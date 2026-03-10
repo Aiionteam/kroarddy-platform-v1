@@ -1,6 +1,15 @@
 """User Info Service – 첫 로그인 시 수집하는 여행 개인화 프로필."""
 import logging
 import os
+from pathlib import Path
+
+# MSA 구조: user_info.tourstory.site/app/main.py
+#   parents[0] = user_info.tourstory.site/app/
+#   parents[1] = user_info.tourstory.site/   ← 서비스 루트
+_env = Path(__file__).resolve().parents[1] / ".env"
+if _env.exists():
+    from dotenv import load_dotenv
+    load_dotenv(_env)
 
 import uvicorn
 from fastapi import FastAPI

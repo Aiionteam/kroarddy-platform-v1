@@ -72,9 +72,11 @@ kakao:
   redirect-uri: ${KAKAO_REDIRECT_URI:}
 
 # AI 서비스 URL 설정
-# Docker Compose 환경: 컨테이너 이름 사용 (http://rag-service:8001, http://vision-service:8002)
-# EC2 독립 인스턴스: 도메인 사용 (http://chat.hohyun.site:8001, http://vision.hohyun.site:8002)
-# Vision 서비스는 선택적 (나중에 배포 가능)
+# MSA 구조 (루트 docker-compose.yaml 기준 서비스명):
+#   festival  → http://festival:8002
+#   planer    → http://planer:8003
+#   user_info → http://user_info:8004
+# 로컬 직접 실행 시: http://localhost:PORT
 ai:
   service:
     rag:
@@ -82,11 +84,11 @@ ai:
     vision:
       url: ${AI_SERVICE_VISION_URL:}  # 비어있으면 vision 서비스 미사용
     festival:
-      url: ${AI_SERVICE_FESTIVAL_URL:http://host.docker.internal:8002}
+      url: ${AI_SERVICE_FESTIVAL_URL:http://festival:8002}
     tourplaner:
-      url: ${AI_SERVICE_TOURPLANER_URL:http://host.docker.internal:8003}
+      url: ${AI_SERVICE_TOURPLANER_URL:http://planer:8003}
     user-info:
-      url: ${AI_SERVICE_USER_INFO_URL:http://host.docker.internal:8004}
+      url: ${AI_SERVICE_USER_INFO_URL:http://user_info:8004}
 
 logging:
   level:

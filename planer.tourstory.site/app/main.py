@@ -4,9 +4,11 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-# 상위 .env 로드 (Docker 볼륨 없이 로컬 실행 대비)
-_ROOT = Path(__file__).resolve().parents[2]
-_env = _ROOT / ".env"
+# MSA 구조: planer.tourstory.site/app/main.py
+#   parents[0] = planer.tourstory.site/app/
+#   parents[1] = planer.tourstory.site/   ← 서비스 루트
+_SERVICE_DIR = Path(__file__).resolve().parents[1]
+_env = _SERVICE_DIR / ".env"
 if _env.exists():
     from dotenv import load_dotenv
     load_dotenv(_env)

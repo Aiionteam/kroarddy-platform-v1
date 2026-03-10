@@ -5,18 +5,15 @@ from pathlib import Path
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 
-_DIR = Path(__file__).resolve().parents[3]          # user_info/
-_PARENT = _DIR.parent                               # sevices.tourstory.site/
+# MSA 구조: user_info.tourstory.site/app/core/config.py
+#   parents[0] = app/core/
+#   parents[1] = app/
+#   parents[2] = user_info.tourstory.site/  ← 서비스 루트
+_SERVICE_DIR = Path(__file__).resolve().parents[2]
 
-_local_env = _DIR / ".env"
-_parent_env = _PARENT / ".env"
-
-if _local_env.exists():
-    load_dotenv(_local_env, override=True)
-elif _parent_env.exists():
-    load_dotenv(_parent_env, override=True)
-
-_env_file = str(_local_env) if _local_env.exists() else str(_parent_env)
+_env_path = _SERVICE_DIR / ".env"
+if _env_path.exists():
+    load_dotenv(_env_path, override=True)
 
 
 def _adapt_asyncpg(url: str) -> str:
@@ -42,7 +39,7 @@ def _adapt_psycopg2(url: str) -> str:
 class Settings(BaseSettings):
     database_url: str = ""
 
-    model_config = {"env_file": _env_file, "extra": "ignore"}
+    model_config = {"env_file": str(_env_path), "extra": "ignore"}
 
     def get_async_url(self) -> str:
         return _adapt_asyncpg(self.database_url)
