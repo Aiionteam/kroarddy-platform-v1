@@ -23,6 +23,8 @@ elif _parent_env.exists():
 # 모델 import (Base.metadata 등록용)
 from app.core.database.base import Base
 from app.models.travel_plan import TravelPlan  # noqa: F401 – 모델 등록
+from app.models.plan_cache import RouteCache, ScheduleCache  # noqa: F401 – 모델 등록
+from app.models.user_content_route import UserContentRoute  # noqa: F401 – 모델 등록
 
 from app.core.config import settings
 

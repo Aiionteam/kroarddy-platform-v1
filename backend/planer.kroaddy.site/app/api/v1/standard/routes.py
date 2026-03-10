@@ -1,26 +1,29 @@
-"""플래너 API 라우터 – 루트 추천 / 일정 생성 / 플랜 관리."""
+"""Standard 플래너 API 라우터 – 루트 추천 / 일정 생성 / 플랜 관리."""
 import asyncio
 import hashlib
 import logging
 import time
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, delete
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
-from app.agent.graph import routes_graph, schedule_graph
-from app.agent.nodes import _is_daily_quota, modify_schedule, reroll_single_item
+from app.agent.standard.graph import routes_graph, schedule_graph
+from app.agent.standard.nodes import _is_daily_quota, modify_schedule, reroll_single_item
 from app.core.database.session import get_db
 from app.models.travel_plan import TravelPlan
+from app.models.plan_cache import RouteCache, ScheduleCache
 from app.services.festival_client import fetch_festivals_for_period
 from app.services.user_info_client import fetch_user_profile
-from .schemas_planner import ModifyRequest, RerollItemRequest, RoutesRequest, SavePlanRequest, ScheduleRequest
+from .schemas import ModifyRequest, RerollItemRequest, RoutesRequest, SavePlanRequest, ScheduleRequest
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/planner", tags=["planner"])
+router = APIRouter(prefix="/api/v1/planner", tags=["standard"])
 
 
 def _check_quota_error(e: Exception) -> None:
@@ -39,22 +42,87 @@ def _check_quota_error(e: Exception) -> None:
     )
 
 def _existing_hash(existing_routes: list[str]) -> str:
-    """existing_routes 목록을 정렬 후 짧은 해시로 변환 (캐시 키용)."""
     key = ",".join(sorted(existing_routes))
     return hashlib.md5(key.encode()).hexdigest()[:8]
 
 
-# ─── 루트 캐시 ───────────────────────────────────────────────
-# 키: "{location}:{start}:{end}:{existing_hash}"
+# ─── L1 인메모리 캐시 ────────────────────────────────────────────
 _routes_cache: dict[str, tuple[list, float]] = {}
 _routes_lock: asyncio.Lock = asyncio.Lock()
-_ROUTES_TTL = 3600  # 1시간
+_ROUTES_TTL = 3600
 
-# ─── 일정 캐시 ───────────────────────────────────────────────
-# 키: "{location}:{route_name}:{start}:{end}"
 _schedule_cache: dict[str, tuple[list, float]] = {}
 _schedule_lock: asyncio.Lock = asyncio.Lock()
-_SCHEDULE_TTL = 7200  # 2시간
+_SCHEDULE_TTL = 7200
+
+# ─── L2 DB 캐시 TTL ─────────────────────────────────────────────
+_ROUTES_DB_TTL_DAYS = 7
+_SCHEDULE_DB_TTL_DAYS = 30
+
+
+def _now_utc() -> datetime:
+    return datetime.now(tz=timezone.utc)
+
+
+async def _get_routes_from_db(cache_key: str, db: AsyncSession) -> list | None:
+    result = await db.execute(
+        select(RouteCache).where(RouteCache.cache_key == cache_key)
+    )
+    row = result.scalar_one_or_none()
+    if row is None:
+        return None
+    if row.expires_at.replace(tzinfo=timezone.utc) < _now_utc():
+        await db.execute(delete(RouteCache).where(RouteCache.cache_key == cache_key))
+        return None
+    return row.routes
+
+
+async def _save_routes_to_db(cache_key: str, location: str, routes: list, db: AsyncSession) -> None:
+    expires_at = _now_utc() + timedelta(days=_ROUTES_DB_TTL_DAYS)
+    stmt = (
+        pg_insert(RouteCache)
+        .values(cache_key=cache_key, location=location, routes=routes, expires_at=expires_at)
+        .on_conflict_do_update(
+            index_elements=["cache_key"],
+            set_={"routes": routes, "expires_at": expires_at},
+        )
+    )
+    await db.execute(stmt)
+
+
+async def _get_schedule_from_db(cache_key: str, db: AsyncSession) -> list | None:
+    result = await db.execute(
+        select(ScheduleCache).where(ScheduleCache.cache_key == cache_key)
+    )
+    row = result.scalar_one_or_none()
+    if row is None:
+        return None
+    if row.expires_at.replace(tzinfo=timezone.utc) < _now_utc():
+        await db.execute(delete(ScheduleCache).where(ScheduleCache.cache_key == cache_key))
+        return None
+    return row.schedule
+
+
+async def _save_schedule_to_db(
+    cache_key: str, location: str, route_name: str, schedule: list, db: AsyncSession
+) -> None:
+    expires_at = _now_utc() + timedelta(days=_SCHEDULE_DB_TTL_DAYS)
+    stmt = (
+        pg_insert(ScheduleCache)
+        .values(
+            cache_key=cache_key,
+            location=location,
+            route_name=route_name,
+            schedule=schedule,
+            expires_at=expires_at,
+        )
+        .on_conflict_do_update(
+            index_elements=["cache_key"],
+            set_={"schedule": schedule, "expires_at": expires_at},
+        )
+    )
+    await db.execute(stmt)
+
 
 SLUG_TO_NAME: dict[str, str] = {
     # 특별시·광역시
@@ -166,8 +234,6 @@ SLUG_TO_NAME: dict[str, str] = {
 }
 
 
-# ── 내부 헬퍼 ──────────────────────────────────────────────────
-
 def _base_state(location: str, start_date: Optional[str], end_date: Optional[str]) -> dict:
     return {
         "location": location,
@@ -197,31 +263,31 @@ def _plan_to_dict(plan: TravelPlan) -> dict:
     }
 
 
-# ── 엔드포인트 ─────────────────────────────────────────────────
-
 @router.post("/{location}/routes", summary="여행 루트 7개 AI 추천 (행사/먹거리/명소/럭셔리/가성비/가족/커플)")
-async def get_routes(location: str, req: RoutesRequest):
+async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depends(get_db)):
     location_name = SLUG_TO_NAME.get(location, location)
     existing_routes: list[str] = req.existing_routes or []
 
-    # existing_routes 포함해서 캐시 키 생성 → 저장 루트가 달라지면 다른 캐시 엔트리
     eh = _existing_hash(existing_routes)
     cache_key = f"{location}:{req.start_date}:{req.end_date}:{eh}"
 
-    # 1차 캐시 확인 (lock 없이)
     cached = _routes_cache.get(cache_key)
     if cached and time.time() - cached[1] < _ROUTES_TTL:
-        logger.info("루트 캐시 히트: %s", cache_key)
+        logger.info("루트 L1캐시 히트: %s", cache_key)
         return {"location": location, "location_name": location_name, "routes": cached[0]}
 
     async with _routes_lock:
-        # lock 획득 후 재확인 (다른 코루틴이 먼저 채웠을 수 있음)
         cached = _routes_cache.get(cache_key)
         if cached and time.time() - cached[1] < _ROUTES_TTL:
-            logger.info("루트 캐시 히트(lock 내부): %s", cache_key)
+            logger.info("루트 L1캐시 히트(lock 내부): %s", cache_key)
             return {"location": location, "location_name": location_name, "routes": cached[0]}
 
-        # 행사 데이터 + 유저 프로필 병렬 조회 (실패해도 루트 생성 계속 진행)
+        db_routes = await _get_routes_from_db(cache_key, db)
+        if db_routes:
+            _routes_cache[cache_key] = (db_routes, time.time())
+            logger.info("루트 L2(DB)캐시 히트: %s (%d건)", cache_key, len(db_routes))
+            return {"location": location, "location_name": location_name, "routes": db_routes}
+
         festivals, user_profile = await asyncio.gather(
             fetch_festivals_for_period(location, location_name, req.start_date, req.end_date),
             fetch_user_profile(req.user_id),
@@ -253,19 +319,23 @@ async def get_routes(location: str, req: RoutesRequest):
 
         routes = result["routes"]
         _routes_cache[cache_key] = (routes, time.time())
-        logger.info("루트 캐시 저장: %s (%d건)", cache_key, len(routes))
+        try:
+            await _save_routes_to_db(cache_key, location_name, routes, db)
+        except Exception as e:
+            logger.warning("루트 DB캐시 저장 실패 (무시): %s", e)
+        logger.info("루트 캐시 저장(L1+L2): %s (%d건)", cache_key, len(routes))
         return {"location": location, "location_name": location_name, "routes": routes}
 
 
 @router.post("/{location}/schedule", summary="선택 루트 AI 일정 생성 (저장 없음)")
-async def get_schedule(location: str, req: ScheduleRequest):
+async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = Depends(get_db)):
     location_name = SLUG_TO_NAME.get(location, location)
 
-    # 일정 캐시 확인
     sched_key = f"{location}:{req.route_name}:{req.start_date}:{req.end_date}"
+
     cached_sched = _schedule_cache.get(sched_key)
     if cached_sched and time.time() - cached_sched[1] < _SCHEDULE_TTL:
-        logger.info("일정 캐시 히트: %s", sched_key)
+        logger.info("일정 L1캐시 히트: %s", sched_key)
         return {
             "location": location,
             "location_name": location_name,
@@ -277,12 +347,24 @@ async def get_schedule(location: str, req: ScheduleRequest):
     async with _schedule_lock:
         cached_sched = _schedule_cache.get(sched_key)
         if cached_sched and time.time() - cached_sched[1] < _SCHEDULE_TTL:
-            logger.info("일정 캐시 히트(lock 내부): %s", sched_key)
+            logger.info("일정 L1캐시 히트(lock 내부): %s", sched_key)
             return {
                 "location": location,
                 "location_name": location_name,
                 "route_name": req.route_name,
                 "schedule": cached_sched[0],
+                "error": None,
+            }
+
+        db_schedule = await _get_schedule_from_db(sched_key, db)
+        if db_schedule:
+            _schedule_cache[sched_key] = (db_schedule, time.time())
+            logger.info("일정 L2(DB)캐시 히트: %s (%d항목)", sched_key, len(db_schedule))
+            return {
+                "location": location,
+                "location_name": location_name,
+                "route_name": req.route_name,
+                "schedule": db_schedule,
                 "error": None,
             }
 
@@ -296,7 +378,11 @@ async def get_schedule(location: str, req: ScheduleRequest):
 
         if schedule:
             _schedule_cache[sched_key] = (schedule, time.time())
-            logger.info("일정 캐시 저장: %s (%d항목)", sched_key, len(schedule))
+            try:
+                await _save_schedule_to_db(sched_key, location_name, req.route_name, schedule, db)
+            except Exception as e:
+                logger.warning("일정 DB캐시 저장 실패 (무시): %s", e)
+            logger.info("일정 캐시 저장(L1+L2): %s (%d항목)", sched_key, len(schedule))
 
         return {
             "location": location,
@@ -344,7 +430,7 @@ async def modify_plan(
         raise
     new_schedule = modified.get("schedule", plan.schedule)
     plan.schedule = new_schedule
-    flag_modified(plan, "schedule")  # JSON 필드는 직접 할당해도 ORM이 변경을 못 감지 → 명시적 표시
+    flag_modified(plan, "schedule")
     await db.flush()
 
     return {
@@ -373,7 +459,7 @@ async def reroll_item(
         raise HTTPException(status_code=400, detail=f"item_index {req.item_index}가 범위를 벗어납니다 (총 {len(schedule)}개).")
 
     target_item = schedule[req.item_index]
-    location_name = plan.location  # 저장 시 이미 한글명으로 저장됨
+    location_name = plan.location
 
     try:
         new_item = await reroll_single_item(target_item, schedule, location_name)

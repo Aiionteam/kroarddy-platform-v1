@@ -1,4 +1,4 @@
-"""플래너 API 요청/응답 Pydantic 스키마."""
+"""Standard 플래너 API 요청/응답 Pydantic 스키마."""
 from typing import Any, Optional
 
 from pydantic import BaseModel
@@ -7,8 +7,8 @@ from pydantic import BaseModel
 class RoutesRequest(BaseModel):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
-    user_id: Optional[int] = None           # 개인화 루트 추천용
-    existing_routes: Optional[list[str]] = None  # 이미 저장된 루트명 목록 (중복 제외용)
+    user_id: Optional[int] = None
+    existing_routes: Optional[list[str]] = None
 
 
 class ScheduleRequest(BaseModel):
@@ -32,5 +32,5 @@ class ModifyRequest(BaseModel):
 
 
 class RerollItemRequest(BaseModel):
-    item_index: int          # 전체 schedule 배열에서의 인덱스
+    item_index: int
     user_id: Optional[int] = None
