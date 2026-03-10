@@ -2,7 +2,7 @@
 
 /**
  * [메모] /home 등 모든 레이아웃에서 사용하는 사이드바.
- * - "설정" 메뉴 클릭 시 /settings 로 이동.
+ * - "설정" 메뉴 클릭 시 /profile/settings 로 이동.
  * - 설정 페이지는 api.kroaddy.site gateway 사용자 서비스와 연동됨 (사용자 정보 조회, 닉네임 CRUD).
  * - 백엔드: api.kroaddy.site/gateway/src/main/java/site/aiion/api/services/user
  */
