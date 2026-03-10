@@ -1,0 +1,65 @@
+bootJar.enabled = true
+jar.enabled = false
+
+// Spring Cloud 제거로 dependencyManagement 불필요
+// dependencyManagement {
+// 	imports {
+// 		mavenBom "org.springframework.cloud:spring-cloud-dependencies:2025.0.0"
+// 	}
+// }
+
+dependencies {
+	// Gateway는 servlet 모드로 변경 (서비스 컨트롤러와 호환)
+	// Spring Cloud 의존성 제거 - 단순 Spring Boot 애플리케이션으로 실행
+	// implementation 'org.springframework.cloud:spring-cloud-starter-gateway'
+	// implementation 'org.springframework.cloud:spring-cloud-starter-config'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	
+	// Redis (Servlet 모드용)
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	
+	// Web (Servlet) - 서비스 컨트롤러를 위해 필요
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	
+	// Spring Security (OAuth2 및 일반 보안 기능)
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+	
+	// JPA (서비스들이 사용)
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	
+	// Database (PostgreSQL)
+	runtimeOnly 'org.postgresql:postgresql:42.7.3'
+	
+	// JWT (OAuth 서비스가 사용)
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
+	
+	// QueryDSL (Diary, User 서비스가 사용)
+	implementation('com.querydsl:querydsl-jpa:5.0.0') {
+		artifact {
+			name = 'querydsl-jpa'
+			classifier = 'jakarta'
+		}
+	}
+	annotationProcessor('com.querydsl:querydsl-apt:5.0.0') {
+		artifact {
+			name = 'querydsl-apt'
+			classifier = 'jakarta'
+		}
+	}
+	annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
+	annotationProcessor 'jakarta.persistence:jakarta.persistence-api:3.1.0'
+	
+	// Swagger
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'
+
+	// Apache HttpComponents – RestTemplate PATCH 지원 (SimpleClientHttpRequestFactory는 PATCH 미지원)
+	// Spring Boot 3.4.x BOM 기준 버전: 5.4.1 (TlsSocketStrategy 클래스 포함)
+	implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.1'
+	
+	// Services는 gateway/src/main/java 안에 직접 포함되어 있으므로 별도 모듈 의존성 불필요
+	
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+}

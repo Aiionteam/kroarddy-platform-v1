@@ -1,0 +1,168 @@
+# CI/CD: GitHub Actions → Docker Hub → Amazon EC2
+# API 포트: 8080
+
+name: Deploy API (api.tourstory.site) to EC2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'gateway/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - 'gradle/**'
+      - '.github/workflows/deploy-api-gateway.yml'
+  workflow_dispatch:
+
+env:
+  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/api.tourstory.site
+  DOCKER_TAG: ${{ github.sha }}
+
+jobs:
+  build-and-push:
+    name: Build & Push to Docker Hub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./gateway/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+            ${{ env.DOCKER_IMAGE }}:latest
+          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
+
+  deploy:
+    name: Deploy to EC2
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            echo "=== Deploy API (api.tourstory.site) - Port 8080 ==="
+
+            DOCKER_IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/api.tourstory.site:${{ github.sha }}"
+            CONTAINER_NAME="api-gateway"
+
+            # Docker 설치 확인
+            if ! command -v docker &> /dev/null; then
+              echo "Installing Docker..."
+              sudo apt-get update
+              sudo apt-get install -y docker.io
+              sudo systemctl start docker
+              sudo systemctl enable docker
+              sudo usermod -aG docker $USER
+            fi
+
+            echo "Logging in to Docker Hub..."
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin || true
+
+            echo "Stopping existing container..."
+            docker stop $CONTAINER_NAME 2>/dev/null || true
+            docker rm $CONTAINER_NAME 2>/dev/null || true
+
+            echo "Pulling image: $DOCKER_IMAGE"
+            docker pull $DOCKER_IMAGE
+
+            # EC2에서 사용할 환경 변수 파일 생성
+            echo "Creating .env for container..."
+            {
+              echo "SPRING_PROFILES_ACTIVE=production"
+              echo "SPRING_DATASOURCE_URL=${{ secrets.NEON_CONNECTION_STRING }}"
+              echo "SPRING_DATASOURCE_USERNAME=${{ secrets.NEON_USER }}"
+              echo "SPRING_DATASOURCE_PASSWORD=${{ secrets.NEON_PASSWORD }}"
+              echo "SPRING_DATA_REDIS_HOST=${{ secrets.UPSTASH_REDIS_HOST }}"
+              echo "SPRING_DATA_REDIS_PORT=${{ secrets.UPSTASH_REDIS_PORT }}"
+              echo "SPRING_DATA_REDIS_PASSWORD=${{ secrets.UPSTASH_REDIS_PASSWORD }}"
+              echo "JWT_SECRET=${{ secrets.JWT_SECRET }}"
+              echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}"
+              echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}"
+              echo "GOOGLE_REDIRECT_URI=${{ secrets.GOOGLE_REDIRECT_URI }}"
+              echo "NAVER_CLIENT_ID=${{ secrets.NAVER_CLIENT_ID }}"
+              echo "NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}"
+              echo "NAVER_REDIRECT_URI=${{ secrets.NAVER_REDIRECT_URI }}"
+              echo "KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }}"
+              echo "KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}"
+              echo "KAKAO_REDIRECT_URI=${{ secrets.KAKAO_REDIRECT_URI }}"
+              echo "AI_SERVICE_RAG_URL=${{ secrets.AI_SERVICE_RAG_URL }}"
+              echo "AI_SERVICE_VISION_URL=${{ secrets.AI_SERVICE_VISION_URL }}"
+            } > ~/.env.api-gateway
+
+            echo "Starting container on port 8080..."
+            docker run -d \
+              --name $CONTAINER_NAME \
+              --restart unless-stopped \
+              -p 8080:8080 \
+              --env-file ~/.env.api-gateway \
+              $DOCKER_IMAGE
+
+            sleep 5
+            echo "=== Container Status ==="
+            docker ps -a | grep $CONTAINER_NAME || true
+            echo ""
+            echo "=== Recent Logs ==="
+            docker logs --tail 30 $CONTAINER_NAME || true
+            echo ""
+            echo "✅ Deployment Complete (API on port 8080)"
+
+      - name: Health Check
+        continue-on-error: true
+        run: |
+          echo "Waiting for service to start..."
+          sleep 30
+          MAX_RETRIES=10
+          RETRY_DELAY=30
+          SUCCESS=false
+          for i in $(seq 1 $MAX_RETRIES); do
+            echo "Health check $i/$MAX_RETRIES..."
+            response=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.EC2_HOST }}:8080/actuator/health 2>/dev/null || echo "000")
+            if [ "$response" = "200" ]; then
+              echo "✅ Service is healthy (8080)"
+              SUCCESS=true
+              break
+            fi
+            echo "Response: $response"
+            [ $i -lt $MAX_RETRIES ] && sleep $RETRY_DELAY
+          done
+          if [ "$SUCCESS" = "false" ]; then
+            echo "⚠️ Health check did not succeed. Check: ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'docker logs api-gateway'"
+          fi
+
+      - name: Verify on EC2
+        if: always()
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "=== Container ==="
+            docker ps -a | grep api-gateway || true
+            echo "=== Port 8080 ==="
+            sudo ss -tulpn | grep :8080 || echo "Port 8080 not listening"
+            echo "=== Logs ==="
+            docker logs --tail 50 api-gateway || true
+            echo "=== Local health ==="
+            curl -s http://localhost:8080/actuator/health || echo "Health check failed"

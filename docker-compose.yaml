@@ -1,4 +1,4 @@
-# TourStar MSA - 통합 Docker Compose
+# Kroaddy MSA - 통합 Docker Compose
 # 포트 구성:
 #   gateway   → 8080 (Spring Boot / 인증·프록시)
 #   festival  → 8002 (FastAPI / 전국문화축제표준데이터)
@@ -14,12 +14,12 @@ services:
   # ── Spring Boot Gateway (인증 + 프록시) ───────────────────────────────────
   gateway:
     build:
-      context: ./api.tourstory.site
+      context: ./api.kroaddy.site
       dockerfile: gateway/Dockerfile
-    image: tour-site-gateway:latest
-    container_name: tour-site-gateway
+    image: kroaddy-gateway:latest
+    container_name: kroaddy-gateway
     env_file:
-      - ./api.tourstory.site/.env
+      - ./api.kroaddy.site/.env
     environment:
       SPRING_PROFILES_ACTIVE: local
       # Docker 내부 네트워크 서비스명으로 라우팅
@@ -37,32 +37,32 @@ services:
       - 8.8.8.8
       - 8.8.4.4
     networks:
-      - tourstar-net
+      - kroaddy-net
 
   # ── Festival API (전국문화축제표준데이터, 포트 8002) ──────────────────────
   festival:
     build:
-      context: ./festival.tourstory.site
+      context: ./festival.kroaddy.site
       dockerfile: Dockerfile
-    image: tour-site-festival:latest
-    container_name: tour-site-festival
+    image: kroaddy-festival:latest
+    container_name: kroaddy-festival
     env_file:
-      - ./festival.tourstory.site/.env
+      - ./festival.kroaddy.site/.env
     ports:
       - "8002:8002"
     restart: unless-stopped
     networks:
-      - tourstar-net
+      - kroaddy-net
 
   # ── Tour Planner API (AI 여행 루트·일정, 포트 8003) ──────────────────────
   planer:
     build:
-      context: ./planer.tourstory.site
+      context: ./planer.kroaddy.site
       dockerfile: Dockerfile
-    image: tour-site-planer:latest
-    container_name: tour-site-planer
+    image: kroaddy-planer:latest
+    container_name: kroaddy-planer
     env_file:
-      - ./planer.tourstory.site/.env
+      - ./planer.kroaddy.site/.env
     environment:
       # Docker 내부 네트워크 서비스명으로 서비스간 통신
       FESTIVAL_SERVICE_URL: http://festival:8002
@@ -74,23 +74,23 @@ services:
       - user_info
     restart: unless-stopped
     networks:
-      - tourstar-net
+      - kroaddy-net
 
   # ── User Info Service (개인화 프로필, 포트 8004) ──────────────────────────
   user_info:
     build:
-      context: ./user_info.tourstory.site
+      context: ./user_info.kroaddy.site
       dockerfile: Dockerfile
-    image: tour-site-user-info:latest
-    container_name: tour-site-user-info
+    image: kroaddy-user-info:latest
+    container_name: kroaddy-user-info
     env_file:
-      - ./user_info.tourstory.site/.env
+      - ./user_info.kroaddy.site/.env
     ports:
       - "8004:8004"
     restart: unless-stopped
     networks:
-      - tourstar-net
+      - kroaddy-net
 
 networks:
-  tourstar-net:
+  kroaddy-net:
     driver: bridge

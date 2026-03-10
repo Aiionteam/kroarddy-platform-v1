@@ -1,0 +1,70 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.5.8' apply false
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+allprojects {
+	group = 'site.aiion'
+	version = '0.0.1-SNAPSHOT'
+	
+	repositories {
+		mavenCentral()
+	}
+}
+
+subprojects {
+	apply plugin: 'java'
+	
+	// 부모 모듈(server)은 Spring Boot 플러그인 제외
+	// services 모듈들은 gateway에 포함되므로 Spring Boot 플러그인 필요
+	if (!project.path.equals(':server')) {
+		apply plugin: 'org.springframework.boot'
+	}
+	apply plugin: 'io.spring.dependency-management'
+	
+	// Spring Boot 및 Spring Cloud 의존성 관리
+	dependencyManagement {
+		imports {
+			mavenBom "org.springframework.boot:spring-boot-dependencies:3.5.8"
+			mavenBom "org.springframework.cloud:spring-cloud-dependencies:2025.0.0"
+		}
+	}
+	
+	java {
+		toolchain {
+			languageVersion = JavaLanguageVersion.of(21)
+		}
+	}
+	
+	// Java 컴파일러 옵션 설정
+	tasks.withType(JavaCompile) {
+		options.encoding = 'UTF-8'
+		options.compilerArgs += ['-parameters']
+		// 증분 컴파일 활성화 (빌드 속도 향상)
+		options.incremental = true
+		// 워닝을 에러로 처리하지 않도록 설정 (필요시 주석 해제)
+		// options.compilerArgs += ['-Werror']
+		// 특정 워닝만 무시하려면 아래 옵션 사용
+		// options.compilerArgs += ['-Xlint:-deprecation', '-Xlint:-unchecked']
+	}
+	
+	configurations {
+		compileOnly {
+			extendsFrom annotationProcessor
+		}
+	}
+	
+	
+	dependencies {
+		compileOnly 'org.projectlombok:lombok'
+		annotationProcessor 'org.projectlombok:lombok'
+		testImplementation 'org.springframework.boot:spring-boot-starter-test'
+		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	}
+	
+	tasks.named('test') {
+		useJUnitPlatform()
+	}
+}
+
