@@ -420,7 +420,7 @@ export default function LocationPlannerPage() {
                   </div>
                   {savedPlanId ? (
                     <button
-                      onClick={() => router.push("/schedule")}
+                      onClick={() => router.push("/planner/schedule")}
                       className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow hover:bg-emerald-700 transition-colors"
                     >
                       ✅ 저장됨 · 일정관리 보기
