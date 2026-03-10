@@ -1,9 +1,9 @@
 # Kroaddy MSA - 통합 Docker Compose
 # 포트 구성:
-#   gateway   → 8080 (Spring Boot / 인증·프록시)
-#   festival  → 8002 (FastAPI / 전국문화축제표준데이터)
-#   planer    → 8003 (FastAPI / AI 여행 루트·일정·날씨)
-#   user_info → 8004 (FastAPI / 개인화 프로필)
+#   gateway → 8080 (Spring Boot / 인증·프록시)
+#   festival → 8002 (FastAPI / 전국문화축제표준데이터)
+#   planer   → 8003 (FastAPI / AI 여행 루트·일정·날씨)
+#   profile  → 8004 (FastAPI / 개인화 프로필)
 #
 # 사용법:
 #   docker compose up -d --build
@@ -14,24 +14,23 @@ services:
   # ── Spring Boot Gateway (인증 + 프록시) ───────────────────────────────────
   gateway:
     build:
-      context: ./api.kroaddy.site
+      context: ./backend/api.kroaddy.site
       dockerfile: gateway/Dockerfile
     image: kroaddy-gateway:latest
     container_name: kroaddy-gateway
     env_file:
-      - ./api.kroaddy.site/.env
+      - ./backend/api.kroaddy.site/.env
     environment:
       SPRING_PROFILES_ACTIVE: local
-      # Docker 내부 네트워크 서비스명으로 라우팅
       AI_SERVICE_FESTIVAL_URL: http://festival:8002
       AI_SERVICE_TOURPLANER_URL: http://planer:8003
-      AI_SERVICE_USER_INFO_URL: http://user_info:8004
+      AI_SERVICE_USER_INFO_URL: http://profile:8004
     ports:
       - "8080:8080"
     depends_on:
       - festival
       - planer
-      - user_info
+      - profile
     restart: unless-stopped
     dns:
       - 8.8.8.8
@@ -42,12 +41,12 @@ services:
   # ── Festival API (전국문화축제표준데이터, 포트 8002) ──────────────────────
   festival:
     build:
-      context: ./festival.kroaddy.site
+      context: ./backend/festival.kroaddy.site
       dockerfile: Dockerfile
     image: kroaddy-festival:latest
     container_name: kroaddy-festival
     env_file:
-      - ./festival.kroaddy.site/.env
+      - ./backend/festival.kroaddy.site/.env
     ports:
       - "8002:8002"
     restart: unless-stopped
@@ -57,34 +56,33 @@ services:
   # ── Tour Planner API (AI 여행 루트·일정, 포트 8003) ──────────────────────
   planer:
     build:
-      context: ./planer.kroaddy.site
+      context: ./backend/planer.kroaddy.site
       dockerfile: Dockerfile
     image: kroaddy-planer:latest
     container_name: kroaddy-planer
     env_file:
-      - ./planer.kroaddy.site/.env
+      - ./backend/planer.kroaddy.site/.env
     environment:
-      # Docker 내부 네트워크 서비스명으로 서비스간 통신
       FESTIVAL_SERVICE_URL: http://festival:8002
-      USER_INFO_SERVICE_URL: http://user_info:8004
+      USER_INFO_SERVICE_URL: http://profile:8004
     ports:
       - "8003:8003"
     depends_on:
       - festival
-      - user_info
+      - profile
     restart: unless-stopped
     networks:
       - kroaddy-net
 
-  # ── User Info Service (개인화 프로필, 포트 8004) ──────────────────────────
-  user_info:
+  # ── Profile Service (개인화 프로필, 포트 8004) ────────────────────────────
+  profile:
     build:
-      context: ./user_info.kroaddy.site
+      context: ./backend/profile.kroaddy.site
       dockerfile: Dockerfile
-    image: kroaddy-user-info:latest
-    container_name: kroaddy-user-info
+    image: kroaddy-profile:latest
+    container_name: kroaddy-profile
     env_file:
-      - ./user_info.kroaddy.site/.env
+      - ./backend/profile.kroaddy.site/.env
     ports:
       - "8004:8004"
     restart: unless-stopped

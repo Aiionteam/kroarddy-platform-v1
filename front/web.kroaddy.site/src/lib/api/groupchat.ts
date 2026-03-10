@@ -19,36 +19,47 @@ export interface ChatRoomInfo {
   accessible: boolean;
 }
 
-export interface GroupChatResponse {
+/** 채팅 메시지 API 응답 (send / recent) */
+export interface GroupChatMessageResponse {
   code: number;
   message: string;
-  data?: GroupChatMessage | GroupChatMessage[] | ChatRoomInfo[];
+  data?: GroupChatMessage | GroupChatMessage[];
 }
 
+/** 대화방 목록 API 응답 */
+export interface GroupChatRoomResponse {
+  code: number;
+  message: string;
+  data?: ChatRoomInfo[];
+}
+
+/** @deprecated GroupChatMessageResponse 또는 GroupChatRoomResponse 를 사용하세요 */
+export type GroupChatResponse = GroupChatMessageResponse | GroupChatRoomResponse;
+
 /** 대화방 목록 (접근 가능 여부·필요 명예도 포함). JWT 필요 */
-export const getGroupChatRooms = async (): Promise<GroupChatResponse> => {
-  const { data } = await apiClient.get<GroupChatResponse>("/api/groupchat/rooms");
-  return data as GroupChatResponse;
+export const getGroupChatRooms = async (): Promise<GroupChatRoomResponse> => {
+  const { data } = await apiClient.get<GroupChatRoomResponse>("/api/groupchat/rooms");
+  return data as GroupChatRoomResponse;
 };
 
 export const getRecentGroupChatMessages = async (
   roomType: string = "SILVER",
   limit: number = 50
-): Promise<GroupChatResponse> => {
-  const { data } = await apiClient.get<GroupChatResponse>(
+): Promise<GroupChatMessageResponse> => {
+  const { data } = await apiClient.get<GroupChatMessageResponse>(
     `/api/groupchat/recent?roomType=${encodeURIComponent(roomType)}&limit=${limit}`
   );
-  return data as GroupChatResponse;
+  return data as GroupChatMessageResponse;
 };
 
 export const sendGroupChatMessage = async (
   message: string,
   options?: { roomType?: string; lookingForBuddy?: boolean }
-): Promise<GroupChatResponse> => {
-  const { data } = await apiClient.post<GroupChatResponse>("/api/groupchat", {
+): Promise<GroupChatMessageResponse> => {
+  const { data } = await apiClient.post<GroupChatMessageResponse>("/api/groupchat", {
     message,
     roomType: options?.roomType ?? undefined,
     lookingForBuddy: options?.lookingForBuddy ?? false,
   });
-  return data as GroupChatResponse;
+  return data as GroupChatMessageResponse;
 };

@@ -12,12 +12,12 @@ import { useRouter, usePathname } from "next/navigation";
 export type SidebarCategoryId = "chat" | "tourstar" | "schedule" | "planner" | "restaurant" | "event";
 
 const CATEGORIES: { id: SidebarCategoryId; label: string; path?: string; icon: React.ReactNode }[] = [
-  { id: "tourstar", label: "투어스타", path: "/tourstar", icon: <TourstarIcon /> },
-  { id: "schedule", label: "일정관리", path: "/schedule", icon: <ScheduleIcon /> },
-  { id: "planner", label: "여행플래너", path: "/planner", icon: <PlannerIcon /> },
-  { id: "restaurant", label: "맛집추천", path: "/restaurant", icon: <RestaurantIcon /> },
-  { id: "event", label: "행사추천", path: "/event", icon: <EventIcon /> },
-  { id: "chat", label: "단체채팅", path: "/groupchat", icon: <ChatIcon /> },
+  { id: "tourstar",    label: "투어스타",  path: "/tourstar",          icon: <TourstarIcon /> },
+  { id: "schedule",   label: "일정관리",  path: "/planner/schedule",  icon: <ScheduleIcon /> },
+  { id: "planner",    label: "여행플래너", path: "/planner",            icon: <PlannerIcon /> },
+  { id: "restaurant", label: "맛집추천",  path: "/guide/restaurant",  icon: <RestaurantIcon /> },
+  { id: "event",      label: "행사추천",  path: "/guide/event",       icon: <EventIcon /> },
+  { id: "chat",       label: "단체채팅",  path: "/chat/groupchat",    icon: <ChatIcon /> },
 ];
 
 function ChatIcon() {
@@ -82,7 +82,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ onLogout }) => {
   const router = useRouter();
   const pathname = usePathname() ?? "";
 
-  const isActive = (path?: string) => path && (pathname === path || pathname.startsWith(path + "?"));
+  const isActive = (path?: string) =>
+    path && (pathname === path || pathname.startsWith(path + "/") || pathname.startsWith(path + "?"));
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-gray-200 bg-gray-50">
@@ -119,9 +120,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ onLogout }) => {
       <div className="border-t border-gray-200 p-3 space-y-1">
         <button
           type="button"
-          onClick={() => router.push("/friends")}
+          onClick={() => router.push("/chat/friends")}
           className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-            pathname === "/friends" ? "bg-purple-100 text-purple-800" : "text-gray-700 hover:bg-gray-100"
+            pathname.startsWith("/chat/friends") ? "bg-purple-100 text-purple-800" : "text-gray-700 hover:bg-gray-100"
           }`}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -134,9 +135,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ onLogout }) => {
         </button>
         <button
           type="button"
-          onClick={() => router.push("/whisper")}
+          onClick={() => router.push("/chat/whisper")}
           className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-            pathname === "/whisper" ? "bg-purple-100 text-purple-800" : "text-gray-700 hover:bg-gray-100"
+            pathname.startsWith("/chat/whisper") ? "bg-purple-100 text-purple-800" : "text-gray-700 hover:bg-gray-100"
           }`}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -146,9 +147,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ onLogout }) => {
         </button>
         <button
           type="button"
-          onClick={() => router.push("/settings")}
+          onClick={() => router.push("/profile/settings")}
           className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-            pathname === "/settings" ? "bg-purple-100 text-purple-800" : "text-gray-700 hover:bg-gray-100"
+            pathname.startsWith("/profile/settings") ? "bg-purple-100 text-purple-800" : "text-gray-700 hover:bg-gray-100"
           }`}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
