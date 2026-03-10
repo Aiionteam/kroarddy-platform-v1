@@ -126,6 +126,28 @@ public class AiServiceProxyController {
 		return proxyRequest(tourplanerServiceUrl + "/api", body, method, request, headers);
 	}
 
+	// User Content 서비스 프록시 (8003) - /api/v1/user-content/** → tourplaner service
+	@RequestMapping({"/v1/user-content", "/v1/user-content/**"})
+	public ResponseEntity<String> proxyUserContent(
+			@RequestBody(required = false) String body,
+			HttpMethod method,
+			HttpServletRequest request,
+			@RequestHeader HttpHeaders headers)
+	{
+		return proxyRequest(tourplanerServiceUrl + "/api", body, method, request, headers);
+	}
+
+	// K-Content 서비스 프록시 (8003) - /api/v1/k-content/** → tourplaner service
+	@RequestMapping({"/v1/k-content", "/v1/k-content/**"})
+	public ResponseEntity<String> proxyKContent(
+			@RequestBody(required = false) String body,
+			HttpMethod method,
+			HttpServletRequest request,
+			@RequestHeader HttpHeaders headers)
+	{
+		return proxyRequest(tourplanerServiceUrl + "/api", body, method, request, headers);
+	}
+
 	// User Profile 서비스 프록시 (8004) - /api/v1/user-profile/** → user_info service
 	@RequestMapping({"/v1/user-profile", "/v1/user-profile/**"})
 	public ResponseEntity<String> proxyUserInfoService(

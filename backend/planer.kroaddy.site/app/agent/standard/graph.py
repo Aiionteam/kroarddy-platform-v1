@@ -1,8 +1,8 @@
-"""LangGraph 그래프 정의."""
+"""LangGraph 그래프 정의 – Standard 플래너."""
 from langgraph.graph import END, StateGraph
 
-from app.agent.nodes import generate_routes, generate_schedule
-from app.agent.state import PlannerState
+from app.agent.standard.nodes import generate_routes, generate_schedule
+from app.agent.standard.state import PlannerState
 
 
 def _build_routes_graph():
