@@ -1,0 +1,28 @@
+# Env / secrets
+.env
+.env.*
+.env.local
+.env.development
+.env.production
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & large runtime
+*.log
+logs/
+
+# Large archives (각 프로젝트에서 세부 규칙 추가)
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# IDE (공통)
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
