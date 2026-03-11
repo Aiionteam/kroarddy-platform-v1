@@ -632,14 +632,16 @@ def resolve_default_artifacts_dir(base_dir: Path) -> Path:
     if env_override:
         return Path(env_override)
 
-    local_artifacts = base_dir / "artifacts"
-    if local_artifacts.exists():
-        return local_artifacts
+    # 현재 경로 및 상위 경로에서 artifacts를 탐색 (v1 하위 실행 포함)
+    for candidate_base in [base_dir, *base_dir.parents]:
+        artifacts = candidate_base / "artifacts"
+        if artifacts.exists():
+            return artifacts
 
     legacy_artifacts = base_dir.parent / "langgraph" / "app" / "core" / "artifacts"
     if legacy_artifacts.exists():
         return legacy_artifacts
-    return local_artifacts
+    return base_dir / "artifacts"
 
 
 def parse_args() -> argparse.Namespace:

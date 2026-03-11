@@ -46,6 +46,9 @@ public class AiServiceProxyController {
 	@Value("${ai.service.user-info.url:http://localhost:8004}")
 	private String userInfoServiceUrl;
 
+	@Value("${ai.service.tourstar.url:http://localhost:8010}")
+	private String tourstarServiceUrl;
+
 	public AiServiceProxyController(RestTemplate restTemplate)
 	{
 		this.restTemplate = restTemplate;
@@ -135,6 +138,28 @@ public class AiServiceProxyController {
 			@RequestHeader HttpHeaders headers)
 	{
 		return proxyRequest(userInfoServiceUrl + "/api", body, method, request, headers);
+	}
+
+	// Tourstar 서비스 프록시 (8010) - /api/v1/photo-selection/** → tourstar service
+	@RequestMapping({"/v1/photo-selection", "/v1/photo-selection/**"})
+	public ResponseEntity<String> proxyTourstarService(
+			@RequestBody(required = false) String body,
+			HttpMethod method,
+			HttpServletRequest request,
+			@RequestHeader HttpHeaders headers)
+	{
+		return proxyRequest(tourstarServiceUrl, body, method, request, headers);
+	}
+
+	// Tourstar 정적 파일 프록시 (8010) - /api/tourstar-files/** → tourstar service
+	@RequestMapping({"/tourstar-files/**"})
+	public ResponseEntity<String> proxyTourstarFiles(
+			@RequestBody(required = false) String body,
+			HttpMethod method,
+			HttpServletRequest request,
+			@RequestHeader HttpHeaders headers)
+	{
+		return proxyRequest(tourstarServiceUrl, body, method, request, headers);
 	}
 
 	// LangGraph 채팅 서비스 프록시 (8001 → 게이트웨이 경유로 통일)

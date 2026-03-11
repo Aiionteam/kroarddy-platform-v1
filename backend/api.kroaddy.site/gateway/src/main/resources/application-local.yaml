@@ -34,4 +34,8 @@ ai:
       url: ${AI_SERVICE_FESTIVAL_URL:http://localhost:8002}
     tourplaner:
       url: ${AI_SERVICE_TOURPLANER_URL:http://localhost:8003}
+    user-info:
+      url: ${AI_SERVICE_USER_INFO_URL:http://localhost:8004}
+    tourstar:
+      url: ${AI_SERVICE_TOURSTAR_URL:http://localhost:8010}
 
