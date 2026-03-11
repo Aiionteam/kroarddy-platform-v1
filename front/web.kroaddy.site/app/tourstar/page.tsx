@@ -4,6 +4,14 @@ import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
 import { AppSidebar } from "@/components/organisms/AppSidebar";
+import {
+  buildTourstarImageUrl,
+  generateTourstarPost,
+  getTourstarJobStatus,
+  localArtifactPathToUrl,
+  type TourstarStyleFilter,
+  uploadTourstarPhotos,
+} from "@/lib/api/tourstar";
 
 /* ────────────────────────── 타입 정의 ────────────────────────── */
 type Visibility = "public" | "private";
@@ -14,6 +22,8 @@ interface TourPhoto {
   id: string;
   gradient: string; // placeholder gradient
   selected: boolean; // AI가 추천한 사진 여부
+  imageUrl?: string; // 업로드된 실제 이미지 미리보기 URL
+  fileName?: string;
 }
 
 interface TourPost {
@@ -28,6 +38,26 @@ interface TourPost {
   liked: boolean;
   tags: string[];
 }
+
+const STYLE_FILTER_OPTIONS: Array<{ value: TourstarStyleFilter; label: string }> = [
+  { value: "AUTO", label: "자동 (기본)" },
+  { value: "INTJ", label: "INTJ" },
+  { value: "INTP", label: "INTP" },
+  { value: "ENTJ", label: "ENTJ" },
+  { value: "ENTP", label: "ENTP" },
+  { value: "INFJ", label: "INFJ" },
+  { value: "INFP", label: "INFP" },
+  { value: "ENFJ", label: "ENFJ" },
+  { value: "ENFP", label: "ENFP" },
+  { value: "ISTJ", label: "ISTJ" },
+  { value: "ISFJ", label: "ISFJ" },
+  { value: "ESTJ", label: "ESTJ" },
+  { value: "ESFJ", label: "ESFJ" },
+  { value: "ISTP", label: "ISTP" },
+  { value: "ISFP", label: "ISFP" },
+  { value: "ESTP", label: "ESTP" },
+  { value: "ESFP", label: "ESFP" },
+];
 
 /* ───────────────────── 플레이스홀더 그라디언트 ───────────────────── */
 const GRADIENTS = [
@@ -154,37 +184,97 @@ interface CreateModalProps {
   open: boolean;
   onClose: () => void;
   onCreate: (post: Omit<TourPost, "id" | "likes" | "liked">) => void;
+  onJobStatusChange?: (status: string) => void;
 }
 
-function CreatePostModal({ open, onClose, onCreate }: CreateModalProps) {
+function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateModalProps) {
   const [form, setForm] = useState({
-    title: "",
-    location: "",
     comment: "",
+    styleFilter: "AUTO" as TourstarStyleFilter,
+    styleTemplate: "",
     visibility: "public" as Visibility,
-    tagsInput: "",
-    photoCount: 4,
   });
-
-  // AI 추천 시뮬레이션: photoCount 장 중 70%를 자동 선택
-  const simulatedPhotos: TourPhoto[] = useMemo(() => {
-    return Array.from({ length: form.photoCount }).map((_, i) => ({
-      id: `new-${i}`,
-      gradient: randomGradient(),
-      selected: Math.random() > 0.3,
-    }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.photoCount]);
-
-  const [photos, setPhotos] = useState(simulatedPhotos);
-
-  // photoCount 변경 시 재생성
-  React.useEffect(() => {
-    setPhotos(simulatedPhotos);
-  }, [simulatedPhotos]);
+  const [photos, setPhotos] = useState<TourPhoto[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isGeneratingPost, setIsGeneratingPost] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const togglePhoto = (id: string) => {
     setPhotos((prev) => prev.map((p) => (p.id === id ? { ...p, selected: !p.selected } : p)));
+  };
+
+  const handleUploadPhotos = async (files: FileList | null) => {
+    if (!files || files.length === 0 || isUploading) return;
+    const imageFiles = Array.from(files).filter((file) => file.type.startsWith("image/"));
+    if (imageFiles.length === 0) return;
+
+    setIsUploading(true);
+    try {
+      const result = await uploadTourstarPhotos(imageFiles);
+      const mapped: TourPhoto[] = result.uploaded.map((item, idx) => ({
+        id: `upload-${Date.now()}-${idx}`,
+        gradient: randomGradient(),
+        selected: true,
+        imageUrl: buildTourstarImageUrl(item.url),
+        fileName: item.name,
+      }));
+      setPhotos((prev) => [...prev, ...mapped]);
+      if (result.pipeline_job?.job_id) {
+        console.log("[tourstar] pipeline queued:", result.pipeline_job.job_id);
+        onJobStatusChange?.("AI 사진 분석 대기중...");
+        const jobId = result.pipeline_job.job_id;
+        for (let i = 0; i < 60; i += 1) {
+          // 1초 간격 폴링 (최대 60초)
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          // eslint-disable-next-line no-await-in-loop
+          const status = await getTourstarJobStatus(jobId);
+          if (status.status === "queued") {
+            onJobStatusChange?.("AI 사진 분석 대기중...");
+            continue;
+          }
+          if (status.status === "running") {
+            onJobStatusChange?.("AI 사진 분석중...");
+            continue;
+          }
+          if (status.status === "failed") {
+            onJobStatusChange?.("AI 분석 실패");
+            break;
+          }
+          if (status.status === "completed") {
+            const bestRows = status.result?.best ?? [];
+            if (bestRows.length > 0) {
+              setPhotos((prev) => {
+                const selected = prev
+                  .map((p) => {
+                    const key = (p.imageUrl ?? "").replace(/\\/g, "/").toLowerCase();
+                    const row = bestRows.find((r) => {
+                      const srcUrl = localArtifactPathToUrl(r.source_image).replace(/\\/g, "/").toLowerCase();
+                      return srcUrl === key;
+                    });
+                    if (!row) return null;
+                    return {
+                      ...p,
+                      selected: true,
+                      imageUrl: localArtifactPathToUrl(row.saved_image) || p.imageUrl,
+                    };
+                  })
+                  .filter(Boolean) as TourPhoto[];
+                return selected.length > 0 ? selected : prev;
+              });
+            }
+            onJobStatusChange?.("AI 분석 완료 (베스트 사진 반영)");
+            break;
+          }
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      alert("사진 업로드에 실패했습니다. tourstar 서버 실행 상태를 확인해 주세요.");
+      onJobStatusChange?.("업로드 실패");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   if (!open) return null;
@@ -206,7 +296,7 @@ function CreatePostModal({ open, onClose, onCreate }: CreateModalProps) {
                 사진 ({photos.filter((p) => p.selected).length}/{photos.length} 선택됨)
               </label>
               <span className="rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-medium text-purple-600">
-                AI 자동 추천
+                파일 업로드
               </span>
             </div>
             <div className="grid grid-cols-4 gap-2">
@@ -220,6 +310,12 @@ function CreatePostModal({ open, onClose, onCreate }: CreateModalProps) {
                     : "opacity-50 hover:opacity-75"
                     }`}
                 >
+                  {photo.imageUrl ? (
+                    <div
+                      className="absolute inset-0 bg-cover bg-center"
+                      style={{ backgroundImage: `url(${photo.imageUrl})` }}
+                    />
+                  ) : null}
                   {/* 체크 표시 */}
                   <div
                     className={`absolute top-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full text-white transition-all ${photo.selected ? "bg-purple-500" : "bg-black/30"
@@ -229,61 +325,38 @@ function CreatePostModal({ open, onClose, onCreate }: CreateModalProps) {
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   </div>
-                  {/* 사진 영역 시뮬레이션 */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" className="opacity-40">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                      <circle cx="8.5" cy="8.5" r="1.5" />
-                      <polyline points="21 15 16 10 5 21" />
-                    </svg>
-                  </div>
+                  {!photo.imageUrl ? (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" className="opacity-40">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <polyline points="21 15 16 10 5 21" />
+                      </svg>
+                    </div>
+                  ) : null}
                 </button>
               ))}
             </div>
-            {/* 사진 수 조절 */}
+            {/* 파일 업로드 */}
             <div className="mt-2 flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setForm((f) => ({ ...f, photoCount: Math.min(f.photoCount + 2, 12) }))}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
                 className="rounded-lg border border-dashed border-gray-300 px-3 py-1.5 text-xs text-gray-400 hover:border-purple-300 hover:text-purple-500 transition-colors"
               >
-                + 사진 더 추가
+                {isUploading ? "업로드 중..." : "+ 사진 파일 올리기"}
               </button>
-            </div>
-          </div>
-
-          {/* 제목 */}
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-500">여행 제목</label>
-            <input
-              className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-purple-400 focus:outline-none"
-              placeholder="예: 제주도 3일간의 힐링 여행"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-            />
-          </div>
-
-          {/* 위치 */}
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-500">여행지</label>
-            <div className="relative">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              >
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
               <input
-                className="w-full rounded-lg border border-gray-200 py-2.5 pl-9 pr-3 text-sm focus:border-purple-400 focus:outline-none"
-                placeholder="예: 제주특별자치도"
-                value={form.location}
-                onChange={(e) => setForm({ ...form, location: e.target.value })}
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={async (e) => {
+                  handleUploadPhotos(e.target.files);
+                  e.target.value = "";
+                }}
               />
             </div>
           </div>
@@ -292,7 +365,7 @@ function CreatePostModal({ open, onClose, onCreate }: CreateModalProps) {
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-500">한줄 코멘트</label>
             <textarea
-              className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-purple-400 focus:outline-none resize-none"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none resize-none"
               rows={2}
               placeholder="간단한 코멘트만 남기면 자동으로 예쁘게 게시됩니다"
               value={form.comment}
@@ -300,15 +373,36 @@ function CreatePostModal({ open, onClose, onCreate }: CreateModalProps) {
             />
           </div>
 
-          {/* 태그 */}
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-500">태그 (쉼표로 구분)</label>
-            <input
-              className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-purple-400 focus:outline-none"
-              placeholder="예: 제주도, 힐링, 바다"
-              value={form.tagsInput}
-              onChange={(e) => setForm({ ...form, tagsInput: e.target.value })}
-            />
+          {/* MBTI 문체 설정 */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-500">문체 프리셋 (MBTI)</label>
+              <select
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:border-purple-400 focus:outline-none"
+                value={form.styleFilter}
+                onChange={(e) =>
+                  setForm({ ...form, styleFilter: e.target.value as TourstarStyleFilter })
+                }
+              >
+                {STYLE_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-500">
+                사용자 템플릿 (선택)
+              </label>
+              <input
+                type="text"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none"
+                placeholder="예) 잔잔하고 여백 있는 감성, 해시태그 3개"
+                value={form.styleTemplate}
+                onChange={(e) => setForm({ ...form, styleTemplate: e.target.value })}
+              />
+            </div>
           </div>
 
           {/* 공개 설정 */}
@@ -358,26 +452,46 @@ function CreatePostModal({ open, onClose, onCreate }: CreateModalProps) {
           </button>
           <button
             type="button"
-            onClick={() => {
-              if (!form.title.trim()) return;
+            onClick={async () => {
+              const selectedPhotos = photos.filter((p) => p.selected);
+              if (selectedPhotos.length === 0) return;
+              setIsGeneratingPost(true);
+              onJobStatusChange?.("AI 게시글 생성중...");
+              let generated = {
+                title: `AI 추천 여행 기록 ${new Date().toLocaleDateString("ko-KR")}`,
+                location: "여행지 미입력",
+                comment: form.comment || "여행의 소중한 순간을 기록합니다.",
+                tags: [] as string[],
+              };
+              try {
+                generated = await generateTourstarPost(
+                  form.comment,
+                  form.styleFilter,
+                  form.styleTemplate
+                );
+              } catch (error) {
+                console.error(error);
+              } finally {
+                setIsGeneratingPost(false);
+              }
               onCreate({
-                title: form.title,
-                location: form.location,
+                title: generated.title,
+                location: generated.location,
                 date: new Date().toISOString().split("T")[0],
-                comment: form.comment,
+                comment: generated.comment,
                 visibility: form.visibility,
-                photos: photos.filter((p) => p.selected),
-                tags: form.tagsInput
-                  .split(",")
-                  .map((t) => t.trim())
-                  .filter(Boolean),
+                photos: selectedPhotos,
+                tags: generated.tags,
               });
-              setForm({ title: "", location: "", comment: "", visibility: "public", tagsInput: "", photoCount: 4 });
+              setForm({ comment: "", styleFilter: "AUTO", styleTemplate: "", visibility: "public" });
+              setPhotos([]);
+              onJobStatusChange?.("AI 게시글 생성 완료");
               onClose();
             }}
+            disabled={isGeneratingPost}
             className="rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:opacity-90 transition-opacity"
           >
-            게시하기
+            {isGeneratingPost ? "생성중..." : "게시하기"}
           </button>
         </div>
       </div>
@@ -410,7 +524,14 @@ function PostDetailModal({ post, onClose, onToggleLike, onToggleVisibility }: De
       >
         {/* 왼쪽: 사진 영역 */}
         <div className="relative flex w-1/2 items-center justify-center bg-gray-900">
-          <div className={`h-full w-full bg-gradient-to-br ${post.photos[photoIndex]?.gradient ?? "from-gray-300 to-gray-500"}`}>
+          <div
+            className={`h-full w-full ${post.photos[photoIndex]?.imageUrl ? "bg-cover bg-center" : `bg-gradient-to-br ${post.photos[photoIndex]?.gradient ?? "from-gray-300 to-gray-500"}`}`}
+            style={
+              post.photos[photoIndex]?.imageUrl
+                ? { backgroundImage: `url(${post.photos[photoIndex].imageUrl})` }
+                : undefined
+            }
+          >
             <div className="flex h-full items-center justify-center">
               <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1" className="opacity-30">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -475,7 +596,7 @@ function PostDetailModal({ post, onClose, onToggleLike, onToggleVisibility }: De
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-800">내 여행기록</p>
-                <p className="text-[11px] text-gray-400">{post.location}</p>
+                <p className="text-[11px] text-gray-600">{post.location}</p>
               </div>
             </div>
             <button
@@ -505,7 +626,7 @@ function PostDetailModal({ post, onClose, onToggleLike, onToggleVisibility }: De
           {/* 본문 */}
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
             <h2 className="text-base font-bold text-gray-800">{post.title}</h2>
-            <p className="text-sm leading-relaxed text-gray-600">{post.comment}</p>
+            <p className="text-sm leading-relaxed text-gray-700">{post.comment}</p>
             {post.tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {post.tags.map((tag) => (
@@ -518,7 +639,7 @@ function PostDetailModal({ post, onClose, onToggleLike, onToggleVisibility }: De
                 ))}
               </div>
             )}
-            <p className="text-xs text-gray-400">{post.date}</p>
+            <p className="text-xs text-gray-600">{post.date}</p>
           </div>
 
           {/* 하단 액션 */}
@@ -554,7 +675,10 @@ function FeedCard({ post, onClick, onToggleLike }: FeedCardProps) {
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all hover:shadow-md">
       {/* 사진 */}
       <button type="button" onClick={onClick} className="relative w-full">
-        <div className={`aspect-[16/10] w-full bg-gradient-to-br ${post.photos[0]?.gradient ?? "from-gray-300 to-gray-500"}`}>
+        <div
+          className={`aspect-[16/10] w-full ${post.photos[0]?.imageUrl ? "bg-cover bg-center" : `bg-gradient-to-br ${post.photos[0]?.gradient ?? "from-gray-300 to-gray-500"}`}`}
+          style={post.photos[0]?.imageUrl ? { backgroundImage: `url(${post.photos[0].imageUrl})` } : undefined}
+        >
           <div className="flex h-full items-center justify-center">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1" className="opacity-30">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -588,7 +712,7 @@ function FeedCard({ post, onClick, onToggleLike }: FeedCardProps) {
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <h3 className="truncate text-xs font-semibold text-gray-800">{post.title}</h3>
-            <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-gray-400">
+            <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-gray-600">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
@@ -611,16 +735,16 @@ function FeedCard({ post, onClick, onToggleLike }: FeedCardProps) {
             <span>{post.likes}</span>
           </button>
         </div>
-        <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-gray-500">{post.comment}</p>
+        <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-gray-700">{post.comment}</p>
         {post.tags.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
             {post.tags.slice(0, 3).map((tag) => (
-              <span key={tag} className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500">
+              <span key={tag} className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-700">
                 #{tag}
               </span>
             ))}
             {post.tags.length > 3 && (
-              <span className="text-[11px] text-gray-400">+{post.tags.length - 3}</span>
+              <span className="text-[11px] text-gray-600">+{post.tags.length - 3}</span>
             )}
           </div>
         )}
@@ -642,7 +766,10 @@ function GridCard({ post, onClick }: GridCardProps) {
       onClick={onClick}
       className="group relative aspect-square overflow-hidden rounded-xl"
     >
-      <div className={`h-full w-full bg-gradient-to-br ${post.photos[0]?.gradient ?? "from-gray-300 to-gray-500"}`}>
+      <div
+        className={`h-full w-full ${post.photos[0]?.imageUrl ? "bg-cover bg-center" : `bg-gradient-to-br ${post.photos[0]?.gradient ?? "from-gray-300 to-gray-500"}`}`}
+        style={post.photos[0]?.imageUrl ? { backgroundImage: `url(${post.photos[0].imageUrl})` } : undefined}
+      >
         <div className="flex h-full items-center justify-center">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1" className="opacity-30">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -696,6 +823,7 @@ export default function TourstarPage() {
   const [filter, setFilter] = useState<FilterType>("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [detailPost, setDetailPost] = useState<TourPost | null>(null);
+  const [analysisStatus, setAnalysisStatus] = useState<string>("");
 
   React.useEffect(() => {
     if (!isAuthenticated) {
@@ -779,6 +907,9 @@ export default function TourstarPage() {
               <p className="mt-0.5 text-xs text-gray-400">
                 여행 사진을 AI가 자동으로 골라주고, 코멘트만 남기면 예쁘게 기록됩니다
               </p>
+              {analysisStatus ? (
+                <p className="mt-1 text-xs font-medium text-purple-600">{analysisStatus}</p>
+              ) : null}
             </div>
             <button
               type="button"
@@ -957,7 +1088,12 @@ export default function TourstarPage() {
       </main>
 
       {/* ── 모달 ── */}
-      <CreatePostModal open={createOpen} onClose={() => setCreateOpen(false)} onCreate={createPost} />
+      <CreatePostModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreate={createPost}
+        onJobStatusChange={setAnalysisStatus}
+      />
       <PostDetailModal
         post={detailPost}
         onClose={() => setDetailPost(null)}
