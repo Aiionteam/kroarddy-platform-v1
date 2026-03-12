@@ -7,16 +7,16 @@ import os
 
 import httpx
 from ..contracts import EvaluationRequest, EvaluationResult
+from ..graph import build_photo_selection_graph
 from ..tourstar_autolog_pipeline import (
     RuntimeOptions,
     ScoreWeights,
     evaluate_image,
 )
-from ..engine.workflow import run_photo_selection
 
 
 class PhotoSelectionAgent:
-    """기존 파이프라인 코드를 재사용하는 1단계 Agent."""
+    """LangGraph 기반으로 사진 선택 파이프라인을 실행하는 Agent."""
 
     def __init__(self, service_root: Path | None = None) -> None:
         self.service_root = service_root or Path(__file__).resolve().parents[4]
@@ -28,13 +28,23 @@ class PhotoSelectionAgent:
         job_id: str | None = None,
         requested_at: datetime | None = None,
     ) -> EvaluationResult:
-        return run_photo_selection(
-            req=req,
-            service_root=self.service_root,
-            infer_func=self._infer_one,
-            job_id=job_id,
-            requested_at=requested_at,
+        graph = build_photo_selection_graph()
+        state = graph.invoke(
+            {
+                "request": req,
+                "job_id": job_id or "",
+                "requested_at": requested_at or datetime.now(),
+                "service_root": self.service_root,
+                "infer_func": self._infer_one,
+            }
         )
+        error = state.get("error")
+        if error:
+            raise RuntimeError(str(error))
+        result = state.get("result")
+        if result is None:
+            raise RuntimeError("LangGraph evaluation did not produce a result.")
+        return result
 
     def _infer_one(
         self,

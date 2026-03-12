@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Callable
 from uuid import uuid4
 
-from ..contracts import EvaluationRequest, EvaluationResult, SelectedImage
+from ..contracts import EvaluationRequest, EvaluationResult, RankedImage, SelectedImage
 from ..tourstar_autolog_pipeline import (
     RuntimeOptions,
     ScoreWeights,
@@ -94,6 +94,7 @@ def run_photo_selection(
 
     best = [_to_selected_image(r) for r in saved_records if r.get("selection_type") == "best"]
     worst = [_to_selected_image(r) for r in saved_records if r.get("selection_type") == "worst"]
+    ranked = [_to_ranked_image(r, idx + 1) for idx, r in enumerate(rows)]
     return EvaluationResult(
         job_id=job_id,
         requested_at=requested_at,
@@ -102,6 +103,7 @@ def run_photo_selection(
         summary_csv=str(summary_csv),
         best=best,
         worst=worst,
+        ranked=ranked,
     )
 
 
@@ -123,6 +125,16 @@ def _to_selected_image(row: dict[str, Any]) -> SelectedImage:
         rank=int(row.get("rank", 0)),
         source_image=str(row.get("source_image", "")),
         saved_image=str(row.get("saved_image", "")),
+        final_score=float(row.get("final_score", 0.0)),
+        is_candidate=bool(row.get("is_candidate", False)),
+        reject_reason=str(row.get("reject_reason", "")),
+    )
+
+
+def _to_ranked_image(row: dict[str, Any], rank: int) -> RankedImage:
+    return RankedImage(
+        rank=rank,
+        source_image=str(row.get("image") or row.get("source_image") or ""),
         final_score=float(row.get("final_score", 0.0)),
         is_candidate=bool(row.get("is_candidate", False)),
         reject_reason=str(row.get("reject_reason", "")),
