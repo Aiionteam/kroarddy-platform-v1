@@ -1,9 +1,9 @@
-"""유저 컨텐츠 플래너 API – AI 폴리시 + 루트 CRUD."""
+"""유저 컨텐츠 플래너 API – AI 폴리시 + S3 presigned URL + 루트 CRUD."""
 import json
 import logging
 import re
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 from sqlalchemy import select
@@ -11,8 +11,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database.session import get_db
+from app.core.nsfw_filter import check_nsfw_async
+from app.core.storage import generate_presigned_upload_url
 from app.models.user_content_route import UserContentRoute
-from .schemas import PolishRequest, PolishResponse, SaveRouteRequest, RouteCardResponse
+from .schemas import (
+    PolishRequest,
+    PolishResponse,
+    PresignedUrlRequest,
+    PresignedUrlResponse,
+    SaveRouteRequest,
+    ValidateImageResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +32,9 @@ router = APIRouter(prefix="/api/v1/user-content", tags=["user-content"])
 
 def _get_llm() -> ChatOpenAI:
     return ChatOpenAI(
-        model="gpt-4.1-mini",
+        model="gpt-5-mini",
         temperature=0.5,
-        openai_api_key=settings.openai_api_key,
+        api_key=settings.openai_api_key,
     )
 
 
@@ -37,7 +46,7 @@ def _parse_json(raw: str) -> dict:
 
 
 async def _ai_polish(req: PolishRequest) -> dict:
-    """Gemini로 유저 입력을 여행 카드용 콘텐츠로 정제."""
+    """유저 입력을 여행 카드용 콘텐츠로 정제."""
     items_text = "\n".join(
         f"  {i+1}. {item.place}" + (f" - {item.note}" if item.note else "")
         for i, item in enumerate(req.route_items)
@@ -85,8 +94,7 @@ def _row_to_card(row: UserContentRoute) -> dict:
         "description": row.description,
         "route_items": row.route_items or [],
         "tags": row.tags or [],
-        "image_data": row.image_data,
-        "image_mime": row.image_mime,
+        "image_url": row.image_url,
         "likes": row.likes,
         "created_at": row.created_at.isoformat(),
     }
@@ -94,9 +102,83 @@ def _row_to_card(row: UserContentRoute) -> dict:
 
 # ── 엔드포인트 ──────────────────────────────────────────────────
 
+@router.post(
+    "/upload-url",
+    response_model=PresignedUrlResponse,
+    summary="이미지 업로드용 S3 Presigned URL 발급 (NSFW 검증 없음)",
+)
+async def get_upload_url(req: PresignedUrlRequest):
+    """
+    프론트엔드가 이 URL을 통해 S3에 직접 PUT 업로드합니다.
+    NSFW 필터 없이 단순 URL 발급이 필요할 때 사용하세요.
+    일반 업로드 흐름에서는 /validate-image 를 사용하세요.
+    """
+    try:
+        upload_url, image_url = generate_presigned_upload_url(req.content_type)
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    return PresignedUrlResponse(upload_url=upload_url, image_url=image_url)
+
+
+@router.post(
+    "/validate-image",
+    response_model=ValidateImageResponse,
+    summary="NSFW 이미지 필터 + S3 Presigned URL 발급 (권장 업로드 흐름)",
+)
+async def validate_image(file: UploadFile = File(...)):
+    """
+    이미지 업로드 파이프라인 (NudeNet → S3):
+
+    1. 이미지 바이트를 NudeNet 으로 NSFW 검사
+    2. 선정적 콘텐츠 감지 시 HTTP 400 반환 (업로드 차단)
+    3. 안전한 이미지면 S3 presigned PUT URL + 공개 image_url 반환
+    4. 프론트엔드는 반환된 upload_url 로 S3 에 직접 PUT 후
+       image_url 을 /routes 저장 시 전달
+
+    감지 레이블 (차단 기준 score ≥ 0.60):
+      FEMALE_GENITALIA_EXPOSED / MALE_GENITALIA_EXPOSED /
+      FEMALE_BREAST_EXPOSED / BUTTOCKS_EXPOSED / ANUS_EXPOSED
+    """
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="이미지 파일만 업로드 가능합니다.")
+
+    image_bytes = await file.read()
+
+    # ── NudeNet 파이프라인 ────────────────────────────────────────
+    result = await check_nsfw_async(image_bytes)
+
+    if not result["is_safe"]:
+        labels_kr = ", ".join(result["detected_labels"])
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"선정적인 콘텐츠가 감지되어 업로드할 수 없습니다. "
+                f"다른 사진을 사용해 주세요. (감지 항목: {labels_kr})"
+            ),
+        )
+
+    # ── 안전한 이미지 → S3 presigned URL 발급 ─────────────────────
+    try:
+        upload_url, image_url = generate_presigned_upload_url(file.content_type)
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+    logger.info(
+        "이미지 검증 통과: nsfw_score=%.3f content_type=%s",
+        result["nsfw_score"],
+        file.content_type,
+    )
+    return ValidateImageResponse(
+        is_safe=True,
+        nsfw_score=result["nsfw_score"],
+        upload_url=upload_url,
+        image_url=image_url,
+    )
+
+
 @router.post("/routes/polish", response_model=PolishResponse, summary="유저 입력 AI 폴리시")
 async def polish_route(req: PolishRequest):
-    """유저가 입력한 제목·장소 목록을 Gemini로 정제해 반환 (저장 없음)."""
+    """유저가 입력한 제목·장소 목록을 AI로 정제해 반환 (저장 없음)."""
     data = await _ai_polish(req)
     return PolishResponse(
         title=data.get("title", req.title),
@@ -116,8 +198,7 @@ async def save_route(req: SaveRouteRequest, db: AsyncSession = Depends(get_db)):
         description=req.description,
         route_items=req.route_items,
         tags=req.tags,
-        image_data=req.image_data,
-        image_mime=req.image_mime,
+        image_url=req.image_url,
     )
     db.add(row)
     await db.flush()
@@ -133,7 +214,7 @@ async def list_routes(
 ):
     result = await db.execute(
         select(UserContentRoute)
-        .order_by(UserContentRoute.created_at.desc())
+        .order_by(UserContentRoute.likes.desc(), UserContentRoute.created_at.desc())
         .offset(offset)
         .limit(limit)
     )

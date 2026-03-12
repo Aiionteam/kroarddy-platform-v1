@@ -30,6 +30,22 @@ class PolishResponse(BaseModel):
     tags: list[str]
 
 
+class PresignedUrlRequest(BaseModel):
+    content_type: str  # e.g. "image/jpeg"
+
+
+class PresignedUrlResponse(BaseModel):
+    upload_url: str   # S3 presigned PUT URL
+    image_url: str    # 업로드 후 DB에 저장할 공개 URL
+
+
+class ValidateImageResponse(BaseModel):
+    is_safe: bool
+    nsfw_score: float          # 0.0 ~ 1.0 (참고용)
+    upload_url: str            # S3 presigned PUT URL (안전할 때만)
+    image_url: str             # DB 저장용 공개 URL (안전할 때만)
+
+
 class SaveRouteRequest(BaseModel):
     user_id: Optional[int] = None
     title: str
@@ -37,8 +53,7 @@ class SaveRouteRequest(BaseModel):
     description: str
     route_items: list[dict]
     tags: list[str]
-    image_data: Optional[str] = None   # base64 인코딩
-    image_mime: Optional[str] = None   # e.g. "image/jpeg"
+    image_url: Optional[str] = None   # S3 공개 URL
 
 
 class RouteCardResponse(BaseModel):
@@ -49,7 +64,6 @@ class RouteCardResponse(BaseModel):
     description: str
     route_items: list[dict]
     tags: list[str]
-    image_data: Optional[str]
-    image_mime: Optional[str]
+    image_url: Optional[str]
     likes: int
     created_at: str

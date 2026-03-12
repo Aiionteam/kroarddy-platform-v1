@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const WEP_URL = process.env.NEXT_PUBLIC_WEP_URL ?? "https://wep.kroaddy.site";
+const WEB_URL = process.env.NEXT_PUBLIC_WEB_URL ?? "https://web.kroaddy.site";
 
 /* ─────────────────────────────────────────────
    상수 데이터
@@ -116,7 +116,7 @@ function Navbar() {
         {/* CTA */}
         <div className="hidden md:flex items-center gap-3">
           <a
-            href={WEP_URL}
+            href={WEB_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="px-5 py-2 rounded-full border-2 border-purple-600 text-purple-600 text-sm font-semibold hover:bg-purple-50 transition-colors"
@@ -157,7 +157,7 @@ function Navbar() {
           <a href="#notices" onClick={() => setMenuOpen(false)} className="hover:text-purple-600">공지사항</a>
           <a href="#download" onClick={() => setMenuOpen(false)} className="hover:text-purple-600">다운로드</a>
           <a
-            href={WEP_URL}
+            href={WEB_URL}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setMenuOpen(false)}
@@ -209,7 +209,7 @@ function Hero() {
 
           <div className="flex flex-wrap gap-4">
             <a
-              href={WEP_URL}
+              href={WEB_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2.5 px-6 py-3.5 rounded-2xl border-2 border-purple-600 text-purple-600 font-semibold hover:bg-purple-50 transition-colors"

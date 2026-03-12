@@ -1,5 +1,5 @@
 /**
- * User Content API – 유저 공유 루트 CRUD + AI 폴리시
+ * User Content API – 유저 공유 루트 CRUD + AI 폴리시 + S3 이미지 업로드
  */
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -31,11 +31,77 @@ export interface UserRoute {
   description: string;
   route_items: PolishedRouteItem[];
   tags: string[];
-  image_data: string | null;
-  image_mime: string | null;
+  image_url: string | null;
   likes: number;
   created_at: string;
 }
+
+// ── S3 이미지 업로드 + NSFW 검증 파이프라인 ───────────────────────
+
+export interface ValidateImageResult {
+  is_safe: boolean;
+  nsfw_score: number;
+  upload_url: string;   // S3 presigned PUT URL
+  image_url: string;    // DB 저장용 공개 URL
+}
+
+/**
+ * [권장] 이미지를 백엔드 NSFW 필터(NudeNet)에 통과시키고
+ * 안전한 경우에만 S3 presigned PUT URL을 반환합니다.
+ *
+ * 선정적 콘텐츠 감지 시 백엔드가 400을 반환하고
+ * 이 함수는 Error를 throw합니다.
+ */
+export async function validateImageAndGetUploadUrl(
+  file: File
+): Promise<ValidateImageResult> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_BASE}/api/v1/user-content/validate-image`, {
+    method: "POST",
+    body: formData,
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `이미지 검증 오류: ${res.status}`);
+  }
+  return res.json();
+}
+
+/**
+ * presigned URL로 S3에 직접 PUT 업로드합니다.
+ */
+export async function uploadImageToS3(
+  uploadUrl: string,
+  file: File
+): Promise<void> {
+  const res = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": file.type },
+    body: file,
+  });
+  if (!res.ok) {
+    throw new Error(`S3 업로드 실패: ${res.status}`);
+  }
+}
+
+/**
+ * NSFW 검증 → S3 업로드를 순서대로 수행하고 최종 image_url을 반환합니다.
+ * (save 시점에 호출)
+ */
+export async function uploadImage(
+  file: File,
+  preValidated?: ValidateImageResult
+): Promise<string> {
+  // 이미 검증된 결과가 있으면 재사용 (presigned URL 재사용 가능 시간 내)
+  const validated = preValidated ?? (await validateImageAndGetUploadUrl(file));
+  await uploadImageToS3(validated.upload_url, file);
+  return validated.image_url;
+}
+
+// ── AI 폴리시 ────────────────────────────────────────────────────
 
 export async function polishRoute(params: {
   title: string;
@@ -56,6 +122,8 @@ export async function polishRoute(params: {
   return res.json();
 }
 
+// ── 루트 CRUD ────────────────────────────────────────────────────
+
 export async function saveUserRoute(params: {
   user_id?: number | null;
   title: string;
@@ -63,8 +131,7 @@ export async function saveUserRoute(params: {
   description: string;
   route_items: PolishedRouteItem[];
   tags: string[];
-  image_data?: string | null;
-  image_mime?: string | null;
+  image_url?: string | null;
 }): Promise<UserRoute> {
   const res = await fetch(`${API_BASE}/api/v1/user-content/routes`, {
     method: "POST",
