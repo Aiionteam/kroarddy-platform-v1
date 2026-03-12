@@ -9,7 +9,7 @@ from typing import Any
 from langchain_core.messages import HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-from app.agent.state import PlannerState
+from app.agent.standard.state import PlannerState
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -182,13 +182,11 @@ async def generate_routes(state: PlannerState) -> PlannerState:
     start_date = state.get("start_date")
     end_date = state.get("end_date")
 
-    # 여행 기간 문구
     if start_date and end_date:
         period_clause = f"여행 기간: {start_date} ~ {end_date}\n"
     else:
         period_clause = ""
 
-    # 행사 정보 블록 (최대 5건, 프롬프트 크기 제한)
     if festivals:
         lines: list[str] = []
         for f in festivals[:5]:
@@ -213,7 +211,6 @@ async def generate_routes(state: PlannerState) -> PlannerState:
 
     user_block = _build_user_profile_block(user_profile)
 
-    # 기존 저장된 루트 제외 블록
     if existing_routes:
         quoted = ", ".join(f'"{r}"' for r in existing_routes)
         exclude_block = (
@@ -319,12 +316,9 @@ async def modify_schedule(
 ) -> dict[str, Any]:
     """사용자 자연어 지시로 일정 특정 항목 수정.
 
-    최적화: indent 제거로 토큰 30~40% 절감, 프롬프트 압축.
-
     Returns:
         {"schedule": [...], "modified_titles": [...]}
     """
-    # indent 없이 직렬화 → 토큰 대폭 절감
     schedule_json = json.dumps(schedule, ensure_ascii=False, separators=(",", ":"))
     prompt = (
         f'여행지:{location}\n'
@@ -358,12 +352,7 @@ async def reroll_single_item(
     schedule: list[dict[str, Any]],
     location: str,
 ) -> dict[str, Any]:
-    """단일 일정 항목 리롤 – 해당 항목만 새로 생성 (최소 컨텍스트로 빠름).
-
-    Args:
-        item: 교체할 원본 아이템 (day/date/time 유지, place/title/description/tips 교체)
-        schedule: 전체 일정 (같은 날 다른 항목 컨텍스트용)
-        location: 여행지 이름
+    """단일 일정 항목 리롤 – 해당 항목만 새로 생성.
 
     Returns:
         교체된 단일 아이템 dict
@@ -372,7 +361,6 @@ async def reroll_single_item(
     date_str = item.get("date", "")
     time_str = item.get("time", "")
 
-    # 같은 날 다른 항목 제목 – 중복 방지 컨텍스트
     same_day_titles = [
         s["title"] for s in schedule
         if s.get("day") == day and s.get("title") != item.get("title")

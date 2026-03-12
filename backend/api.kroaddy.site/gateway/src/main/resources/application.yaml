@@ -13,7 +13,53 @@ spring:
   application:
     name: tour-site
   main:
-    web-application-type: servlet  # servlet 모드로 변경 (서비스 컨트롤러와 호환)
+    web-application-type: servlet  # servlet 모드 – SseEmitter / JPA / OAuth 컨트롤러와 공존
+  threads:
+    virtual:
+      enabled: true  # 가상 스레드(Project Loom) – 게이트웨이 I/O 처리량 향상
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+          # ── Festival 서비스 (8002) ───────────────────────────────────────
+          - id: festival
+            uri: ${AI_SERVICE_FESTIVAL_URL:http://festival:8002}
+            predicates:
+              - Path=/api/v1/festivals,/api/v1/festivals/**
+            filters:
+              - RemoveResponseHeader=Access-Control-Allow-Origin
+              - RemoveResponseHeader=Access-Control-Allow-Methods
+              - RemoveResponseHeader=Access-Control-Allow-Headers
+              - RemoveResponseHeader=Access-Control-Allow-Credentials
+              - RemoveResponseHeader=Access-Control-Expose-Headers
+              - RemoveResponseHeader=Access-Control-Max-Age
+
+          # ── Planer 서비스 (8003) – Standard / User-Content / K-Content / Weather
+          - id: planer
+            uri: ${AI_SERVICE_TOURPLANER_URL:http://planer:8003}
+            predicates:
+              - Path=/api/v1/planner/**,/api/v1/user-content/**,/api/v1/k-content/**,/api/v1/weather,/api/v1/weather/**
+            filters:
+              - RemoveResponseHeader=Access-Control-Allow-Origin
+              - RemoveResponseHeader=Access-Control-Allow-Methods
+              - RemoveResponseHeader=Access-Control-Allow-Headers
+              - RemoveResponseHeader=Access-Control-Allow-Credentials
+              - RemoveResponseHeader=Access-Control-Expose-Headers
+              - RemoveResponseHeader=Access-Control-Max-Age
+
+          # ── User-Info 서비스 (8004) ──────────────────────────────────────
+          - id: user-info
+            uri: ${AI_SERVICE_USER_INFO_URL:http://user_info:8004}
+            predicates:
+              - Path=/api/v1/user-profile,/api/v1/user-profile/**
+            filters:
+              - RemoveResponseHeader=Access-Control-Allow-Origin
+              - RemoveResponseHeader=Access-Control-Allow-Methods
+              - RemoveResponseHeader=Access-Control-Allow-Headers
+              - RemoveResponseHeader=Access-Control-Allow-Credentials
+              - RemoveResponseHeader=Access-Control-Expose-Headers
+              - RemoveResponseHeader=Access-Control-Max-Age
   datasource:
     driver-class-name: org.postgresql.Driver
     hikari:
@@ -71,7 +117,7 @@ kakao:
   client-secret: ${KAKAO_CLIENT_SECRET:}
   redirect-uri: ${KAKAO_REDIRECT_URI:}
 
-# AI 서비스 URL 설정
+# AI 서비스 URL – spring.cloud.gateway.mvc.routes 에서 참조
 # MSA 구조 (루트 docker-compose.yaml 기준 서비스명):
 #   festival  → http://festival:8002
 #   planer    → http://planer:8003
@@ -79,10 +125,6 @@ kakao:
 # 로컬 직접 실행 시: http://localhost:PORT
 ai:
   service:
-    rag:
-      url: ${AI_SERVICE_RAG_URL:http://chat.hohyun.site:8001}
-    vision:
-      url: ${AI_SERVICE_VISION_URL:}  # 비어있으면 vision 서비스 미사용
     festival:
       url: ${AI_SERVICE_FESTIVAL_URL:http://festival:8002}
     tourplaner:

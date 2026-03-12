@@ -20,7 +20,7 @@ import {
   writeSchedule,
 } from "@/lib/plannerCache";
 import { getAppUserIdFromToken } from "@/lib/api/auth";
-import { SLUG_TO_NAME } from "../planner-data";
+import { SLUG_TO_NAME } from "../../planner-data";
 
 const THEME_META: Record<string, { emoji: string; bg: string; text: string }> = {
   행사:   { emoji: "🎪", bg: "bg-amber-100",   text: "text-amber-700"  },
@@ -51,14 +51,13 @@ export default function LocationPlannerPage() {
   const appUserId = getAppUserIdFromToken(accessToken ?? undefined);
 
   const [startDate, setStartDate] = useState(todayStr);
-  const [endDate, setEndDate] = useState(() => offsetDate(1)); // 기본 1박2일
+  const [endDate, setEndDate] = useState(() => offsetDate(1));
 
   const routesFetchedRef = useRef<string | null>(null);
 
   const [routes, setRoutes] = useState<PlanRoute[]>([]);
   const [routesLoading, setRoutesLoading] = useState(false);
   const [routesError, setRoutesError] = useState<string | null>(null);
-  // 사용자가 한 번이라도 루트 생성을 요청했는지 여부
   const [routesTriggered, setRoutesTriggered] = useState(false);
 
   const [selectedRoute, setSelectedRoute] = useState<PlanRoute | null>(null);
@@ -73,7 +72,6 @@ export default function LocationPlannerPage() {
   }, [isAuthenticated, router]);
 
   const loadRoutes = useCallback(async () => {
-    // React StrictMode 이중 실행 방지
     const dedupeKey = `${location}:${startDate}:${endDate}`;
     if (routesFetchedRef.current === dedupeKey) return;
     routesFetchedRef.current = dedupeKey;
@@ -86,7 +84,6 @@ export default function LocationPlannerPage() {
     setSchedule([]);
     setSavedPlanId(null);
     try {
-      // 이미 저장된 플랜의 루트명 수집 → AI가 중복 추천 방지
       let existingRoutes: string[] = [];
       if (appUserId) {
         try {
@@ -97,7 +94,6 @@ export default function LocationPlannerPage() {
         }
       }
 
-      // ① sessionStorage 캐시 확인 → 히트 시 LLM 호출 없이 즉시 반환
       const cached = readRoutes<{ routes: PlanRoute[] }>(location, startDate, endDate, existingRoutes);
       if (cached) {
         console.info("[plannerCache] 루트 캐시 히트:", dedupeKey);
@@ -106,7 +102,6 @@ export default function LocationPlannerPage() {
         return;
       }
 
-      // ② 캐시 미스 → API 호출
       const res = await fetchRoutes(location, {
         startDate,
         endDate,
@@ -117,7 +112,6 @@ export default function LocationPlannerPage() {
       if (res.error && res.routes.length === 0) {
         setRoutesError(res.error);
       } else if (res.routes.length > 0) {
-        // ③ 결과 캐시에 저장
         writeRoutes(location, startDate, endDate, existingRoutes, { routes: res.routes });
         console.info("[plannerCache] 루트 캐시 저장:", dedupeKey);
       }
@@ -131,7 +125,6 @@ export default function LocationPlannerPage() {
 
   useEffect(() => {
     routesFetchedRef.current = null;
-    // 위치가 바뀌면 이전 루트 초기화
     setRoutesTriggered(false);
     setRoutes([]);
     setSelectedRoute(null);
@@ -147,7 +140,6 @@ export default function LocationPlannerPage() {
       setSavedPlanId(null);
       setScheduleLoading(true);
       try {
-        // ① 캐시 확인
         const cached = readSchedule<{ schedule: ScheduleItem[] }>(location, route.name, startDate, endDate);
         if (cached) {
           console.info("[plannerCache] 일정 캐시 히트:", route.name);
@@ -156,13 +148,11 @@ export default function LocationPlannerPage() {
           return;
         }
 
-        // ② 캐시 미스 → API 호출
         const res = await fetchSchedule(location, route.name, { startDate, endDate });
         setSchedule(res.schedule);
         if (res.error && res.schedule.length === 0) {
           setScheduleError(res.error);
         } else if (res.schedule.length > 0) {
-          // ③ 결과 캐시에 저장
           writeSchedule(location, route.name, startDate, endDate, { schedule: res.schedule });
           console.info("[plannerCache] 일정 캐시 저장:", route.name);
         }
@@ -188,7 +178,6 @@ export default function LocationPlannerPage() {
         userId: appUserId ?? undefined,
       });
       setSavedPlanId(res.plan_id);
-      // 저장 후 루트 캐시 무효화 → 다음 루트 생성 시 existingRoutes가 바뀌므로 새로 추천받아야 함
       invalidateRoutes(location);
       routesFetchedRef.current = null;
     } catch (e) {
@@ -209,11 +198,8 @@ export default function LocationPlannerPage() {
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <AppSidebar onLogout={logout} />
       <main className="flex flex-1 flex-col overflow-hidden">
-
-        {/* 헤더 */}
         <header className="shrink-0 border-b border-gray-200 bg-white px-6 py-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            {/* 왼쪽: 뒤로 + 제목 */}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => router.back()}
@@ -222,12 +208,11 @@ export default function LocationPlannerPage() {
                 ←
               </button>
               <div>
-                <p className="text-xs text-gray-400 font-medium">여행지</p>
+                <p className="text-xs text-gray-400 font-medium">스탠다드</p>
                 <h1 className="text-xl font-bold text-gray-800">{locationName}</h1>
               </div>
             </div>
 
-            {/* 오른쪽: 날짜 선택 + 생성 버튼 */}
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
                 <span className="text-xs text-gray-400 shrink-0">날짜</span>
@@ -238,7 +223,6 @@ export default function LocationPlannerPage() {
                   onChange={(e) => {
                     setStartDate(e.target.value);
                     routesFetchedRef.current = null;
-                    // 날짜 변경 시 기존 루트 초기화 → 재생성 유도
                     setRoutes([]);
                     setRoutesTriggered(false);
                     setSelectedRoute(null);
@@ -264,8 +248,6 @@ export default function LocationPlannerPage() {
                   className="bg-transparent text-sm text-gray-700 outline-none"
                 />
               </div>
-
-              {/* 루트 생성 실행 버튼 */}
               <button
                 onClick={loadRoutes}
                 disabled={routesLoading || !startDate || !endDate}
@@ -285,20 +267,16 @@ export default function LocationPlannerPage() {
         </header>
 
         <div className="flex flex-1 overflow-hidden">
-          {/* 왼쪽: 루트 목록 */}
           <div className="flex w-full flex-col overflow-auto border-r border-gray-200 bg-white p-5 md:w-[40%]">
             <h2 className="mb-4 text-sm font-semibold text-gray-500 uppercase tracking-wide">
               AI 추천 루트
             </h2>
 
-            {/* 아직 생성 전 안내 */}
             {!routesTriggered && !routesLoading && (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 py-10 text-center text-gray-400">
                 <span className="text-4xl">📅</span>
                 <p className="text-sm font-medium text-gray-600">날짜를 설정하고<br />루트를 생성해주세요</p>
-                <p className="text-xs text-gray-400">
-                  {startDate} ~ {endDate}
-                </p>
+                <p className="text-xs text-gray-400">{startDate} ~ {endDate}</p>
                 <button
                   onClick={loadRoutes}
                   disabled={routesLoading}
@@ -333,42 +311,38 @@ export default function LocationPlannerPage() {
               <ul className="space-y-3">
                 {routes.map((route) => {
                   const isActive = selectedRoute?.name === route.name;
+                  const meta = THEME_META[route.theme] ?? DEFAULT_THEME;
                   return (
                     <li key={route.name}>
-                      {(() => {
-                        const meta = THEME_META[route.theme] ?? DEFAULT_THEME;
-                        return (
-                          <button
-                            onClick={() => generateSchedule(route)}
-                            disabled={scheduleLoading}
-                            className={`w-full rounded-xl border p-4 text-left transition-all disabled:opacity-60 ${
-                              isActive
-                                ? "border-indigo-400 bg-indigo-50 shadow-md"
-                                : "border-gray-200 bg-white hover:border-indigo-200 hover:bg-indigo-50/40 hover:shadow-sm"
-                            }`}
-                          >
-                            <div className="flex items-start gap-3">
-                              <span className="mt-0.5 text-2xl">{meta.emoji}</span>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-semibold text-gray-900">{route.name}</span>
-                                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${meta.bg} ${meta.text}`}>
-                                    {route.theme}
-                                  </span>
-                                </div>
-                                <p className="mt-1 text-sm text-gray-500">{route.description}</p>
-                                <div className="mt-2 flex flex-wrap gap-1">
-                                  {route.highlights.map((h) => (
-                                    <span key={h} className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
-                                      {h}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
+                      <button
+                        onClick={() => generateSchedule(route)}
+                        disabled={scheduleLoading}
+                        className={`w-full rounded-xl border p-4 text-left transition-all disabled:opacity-60 ${
+                          isActive
+                            ? "border-indigo-400 bg-indigo-50 shadow-md"
+                            : "border-gray-200 bg-white hover:border-indigo-200 hover:bg-indigo-50/40 hover:shadow-sm"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <span className="mt-0.5 text-2xl">{meta.emoji}</span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-gray-900">{route.name}</span>
+                              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${meta.bg} ${meta.text}`}>
+                                {route.theme}
+                              </span>
                             </div>
-                          </button>
-                        );
-                      })()}
+                            <p className="mt-1 text-sm text-gray-500">{route.description}</p>
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {route.highlights.map((h) => (
+                                <span key={h} className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
+                                  {h}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
                     </li>
                   );
                 })}
@@ -376,7 +350,6 @@ export default function LocationPlannerPage() {
             )}
           </div>
 
-          {/* 오른쪽: 일정 */}
           <div className="flex flex-1 flex-col overflow-hidden bg-gray-50">
             {!selectedRoute && !scheduleLoading && (
               <div className="flex flex-1 flex-col items-center justify-center text-center text-gray-400">

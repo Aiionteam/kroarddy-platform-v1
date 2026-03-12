@@ -44,6 +44,17 @@ class Settings(BaseSettings):
     # 로컬: localhost / Docker Compose: http://user_info:8004
     user_info_service_url: str = "http://localhost:8004"
 
+    # AWS S3 이미지 저장소
+    aws_access_key_id: str = ""
+    aws_secret_access_key: str = ""
+    aws_region: str = "ap-northeast-2"
+    s3_bucket_name: str = ""
+    # presigned URL 유효 시간 (초)
+    s3_presigned_expires: int = 300
+    # 공개 URL 베이스 (CloudFront 또는 S3 direct)
+    # 예: https://cdn.kroaddy.site  또는  https://{bucket}.s3.{region}.amazonaws.com
+    s3_public_base_url: str = ""
+
     model_config = {"env_file": str(_env_path), "extra": "ignore"}
 
     def get_async_url(self) -> str:
