@@ -15,10 +15,13 @@ import {
   saveUserRoute,
   fetchUserRoutes,
   likeUserRoute,
+  uploadImage,
+  validateImageAndGetUploadUrl,
   type UserRoute,
   type RouteItemInput,
   type PolishedRouteItem,
   type PolishResponse,
+  type ValidateImageResult,
 } from "@/lib/api/userContent";
 
 // ────────────────────────────────────────────────────────────
@@ -35,17 +38,16 @@ const GRAD_FALLBACKS = [
 
 function RouteCard({
   route,
+  liked,
   onLike,
   onOpen,
 }: {
   route: UserRoute;
+  liked: boolean;
   onLike: (id: number) => void;
   onOpen: (route: UserRoute) => void;
 }) {
   const grad = GRAD_FALLBACKS[route.id % GRAD_FALLBACKS.length];
-  const imgSrc = route.image_data
-    ? `data:${route.image_mime ?? "image/jpeg"};base64,${route.image_data}`
-    : null;
 
   return (
     <div
@@ -53,10 +55,10 @@ function RouteCard({
       style={{ aspectRatio: "2/3" }}
       onClick={() => onOpen(route)}
     >
-      {imgSrc ? (
+      {route.image_url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={imgSrc}
+          src={route.image_url}
           alt={route.title}
           className="absolute inset-0 h-full w-full object-cover"
         />
@@ -71,11 +73,20 @@ function RouteCard({
       <button
         onClick={(e) => {
           e.stopPropagation();
-          onLike(route.id);
+          if (!liked) onLike(route.id);
         }}
-        className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-black/30 px-2.5 py-1 text-xs text-white backdrop-blur-sm hover:bg-black/50 transition-colors"
+        disabled={liked}
+        className={`absolute top-3 right-3 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs text-white backdrop-blur-sm transition-all duration-200
+          ${liked
+            ? "bg-rose-500/80 scale-110 cursor-default"
+            : "bg-black/30 hover:bg-rose-500/70 hover:scale-110"
+          }`}
+        aria-label={liked ? "이미 좋아요" : "좋아요"}
       >
-        ❤ {route.likes}
+        <span className={`transition-transform duration-200 ${liked ? "scale-125" : "scale-100"}`}>
+          {liked ? "❤️" : "🤍"}
+        </span>
+        <span className="tabular-nums">{route.likes}</span>
       </button>
 
       {/* 본문 */}
@@ -109,10 +120,6 @@ function RouteDetailModal({
   route: UserRoute;
   onClose: () => void;
 }) {
-  const imgSrc = route.image_data
-    ? `data:${route.image_mime ?? "image/jpeg"};base64,${route.image_data}`
-    : null;
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
@@ -121,9 +128,9 @@ function RouteDetailModal({
       <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
         {/* 사진 헤더 */}
         <div className="relative h-52 shrink-0">
-          {imgSrc ? (
+          {route.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={imgSrc} alt={route.title} className="h-full w-full object-cover" />
+            <img src={route.image_url} alt={route.title} className="h-full w-full object-cover" />
           ) : (
             <div
               className={`h-full w-full bg-gradient-to-br ${GRAD_FALLBACKS[route.id % GRAD_FALLBACKS.length]}`}
@@ -192,9 +199,13 @@ function UploadModal({
 }) {
   const [step, setStep] = useState<Step>("photo");
 
-  // Step 1 – 사진
-  const [imageData, setImageData] = useState<string | null>(null);
-  const [imageMime, setImageMime] = useState<string | null>(null);
+  // Step 1 – 사진 (S3 업로드를 위해 File 객체 유지)
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  // NSFW 검증 결과 캐싱 (presigned URL 포함, 5분 유효)
+  const [validatedImage, setValidatedImage] = useState<ValidateImageResult | null>(null);
+  const [validating, setValidating] = useState(false);
+  const [nsfwError, setNsfwError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Step 2 – 폼
@@ -213,35 +224,49 @@ function UploadModal({
   const [polishError, setPolishError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const applyFile = (file: File) => {
+    if (!file.type.startsWith("image/")) return;
+    setImageFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    // 새 파일 선택 시 이전 검증 결과 초기화
+    setValidatedImage(null);
+    setNsfwError(null);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const result = ev.target?.result as string;
-      // data:image/jpeg;base64,XXXX → 분리
-      const [header, b64] = result.split(",");
-      const mime = header.replace("data:", "").replace(";base64", "");
-      setImageData(b64);
-      setImageMime(mime);
-    };
-    reader.readAsDataURL(file);
+    if (file) applyFile(file);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
-    if (!file || !file.type.startsWith("image/")) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const result = ev.target?.result as string;
-      const [header, b64] = result.split(",");
-      const mime = header.replace("data:", "").replace(";base64", "");
-      setImageData(b64);
-      setImageMime(mime);
-    };
-    reader.readAsDataURL(file);
+    if (file) applyFile(file);
   };
+
+  // "다음 →" 클릭 시 이미지가 있으면 NSFW 검증 먼저 수행
+  const handleNextFromPhoto = useCallback(async () => {
+    if (!imageFile) {
+      setStep("form");
+      return;
+    }
+    // 이미 검증된 결과가 있으면 바로 다음 단계
+    if (validatedImage) {
+      setStep("form");
+      return;
+    }
+    setValidating(true);
+    setNsfwError(null);
+    try {
+      const result = await validateImageAndGetUploadUrl(imageFile);
+      setValidatedImage(result);
+      setStep("form");
+    } catch (e) {
+      setNsfwError(e instanceof Error ? e.message : "이미지 검증 실패");
+    } finally {
+      setValidating(false);
+    }
+  }, [imageFile, validatedImage]);
 
   const addStop = () => setStops((s) => [...s, { place: "", note: "" }]);
   const removeStop = (i: number) => setStops((s) => s.filter((_, idx) => idx !== i));
@@ -274,6 +299,12 @@ function UploadModal({
     if (!polished) return;
     setSaving(true);
     try {
+      // 이미지가 있으면 S3에 업로드 (검증 결과 presigned URL 재사용)
+      let imageUrl: string | null = null;
+      if (imageFile) {
+        // validatedImage 에 presigned URL이 있으면 재사용, 없으면 재검증
+        imageUrl = await uploadImage(imageFile, validatedImage ?? undefined);
+      }
       const saved = await saveUserRoute({
         user_id: userId,
         title: polished.title,
@@ -281,8 +312,7 @@ function UploadModal({
         description: polished.description,
         route_items: polished.route_items,
         tags: polished.tags,
-        image_data: imageData,
-        image_mime: imageMime,
+        image_url: imageUrl,
       });
       onSaved(saved);
       setStep("done");
@@ -291,7 +321,7 @@ function UploadModal({
     } finally {
       setSaving(false);
     }
-  }, [polished, userId, imageData, imageMime, onSaved]);
+  }, [polished, userId, imageFile, validatedImage, onSaved]);
 
   const STEPS: Record<Step, string> = {
     photo: "사진 선택",
@@ -344,10 +374,10 @@ function UploadModal({
               className="relative flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 py-10 text-center transition hover:border-purple-400 hover:bg-purple-50"
               style={{ minHeight: 200 }}
             >
-              {imageData ? (
+              {previewUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={`data:${imageMime};base64,${imageData}`}
+                  src={previewUrl}
                   alt="preview"
                   className="absolute inset-0 h-full w-full object-cover rounded-xl"
                 />
@@ -366,20 +396,45 @@ function UploadModal({
                 onChange={handleFileChange}
               />
             </div>
-            {imageData && (
+            {previewUrl && (
               <button
-                onClick={() => { setImageData(null); setImageMime(null); }}
+                onClick={() => { setImageFile(null); setPreviewUrl(null); setValidatedImage(null); setNsfwError(null); }}
                 className="mt-2 text-xs text-gray-400 hover:text-red-500 transition-colors"
               >
                 ✕ 사진 제거
               </button>
             )}
+
+            {/* NSFW 오류 메시지 */}
+            {nsfwError && (
+              <div className="mt-3 flex items-start gap-2 rounded-xl bg-red-50 border border-red-200 px-3 py-2.5">
+                <span className="text-base shrink-0">🚫</span>
+                <p className="text-xs text-red-700 leading-relaxed">{nsfwError}</p>
+              </div>
+            )}
+
+            {/* 검증 완료 배지 */}
+            {validatedImage && !nsfwError && (
+              <div className="mt-3 flex items-center gap-1.5 text-xs text-emerald-600">
+                <span>✅</span>
+                <span>이미지 검증 완료</span>
+              </div>
+            )}
+
             <div className="mt-4 flex gap-2">
               <button
-                onClick={() => setStep("form")}
-                className="flex-1 rounded-xl bg-purple-600 py-2.5 text-sm font-semibold text-white hover:bg-purple-700 transition-colors"
+                onClick={handleNextFromPhoto}
+                disabled={validating}
+                className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-purple-600 py-2.5 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-60 transition-colors"
               >
-                {imageData ? "다음 →" : "사진 없이 계속"}
+                {validating ? (
+                  <>
+                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    검증 중…
+                  </>
+                ) : (
+                  imageFile ? "다음 →" : "사진 없이 계속"
+                )}
               </button>
             </div>
           </div>
@@ -510,10 +565,10 @@ function UploadModal({
                   <div
                     className={`relative h-36 bg-gradient-to-br ${GRAD_FALLBACKS[0]}`}
                   >
-                    {imageData && (
+                    {previewUrl && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={`data:${imageMime};base64,${imageData}`}
+                        src={previewUrl}
                         alt="preview"
                         className="absolute inset-0 h-full w-full object-cover"
                       />
@@ -605,6 +660,7 @@ export default function UserContentPage() {
   const userId = getAppUserIdFromToken(accessToken ?? undefined);
 
   const [routes, setRoutes] = useState<UserRoute[]>([]);
+  const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
   const [feedLoading, setFeedLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
   const [detailRoute, setDetailRoute] = useState<UserRoute | null>(null);
@@ -621,18 +677,35 @@ export default function UserContentPage() {
   }, []);
 
   const handleLike = useCallback(async (id: number) => {
+    // 낙관적 업데이트: 즉시 하트 채우기 + 카운트 +1
+    setLikedIds((prev) => new Set(prev).add(id));
+    setRoutes((prev) => {
+      const updated = prev.map((r) => r.id === id ? { ...r, likes: r.likes + 1 } : r);
+      // 좋아요 많은 순으로 재정렬
+      return [...updated].sort((a, b) => b.likes - a.likes || b.id - a.id);
+    });
     try {
       const res = await likeUserRoute(id);
-      setRoutes((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, likes: res.likes } : r))
-      );
+      // 서버 반환 좋아요 수로 보정
+      setRoutes((prev) => {
+        const updated = prev.map((r) => r.id === id ? { ...r, likes: res.likes } : r);
+        return [...updated].sort((a, b) => b.likes - a.likes || b.id - a.id);
+      });
     } catch {
-      // 무시
+      // 실패 시 낙관적 업데이트 롤백
+      setLikedIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
+      setRoutes((prev) => {
+        const reverted = prev.map((r) => r.id === id ? { ...r, likes: Math.max(0, r.likes - 1) } : r);
+        return [...reverted].sort((a, b) => b.likes - a.likes || b.id - a.id);
+      });
     }
   }, []);
 
   const handleSaved = useCallback((saved: UserRoute) => {
-    setRoutes((prev) => [saved, ...prev]);
+    setRoutes((prev) => {
+      const updated = [saved, ...prev];
+      return [...updated].sort((a, b) => b.likes - a.likes || b.id - a.id);
+    });
   }, []);
 
   if (!isAuthenticated) return null;
@@ -695,6 +768,7 @@ export default function UserContentPage() {
                 <RouteCard
                   key={route.id}
                   route={route}
+                  liked={likedIds.has(route.id)}
                   onLike={handleLike}
                   onOpen={setDetailRoute}
                 />

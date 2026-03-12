@@ -87,7 +87,7 @@ export default function EventPage() {
           setData(res);
           setError(res.error && !res.noData ? res.error : null);
         })
-        .catch(() => {}); // 실패해도 stale 데이터 유지
+        .catch(() => { /* stale 데이터 유지, 에러 표시 안 함 */ });
       return;
     }
 
@@ -99,8 +99,18 @@ export default function EventPage() {
       setData(res);
       if (res.error && !res.noData) setError(res.error);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "행사 목록을 불러오지 못했습니다.");
       setData(null);
+      const raw = e instanceof Error ? e.message : "";
+      const isConnectionError =
+        raw.includes("Server disconnected") ||
+        raw.includes("Failed to fetch") ||
+        raw.includes("NetworkError") ||
+        raw.includes("서버에 연결할 수 없습니다");
+      setError(
+        isConnectionError
+          ? "행사 정보를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요."
+          : (raw || "행사 목록을 불러오지 못했습니다.")
+      );
     } finally {
       setLoading(false);
     }

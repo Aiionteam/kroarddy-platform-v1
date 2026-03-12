@@ -22,9 +22,8 @@ class UserContentRoute(Base):
     # AI가 추출한 태그: ["#맛집", "#야경", ...]
     tags: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
 
-    # 이미지 (base64 인코딩, nullable)
-    image_data: Mapped[str | None] = mapped_column(Text, nullable=True)
-    image_mime: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    # S3 이미지 URL (nullable)
+    image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     likes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(
