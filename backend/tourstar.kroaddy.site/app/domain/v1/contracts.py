@@ -34,6 +34,14 @@ class SelectedImage(BaseModel):
     reject_reason: str
 
 
+class RankedImage(BaseModel):
+    rank: int
+    source_image: str
+    final_score: float
+    is_candidate: bool
+    reject_reason: str
+
+
 class EvaluationResult(BaseModel):
     job_id: str
     requested_at: datetime
@@ -42,6 +50,7 @@ class EvaluationResult(BaseModel):
     summary_csv: str
     best: list[SelectedImage]
     worst: list[SelectedImage]
+    ranked: list[RankedImage] = Field(default_factory=list)
 
 
 class JobStatusResponse(BaseModel):
@@ -76,6 +85,7 @@ class GeneratePostRequest(BaseModel):
     comment: str = Field(default="", description="사용자가 입력한 한줄 코멘트")
     style_filter: str = Field(default="AUTO", description="MBTI 스타일 필터 (AUTO 또는 MBTI 코드)")
     style_template: str | None = Field(default=None, description="사용자 지정 스타일 템플릿")
+    image_paths: list[str] = Field(default_factory=list, description="게시글 생성에 참고할 이미지 절대 경로 목록")
 
 
 class GeneratePostResponse(BaseModel):
@@ -83,4 +93,25 @@ class GeneratePostResponse(BaseModel):
     location: str
     comment: str
     tags: list[str]
+
+
+class AutoCommentRequest(BaseModel):
+    image_paths: list[str] = Field(default_factory=list, description="분석 대상 이미지 절대 경로 목록")
+    max_images: int = Field(default=3, ge=1, le=5)
+
+
+class GpsLocationCandidate(BaseModel):
+    path: str
+    lat: float
+    lon: float
+    place: str
+    confidence: float = 1.0
+
+
+class AutoCommentResponse(BaseModel):
+    comment: str
+    location_hint: str = ""
+    mood: str = ""
+    time_of_day: str = ""
+    gps_candidates: list[GpsLocationCandidate] = Field(default_factory=list)
 

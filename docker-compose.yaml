@@ -25,18 +25,19 @@ services:
       AI_SERVICE_FESTIVAL_URL: http://festival:8002
       AI_SERVICE_TOURPLANER_URL: http://planer:8003
       AI_SERVICE_USER_INFO_URL: http://profile:8004
-      AI_SERVICE_TOURSTAR_URL: http://tourstar:8010
+      AI_SERVICE_TOURSTAR_URL: http://host.docker.internal:8010
     ports:
       - "8080:8080"
     depends_on:
       - festival
       - planer
       - profile
-      - tourstar
     restart: unless-stopped
     dns:
       - 8.8.8.8
       - 8.8.4.4
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - kroaddy-net
 
@@ -87,23 +88,6 @@ services:
       - ./backend/profile.kroaddy.site/.env
     ports:
       - "8004:8004"
-    restart: unless-stopped
-    networks:
-      - kroaddy-net
-
-  # ── Tourstar Service (사진 선별/게시글 생성, 포트 8010) ───────────────────
-  tourstar:
-    build:
-      context: ./backend/tourstar.kroaddy.site
-      dockerfile: Dockerfile
-    image: kroaddy-tourstar:latest
-    container_name: kroaddy-tourstar
-    env_file:
-      - ./backend/.env
-    volumes:
-      - ./backend/tourstar.kroaddy.site/artifacts:/app/artifacts
-    ports:
-      - "8010:8010"
     restart: unless-stopped
     networks:
       - kroaddy-net

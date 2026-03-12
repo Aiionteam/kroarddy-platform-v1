@@ -3,6 +3,11 @@
 # 또는 SPRING_PROFILES_ACTIVE=local 환경 변수 설정
 
 spring:
+  servlet:
+    multipart:
+      # Tourstar 이미지 업로드 프록시 용량 상향 (로컬 개발용)
+      max-file-size: 20MB
+      max-request-size: 50MB
   datasource:
     # 로컬 개발 시 데이터베이스 연결이 없어도 실행 가능하도록 설정
     # 실제 사용 시에는 환경 변수로 설정하세요

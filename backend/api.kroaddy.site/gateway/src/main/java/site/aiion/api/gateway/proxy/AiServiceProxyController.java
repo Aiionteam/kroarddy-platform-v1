@@ -1,15 +1,22 @@
 package site.aiion.api.gateway.proxy;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -18,7 +25,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.util.Enumeration;
-import java.util.Map;
 import java.util.Set;
 
 @RestController
@@ -143,23 +149,102 @@ public class AiServiceProxyController {
 	// Tourstar 서비스 프록시 (8010) - /api/v1/photo-selection/** → tourstar service
 	@RequestMapping({"/v1/photo-selection", "/v1/photo-selection/**"})
 	public ResponseEntity<String> proxyTourstarService(
-			@RequestBody(required = false) String body,
+			@RequestBody(required = false) byte[] body,
 			HttpMethod method,
 			HttpServletRequest request,
 			@RequestHeader HttpHeaders headers)
 	{
-		return proxyRequest(tourstarServiceUrl, body, method, request, headers);
+		return proxyRequestBytes(tourstarServiceUrl, body, method, request, headers);
+	}
+
+	// Tourstar 멀티파트 업로드 프록시 - multipart 본문을 명시적으로 재구성해 전달
+	@PostMapping(value = "/v1/photo-selection/uploads", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<String> proxyTourstarUpload(
+			@RequestPart("files") java.util.List<MultipartFile> files,
+			HttpServletRequest request,
+			@RequestHeader HttpHeaders headers)
+	{
+		HttpHeaders proxyHeaders = new HttpHeaders();
+		Enumeration<String> headerNames = request.getHeaderNames();
+		while (headerNames.hasMoreElements())
+		{
+			String headerName = headerNames.nextElement();
+			if (!headerName.equalsIgnoreCase(HttpHeaders.HOST)
+					&& !headerName.equalsIgnoreCase(HttpHeaders.CONTENT_LENGTH)
+					&& !headerName.equalsIgnoreCase(HttpHeaders.CONTENT_TYPE))
+			{
+				proxyHeaders.add(headerName, request.getHeader(headerName));
+			}
+		}
+		proxyHeaders.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+		MultiValueMap<String, Object> multipartBody = new LinkedMultiValueMap<>();
+		for (MultipartFile file : files)
+		{
+			try
+			{
+				ByteArrayResource resource = new ByteArrayResource(file.getBytes())
+				{
+					@Override
+					public String getFilename()
+					{
+						return file.getOriginalFilename() != null ? file.getOriginalFilename() : "upload.bin";
+					}
+				};
+
+				HttpHeaders partHeaders = new HttpHeaders();
+				if (file.getContentType() != null && !file.getContentType().isEmpty())
+				{
+					partHeaders.setContentType(MediaType.parseMediaType(file.getContentType()));
+				}
+				multipartBody.add("files", new HttpEntity<>(resource, partHeaders));
+			}
+			catch (Exception e)
+			{
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+						.body("{\"error\":\"Failed to read upload file: " + e.getMessage() + "\"}");
+			}
+		}
+
+		String queryString = request.getQueryString();
+		URI uri = UriComponentsBuilder.fromUriString(tourstarServiceUrl)
+				.path("/v1/photo-selection/uploads")
+				.query(queryString)
+				.build(true)
+				.toUri();
+
+		try
+		{
+			ResponseEntity<String> responseEntity =
+					restTemplate.exchange(uri, HttpMethod.POST, new HttpEntity<>(multipartBody, proxyHeaders), String.class);
+			HttpHeaders filteredHeaders = filterUpstreamCorsHeaders(responseEntity.getHeaders());
+			return ResponseEntity.status(responseEntity.getStatusCode())
+					.headers(filteredHeaders)
+					.body(responseEntity.getBody());
+		}
+		catch (HttpClientErrorException | HttpServerErrorException e)
+		{
+			HttpHeaders filteredHeaders = filterUpstreamCorsHeaders(e.getResponseHeaders());
+			return ResponseEntity.status(e.getStatusCode())
+					.headers(filteredHeaders)
+					.body(e.getResponseBodyAsString());
+		}
+		catch (Exception e)
+		{
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("Proxy error: " + e.getMessage());
+		}
 	}
 
 	// Tourstar 정적 파일 프록시 (8010) - /api/tourstar-files/** → tourstar service
 	@RequestMapping({"/tourstar-files/**"})
-	public ResponseEntity<String> proxyTourstarFiles(
-			@RequestBody(required = false) String body,
+	public ResponseEntity<byte[]> proxyTourstarFiles(
+			@RequestBody(required = false) byte[] body,
 			HttpMethod method,
 			HttpServletRequest request,
 			@RequestHeader HttpHeaders headers)
 	{
-		return proxyRequest(tourstarServiceUrl, body, method, request, headers);
+		return proxyRequestBinary(tourstarServiceUrl, body, method, request, headers);
 	}
 
 	// LangGraph 채팅 서비스 프록시 (8001 → 게이트웨이 경유로 통일)
@@ -262,6 +347,117 @@ public class AiServiceProxyController {
 		{
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body("Proxy error: " + e.getMessage());
+		}
+	}
+
+	private ResponseEntity<String> proxyRequestBytes(
+			String baseUrl,
+			byte[] body,
+			HttpMethod method,
+			HttpServletRequest request,
+			HttpHeaders headers)
+	{
+		String requestUri = request.getRequestURI();
+		String queryString = request.getQueryString();
+
+		String path = requestUri.replaceFirst("/api", "");
+
+		URI uri = UriComponentsBuilder.fromUriString(baseUrl)
+				.path(path)
+				.query(queryString)
+				.build(true)
+				.toUri();
+
+		HttpHeaders proxyHeaders = new HttpHeaders();
+		Enumeration<String> headerNames = request.getHeaderNames();
+		while (headerNames.hasMoreElements())
+		{
+			String headerName = headerNames.nextElement();
+			if (!headerName.equalsIgnoreCase(HttpHeaders.HOST) && !headerName.equalsIgnoreCase(HttpHeaders.CONTENT_LENGTH))
+			{
+				proxyHeaders.add(headerName, request.getHeader(headerName));
+			}
+		}
+
+		if (body != null && body.length > 0 && proxyHeaders.getContentType() == null)
+		{
+			proxyHeaders.setContentType(MediaType.APPLICATION_JSON);
+		}
+
+		org.springframework.http.HttpEntity<byte[]> httpEntity = new org.springframework.http.HttpEntity<>(body, proxyHeaders);
+
+		try
+		{
+			ResponseEntity<String> responseEntity = restTemplate.exchange(uri, method, httpEntity, String.class);
+			HttpHeaders filteredHeaders = filterUpstreamCorsHeaders(responseEntity.getHeaders());
+			return ResponseEntity.status(responseEntity.getStatusCode())
+					.headers(filteredHeaders)
+					.body(responseEntity.getBody());
+		}
+		catch (HttpClientErrorException | HttpServerErrorException e)
+		{
+			HttpHeaders filteredHeaders = filterUpstreamCorsHeaders(e.getResponseHeaders());
+			return ResponseEntity.status(e.getStatusCode())
+					.headers(filteredHeaders)
+					.body(e.getResponseBodyAsString());
+		}
+		catch (Exception e)
+		{
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("Proxy error: " + e.getMessage());
+		}
+	}
+
+	private ResponseEntity<byte[]> proxyRequestBinary(
+			String baseUrl,
+			byte[] body,
+			HttpMethod method,
+			HttpServletRequest request,
+			HttpHeaders headers)
+	{
+		String requestUri = request.getRequestURI();
+		String queryString = request.getQueryString();
+
+		String path = requestUri.replaceFirst("/api", "");
+
+		URI uri = UriComponentsBuilder.fromUriString(baseUrl)
+				.path(path)
+				.query(queryString)
+				.build(true)
+				.toUri();
+
+		HttpHeaders proxyHeaders = new HttpHeaders();
+		Enumeration<String> headerNames = request.getHeaderNames();
+		while (headerNames.hasMoreElements())
+		{
+			String headerName = headerNames.nextElement();
+			if (!headerName.equalsIgnoreCase(HttpHeaders.HOST) && !headerName.equalsIgnoreCase(HttpHeaders.CONTENT_LENGTH))
+			{
+				proxyHeaders.add(headerName, request.getHeader(headerName));
+			}
+		}
+
+		org.springframework.http.HttpEntity<byte[]> httpEntity = new org.springframework.http.HttpEntity<>(body, proxyHeaders);
+
+		try
+		{
+			ResponseEntity<byte[]> responseEntity = restTemplate.exchange(uri, method, httpEntity, byte[].class);
+			HttpHeaders filteredHeaders = filterUpstreamCorsHeaders(responseEntity.getHeaders());
+			return ResponseEntity.status(responseEntity.getStatusCode())
+					.headers(filteredHeaders)
+					.body(responseEntity.getBody());
+		}
+		catch (HttpClientErrorException | HttpServerErrorException e)
+		{
+			HttpHeaders filteredHeaders = filterUpstreamCorsHeaders(e.getResponseHeaders());
+			return ResponseEntity.status(e.getStatusCode())
+					.headers(filteredHeaders)
+					.body(e.getResponseBodyAsByteArray());
+		}
+		catch (Exception e)
+		{
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(("Proxy error: " + e.getMessage()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
 		}
 	}
 

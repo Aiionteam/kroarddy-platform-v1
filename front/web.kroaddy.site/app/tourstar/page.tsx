@@ -6,6 +6,7 @@ import { useLoginStore } from "@/store";
 import { AppSidebar } from "@/components/organisms/AppSidebar";
 import {
   buildTourstarImageUrl,
+  generateTourstarAutoComment,
   generateTourstarPost,
   getTourstarJobStatus,
   localArtifactPathToUrl,
@@ -24,6 +25,16 @@ interface TourPhoto {
   selected: boolean; // AI가 추천한 사진 여부
   imageUrl?: string; // 업로드된 실제 이미지 미리보기 URL
   fileName?: string;
+  sourceImagePath?: string; // 백엔드 분석 결과 원본 경로
+  aiRank?: number; // AI가 계산한 순위(1부터 시작)
+  aiScore?: number; // AI 점수(0~1)
+}
+
+interface TourPostComment {
+  id: string;
+  author: string;
+  content: string;
+  createdAt: string;
 }
 
 interface TourPost {
@@ -37,27 +48,55 @@ interface TourPost {
   likes: number;
   liked: boolean;
   tags: string[];
+  comments: TourPostComment[];
 }
 
-const STYLE_FILTER_OPTIONS: Array<{ value: TourstarStyleFilter; label: string }> = [
-  { value: "AUTO", label: "자동 (기본)" },
-  { value: "INTJ", label: "INTJ" },
-  { value: "INTP", label: "INTP" },
-  { value: "ENTJ", label: "ENTJ" },
-  { value: "ENTP", label: "ENTP" },
-  { value: "INFJ", label: "INFJ" },
-  { value: "INFP", label: "INFP" },
-  { value: "ENFJ", label: "ENFJ" },
-  { value: "ENFP", label: "ENFP" },
-  { value: "ISTJ", label: "ISTJ" },
-  { value: "ISFJ", label: "ISFJ" },
-  { value: "ESTJ", label: "ESTJ" },
-  { value: "ESFJ", label: "ESFJ" },
-  { value: "ISTP", label: "ISTP" },
-  { value: "ISFP", label: "ISFP" },
-  { value: "ESTP", label: "ESTP" },
-  { value: "ESFP", label: "ESFP" },
-];
+const STYLE_FILTER_AUTO: { value: TourstarStyleFilter; label: string } = {
+  value: "AUTO",
+  label: "자동 (기본)",
+};
+
+const STYLE_FILTER_GROUPS: Array<{
+  title: string;
+  options: Array<{ value: TourstarStyleFilter; label: string }>;
+}> = [
+    {
+      title: "분석/전략형 (NT)",
+      options: [
+        { value: "INTJ", label: "INTJ" },
+        { value: "INTP", label: "INTP" },
+        { value: "ENTJ", label: "ENTJ" },
+        { value: "ENTP", label: "ENTP" },
+      ],
+    },
+    {
+      title: "외교/감성형 (NF)",
+      options: [
+        { value: "INFJ", label: "INFJ" },
+        { value: "INFP", label: "INFP" },
+        { value: "ENFJ", label: "ENFJ" },
+        { value: "ENFP", label: "ENFP" },
+      ],
+    },
+    {
+      title: "관리/실무형 (SJ)",
+      options: [
+        { value: "ISTJ", label: "ISTJ" },
+        { value: "ISFJ", label: "ISFJ" },
+        { value: "ESTJ", label: "ESTJ" },
+        { value: "ESFJ", label: "ESFJ" },
+      ],
+    },
+    {
+      title: "탐험/즉흥형 (SP)",
+      options: [
+        { value: "ISTP", label: "ISTP" },
+        { value: "ISFP", label: "ISFP" },
+        { value: "ESTP", label: "ESTP" },
+        { value: "ESFP", label: "ESFP" },
+      ],
+    },
+  ];
 
 /* ───────────────────── 플레이스홀더 그라디언트 ───────────────────── */
 const GRADIENTS = [
@@ -96,6 +135,10 @@ const SAMPLE_POSTS: TourPost[] = [
     likes: 24,
     liked: false,
     tags: ["제주도", "힐링", "바다", "흑돼지"],
+    comments: [
+      { id: "c1", author: "mina", content: "사진 무드 너무 좋아요!", createdAt: "방금 전" },
+      { id: "c2", author: "jiho", content: "제주 또 가고 싶어짐", createdAt: "2시간 전" },
+    ],
   },
   {
     id: "2",
@@ -112,6 +155,7 @@ const SAMPLE_POSTS: TourPost[] = [
     likes: 42,
     liked: true,
     tags: ["교토", "벚꽃", "일본여행"],
+    comments: [{ id: "c3", author: "yuna", content: "벚꽃 시즌에 꼭 가보고 싶다", createdAt: "1일 전" }],
   },
   {
     id: "3",
@@ -129,6 +173,7 @@ const SAMPLE_POSTS: TourPost[] = [
     likes: 8,
     liked: false,
     tags: ["부산", "해운대", "야경"],
+    comments: [],
   },
   {
     id: "4",
@@ -144,6 +189,7 @@ const SAMPLE_POSTS: TourPost[] = [
     likes: 15,
     liked: false,
     tags: ["강릉", "카페", "바다"],
+    comments: [],
   },
   {
     id: "5",
@@ -163,6 +209,7 @@ const SAMPLE_POSTS: TourPost[] = [
     likes: 31,
     liked: true,
     tags: ["방콕", "길거리음식", "태국"],
+    comments: [{ id: "c4", author: "sohee", content: "팟타이 진리 인정", createdAt: "3일 전" }],
   },
 ];
 
@@ -183,7 +230,7 @@ function HeartIcon({ filled }: { filled: boolean }) {
 interface CreateModalProps {
   open: boolean;
   onClose: () => void;
-  onCreate: (post: Omit<TourPost, "id" | "likes" | "liked">) => void;
+  onCreate: (post: Omit<TourPost, "id" | "likes" | "liked" | "comments">) => void;
   onJobStatusChange?: (status: string) => void;
 }
 
@@ -196,16 +243,89 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
   });
   const [photos, setPhotos] = useState<TourPhoto[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isFilteringByDate, setIsFilteringByDate] = useState(false);
   const [isGeneratingPost, setIsGeneratingPost] = useState(false);
+  const [dateFilter, setDateFilter] = useState({
+    startDate: "",
+    endDate: "",
+    includeUnknownDate: false,
+  });
+  const [openStyleGroup, setOpenStyleGroup] = useState<string | null>(
+    STYLE_FILTER_GROUPS[0]?.title ?? null,
+  );
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const togglePhoto = (id: string) => {
     setPhotos((prev) => prev.map((p) => (p.id === id ? { ...p, selected: !p.selected } : p)));
   };
 
-  const handleUploadPhotos = async (files: FileList | null) => {
-    if (!files || files.length === 0 || isUploading) return;
-    const imageFiles = Array.from(files).filter((file) => file.type.startsWith("image/"));
+  const parseExifShotDate = async (file: File): Promise<Date | null> => {
+    try {
+      const exifr = await import("exifr");
+      const meta = await exifr.parse(file, [
+        "DateTimeOriginal",
+        "CreateDate",
+        "DateTimeDigitized",
+        "ModifyDate",
+      ]);
+      const raw =
+        meta?.DateTimeOriginal ?? meta?.CreateDate ?? meta?.DateTimeDigitized ?? meta?.ModifyDate;
+      if (!raw) return null;
+      if (raw instanceof Date && !Number.isNaN(raw.getTime())) return raw;
+      if (typeof raw === "string") {
+        const normalized = raw
+          .trim()
+          .replace(/^(\d{4}):(\d{2}):(\d{2})/, "$1-$2-$3")
+          .replace(" ", "T");
+        const parsed = new Date(normalized);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const filterFilesByDateRange = async (files: File[]) => {
+    const hasStart = Boolean(dateFilter.startDate);
+    const hasEnd = Boolean(dateFilter.endDate);
+    if (!hasStart && !hasEnd) {
+      return { filteredFiles: files, excludedCount: 0, unknownCount: 0 };
+    }
+
+    const startAt = hasStart ? new Date(`${dateFilter.startDate}T00:00:00`) : null;
+    const endAt = hasEnd ? new Date(`${dateFilter.endDate}T23:59:59.999`) : null;
+    const filteredFiles: File[] = [];
+    let unknownCount = 0;
+
+    for (const file of files) {
+      // eslint-disable-next-line no-await-in-loop
+      const shotDate = await parseExifShotDate(file);
+      if (!shotDate) {
+        unknownCount += 1;
+        if (dateFilter.includeUnknownDate) {
+          filteredFiles.push(file);
+        }
+        continue;
+      }
+
+      const inStart = startAt ? shotDate >= startAt : true;
+      const inEnd = endAt ? shotDate <= endAt : true;
+      if (inStart && inEnd) {
+        filteredFiles.push(file);
+      }
+    }
+
+    return {
+      filteredFiles,
+      excludedCount: Math.max(0, files.length - filteredFiles.length),
+      unknownCount,
+    };
+  };
+
+  const handleUploadPhotos = async (files: File[]) => {
+    if (files.length === 0 || isUploading) return;
+    const imageFiles = files.filter((file) => file.type.startsWith("image/"));
     if (imageFiles.length === 0) return;
 
     setIsUploading(true);
@@ -242,28 +362,110 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
             break;
           }
           if (status.status === "completed") {
-            const bestRows = status.result?.best ?? [];
-            if (bestRows.length > 0) {
+            const rankedRows = status.result?.ranked ?? [];
+            if (rankedRows.length > 0) {
               setPhotos((prev) => {
-                const selected = prev
+                const ranked = prev
                   .map((p) => {
+                    const key = (p.imageUrl ?? "").replace(/\\/g, "/").toLowerCase();
+                    const row = rankedRows.find((r) => {
+                      const srcUrl = localArtifactPathToUrl(r.source_image).replace(/\\/g, "/").toLowerCase();
+                      return srcUrl === key;
+                    });
+                    if (!row) {
+                      return {
+                        ...p,
+                        selected: false,
+                        sourceImagePath: undefined,
+                        aiRank: undefined,
+                        aiScore: undefined,
+                      };
+                    }
+                    return {
+                      ...p,
+                      selected: false,
+                      sourceImagePath: row.source_image,
+                      aiRank: row.rank,
+                      aiScore: row.final_score,
+                    };
+                  })
+                  .sort((a, b) => {
+                    const ar = a.aiRank ?? Number.MAX_SAFE_INTEGER;
+                    const br = b.aiRank ?? Number.MAX_SAFE_INTEGER;
+                    return ar - br;
+                  });
+                return ranked;
+              });
+              onJobStatusChange?.("AI 분석 완료 (순위 확인 후 사진 선택)");
+              try {
+                const topImagePaths = rankedRows
+                  .map((r) => r.source_image)
+                  .filter((v) => !!v)
+                  .slice(0, 3);
+                if (topImagePaths.length > 0) {
+                  onJobStatusChange?.("AI 분석 완료 (코멘트 초안 생성중...)");
+                  const auto = await generateTourstarAutoComment(topImagePaths, 3);
+                  if ((auto.comment || "").trim()) {
+                    setForm((prev) => {
+                      if (prev.comment.trim().length > 0) return prev;
+                      return { ...prev, comment: auto.comment.trim() };
+                    });
+                    onJobStatusChange?.("AI 분석 완료 (코멘트 초안 생성됨)");
+                  } else {
+                    onJobStatusChange?.("AI 분석 완료 (순위 확인 후 사진 선택)");
+                  }
+                }
+              } catch (error) {
+                console.error(error);
+                onJobStatusChange?.("AI 분석 완료 (순위 확인 후 사진 선택)");
+              }
+            } else {
+              const bestRows = status.result?.best ?? [];
+              if (bestRows.length > 0) {
+                setPhotos((prev) =>
+                  prev.map((p) => {
                     const key = (p.imageUrl ?? "").replace(/\\/g, "/").toLowerCase();
                     const row = bestRows.find((r) => {
                       const srcUrl = localArtifactPathToUrl(r.source_image).replace(/\\/g, "/").toLowerCase();
                       return srcUrl === key;
                     });
-                    if (!row) return null;
                     return {
                       ...p,
-                      selected: true,
-                      imageUrl: localArtifactPathToUrl(row.saved_image) || p.imageUrl,
+                      selected: false,
+                      sourceImagePath: row?.source_image,
+                      aiRank: row?.rank,
+                      aiScore: row?.final_score,
+                      imageUrl: row ? localArtifactPathToUrl(row.saved_image) || p.imageUrl : p.imageUrl,
                     };
-                  })
-                  .filter(Boolean) as TourPhoto[];
-                return selected.length > 0 ? selected : prev;
-              });
+                  }),
+                );
+                onJobStatusChange?.("AI 분석 완료 (순위 확인 후 사진 선택)");
+                try {
+                  const topImagePaths = bestRows
+                    .map((r) => r.source_image)
+                    .filter((v) => !!v)
+                    .slice(0, 3);
+                  if (topImagePaths.length > 0) {
+                    onJobStatusChange?.("AI 분석 완료 (코멘트 초안 생성중...)");
+                    const auto = await generateTourstarAutoComment(topImagePaths, 3);
+                    if ((auto.comment || "").trim()) {
+                      setForm((prev) => {
+                        if (prev.comment.trim().length > 0) return prev;
+                        return { ...prev, comment: auto.comment.trim() };
+                      });
+                      onJobStatusChange?.("AI 분석 완료 (코멘트 초안 생성됨)");
+                    } else {
+                      onJobStatusChange?.("AI 분석 완료 (순위 확인 후 사진 선택)");
+                    }
+                  }
+                } catch (error) {
+                  console.error(error);
+                  onJobStatusChange?.("AI 분석 완료 (순위 확인 후 사진 선택)");
+                }
+              } else {
+                onJobStatusChange?.("AI 분석 완료");
+              }
             }
-            onJobStatusChange?.("AI 분석 완료 (베스트 사진 반영)");
             break;
           }
         }
@@ -274,6 +476,36 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
       onJobStatusChange?.("업로드 실패");
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleUploadPhotosWithDateFilter = async (files: File[] | null) => {
+    if (!files || files.length === 0 || isUploading || isFilteringByDate) return;
+    const imageFiles = files.filter((file) => file.type.startsWith("image/"));
+    if (imageFiles.length === 0) return;
+
+    setIsFilteringByDate(true);
+    try {
+      onJobStatusChange?.("촬영일 메타데이터 확인중...");
+      const { filteredFiles, excludedCount, unknownCount } = await filterFilesByDateRange(imageFiles);
+      if (filteredFiles.length === 0) {
+        onJobStatusChange?.("조건에 맞는 사진 없음");
+        alert(
+          `선택한 기간에 해당하는 사진이 없습니다.\n(메타데이터 없음: ${unknownCount}장, 제외: ${excludedCount}장)`,
+        );
+        return;
+      }
+
+      if (excludedCount > 0) {
+        onJobStatusChange?.(
+          `기간 조건으로 ${excludedCount}장 제외, ${filteredFiles.length}장 자동 업로드중...`,
+        );
+      } else {
+        onJobStatusChange?.(`${filteredFiles.length}장 업로드중...`);
+      }
+      await handleUploadPhotos(filteredFiles);
+    } finally {
+      setIsFilteringByDate(false);
     }
   };
 
@@ -325,6 +557,11 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   </div>
+                  {photo.aiRank ? (
+                    <div className="absolute top-1.5 left-1.5 rounded-md bg-white/90 px-1.5 py-0.5 text-[10px] font-semibold text-purple-700 backdrop-blur-sm">
+                      #{photo.aiRank}
+                    </div>
+                  ) : null}
                   {!photo.imageUrl ? (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" className="opacity-40">
@@ -342,10 +579,14 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
+                disabled={isUploading || isFilteringByDate}
                 className="rounded-lg border border-dashed border-gray-300 px-3 py-1.5 text-xs text-gray-400 hover:border-purple-300 hover:text-purple-500 transition-colors"
               >
-                {isUploading ? "업로드 중..." : "+ 사진 파일 올리기"}
+                {isFilteringByDate
+                  ? "촬영일 확인중..."
+                  : isUploading
+                    ? "업로드 중..."
+                    : "+ 사진 파일 올리기"}
               </button>
               <input
                 ref={fileInputRef}
@@ -354,10 +595,47 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
                 multiple
                 className="hidden"
                 onChange={async (e) => {
-                  handleUploadPhotos(e.target.files);
+                  await handleUploadPhotosWithDateFilter(e.target.files ? Array.from(e.target.files) : null);
                   e.target.value = "";
                 }}
               />
+            </div>
+            <div className="mt-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
+              <p className="text-[11px] font-semibold text-gray-600">촬영일 기간 자동 선별 (메타데이터 기반)</p>
+              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <label className="flex flex-col gap-1 text-[11px] text-gray-500">
+                  시작일
+                  <input
+                    type="date"
+                    value={dateFilter.startDate}
+                    onChange={(e) => setDateFilter((prev) => ({ ...prev, startDate: e.target.value }))}
+                    className="rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 focus:border-purple-300 focus:outline-none"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-[11px] text-gray-500">
+                  종료일
+                  <input
+                    type="date"
+                    value={dateFilter.endDate}
+                    onChange={(e) => setDateFilter((prev) => ({ ...prev, endDate: e.target.value }))}
+                    className="rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 focus:border-purple-300 focus:outline-none"
+                  />
+                </label>
+              </div>
+              <label className="mt-2 flex items-center gap-2 text-[11px] text-gray-500">
+                <input
+                  type="checkbox"
+                  checked={dateFilter.includeUnknownDate}
+                  onChange={(e) =>
+                    setDateFilter((prev) => ({ ...prev, includeUnknownDate: e.target.checked }))
+                  }
+                  className="h-3.5 w-3.5 rounded border-gray-300 text-purple-600 focus:ring-purple-400"
+                />
+                촬영일 메타데이터가 없는 사진도 포함
+              </label>
+              <p className="mt-1 text-[10px] text-gray-400">
+                날짜를 입력하면 해당 기간에 촬영된 사진만 자동 업로드됩니다. (OpenAI 미사용)
+              </p>
             </div>
           </div>
 
@@ -377,19 +655,61 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-500">문체 프리셋 (MBTI)</label>
-              <select
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:border-purple-400 focus:outline-none"
-                value={form.styleFilter}
-                onChange={(e) =>
-                  setForm({ ...form, styleFilter: e.target.value as TourstarStyleFilter })
-                }
-              >
-                {STYLE_FILTER_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
+              <div className="max-h-44 space-y-2 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, styleFilter: STYLE_FILTER_AUTO.value })}
+                    className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${form.styleFilter === STYLE_FILTER_AUTO.value
+                      ? "border-purple-300 bg-purple-50 text-purple-700"
+                      : "border-gray-200 bg-white text-gray-600 hover:border-purple-200 hover:text-purple-600"
+                      }`}
+                  >
+                    {STYLE_FILTER_AUTO.label}
+                  </button>
+                </div>
+                {STYLE_FILTER_GROUPS.map((group) => (
+                  <div key={group.title}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setOpenStyleGroup((prev) => (prev === group.title ? null : group.title))
+                      }
+                      className="mb-1 flex w-full items-center justify-between rounded-md px-1 py-1 text-left text-[11px] font-semibold text-gray-500 hover:bg-gray-50"
+                    >
+                      <span>{group.title}</span>
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        className={`transition-transform ${openStyleGroup === group.title ? "rotate-180" : ""}`}
+                      >
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </button>
+                    {openStyleGroup === group.title ? (
+                      <div className="flex flex-wrap gap-2 pb-1">
+                        {group.options.map((option) => (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => setForm({ ...form, styleFilter: option.value })}
+                            className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${form.styleFilter === option.value
+                              ? "border-purple-300 bg-purple-50 text-purple-700"
+                              : "border-gray-200 bg-white text-gray-600 hover:border-purple-200 hover:text-purple-600"
+                              }`}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
                 ))}
-              </select>
+              </div>
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-500">
@@ -464,10 +784,14 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
                 tags: [] as string[],
               };
               try {
+                const selectedImagePaths = selectedPhotos
+                  .map((p) => p.sourceImagePath)
+                  .filter((v): v is string => Boolean(v && v.trim()));
                 generated = await generateTourstarPost(
                   form.comment,
                   form.styleFilter,
-                  form.styleTemplate
+                  form.styleTemplate,
+                  selectedImagePaths,
                 );
               } catch (error) {
                 console.error(error);
@@ -505,13 +829,16 @@ interface DetailModalProps {
   onClose: () => void;
   onToggleLike: (id: string) => void;
   onToggleVisibility: (id: string) => void;
+  onAddComment: (postId: string, content: string) => void;
 }
 
-function PostDetailModal({ post, onClose, onToggleLike, onToggleVisibility }: DetailModalProps) {
+function PostDetailModal({ post, onClose, onToggleLike, onToggleVisibility, onAddComment }: DetailModalProps) {
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [commentInput, setCommentInput] = useState("");
 
   React.useEffect(() => {
     setPhotoIndex(0);
+    setCommentInput("");
   }, [post]);
 
   if (!post) return null;
@@ -640,6 +967,57 @@ function PostDetailModal({ post, onClose, onToggleLike, onToggleVisibility }: De
               </div>
             )}
             <p className="text-xs text-gray-600">{post.date}</p>
+
+            <div className="border-t border-gray-100 pt-3">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs font-semibold text-gray-700">댓글 {post.comments.length}개</p>
+              </div>
+              <div className="max-h-32 space-y-2 overflow-y-auto pr-1">
+                {post.comments.length > 0 ? (
+                  post.comments.map((item) => (
+                    <div key={item.id} className="rounded-lg bg-gray-50 px-2.5 py-2">
+                      <div className="mb-0.5 flex items-center gap-1.5 text-[11px] text-gray-500">
+                        <span className="font-semibold text-gray-700">{item.author}</span>
+                        <span>·</span>
+                        <span>{item.createdAt}</span>
+                      </div>
+                      <p className="text-xs text-gray-700">{item.content}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-gray-400">첫 댓글을 남겨보세요.</p>
+                )}
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  type="text"
+                  value={commentInput}
+                  onChange={(e) => setCommentInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const value = commentInput.trim();
+                      if (!value) return;
+                      onAddComment(post.id, value);
+                      setCommentInput("");
+                    }
+                  }}
+                  placeholder="댓글을 입력하세요"
+                  className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-xs text-gray-800 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const value = commentInput.trim();
+                    if (!value) return;
+                    onAddComment(post.id, value);
+                    setCommentInput("");
+                  }}
+                  className="rounded-lg bg-purple-600 px-3 py-2 text-xs font-medium text-white hover:bg-purple-700 transition-colors"
+                >
+                  등록
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* 하단 액션 */}
@@ -654,6 +1032,7 @@ function PostDetailModal({ post, onClose, onToggleLike, onToggleVisibility }: De
                 <HeartIcon filled={post.liked} />
                 <span>{post.likes}</span>
               </button>
+              <span className="text-xs text-gray-400">댓글 {post.comments.length}개</span>
               <span className="text-xs text-gray-300">사진 {post.photos.length}장</span>
             </div>
           </div>
@@ -734,6 +1113,12 @@ function FeedCard({ post, onClick, onToggleLike }: FeedCardProps) {
             <HeartIcon filled={post.liked} />
             <span>{post.likes}</span>
           </button>
+        </div>
+        <div className="mt-1 flex items-center gap-1.5 text-[11px] text-gray-500">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          댓글 {post.comments.length}
         </div>
         <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-gray-700">{post.comment}</p>
         {post.tags.length > 0 && (
@@ -818,7 +1203,7 @@ export default function TourstarPage() {
   const { isAuthenticated, logout } = useLoginStore();
 
   /* ── 상태 ── */
-  const [posts, setPosts] = useState<TourPost[]>(SAMPLE_POSTS);
+  const [posts, setPosts] = useState<TourPost[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("feed");
   const [filter, setFilter] = useState<FilterType>("all");
   const [createOpen, setCreateOpen] = useState(false);
@@ -880,11 +1265,28 @@ export default function TourstarPage() {
     );
   };
 
-  const createPost = (newPost: Omit<TourPost, "id" | "likes" | "liked">) => {
+  const createPost = (newPost: Omit<TourPost, "id" | "likes" | "liked" | "comments">) => {
     setPosts((prev) => [
-      { ...newPost, id: Date.now().toString(), likes: 0, liked: false },
+      { ...newPost, id: Date.now().toString(), likes: 0, liked: false, comments: [] },
       ...prev,
     ]);
+  };
+
+  const addComment = (postId: string, content: string) => {
+    const newComment: TourPostComment = {
+      id: `comment-${Date.now()}`,
+      author: "me",
+      content,
+      createdAt: "방금 전",
+    };
+    setPosts((prev) =>
+      prev.map((p) => (p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p)),
+    );
+    setDetailPost((prev) =>
+      prev && prev.id === postId
+        ? { ...prev, comments: [...prev.comments, newComment] }
+        : prev,
+    );
   };
 
   const deletePost = (id: string) => {
@@ -1099,6 +1501,7 @@ export default function TourstarPage() {
         onClose={() => setDetailPost(null)}
         onToggleLike={toggleLike}
         onToggleVisibility={toggleVisibility}
+        onAddComment={addComment}
       />
     </div>
   );

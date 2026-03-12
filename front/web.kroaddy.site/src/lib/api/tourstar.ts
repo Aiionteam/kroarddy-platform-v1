@@ -31,6 +31,14 @@ export interface SelectedImage {
   reject_reason: string;
 }
 
+export interface RankedImage {
+  rank: number;
+  source_image: string;
+  final_score: number;
+  is_candidate: boolean;
+  reject_reason: string;
+}
+
 export interface EvaluationResult {
   job_id: string;
   requested_at: string;
@@ -39,6 +47,7 @@ export interface EvaluationResult {
   summary_csv: string;
   best: SelectedImage[];
   worst: SelectedImage[];
+  ranked?: RankedImage[];
 }
 
 export interface TourstarJobStatus {
@@ -57,6 +66,20 @@ export interface GeneratePostResponse {
   location: string;
   comment: string;
   tags: string[];
+}
+
+export interface AutoCommentResponse {
+  comment: string;
+  location_hint: string;
+  mood: string;
+  time_of_day: string;
+  gps_candidates?: Array<{
+    path: string;
+    lat: number;
+    lon: number;
+    place: string;
+    confidence: number;
+  }>;
 }
 
 export type TourstarStyleFilter =
@@ -140,7 +163,8 @@ export async function getTourstarJobStatus(jobId: string): Promise<TourstarJobSt
 export async function generateTourstarPost(
   comment: string,
   styleFilter: TourstarStyleFilter = "AUTO",
-  styleTemplate = ""
+  styleTemplate = "",
+  imagePaths: string[] = [],
 ): Promise<GeneratePostResponse> {
   const res = await fetch(toApiUrl("/v1/photo-selection/generate-post"), {
     method: "POST",
@@ -149,11 +173,31 @@ export async function generateTourstarPost(
       comment,
       style_filter: styleFilter,
       style_template: styleTemplate.trim() || undefined,
+      image_paths: imagePaths,
     }),
     cache: "no-store",
   });
   if (!res.ok) {
     throw new Error(`투어스타 게시글 생성 API 오류: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function generateTourstarAutoComment(
+  imagePaths: string[],
+  maxImages = 3
+): Promise<AutoCommentResponse> {
+  const res = await fetch(toApiUrl("/v1/photo-selection/auto-comment"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      image_paths: imagePaths,
+      max_images: maxImages,
+    }),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`투어스타 자동 코멘트 API 오류: ${res.status}`);
   }
   return res.json();
 }
