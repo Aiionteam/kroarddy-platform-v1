@@ -1,0 +1,22 @@
+# kroaddy - 게이트웨이 단독 실행용 (클라우드 배포 / 게이트웨이만 올릴 때)
+# Python 서비스까지 포함한 전체 실행은 루트의 docker-compose.yaml 사용
+
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    image: kroaddy-gateway:latest
+    container_name: kroaddy-gateway
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

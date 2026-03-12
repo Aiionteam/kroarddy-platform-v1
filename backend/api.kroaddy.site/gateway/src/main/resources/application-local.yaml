@@ -1,0 +1,46 @@
+# 로컬 개발용 프로파일
+# 실행 시 --spring.profiles.active=local 옵션 사용
+# 또는 SPRING_PROFILES_ACTIVE=local 환경 변수 설정
+
+spring:
+  servlet:
+    multipart:
+      # Tourstar 이미지 업로드 프록시 용량 상향 (로컬 개발용)
+      max-file-size: 20MB
+      max-request-size: 50MB
+  datasource:
+    # 로컬 개발 시 데이터베이스 연결이 없어도 실행 가능하도록 설정
+    # 실제 사용 시에는 환경 변수로 설정하세요
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/test}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    # 데이터소스가 없어도 실행 가능하도록 (선택사항)
+    # continue-on-error: true
+  
+  data:
+    redis:
+      # Upstash: rediss:// URL 사용 시 host/port/password 대신 URL만 사용
+      url: ${UPSTASH_REDIS_URL:}
+      host: ${UPSTASH_REDIS_HOST:localhost}
+      port: ${UPSTASH_REDIS_PORT:6379}
+      password: ${UPSTASH_REDIS_PASSWORD:}
+      ssl:
+        enabled: true
+
+# AI 서비스 URL (로컬 개발 시)
+ai:
+  service:
+    rag:
+      url: ${AI_SERVICE_RAG_URL:http://localhost:8001}
+    vision:
+      url: ${AI_SERVICE_VISION_URL:}
+    # Docker 환경: host.docker.internal / 로컬 직접 실행: localhost
+    festival:
+      url: ${AI_SERVICE_FESTIVAL_URL:http://localhost:8002}
+    tourplaner:
+      url: ${AI_SERVICE_TOURPLANER_URL:http://localhost:8003}
+    user-info:
+      url: ${AI_SERVICE_USER_INFO_URL:http://localhost:8004}
+    tourstar:
+      url: ${AI_SERVICE_TOURSTAR_URL:http://localhost:8010}
+

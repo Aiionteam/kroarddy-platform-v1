@@ -1,0 +1,6 @@
+rootProject.name = 'tourstory-api'
+
+// Gateway (통합 서버 - gateway 내부에 services 포함)
+include 'gateway'
+project(':gateway').projectDir = file('gateway')
+

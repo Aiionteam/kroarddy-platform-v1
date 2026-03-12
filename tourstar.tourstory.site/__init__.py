@@ -1,3 +1,0 @@
-"""Tourstar photo selection service."""
-
-

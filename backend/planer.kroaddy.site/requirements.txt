@@ -1,0 +1,24 @@
+fastapi
+uvicorn[standard]
+httpx
+python-dotenv
+pydantic-settings
+# LangGraph / Gemini / OpenAI fallback
+langgraph
+langchain-google-genai
+langchain-openai
+langchain-core
+# Database
+sqlalchemy[asyncio]
+asyncpg
+psycopg2-binary
+alembic
+# AWS S3
+boto3
+# multipart/form-data (UploadFile 사용에 필수)
+python-multipart
+# NSFW 이미지 필터
+nudenet
+pillow
+# nudenet 내부에서 onnxruntime 자동 설치되지만 명시 (CPU 환경)
+onnxruntime

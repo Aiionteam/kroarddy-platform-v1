@@ -1,0 +1,120 @@
+# Kroaddy MSA - 통합 Docker Compose
+# 포트 구성:
+#   gateway → 8080 (Spring Boot / 인증·프록시)
+#   festival → 8002 (FastAPI / 전국문화축제표준데이터)
+#   planer   → 8003 (FastAPI / AI 여행 루트·일정·날씨)
+#   profile  → 8004 (FastAPI / 개인화 프로필)
+#
+# 사용법:
+#   docker compose up -d --build
+#   docker compose up -d --build gateway   (게이트웨이만 재빌드)
+
+services:
+
+  # ── Spring Boot Gateway (인증 + 프록시) ───────────────────────────────────
+  gateway:
+    build:
+      context: ./backend/api.kroaddy.site
+      dockerfile: gateway/Dockerfile
+    image: kroaddy-gateway:latest
+    container_name: kroaddy-gateway
+    env_file:
+      - ./backend/api.kroaddy.site/.env
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      AI_SERVICE_FESTIVAL_URL: http://festival:8002
+      AI_SERVICE_TOURPLANER_URL: http://planer:8003
+      AI_SERVICE_USER_INFO_URL: http://profile:8004
+<<<<<<< HEAD
+      AI_SERVICE_TOURSTAR_URL: http://host.docker.internal:8010
+=======
+>>>>>>> develop
+    ports:
+      - "8080:8080"
+    depends_on:
+      - festival
+      - planer
+      - profile
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - kroaddy-net
+
+  # ── Festival API (전국문화축제표준데이터, 포트 8002) ──────────────────────
+  festival:
+    build:
+      context: ./backend/festival.kroaddy.site
+      dockerfile: Dockerfile
+    image: kroaddy-festival:latest
+    container_name: kroaddy-festival
+    env_file:
+      - ./backend/festival.kroaddy.site/.env
+    ports:
+      - "8002:8002"
+    restart: unless-stopped
+    networks:
+      - kroaddy-net
+
+  # ── Tour Planner API (AI 여행 루트·일정, 포트 8003) ──────────────────────
+  planer:
+    build:
+      context: ./backend/planer.kroaddy.site
+      dockerfile: Dockerfile
+    image: kroaddy-planer:latest
+    container_name: kroaddy-planer
+    env_file:
+      - ./backend/planer.kroaddy.site/.env
+    environment:
+      FESTIVAL_SERVICE_URL: http://festival:8002
+      USER_INFO_SERVICE_URL: http://profile:8004
+    ports:
+      - "8003:8003"
+    depends_on:
+      - festival
+      - profile
+    restart: unless-stopped
+    networks:
+      - kroaddy-net
+
+  # ── Profile Service (개인화 프로필, 포트 8004) ────────────────────────────
+  profile:
+    build:
+      context: ./backend/profile.kroaddy.site
+      dockerfile: Dockerfile
+    image: kroaddy-profile:latest
+    container_name: kroaddy-profile
+    env_file:
+      - ./backend/profile.kroaddy.site/.env
+    ports:
+      - "8004:8004"
+    restart: unless-stopped
+    networks:
+      - kroaddy-net
+
+<<<<<<< HEAD
+=======
+  # ── Tourstar Service (사진 선별/게시글 생성, 포트 8010) ───────────────────
+  # tourstar:
+  #   build:
+  #     context: ./backend/tourstar.kroaddy.site
+  #     dockerfile: Dockerfile
+  #   image: kroaddy-tourstar:latest
+  #   container_name: kroaddy-tourstar
+  #   env_file:
+  #     - ./backend/tourstar.kroaddy.site/.env
+  #   volumes:
+  #     - ./backend/tourstar.kroaddy.site/artifacts:/app/artifacts
+  #   ports:
+  #     - "8010:8010"
+  #   restart: unless-stopped
+  #   networks:
+  #     - kroaddy-net
+
+>>>>>>> develop
+networks:
+  kroaddy-net:
+    driver: bridge

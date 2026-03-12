@@ -1,0 +1,45 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.idea
+.vscode
+*.iml
+*.ipr
+*.iws
+.DS_Store
+
+# Build outputs
+build/
+.gradle/
+!gradle/wrapper/
+
+# Logs
+*.log
+logs/
+
+# Docker
+docker-compose.yaml
+Dockerfile
+.dockerignore
+
+# Documentation
+README.md
+*.md
+
+# Test files
+**/test/
+**/*Test.java
+**/*Tests.java
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Frontend (not needed for backend builds)
+frontend/
+
