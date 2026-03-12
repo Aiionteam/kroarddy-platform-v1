@@ -94,3 +94,4 @@ coverage/
 .nyc_output/
 htmlcov/
 .pytest_cache/
+backend/tourstar.kroaddy.site/artifacts/

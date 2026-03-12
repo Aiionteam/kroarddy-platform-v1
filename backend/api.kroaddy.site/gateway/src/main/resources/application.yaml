@@ -131,6 +131,8 @@ ai:
       url: ${AI_SERVICE_TOURPLANER_URL:http://planer:8003}
     user-info:
       url: ${AI_SERVICE_USER_INFO_URL:http://user_info:8004}
+    tourstar:
+      url: ${AI_SERVICE_TOURSTAR_URL:http://tourstar:8010}
 
 logging:
   level:
