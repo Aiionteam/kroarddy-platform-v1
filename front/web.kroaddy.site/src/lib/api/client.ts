@@ -1,11 +1,23 @@
 /**
- * API Client - 로컬: http://localhost:8080 / 배포: NEXT_PUBLIC_API_URL (api.tourstory.site)
+ * API Client - 로컬: http://localhost:8080 / 배포: NEXT_PUBLIC_API_URL 필수
+ * Vercel 배포 시 환경 변수에 NEXT_PUBLIC_API_URL 을 게이트웨이 URL 로 설정하세요.
  */
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
-  console.log("[API Client] Base URL:", API_BASE_URL);
+if (typeof window !== "undefined") {
+  if (process.env.NODE_ENV === "development") {
+    console.log("[API Client] Base URL:", API_BASE_URL);
+  }
+  // 백엔드 없이 배포해도 됨: 페이지는 정상 동작하고, API 호출만 실패 시 위 메시지로 안내
+  if (
+    process.env.NODE_ENV === "production" &&
+    (API_BASE_URL === "http://localhost:8080" || !process.env.NEXT_PUBLIC_API_URL)
+  ) {
+    console.info(
+      "[API Client] 백엔드 미연결 모드. 페이지는 동작하며, API 사용 시 NEXT_PUBLIC_API_URL 을 설정하세요."
+    );
+  }
 }
 
 interface RequestOptions extends RequestInit {
@@ -60,8 +72,15 @@ class ApiClient {
     } catch (error: any) {
       clearTimeout(timeoutId);
       if (error.name === "AbortError") throw new Error("요청 시간이 초과되었습니다.");
-      if (error instanceof TypeError && error.message === "Failed to fetch")
-        throw new Error("서버에 연결할 수 없습니다. 네트워크와 백엔드 실행 여부를 확인해 주세요.");
+      if (error instanceof TypeError && error.message === "Failed to fetch") {
+        const msg =
+          typeof window !== "undefined" &&
+          process.env.NODE_ENV === "production" &&
+          (API_BASE_URL === "http://localhost:8080" || !process.env.NEXT_PUBLIC_API_URL)
+            ? "백엔드가 연결되지 않았습니다. 배포 후에는 Vercel 환경 변수에 NEXT_PUBLIC_API_URL 을 설정하세요."
+            : "서버에 연결할 수 없습니다. 네트워크와 백엔드 실행 여부를 확인해 주세요.";
+        throw new Error(msg);
+      }
       throw error;
     }
   }
