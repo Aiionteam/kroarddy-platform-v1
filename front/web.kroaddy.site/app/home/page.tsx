@@ -10,8 +10,8 @@ import { fetchUserProfile } from "@/lib/api/userProfile";
 const QUICK_LINKS = [
   { label: "여행플래너", desc: "AI가 추천하는 여행 루트와 일정", path: "/planner",           emoji: "🗺️" },
   { label: "일정관리",  desc: "저장된 내 여행 플랜 보기",       path: "/planner/schedule", emoji: "📋" },
-  { label: "행사추천",  desc: "전국 문화 축제 캘린더",          path: "/guide/event",      emoji: "🎪" },
-  { label: "맛집추천",  desc: "지역별 맛집 탐색",               path: "/guide/restaurant", emoji: "🍜" },
+  { label: "장소 추천", desc: "맛집 · 행사 한 번에 보기",       path: "/guide",            emoji: "📍" },
+  { label: "K-Content 플래너", desc: "K-콘텐츠 기반 여행 플랜 만들기", path: "/planner/k-content", emoji: "🎬" },
 ];
 
 export default function HomePage() {

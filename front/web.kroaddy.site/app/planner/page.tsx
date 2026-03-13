@@ -19,7 +19,7 @@ const MODE_OPTIONS = [
     label: "K컨텐츠",
     emoji: "🎬",
     desc: "드라마·영화 촬영지 여행",
-    available: false,
+    available: true,
     path: "/planner/k-content",
   },
   {

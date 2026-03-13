@@ -9,15 +9,14 @@
 import React from "react";
 import { useRouter, usePathname } from "next/navigation";
 
-export type SidebarCategoryId = "chat" | "tourstar" | "schedule" | "planner" | "restaurant" | "event";
+export type SidebarCategoryId = "chat" | "tourstar" | "schedule" | "planner" | "place";
 
 const CATEGORIES: { id: SidebarCategoryId; label: string; path?: string; icon: React.ReactNode }[] = [
-  { id: "tourstar",    label: "투어스타",  path: "/tourstar",          icon: <TourstarIcon /> },
-  { id: "schedule",   label: "일정관리",  path: "/planner/schedule",  icon: <ScheduleIcon /> },
-  { id: "planner",    label: "여행플래너", path: "/planner",            icon: <PlannerIcon /> },
-  { id: "restaurant", label: "맛집추천",  path: "/guide/restaurant",  icon: <RestaurantIcon /> },
-  { id: "event",      label: "행사추천",  path: "/guide/event",       icon: <EventIcon /> },
-  { id: "chat",       label: "단체채팅",  path: "/chat/groupchat",    icon: <ChatIcon /> },
+  { id: "tourstar", label: "투어스타", path: "/tourstar", icon: <TourstarIcon /> },
+  { id: "schedule", label: "일정관리", path: "/planner/schedule", icon: <ScheduleIcon /> },
+  { id: "planner", label: "여행플래너", path: "/planner", icon: <PlannerIcon /> },
+  { id: "place", label: "장소 추천", path: "/guide", icon: <PlaceIcon /> },
+  { id: "chat", label: "단체채팅", path: "/chat/groupchat", icon: <ChatIcon /> },
 ];
 
 function ChatIcon() {
@@ -54,22 +53,11 @@ function PlannerIcon() {
     </svg>
   );
 }
-function RestaurantIcon() {
+function PlaceIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-      <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
-      <line x1="6" y1="1" x2="6" y2="4" />
-      <line x1="10" y1="1" x2="10" y2="4" />
-      <line x1="14" y1="1" x2="14" y2="4" />
-    </svg>
-  );
-}
-function EventIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2z" />
-      <line x1="7" y1="12" x2="17" y2="12" />
+      <path d="M12 2C8.686 2 6 4.686 6 8c0 4.418 6 10 6 10s6-5.582 6-10c0-3.314-2.686-6-6-6z" />
+      <circle cx="12" cy="8" r="2.5" />
     </svg>
   );
 }
@@ -83,7 +71,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ onLogout }) => {
   const pathname = usePathname() ?? "";
 
   const isActive = (path?: string) =>
-    path && (pathname === path || pathname.startsWith(path + "/") || pathname.startsWith(path + "?"));
+    path &&
+    (pathname === path ||
+      pathname.startsWith(path + "/") ||
+      pathname.startsWith(path + "?") ||
+      (path === "/guide" && pathname.startsWith("/guide/")));
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-gray-200 bg-gray-50">
