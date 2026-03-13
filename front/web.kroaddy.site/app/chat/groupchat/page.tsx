@@ -51,6 +51,8 @@ export default function GroupChatPage() {
   const [actionMessage, setActionMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const inputWasFocused = useRef(false);
   const eventSourceRef = useRef<EventSource | null>(null);
   const lastMessageIdRef = useRef<number>(0);
 
@@ -185,6 +187,9 @@ export default function GroupChatPage() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (inputWasFocused.current) {
+      inputRef.current?.focus();
+    }
   }, [messages]);
 
   const handleSend = async () => {
@@ -215,6 +220,7 @@ export default function GroupChatPage() {
       setError(err.message || "전송 중 오류가 발생했습니다.");
     } finally {
       setIsLoading(false);
+      setTimeout(() => inputRef.current?.focus(), 0);
     }
   };
 
@@ -506,9 +512,12 @@ export default function GroupChatPage() {
           >
             <div className="flex gap-2">
               <input
+                ref={inputRef}
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
+                onFocus={() => { inputWasFocused.current = true; }}
+                onBlur={() => { inputWasFocused.current = false; }}
                 placeholder="메시지를 입력하세요..."
                 className="flex-1 rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-purple-500"
                 disabled={isLoading}
