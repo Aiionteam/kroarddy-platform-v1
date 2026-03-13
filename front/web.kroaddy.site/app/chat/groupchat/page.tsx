@@ -192,6 +192,12 @@ export default function GroupChatPage() {
     }
   }, [messages]);
 
+  useEffect(() => {
+    if (!isLoading && inputWasFocused.current) {
+      inputRef.current?.focus();
+    }
+  }, [isLoading]);
+
   const handleSend = async () => {
     const text = input.trim();
     if (!text || !accessToken) return;
@@ -220,7 +226,6 @@ export default function GroupChatPage() {
       setError(err.message || "전송 중 오류가 발생했습니다.");
     } finally {
       setIsLoading(false);
-      setTimeout(() => inputRef.current?.focus(), 0);
     }
   };
 
