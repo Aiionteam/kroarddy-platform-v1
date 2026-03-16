@@ -7,4 +7,5 @@ public interface FriendService {
     Messenger listPendingToMe(Long toUserId);
     Messenger accept(Long toUserId, Long fromUserId);
     Messenger listFriends(Long userId);
+    Messenger removeFriend(Long me, Long targetId);
 }

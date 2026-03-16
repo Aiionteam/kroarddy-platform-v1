@@ -1,6 +1,7 @@
 package site.aiion.api.services.user;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import site.aiion.api.services.oauth.util.JwtTokenProvider;
 import site.aiion.api.services.user.common.domain.Messenger;
@@ -15,6 +16,7 @@ public class UserBlockController {
 
     private final UserBlockRepository blockRepository;
     private final UserRepository userRepository;
+    private final FriendRequestRepository friendRequestRepository;
     private final JwtTokenProvider jwtTokenProvider;
 
     private Long extractUserId(String authHeader) {
@@ -48,6 +50,7 @@ public class UserBlockController {
     }
 
     /** 차단 */
+    @Transactional
     @PostMapping("/{targetId}")
     public Messenger block(
             @PathVariable Long targetId,
@@ -59,6 +62,8 @@ public class UserBlockController {
             return Messenger.builder().code(409).message("이미 차단된 사용자입니다.").build();
         }
         blockRepository.save(UserBlock.builder().blockerId(me).blockedId(targetId).build());
+        // 차단 시 친구 관계도 함께 제거
+        friendRequestRepository.deleteBetween(me, targetId);
         return Messenger.builder().code(200).message("차단했습니다.").build();
     }
 

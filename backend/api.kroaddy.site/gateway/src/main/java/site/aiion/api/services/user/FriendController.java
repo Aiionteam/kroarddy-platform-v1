@@ -74,4 +74,15 @@ public class FriendController {
         }
         return friendService.listFriends(userId);
     }
+
+    @DeleteMapping("/{targetId}")
+    public Messenger removeFriend(
+            @PathVariable Long targetId,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        Long userId = getUserIdFromAuth(authHeader);
+        if (userId == null) {
+            return Messenger.builder().code(401).message("인증이 필요합니다.").build();
+        }
+        return friendService.removeFriend(userId, targetId);
+    }
 }
