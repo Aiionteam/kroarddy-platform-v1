@@ -10,6 +10,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
+import { useLangStore } from "@/store/slices/langSlice";
 import { getUserIdFromToken, getAppUserIdFromToken } from "@/lib/api/auth";
 import { findUserById, updateUser, deleteUser, type UserModel } from "@/lib/api/user";
 import {
@@ -53,6 +54,7 @@ function ProfileChip({ label, selected, onClick }: { label: string; selected: bo
 export default function SettingsPage() {
   const router = useRouter();
   const { isAuthenticated, accessToken, logout } = useLoginStore();
+  const { setLangByNationality } = useLangStore();
   const [user, setUser] = useState<UserModel | null>(null);
   const [nickname, setNickname] = useState("");
   const [loading, setLoading] = useState(true);
@@ -261,6 +263,24 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="space-y-5">
+                  {/* 국가 / 국적 — 최상단 */}
+                  <div>
+                    <p className="mb-2 text-sm font-medium text-gray-600">국가 / 국적</p>
+                    <div className="flex flex-wrap gap-2">
+                      {NATIONALITY_OPTIONS.map((opt) => (
+                        <ProfileChip
+                          key={opt}
+                          label={opt}
+                          selected={profile.nationality === opt}
+                          onClick={() => {
+                            setProfile((p) => ({ ...p, nationality: p.nationality === opt ? "" : opt }));
+                            if (profile.nationality !== opt) setLangByNationality(opt);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
                   {/* 성별 */}
                   <div>
                     <p className="mb-2 text-sm font-medium text-gray-600">성별</p>
@@ -316,21 +336,6 @@ export default function SettingsPage() {
                           label={opt}
                           selected={profile.religion === opt}
                           onClick={() => setProfile((p) => ({ ...p, religion: p.religion === opt ? "" : opt }))}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* 국가 */}
-                  <div>
-                    <p className="mb-2 text-sm font-medium text-gray-600">국가 / 국적</p>
-                    <div className="flex flex-wrap gap-2">
-                      {NATIONALITY_OPTIONS.map((opt) => (
-                        <ProfileChip
-                          key={opt}
-                          label={opt}
-                          selected={profile.nationality === opt}
-                          onClick={() => setProfile((p) => ({ ...p, nationality: p.nationality === opt ? "" : opt }))}
                         />
                       ))}
                     </div>
