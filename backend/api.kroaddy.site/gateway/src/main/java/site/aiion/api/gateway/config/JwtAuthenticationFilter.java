@@ -20,9 +20,9 @@ import java.util.List;
  * JWT 중앙 인증 필터
  *
  * 모든 요청에서 Bearer 토큰을 추출하고,
- * 1) JWT 서명/만료 검증 (JwtTokenProvider)
- * 2) Redis 블랙리스트 검증 — 로그아웃/강제만료 hard failure
- *    Redis 장애 시에는 JWT 검증만으로 진행 (degraded mode)
+ * 1) JWT 서명/만료 검증 (JwtTokenProvider) — 필수 검증
+ * 2) Redis 가시성 확인 (soft check) — Redis에 토큰 없어도 통과, 로그만 남김
+ *    명시적 로그아웃 시에만 "REVOKED:{userId}" 마커를 Redis에 저장하여 차단
  * 3) SecurityContextHolder에 인증 정보 주입 → 컨트롤러 수동 검증 불필요
  */
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -54,12 +54,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String userId = claims.getSubject();
                 String provider = claims.get("provider", String.class);
 
-                // 2. Redis hard check — 로그아웃된 토큰 차단
-                //    Redis 연결 불가 시 JWT 검증만으로 허용 (degraded mode)
+                // 2. Redis soft check — 명시적 REVOKED 마커만 차단
+                //    토큰이 Redis에 없는 것은 정상 (Redis 재시작, URL 변경 등) → 통과
+                //    "REVOKED:{provider}:{userId}" 마커가 있으면 로그아웃된 토큰 → 차단
                 if (tokenService.isRedisAvailable()) {
-                    String storedToken = tokenService.getAccessToken(provider, userId);
-                    if (storedToken == null) {
-                        sendUnauthorized(response, "로그아웃된 사용자이거나 토큰이 만료되었습니다.");
+                    String revokedKey = "REVOKED:" + provider + ":" + userId;
+                    if (Boolean.TRUE.equals(tokenService.hasKey(revokedKey))) {
+                        sendUnauthorized(response, "로그아웃된 사용자입니다.");
                         return;
                     }
                 } else {
@@ -84,9 +85,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String extractToken(HttpServletRequest request) {
+        // 1. Authorization: Bearer 헤더 (일반 API 요청)
         String bearerToken = request.getHeader("Authorization");
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
+        }
+        // 2. ?token= 쿼리 파라미터 (SSE/EventSource - 브라우저가 커스텀 헤더 미지원)
+        String queryToken = request.getParameter("token");
+        if (StringUtils.hasText(queryToken)) {
+            return queryToken;
         }
         return null;
     }

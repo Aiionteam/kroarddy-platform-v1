@@ -91,6 +91,32 @@ public class TokenService {
     }
 
     /**
+     * 키 존재 여부 확인 (Redis 실패 시 false 반환)
+     */
+    public boolean hasKey(String key) {
+        try {
+            return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+        } catch (Exception e) {
+            System.err.println(REDIS_WARN + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 로그아웃 시 REVOKED 마커 설정 (JWT 만료 시각까지 유지)
+     * JWT 필터에서 이 마커가 있으면 해당 userId의 요청을 차단
+     */
+    public void revokeTokens(String provider, String userId, long expireSeconds) {
+        try {
+            String revokedKey = String.format("REVOKED:%s:%s", provider, userId);
+            redisTemplate.opsForValue().set(revokedKey, "1", expireSeconds, java.util.concurrent.TimeUnit.SECONDS);
+            System.out.println("[TokenService] REVOKED 마커 설정: " + revokedKey);
+        } catch (Exception e) {
+            System.err.println(REDIS_WARN + e.getMessage());
+        }
+    }
+
+    /**
      * 토큰 삭제 (Redis 실패 시 무시)
      */
     public void deleteTokens(String provider, String userId) {
@@ -100,6 +126,8 @@ public class TokenService {
             System.out.println("[TokenService] 토큰 삭제 - provider: " + provider + ", userId: " + userId);
             redisTemplate.delete(accessKey);
             redisTemplate.delete(refreshKey);
+            // REVOKED 마커 설정 (1시간 — access token TTL과 동일)
+            revokeTokens(provider, userId, 3600);
             System.out.println("[TokenService] 토큰 삭제 완료");
         } catch (Exception e) {
             System.err.println(REDIS_WARN + e.getMessage());
