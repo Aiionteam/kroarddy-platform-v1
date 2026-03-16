@@ -251,8 +251,14 @@ public class KakaoController {
                     System.out.println("Refresh Token을 HttpOnly 쿠키로 설정 완료");
                 }
                 
-                // 7. 프론트엔드로 리다이렉트 (Access Token만 URL에 포함)
+                // 7. 프론트엔드로 리다이렉트
+                // 모바일 딥링크(http/https가 아닌 커스텀 스킴)인 경우 refresh_token도 URL에 포함
+                boolean isMobileDeepLink = frontendUrl != null && !frontendUrl.startsWith("http");
                 String redirectUrl = frontendUrl + "/login/callback?provider=kakao&token=" + URLEncoder.encode(jwtAccessToken, StandardCharsets.UTF_8);
+                if (isMobileDeepLink && jwtRefreshToken != null && !jwtRefreshToken.isEmpty()) {
+                    redirectUrl += "&refresh_token=" + URLEncoder.encode(jwtRefreshToken, StandardCharsets.UTF_8);
+                    System.out.println("모바일 딥링크 감지: refresh_token을 URL에 포함");
+                }
                 
                 System.out.println("JWT 토큰 생성 완료, 프론트엔드로 리다이렉트: " + redirectUrl);
                 return new RedirectView(redirectUrl);
@@ -391,41 +397,21 @@ public class KakaoController {
     
     /**
      * 카카오 사용자 정보 조회
-     * JWT 토큰으로 사용자 정보 반환
+     * JwtAuthenticationFilter가 이미 토큰을 검증했으므로 SecurityContext에서 사용자 정보를 가져옴
      */
     @GetMapping("/user")
     @Operation(summary = "카카오 사용자 정보 조회", description = "카카오 OAuth 토큰을 사용하여 사용자 정보를 조회합니다.")
-    public ResponseEntity<Map<String, Object>> kakaoUserInfo(
-            @RequestHeader(value = "Authorization", required = false) String authHeader,
-            HttpServletRequest request) {
+    public ResponseEntity<Map<String, Object>> kakaoUserInfo() {
         System.out.println("=== 카카오 사용자 정보 조회 요청 수신 ===");
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                response.put("success", false);
-                response.put("message", "인증 토큰이 필요합니다.");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-            }
-            
-            String token = authHeader.substring(7);
-            if (!jwtTokenProvider.validateToken(token)) {
-                response.put("success", false);
-                response.put("message", "유효하지 않은 토큰입니다.");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-            }
-            
-            // JWT 토큰에서 사용자 정보 추출
-            String userId = jwtTokenProvider.getUserIdFromToken(token);
-            var claims = jwtTokenProvider.getAllClaimsFromToken(token);
-            
-            // Redis에서 토큰 확인 (선택적)
-            String storedToken = tokenService.getAccessToken("kakao", userId);
-            if (storedToken == null) {
-                System.out.println("경고: Redis에 저장된 토큰이 없습니다.");
-            }
-            
-            // 사용자 정보 구성
+            // JwtAuthenticationFilter가 SecurityContext에 저장한 인증 정보 사용
+            var auth = (org.springframework.security.authentication.UsernamePasswordAuthenticationToken)
+                    org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            String userId = (String) auth.getPrincipal();
+            io.jsonwebtoken.Claims claims = (io.jsonwebtoken.Claims) auth.getDetails();
+
             Map<String, Object> userInfo = new HashMap<>();
             userInfo.put("kakao_id", userId);
             userInfo.put("nickname", claims.get("nickname"));
@@ -433,19 +419,15 @@ public class KakaoController {
             userInfo.put("email_verified", claims.get("email_verified"));
             userInfo.put("profile_image", claims.get("profile_image"));
             userInfo.put("provider", "kakao");
-            
-            System.out.println("============================");
-            
+
             response.put("success", true);
             response.put("message", "카카오 사용자 정보를 성공적으로 조회했습니다.");
             response.put("user", userInfo);
-            
-            return ResponseEntity.status(HttpStatus.OK).body(response);
-            
+
+            return ResponseEntity.ok(response);
+
         } catch (Exception e) {
             System.err.println("사용자 정보 조회 중 오류 발생: " + e.getMessage());
-            e.printStackTrace();
-            
             response.put("success", false);
             response.put("message", "사용자 정보 조회 중 오류가 발생했습니다.");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);

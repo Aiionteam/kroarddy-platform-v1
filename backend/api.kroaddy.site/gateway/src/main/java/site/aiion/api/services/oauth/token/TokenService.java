@@ -17,6 +17,22 @@ public class TokenService {
     }
 
     /**
+     * Redis 연결 가능 여부 확인
+     * JwtAuthenticationFilter에서 hard check 여부 결정에 사용
+     * — 연결 가능: 토큰 없으면 401 (강제 로그아웃 적용)
+     * — 연결 불가: JWT 서명 검증만으로 진행 (degraded mode)
+     */
+    public boolean isRedisAvailable() {
+        try {
+            redisTemplate.opsForValue().get("__ping__");
+            return true;
+        } catch (Exception e) {
+            System.err.println("[TokenService] Redis 불가 (degraded mode): " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Access Token 저장 (Redis 연결 실패 시 로그만 남기고 진행 - 로그인은 성공 처리)
      */
     public void saveAccessToken(String provider, String userId, String accessToken, long expireTime) {
