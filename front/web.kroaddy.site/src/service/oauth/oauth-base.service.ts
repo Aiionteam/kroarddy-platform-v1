@@ -16,7 +16,7 @@ export interface OAuthCallbackResult {
 }
 
 export interface OAuthCallbackHandlers {
-  onSuccess: (provider: OAuthProvider) => void;
+  onSuccess: (provider: OAuthProvider) => void | Promise<void>;
   onError: (error: string) => void;
   onRedirect?: (path: string) => void;
 }
@@ -87,8 +87,10 @@ export const OAuthBaseHandler = (() => {
           return { success: true, provider };
         }
         useLoginStore.getState().setAccessToken(token);
-        callbacks.onSuccess(provider);
-        if (callbacks.onRedirect) callbacks.onRedirect("/home");
+        // onSuccess가 async일 수 있으므로 라우팅은 onSuccess 내부에서 처리
+        Promise.resolve(callbacks.onSuccess(provider)).catch(() => {
+          if (callbacks.onRedirect) callbacks.onRedirect("/home");
+        });
         return { success: true, provider };
       } catch (e: any) {
         const errorMsg = "토큰 처리 중 오류가 발생했습니다.";
