@@ -16,6 +16,37 @@ logger = logging.getLogger(__name__)
 
 _TRAVEL_DAYS_DEFAULT = 2
 
+# 국적 → Gemini 응답 언어 지시 매핑
+_NATIONALITY_TO_LANG: dict[str, str] = {
+    "한국": "Korean",
+    "USA": "English", "United Kingdom": "English", "Australia": "English",
+    "Canada": "English", "Singapore": "English", "India": "English",
+    "Malaysia": "English", "Philippines": "English", "Indonesia": "English",
+    "Thailand": "English", "Other": "English",
+    "日本": "Japanese",
+    "中国": "Chinese (Simplified)",
+    "Deutschland": "German",
+    "France": "French",
+    "Việt Nam": "Vietnamese",
+}
+
+
+def _get_lang(profile: dict | None) -> str:
+    """사용자 국적에서 응답 언어를 결정한다. 기본값은 Korean."""
+    if not profile:
+        return "Korean"
+    return _NATIONALITY_TO_LANG.get(profile.get("nationality") or "", "Korean")
+
+
+def _lang_directive(lang: str) -> str:
+    """Korean이 아닌 경우 Gemini에 언어 지시 문구를 반환한다."""
+    if lang == "Korean":
+        return ""
+    return (
+        f"\n⚠️ IMPORTANT: Write ALL text values (name, description, title, tips, highlights, etc.) "
+        f"ENTIRELY in {lang}. JSON keys must stay in English.\n"
+    )
+
 # 일일 쿼터 초과 식별자 (재시도해도 무의미)
 _DAILY_QUOTA_MARKER = "GenerateRequestsPerDayPerProjectPerModel"
 
@@ -134,40 +165,46 @@ def _format_festival_date(d: str) -> str:
     return d
 
 
-def _build_user_profile_block(profile: dict | None) -> str:
+def _build_user_profile_block(profile: dict | None, lang: str = "Korean") -> str:
     """사용자 프로필 → 프롬프트 삽입 텍스트. 프로필이 없으면 빈 문자열."""
     if not profile:
         return ""
 
-    gender = profile.get("gender") or "정보없음"
-    age_band = profile.get("age_band") or "정보없음"
-    dietary = profile.get("dietary_pref") or "일반"
-    religion = profile.get("religion") or "없음"
+    gender = profile.get("gender") or "N/A"
+    age_band = profile.get("age_band") or "N/A"
+    dietary = profile.get("dietary_pref") or "regular"
+    religion = profile.get("religion") or "none"
+    nationality = profile.get("nationality") or ""
 
     lines = [
-        "【사용자 여행 성향 (루트 추천 참고)】",
-        f"  • 성별: {gender}",
-        f"  • 나이대: {age_band}",
-        f"  • 식습관: {dietary}",
-        f"  • 종교: {religion}",
+        "【User Travel Profile (consider for route recommendations)】",
+        f"  • Nationality: {nationality}",
+        f"  • Gender: {gender}",
+        f"  • Age group: {age_band}",
+        f"  • Diet: {dietary}",
+        f"  • Religion: {religion}",
         "",
     ]
 
     notes: list[str] = []
-    if dietary in ("채식", "비건"):
-        notes.append(f"- 먹거리 루트는 {dietary} 가능한 시장·음식 거리 위주로 구성하세요.")
-    if dietary == "할랄":
-        notes.append("- 먹거리 루트는 할랄 인증 음식 또는 무슬림 친화 식당가 위주로 구성하세요.")
-    if religion == "이슬람":
-        notes.append("- 돼지고기·주류 관련 장소는 피하고, 할랄 식당·무슬림 친화 명소를 우선하세요.")
-    if religion == "불교":
-        notes.append("- 사찰·불교문화 명소·템플스테이 등을 명소 루트에 적극 반영하세요.")
-    if religion == "기독교":
-        notes.append("- 성당·교회·기독교 역사 명소를 명소 루트에 포함할 수 있습니다.")
+    if dietary in ("채식", "비건", "Vegetarian", "Vegan"):
+        notes.append(f"- Food routes: focus on vegetarian/vegan-friendly markets and streets.")
+    if dietary in ("할랄", "Halal"):
+        notes.append("- Food routes: focus on halal-certified or Muslim-friendly restaurants.")
+    if religion in ("이슬람", "Muslim"):
+        notes.append("- Avoid pork/alcohol venues; prioritize halal restaurants and Muslim-friendly attractions.")
+    if religion in ("불교", "Buddhist"):
+        notes.append("- Include Buddhist temples, cultural sites, and temple-stay experiences in sightseeing routes.")
+    if religion in ("기독교", "천주교", "Christian", "Catholic"):
+        notes.append("- Include churches, cathedrals, or Christian heritage sites in sightseeing routes.")
 
     if notes:
-        lines.append("개인화 주의사항:")
+        lines.append("Personalization notes:")
         lines.extend(notes)
+        lines.append("")
+
+    if lang != "Korean":
+        lines.append(f"Response language: {lang}")
         lines.append("")
 
     return "\n".join(lines) + "\n"
@@ -209,7 +246,9 @@ async def generate_routes(state: PlannerState) -> PlannerState:
             "1. 행사/문화체험: 지역 대표 축제·전통 행사·문화 체험 위주 (현재 기간 행사 정보 없음, 대표적 문화행사로 대체)."
         )
 
-    user_block = _build_user_profile_block(user_profile)
+    lang = _get_lang(user_profile)
+    user_block = _build_user_profile_block(user_profile, lang)
+    lang_dir = _lang_directive(lang)
 
     if existing_routes:
         quoted = ", ".join(f'"{r}"' for r in existing_routes)
@@ -231,10 +270,11 @@ async def generate_routes(state: PlannerState) -> PlannerState:
         "5.가성비:무료명소·저렴먹거리·대중교통 중심\n"
         "6.가족:키즈체험·동물원·놀이공원·자연탐방(유아·초등 기준)\n"
         "7.커플:야경·사진스팟·감성카페·데이트코스\n\n"
-        "highlights는 실존 장소·거리·행사만 사용.\n\n"
-        "아래 JSON 형식으로만 응답하세요 (다른 설명 없이 JSON만):\n"
-        '{"routes":[{"name":"이름(15자이내)","theme":"행사|먹거리|명소|럭셔리|가성비|가족|커플",'
-        '"description":"설명(40자이내)","highlights":["장소1","장소2","장소3"]}]}'
+        "highlights는 실존 장소·거리·행사만 사용.\n"
+        f"{lang_dir}"
+        "\nRespond ONLY with valid JSON (no explanation):\n"
+        '{"routes":[{"name":"name(≤15chars)","theme":"행사|먹거리|명소|럭셔리|가성비|가족|커플",'
+        '"description":"description(≤40chars)","highlights":["place1","place2","place3"]}]}'
     )
 
     llm = _get_llm()
@@ -271,6 +311,10 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
     route_name = state.get("route_name") or ""
     start_date = state.get("start_date")
     end_date = state.get("end_date")
+    user_profile: dict | None = state.get("user_profile")
+
+    lang = _get_lang(user_profile)
+    lang_dir = _lang_directive(lang)
 
     date_list = _build_date_list(start_date, end_date)
     num_days = len(date_list) if date_list else _TRAVEL_DAYS_DEFAULT
@@ -278,21 +322,24 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
 
     if date_list:
         mapping = " | ".join(f"Day{i+1}:{d}" for i, d in enumerate(date_list))
-        date_clause = f"기간:{start_date}~{end_date}({num_days}일) | 날짜매핑:{mapping}\n"
+        date_clause = f"Period:{start_date}~{end_date}({num_days}days) | DateMapping:{mapping}\n"
     else:
         date_clause = ""
 
+    time_labels = "morning|lunch|afternoon|evening" if lang != "Korean" else "오전|점심|오후|저녁"
+
     prompt = (
-        f"여행지:{location_name} | 루트:{route_name}\n"
+        f"Destination:{location_name} | Route:{route_name}\n"
         f"{date_clause}\n"
-        f"상세 여행 일정을 작성하세요 ({num_days}일, 하루 4개 항목).\n\n"
-        "규칙:\n"
-        "- date 필드는 날짜매핑의 YYYY-MM-DD 형식을 그대로 사용\n"
-        "- 실존하는 장소/음식점/관광지만 사용\n"
-        "- time은 오전|점심|오후|저녁 중 하나\n\n"
-        "아래 JSON 형식으로만 응답하세요 (다른 설명 없이 JSON만):\n"
-        f'{{"schedule":[{{"day":1,"date":"{date_example}","time":"오전","place":"장소명",'
-        '"title":"활동제목(20자이내)","description":"설명(60자이내)","tips":"팁(30자이내)"}]}}'
+        f"Create a detailed travel itinerary ({num_days} days, 4 items per day).\n\n"
+        "Rules:\n"
+        "- date field must use YYYY-MM-DD from the DateMapping above\n"
+        "- Use only real existing places/restaurants/attractions\n"
+        f"- time must be one of: {time_labels}\n"
+        f"{lang_dir}"
+        "\nRespond ONLY with valid JSON (no explanation):\n"
+        f'{{"schedule":[{{"day":1,"date":"{date_example}","time":"morning","place":"place name",'
+        '"title":"activity title(≤20chars)","description":"description(≤60chars)","tips":"tip(≤30chars)"}]}}'
     )
 
     llm = _get_llm()
@@ -313,24 +360,28 @@ async def modify_schedule(
     schedule: list[dict[str, Any]],
     instruction: str,
     location: str,
+    user_profile: dict | None = None,
 ) -> dict[str, Any]:
     """사용자 자연어 지시로 일정 특정 항목 수정.
 
     Returns:
         {"schedule": [...], "modified_titles": [...]}
     """
+    lang = _get_lang(user_profile)
+    lang_dir = _lang_directive(lang)
     schedule_json = json.dumps(schedule, ensure_ascii=False, separators=(",", ":"))
     prompt = (
-        f'여행지:{location}\n'
-        f'수정 지시:"{instruction}"\n'
-        f"현재 일정(JSON):\n{schedule_json}\n\n"
-        "규칙:\n"
-        "- 지시된 항목만 place/title/description/tips 교체\n"
-        "- day/date/time 및 나머지 항목은 절대 변경 금지\n"
-        "- 실존하는 장소만 사용\n\n"
-        "아래 JSON 형식으로만 응답하세요 (다른 설명 없이 JSON만):\n"
-        '{"schedule":[{"day":1,"date":"YYYY-MM-DD","time":"오전","place":"장소명","title":"활동제목","description":"설명","tips":"팁"}],'
-        '"modified_titles":["변경된항목의title"]}'
+        f'Destination:{location}\n'
+        f'Modification instruction:"{instruction}"\n'
+        f"Current schedule (JSON):\n{schedule_json}\n\n"
+        "Rules:\n"
+        "- Replace only the instructed items' place/title/description/tips\n"
+        "- Never change day/date/time or other items\n"
+        "- Use only real existing places\n"
+        f"{lang_dir}"
+        "\nRespond ONLY with valid JSON (no explanation):\n"
+        '{"schedule":[{"day":1,"date":"YYYY-MM-DD","time":"morning","place":"place name","title":"activity title","description":"description","tips":"tip"}],'
+        '"modified_titles":["title of modified item"]}'
     )
 
     llm = _get_llm()
@@ -351,6 +402,7 @@ async def reroll_single_item(
     item: dict[str, Any],
     schedule: list[dict[str, Any]],
     location: str,
+    user_profile: dict | None = None,
 ) -> dict[str, Any]:
     """단일 일정 항목 리롤 – 해당 항목만 새로 생성.
 
@@ -361,21 +413,25 @@ async def reroll_single_item(
     date_str = item.get("date", "")
     time_str = item.get("time", "")
 
+    lang = _get_lang(user_profile)
+    lang_dir = _lang_directive(lang)
+
     same_day_titles = [
         s["title"] for s in schedule
         if s.get("day") == day and s.get("title") != item.get("title")
     ]
-    ctx = f"같은날 다른일정(중복금지):{','.join(same_day_titles)}" if same_day_titles else ""
+    ctx = f"Other items same day (no duplicates): {', '.join(same_day_titles)}" if same_day_titles else ""
 
     prompt = (
-        f"여행지:{location} | Day{day}({date_str}) {time_str}\n"
-        f"교체 대상: {item.get('title')} (📍{item.get('place')})\n"
+        f"Destination:{location} | Day{day}({date_str}) {time_str}\n"
+        f"Replace: {item.get('title')} (📍{item.get('place')})\n"
         f"{ctx}\n\n"
-        "위 항목을 완전히 다른 장소/활동으로 교체하세요. day/date/time은 동일하게 유지.\n"
-        "실존하는 장소만 사용하세요.\n\n"
-        "아래 JSON 형식으로만 응답하세요 (다른 설명 없이 JSON만):\n"
+        "Replace with a completely different place/activity. Keep day/date/time identical.\n"
+        "Use only real existing places.\n"
+        f"{lang_dir}"
+        "\nRespond ONLY with valid JSON (no explanation):\n"
         f'{{"day":{day},"date":"{date_str}","time":"{time_str}",'
-        '"place":"장소명","title":"활동제목","description":"설명","tips":"팁"}'
+        '"place":"place name","title":"activity title","description":"description","tips":"tip"}'
         "}"
     )
 

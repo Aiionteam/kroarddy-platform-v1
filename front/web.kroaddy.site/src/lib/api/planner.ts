@@ -174,7 +174,7 @@ export async function savePlan(data: {
 export async function fetchSchedule(
   location: string,
   routeName: string,
-  opts?: { startDate?: string; endDate?: string }
+  opts?: { startDate?: string; endDate?: string; userId?: number }
 ): Promise<ScheduleResponse> {
   const res = await fetch(`${API_BASE}/api/v1/planner/${location}/schedule`, {
     method: "POST",
@@ -183,6 +183,7 @@ export async function fetchSchedule(
       route_name: routeName,
       start_date: opts?.startDate ?? null,
       end_date: opts?.endDate ?? null,
+      user_id: opts?.userId ?? null,
     }),
     cache: "no-store",
   });
