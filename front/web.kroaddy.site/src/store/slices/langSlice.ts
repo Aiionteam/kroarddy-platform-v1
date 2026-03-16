@@ -1,30 +1,35 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { type Lang, type TranslationKey, NATIONALITY_TO_LANG, t as translate } from "@/lib/i18n/translations";
+import i18n, { type Lang, NATIONALITY_TO_LANG } from "@/lib/i18n/config";
 
 interface LangState {
   lang: Lang;
   setLang: (lang: Lang) => void;
   setLangByNationality: (nationality: string) => void;
-  t: (key: TranslationKey) => string;
 }
 
 export const useLangStore = create<LangState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       lang: "ko",
 
-      setLang: (lang) => set({ lang }),
-
-      setLangByNationality: (nationality) => {
-        const lang = NATIONALITY_TO_LANG[nationality] ?? "en";
+      setLang: (lang) => {
+        i18n.changeLanguage(lang);
         set({ lang });
       },
 
-      t: (key) => translate(get().lang, key),
+      setLangByNationality: (nationality) => {
+        const lang: Lang = NATIONALITY_TO_LANG[nationality] ?? "en";
+        i18n.changeLanguage(lang);
+        set({ lang });
+      },
     }),
     {
       name: "kroaddy-lang",
+      onRehydrateStorage: () => (state) => {
+        // 페이지 로드 시 저장된 언어를 i18next에 동기화
+        if (state?.lang) i18n.changeLanguage(state.lang);
+      },
     }
   )
 );

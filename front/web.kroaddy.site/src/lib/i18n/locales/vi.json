@@ -1,0 +1,34 @@
+{
+  "app": { "name": "Kroaddy" },
+  "common": { "save": "Lưu", "cancel": "Hủy", "next": "Tiếp theo", "skip": "Bỏ qua", "done": "Hoàn thành", "loading": "Đang tải...", "error": "Đã xảy ra lỗi", "logout": "Đăng xuất" },
+  "onboarding": {
+    "title": "Sở thích du lịch",
+    "subtitle": "Nhập thông tin để nhận gợi ý du lịch AI cá nhân hóa",
+    "later": "Để sau",
+    "saving": "Đang lưu...",
+    "nationality": { "title": "Quốc gia / Quốc tịch", "hint": "Dịch vụ sẽ được cung cấp bằng ngôn ngữ của bạn" },
+    "gender":  { "title": "Giới tính" },
+    "age":     { "title": "Độ tuổi" },
+    "diet":    { "title": "Chế độ ăn uống" },
+    "religion":{ "title": "Tôn giáo" }
+  },
+  "home": {
+    "subtitle": "Tạo chuyến đi hoàn hảo cùng AI",
+    "planner":  { "label": "Lên kế hoạch du lịch", "desc": "Lộ trình & hành trình do AI đề xuất" },
+    "schedule": { "label": "Kế hoạch của tôi",     "desc": "Xem các kế hoạch du lịch đã lưu" },
+    "guide":    { "label": "Khám phá",              "desc": "Nhà hàng & sự kiện trong một nơi" },
+    "kcontent": { "label": "Lịch trình K-Content",  "desc": "Lập kế hoạch du lịch lấy cảm hứng từ K-content" },
+    "banner":   { "title": "Cài đặt sở thích để nhận gợi ý AI tốt hơn!", "sub": "Thêm giới tính, tuổi, chế độ ăn & tôn giáo để nhận lộ trình cá nhân hóa.", "setup": "Cài đặt ngay", "close": "Đóng" }
+  },
+  "sidebar": {
+    "tourstar": "TourStar", "planner": "Lập kế hoạch", "schedule": "Kế hoạch của tôi",
+    "guide": "Khám phá", "groupchat": "Chat nhóm", "friends": "Bạn bè",
+    "profile": "Cài đặt", "logout": "Đăng xuất"
+  },
+  "options": {
+    "gender":   { "남성": "Nam", "여성": "Nữ", "기타": "Khác", "무응답": "Không trả lời" },
+    "age":      { "10대": "Tuổi teen", "20대": "20 tuổi", "30대": "30 tuổi", "40대": "40 tuổi", "50대": "50 tuổi", "60대이상": "60 tuổi+" },
+    "diet":     { "일반": "Thông thường", "채식": "Ăn chay", "비건": "Thuần chay", "할랄": "Halal", "알레르기있음": "Dị ứng thực phẩm" },
+    "religion": { "없음": "Không có", "기독교": "Thiên Chúa giáo", "불교": "Phật giáo", "천주교": "Công giáo", "이슬람": "Hồi giáo", "기타": "Khác" }
+  }
+}

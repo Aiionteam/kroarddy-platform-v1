@@ -1,0 +1,34 @@
+{
+  "app": { "name": "Kroaddy" },
+  "common": { "save": "Speichern", "cancel": "Abbrechen", "next": "Weiter", "skip": "Überspringen", "done": "Fertig", "loading": "Wird geladen...", "error": "Ein Fehler ist aufgetreten", "logout": "Abmelden" },
+  "onboarding": {
+    "title": "Reisepräferenzen",
+    "subtitle": "Geben Sie Informationen für personalisierte KI-Reiseempfehlungen ein",
+    "later": "Später",
+    "saving": "Wird gespeichert...",
+    "nationality": { "title": "Land / Nationalität", "hint": "Der Service wird in Ihrer Sprache angeboten" },
+    "gender":  { "title": "Geschlecht" },
+    "age":     { "title": "Altersgruppe" },
+    "diet":    { "title": "Ernährungsgewohnheiten" },
+    "religion":{ "title": "Religion" }
+  },
+  "home": {
+    "subtitle": "Erstellen Sie Ihre perfekte Reise mit KI",
+    "planner":  { "label": "Reiseplaner",  "desc": "KI-empfohlene Routen und Reisepläne" },
+    "schedule": { "label": "Meine Reisen", "desc": "Gespeicherte Reisepläne ansehen" },
+    "guide":    { "label": "Entdecken",    "desc": "Restaurants & Veranstaltungen auf einen Blick" },
+    "kcontent": { "label": "K-Content Planer", "desc": "Reisepläne inspiriert von K-Content" },
+    "banner":   { "title": "Reisepräferenzen für bessere KI-Empfehlungen setzen!", "sub": "Geben Sie Geschlecht, Alter, Ernährung & Religion ein.", "setup": "Einrichten", "close": "Schließen" }
+  },
+  "sidebar": {
+    "tourstar": "TourStar", "planner": "Reiseplaner", "schedule": "Meine Reisen",
+    "guide": "Entdecken", "groupchat": "Gruppenchat", "friends": "Freunde",
+    "profile": "Einstellungen", "logout": "Abmelden"
+  },
+  "options": {
+    "gender":   { "남성": "Männlich", "여성": "Weiblich", "기타": "Divers", "무응답": "Keine Angabe" },
+    "age":      { "10대": "Teenager", "20대": "20er", "30대": "30er", "40대": "40er", "50대": "50er", "60대이상": "60+" },
+    "diet":     { "일반": "Normal", "채식": "Vegetarisch", "비건": "Vegan", "할랄": "Halal", "알레르기있음": "Allergien" },
+    "religion": { "없음": "Keine", "기독교": "Christlich", "불교": "Buddhistisch", "천주교": "Katholisch", "이슬람": "Muslimisch", "기타": "Andere" }
+  }
+}

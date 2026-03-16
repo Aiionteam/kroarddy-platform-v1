@@ -148,7 +148,7 @@ export default function LocationPlannerPage() {
           return;
         }
 
-        const res = await fetchSchedule(location, route.name, { startDate, endDate });
+        const res = await fetchSchedule(location, route.name, { startDate, endDate, userId: appUserId ?? undefined });
         setSchedule(res.schedule);
         if (res.error && res.schedule.length === 0) {
           setScheduleError(res.error);

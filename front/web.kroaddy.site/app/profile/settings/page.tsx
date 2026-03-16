@@ -7,8 +7,10 @@
  * - 닉네임 수정(U): updateUser → PUT /api/users (nickname 필드 반영)
  * - /home 등에서 사이드바 "설정" 클릭 시 이 페이지로 진입. 닉네임 CRUD 동작 여기서 체크.
  */
+import "@/lib/i18n/config";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { useLoginStore } from "@/store";
 import { useLangStore } from "@/store/slices/langSlice";
 import { getUserIdFromToken, getAppUserIdFromToken } from "@/lib/api/auth";
@@ -55,6 +57,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const { isAuthenticated, accessToken, logout } = useLoginStore();
   const { setLangByNationality } = useLangStore();
+  const { t } = useTranslation();
   const [user, setUser] = useState<UserModel | null>(null);
   const [nickname, setNickname] = useState("");
   const [loading, setLoading] = useState(true);
@@ -265,78 +268,55 @@ export default function SettingsPage() {
                 <div className="space-y-5">
                   {/* 국가 / 국적 — 최상단 */}
                   <div>
-                    <p className="mb-2 text-sm font-medium text-gray-600">국가 / 국적</p>
+                    <p className="mb-2 text-sm font-medium text-gray-600">{t("onboarding.nationality.title")}</p>
                     <div className="flex flex-wrap gap-2">
                       {NATIONALITY_OPTIONS.map((opt) => (
-                        <ProfileChip
-                          key={opt}
-                          label={opt}
-                          selected={profile.nationality === opt}
-                          onClick={() => {
-                            setProfile((p) => ({ ...p, nationality: p.nationality === opt ? "" : opt }));
-                            if (profile.nationality !== opt) setLangByNationality(opt);
-                          }}
-                        />
+                        <ProfileChip key={opt} label={opt} selected={profile.nationality === opt}
+                          onClick={() => { setProfile((p) => ({ ...p, nationality: p.nationality === opt ? "" : opt })); if (profile.nationality !== opt) setLangByNationality(opt); }} />
                       ))}
                     </div>
                   </div>
 
                   {/* 성별 */}
                   <div>
-                    <p className="mb-2 text-sm font-medium text-gray-600">성별</p>
+                    <p className="mb-2 text-sm font-medium text-gray-600">{t("onboarding.gender.title")}</p>
                     <div className="flex flex-wrap gap-2">
                       {GENDER_OPTIONS.map((opt) => (
-                        <ProfileChip
-                          key={opt}
-                          label={opt}
-                          selected={profile.gender === opt}
-                          onClick={() => setProfile((p) => ({ ...p, gender: p.gender === opt ? "" : opt }))}
-                        />
+                        <ProfileChip key={opt} label={t(`options.gender.${opt}`, opt)} selected={profile.gender === opt}
+                          onClick={() => setProfile((p) => ({ ...p, gender: p.gender === opt ? "" : opt }))} />
                       ))}
                     </div>
                   </div>
 
                   {/* 나이대 */}
                   <div>
-                    <p className="mb-2 text-sm font-medium text-gray-600">나이대</p>
+                    <p className="mb-2 text-sm font-medium text-gray-600">{t("onboarding.age.title")}</p>
                     <div className="flex flex-wrap gap-2">
                       {AGE_BAND_OPTIONS.map((opt) => (
-                        <ProfileChip
-                          key={opt}
-                          label={opt}
-                          selected={profile.age_band === opt}
-                          onClick={() => setProfile((p) => ({ ...p, age_band: p.age_band === opt ? "" : opt }))}
-                        />
+                        <ProfileChip key={opt} label={t(`options.age.${opt}`, opt)} selected={profile.age_band === opt}
+                          onClick={() => setProfile((p) => ({ ...p, age_band: p.age_band === opt ? "" : opt }))} />
                       ))}
                     </div>
                   </div>
 
                   {/* 식습관 */}
                   <div>
-                    <p className="mb-2 text-sm font-medium text-gray-600">식습관</p>
+                    <p className="mb-2 text-sm font-medium text-gray-600">{t("onboarding.diet.title")}</p>
                     <div className="flex flex-wrap gap-2">
                       {DIETARY_OPTIONS.map((opt) => (
-                        <ProfileChip
-                          key={opt}
-                          label={opt}
-                          selected={profile.dietary_pref === opt}
-                          onClick={() => setProfile((p) => ({ ...p, dietary_pref: p.dietary_pref === opt ? "" : opt }))}
-                        />
+                        <ProfileChip key={opt} label={t(`options.diet.${opt}`, opt)} selected={profile.dietary_pref === opt}
+                          onClick={() => setProfile((p) => ({ ...p, dietary_pref: p.dietary_pref === opt ? "" : opt }))} />
                       ))}
                     </div>
                   </div>
 
                   {/* 종교 */}
                   <div>
-                    <p className="mb-2 text-sm font-medium text-gray-600">종교</p>
+                    <p className="mb-2 text-sm font-medium text-gray-600">{t("onboarding.religion.title")}</p>
                     <div className="flex flex-wrap gap-2">
                       {RELIGION_OPTIONS.map((opt) => (
-                        <ProfileChip
-                          key={opt}
-                          label={opt}
-                          selected={profile.religion === opt}
-                          onClick={() => setProfile((p) => ({ ...p, religion: p.religion === opt ? "" : opt }))}
-                        />
+                        <ProfileChip key={opt} label={t(`options.religion.${opt}`, opt)} selected={profile.religion === opt}
+                          onClick={() => setProfile((p) => ({ ...p, religion: p.religion === opt ? "" : opt }))} />
                       ))}
                     </div>
                   </div>

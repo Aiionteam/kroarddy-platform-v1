@@ -1,0 +1,34 @@
+{
+  "app": { "name": "Kroaddy" },
+  "common": { "save": "Enregistrer", "cancel": "Annuler", "next": "Suivant", "skip": "Passer", "done": "Terminer", "loading": "Chargement...", "error": "Une erreur s'est produite", "logout": "Déconnexion" },
+  "onboarding": {
+    "title": "Préférences de voyage",
+    "subtitle": "Entrez vos informations pour des recommandations IA personnalisées",
+    "later": "Plus tard",
+    "saving": "Enregistrement...",
+    "nationality": { "title": "Pays / Nationalité", "hint": "Le service sera proposé dans votre langue" },
+    "gender":  { "title": "Genre" },
+    "age":     { "title": "Tranche d'âge" },
+    "diet":    { "title": "Habitudes alimentaires" },
+    "religion":{ "title": "Religion" }
+  },
+  "home": {
+    "subtitle": "Créez votre voyage parfait avec l'IA",
+    "planner":  { "label": "Planificateur",  "desc": "Itinéraires et routes recommandés par l'IA" },
+    "schedule": { "label": "Mes voyages",    "desc": "Voir mes plans de voyage sauvegardés" },
+    "guide":    { "label": "Découvrir",      "desc": "Restaurants & événements en un coup d'œil" },
+    "kcontent": { "label": "Planificateur K-Content", "desc": "Créer des voyages inspirés du K-content" },
+    "banner":   { "title": "Configurez vos préférences pour de meilleures recommandations IA !", "sub": "Ajoutez genre, âge, régime & religion pour des itinéraires personnalisés.", "setup": "Configurer", "close": "Fermer" }
+  },
+  "sidebar": {
+    "tourstar": "TourStar", "planner": "Planificateur", "schedule": "Mes voyages",
+    "guide": "Découvrir", "groupchat": "Discussion de groupe", "friends": "Amis",
+    "profile": "Paramètres", "logout": "Déconnexion"
+  },
+  "options": {
+    "gender":   { "남성": "Homme", "여성": "Femme", "기타": "Autre", "무응답": "Ne pas répondre" },
+    "age":      { "10대": "Ados", "20대": "20 ans", "30대": "30 ans", "40대": "40 ans", "50대": "50 ans", "60대이상": "60 ans+" },
+    "diet":     { "일반": "Ordinaire", "채식": "Végétarien", "비건": "Végétalien", "할랄": "Halal", "알레르기있음": "Allergies" },
+    "religion": { "없음": "Aucune", "기독교": "Chrétien", "불교": "Bouddhiste", "천주교": "Catholique", "이슬람": "Musulman", "기타": "Autre" }
+  }
+}
