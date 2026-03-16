@@ -13,4 +13,6 @@ public interface WhisperService {
     Messenger findConversationList(Long me);
     /** 대화 읽음 처리 */
     Messenger markRead(Long me, Long other);
+    /** 특정 상대방과의 대화 전체 삭제 */
+    Messenger deleteConversation(Long me, Long other);
 }

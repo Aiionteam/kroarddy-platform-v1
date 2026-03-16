@@ -76,6 +76,16 @@ public class WhisperController {
         return whisperService.findConversation(userId, partnerId, PageRequest.of(0, size));
     }
 
+    /** 특정 상대방과의 대화 전체 삭제 */
+    @DeleteMapping("/conversation/{partnerId}")
+    public Messenger deleteConversation(
+            @PathVariable Long partnerId,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        Long userId = extractUserId(authHeader);
+        if (userId == null) return unauthorized();
+        return whisperService.deleteConversation(userId, partnerId);
+    }
+
     /** 특정 상대방의 메시지 읽음 처리 */
     @PatchMapping("/conversation/{partnerId}/read")
     public Messenger markRead(
