@@ -336,6 +336,7 @@ function PlanCard({
   const [prompt, setPrompt] = useState("");
   const [modifying, setModifying] = useState(false);
   const [modifyError, setModifyError] = useState<string | null>(null);
+  const [modifyResult, setModifyResult] = useState<{ notPossible: boolean; reason: string } | null>(null);
   const [highlightedTitles, setHighlightedTitles] = useState<Set<string>>(new Set());
   // 리롤 중인 항목 인덱스 (전체 schedule 배열 기준)
   const [rerollingIdx, setRerollingIdx] = useState<number | null>(null);
@@ -354,15 +355,23 @@ function PlanCard({
     if (!trimmed || !userId || modifying) return;
     setModifying(true);
     setModifyError(null);
+    setModifyResult(null);
     setHighlightedTitles(new Set());
     try {
       const res = await modifyPlan(plan.id, userId, trimmed);
       if (res.error) throw new Error(res.error);
       setSchedule(res.schedule);
-      setHighlightedTitles(new Set(res.modified_titles));
       onScheduleChange(plan.id, res.schedule);
       setPrompt("");
-      setTimeout(() => setHighlightedTitles(new Set()), 3000);
+      // 이유 표시 (불가능 여부 포함)
+      if (res.reason) {
+        setModifyResult({ notPossible: res.not_possible ?? false, reason: res.reason });
+        setTimeout(() => setModifyResult(null), 8000);
+      }
+      if (!res.not_possible) {
+        setHighlightedTitles(new Set(res.modified_titles));
+        setTimeout(() => setHighlightedTitles(new Set()), 3000);
+      }
     } catch (err) {
       setModifyError(err instanceof Error ? err.message : "수정에 실패했습니다.");
     } finally {
@@ -577,6 +586,18 @@ function PlanCard({
             {modifying && <p className="mt-1 text-xs text-indigo-500 animate-pulse">AI가 수정 중…</p>}
             {rerollingIdx !== null && <p className="mt-1 text-xs text-sky-500 animate-pulse">항목 새로 생성 중…</p>}
             {modifyError && <p className="mt-1 text-xs text-red-500">{modifyError}</p>}
+            {modifyResult && (
+              <div className={`mt-2 flex items-start gap-2 rounded-xl px-3 py-2.5 text-xs ${
+                modifyResult.notPossible
+                  ? "bg-amber-50 text-amber-800 border border-amber-200"
+                  : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+              }`}>
+                <span className="mt-0.5 shrink-0 text-sm">
+                  {modifyResult.notPossible ? "⚠️" : "✅"}
+                </span>
+                <p className="leading-relaxed">{modifyResult.reason}</p>
+              </div>
+            )}
             {!userId && <p className="mt-1 text-xs text-gray-400">로그인 후 수정 기능 이용 가능</p>}
           </div>
         </>

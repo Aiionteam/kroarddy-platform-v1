@@ -23,7 +23,7 @@
   "sidebar": {
     "tourstar": "TourStar", "planner": "Lập kế hoạch", "schedule": "Kế hoạch của tôi",
     "guide": "Khám phá", "groupchat": "Chat nhóm", "friends": "Bạn bè",
-    "profile": "Cài đặt", "logout": "Đăng xuất"
+    "whisper": "Thì thầm", "profile": "Cài đặt", "logout": "Đăng xuất"
   },
   "options": {
     "gender":   { "남성": "Nam", "여성": "Nữ", "기타": "Khác", "무응답": "Không trả lời" },
