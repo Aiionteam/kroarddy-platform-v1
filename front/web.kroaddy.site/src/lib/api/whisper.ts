@@ -63,3 +63,9 @@ export const markConversationRead = async (partnerId: number): Promise<WhisperRe
   const { data } = await apiClient.patch<WhisperResponse>(`/api/whisper/conversation/${partnerId}/read`);
   return data as WhisperResponse;
 };
+
+/** 특정 상대방과의 대화 전체 삭제 (내 쪽만) */
+export const deleteConversation = async (partnerId: number): Promise<WhisperResponse> => {
+  const { data } = await apiClient.delete<WhisperResponse>(`/api/whisper/conversation/${partnerId}`);
+  return data as WhisperResponse;
+};

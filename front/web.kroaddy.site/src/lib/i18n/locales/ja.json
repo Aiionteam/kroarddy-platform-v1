@@ -23,7 +23,7 @@
   "sidebar": {
     "tourstar": "ツアースター", "planner": "旅行プランナー", "schedule": "スケジュール",
     "guide": "スポット", "groupchat": "グループチャット", "friends": "友達",
-    "whisper": "ひそひそ話", "profile": "設定", "logout": "ログアウト"
+    "whisper": "ひそひそ話", "profile": "マイページ", "logout": "ログアウト"
   },
   "options": {
     "gender":   { "남성": "男性", "여성": "女性", "기타": "その他", "무응답": "回答しない" },

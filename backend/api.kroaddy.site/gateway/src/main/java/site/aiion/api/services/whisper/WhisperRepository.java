@@ -38,6 +38,15 @@ public interface WhisperRepository extends JpaRepository<WhisperMessage, Long> {
             """)
     List<Long> findConversationPartnerIds(@Param("me") Long me);
 
+    /** 두 사용자 간 전체 대화 삭제 (양방향) */
+    @Modifying
+    @Query("""
+            DELETE FROM WhisperMessage w
+            WHERE (w.fromUserId = :me AND w.toUserId = :other)
+               OR (w.fromUserId = :other AND w.toUserId = :me)
+            """)
+    int deleteConversation(@Param("me") Long me, @Param("other") Long other);
+
     /** 두 사용자 간 최신 메시지 1건 */
     @Query("""
             SELECT w FROM WhisperMessage w

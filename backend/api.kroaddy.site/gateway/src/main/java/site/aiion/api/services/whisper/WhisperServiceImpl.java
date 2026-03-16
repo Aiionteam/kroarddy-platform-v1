@@ -97,6 +97,13 @@ public class WhisperServiceImpl implements WhisperService {
 
     @Override
     @Transactional
+    public Messenger deleteConversation(Long me, Long other) {
+        int deleted = whisperRepository.deleteConversation(me, other);
+        return Messenger.builder().code(200).message(deleted + "개 메시지 삭제 완료").build();
+    }
+
+    @Override
+    @Transactional
     public Messenger markRead(Long me, Long other) {
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
         int count = whisperRepository.markAsRead(me, other, now);
