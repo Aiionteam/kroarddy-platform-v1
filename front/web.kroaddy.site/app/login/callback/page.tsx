@@ -4,6 +4,7 @@ import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLoginStore } from "@/store";
 import { handleOAuthCallback, extractOAuthParams } from "@/service";
+import { setSharedToken } from "@/lib/api/tokenStore";
 
 function OAuthCallbackContent() {
   const router = useRouter();
@@ -22,7 +23,10 @@ function OAuthCallbackContent() {
     }
     setIsProcessing(true);
 
-    if (params.token) setAccessToken(params.token);
+    if (params.token) {
+      setSharedToken(params.token);
+      setAccessToken(params.token);
+    }
 
     const result = handleOAuthCallback(params, {
       onSuccess: (provider) => {
