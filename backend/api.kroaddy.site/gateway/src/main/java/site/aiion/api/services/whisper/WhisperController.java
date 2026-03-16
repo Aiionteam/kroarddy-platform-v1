@@ -14,43 +14,36 @@ public class WhisperController {
     private final WhisperService whisperService;
     private final JwtTokenProvider jwtTokenProvider;
 
+    private Long extractUserId(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) return null;
+        String token = authHeader.substring(7);
+        if (!jwtTokenProvider.validateToken(token)) return null;
+        try {
+            return Long.parseLong(jwtTokenProvider.getUserIdFromToken(token));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private Messenger unauthorized() {
+        return Messenger.builder().code(401).message("인증이 필요합니다.").build();
+    }
+
     @PostMapping
     public Messenger send(
             @RequestBody WhisperModel model,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return Messenger.builder().code(401).message("인증이 필요합니다.").build();
-        }
-        String token = authHeader.substring(7);
-        if (!jwtTokenProvider.validateToken(token)) {
-            return Messenger.builder().code(401).message("유효하지 않은 토큰입니다.").build();
-        }
-        Long fromUserId;
-        try {
-            fromUserId = Long.parseLong(jwtTokenProvider.getUserIdFromToken(token));
-        } catch (NumberFormatException e) {
-            return Messenger.builder().code(401).message("토큰에서 사용자 ID를 추출할 수 없습니다.").build();
-        }
-        return whisperService.send(fromUserId, model);
+        Long userId = extractUserId(authHeader);
+        if (userId == null) return unauthorized();
+        return whisperService.send(userId, model);
     }
 
     @GetMapping("/inbox")
     public Messenger inbox(
             @RequestParam(value = "size", defaultValue = "50") int size,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return Messenger.builder().code(401).message("인증이 필요합니다.").build();
-        }
-        String token = authHeader.substring(7);
-        if (!jwtTokenProvider.validateToken(token)) {
-            return Messenger.builder().code(401).message("유효하지 않은 토큰입니다.").build();
-        }
-        Long userId;
-        try {
-            userId = Long.parseLong(jwtTokenProvider.getUserIdFromToken(token));
-        } catch (NumberFormatException e) {
-            return Messenger.builder().code(401).message("토큰에서 사용자 ID를 추출할 수 없습니다.").build();
-        }
+        Long userId = extractUserId(authHeader);
+        if (userId == null) return unauthorized();
         return whisperService.findInbox(userId, PageRequest.of(0, size));
     }
 
@@ -58,19 +51,38 @@ public class WhisperController {
     public Messenger sent(
             @RequestParam(value = "size", defaultValue = "50") int size,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return Messenger.builder().code(401).message("인증이 필요합니다.").build();
-        }
-        String token = authHeader.substring(7);
-        if (!jwtTokenProvider.validateToken(token)) {
-            return Messenger.builder().code(401).message("유효하지 않은 토큰입니다.").build();
-        }
-        Long userId;
-        try {
-            userId = Long.parseLong(jwtTokenProvider.getUserIdFromToken(token));
-        } catch (NumberFormatException e) {
-            return Messenger.builder().code(401).message("토큰에서 사용자 ID를 추출할 수 없습니다.").build();
-        }
+        Long userId = extractUserId(authHeader);
+        if (userId == null) return unauthorized();
         return whisperService.findSent(userId, PageRequest.of(0, size));
+    }
+
+    /** 대화 목록 (SMS 방식 - 상대방별 최신 메시지 요약) */
+    @GetMapping("/conversations")
+    public Messenger conversations(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        Long userId = extractUserId(authHeader);
+        if (userId == null) return unauthorized();
+        return whisperService.findConversationList(userId);
+    }
+
+    /** 특정 상대방과의 대화 스레드 */
+    @GetMapping("/conversation/{partnerId}")
+    public Messenger conversation(
+            @PathVariable Long partnerId,
+            @RequestParam(value = "size", defaultValue = "100") int size,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        Long userId = extractUserId(authHeader);
+        if (userId == null) return unauthorized();
+        return whisperService.findConversation(userId, partnerId, PageRequest.of(0, size));
+    }
+
+    /** 특정 상대방의 메시지 읽음 처리 */
+    @PatchMapping("/conversation/{partnerId}/read")
+    public Messenger markRead(
+            @PathVariable Long partnerId,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        Long userId = extractUserId(authHeader);
+        if (userId == null) return unauthorized();
+        return whisperService.markRead(userId, partnerId);
     }
 }

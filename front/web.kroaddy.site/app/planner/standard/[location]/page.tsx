@@ -219,9 +219,15 @@ export default function LocationPlannerPage() {
                 <input
                   type="date"
                   value={startDate}
-                  max={endDate}
                   onChange={(e) => {
-                    setStartDate(e.target.value);
+                    const newStart = e.target.value;
+                    setStartDate(newStart);
+                    // 종료일이 시작일보다 같거나 이전이면 시작일 +1일로 자동 조정
+                    if (endDate <= newStart) {
+                      const d = new Date(newStart);
+                      d.setDate(d.getDate() + 1);
+                      setEndDate(d.toISOString().slice(0, 10));
+                    }
                     routesFetchedRef.current = null;
                     setRoutes([]);
                     setRoutesTriggered(false);
@@ -235,7 +241,7 @@ export default function LocationPlannerPage() {
                 <input
                   type="date"
                   value={endDate}
-                  min={startDate}
+                  min={(() => { const d = new Date(startDate); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); })()}
                   onChange={(e) => {
                     setEndDate(e.target.value);
                     routesFetchedRef.current = null;

@@ -1,6 +1,7 @@
 package site.aiion.api.services.whisper;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -8,6 +9,9 @@ import site.aiion.api.services.user.UserRepository;
 import site.aiion.api.services.user.User;
 import site.aiion.api.services.user.common.domain.Messenger;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -37,40 +41,82 @@ public class WhisperServiceImpl implements WhisperService {
                 .message(model.getMessage().trim())
                 .build();
         WhisperMessage saved = whisperRepository.save(entity);
-        WhisperModel savedModel = toModel(saved);
-        return Messenger.builder().code(200).message("귓속말을 보냈습니다.").data(savedModel).build();
+        return Messenger.builder().code(200).message("귓속말을 보냈습니다.").data(toModel(saved)).build();
     }
 
     @Override
     public Messenger findInbox(Long toUserId, Pageable pageable) {
-        List<WhisperMessage> list = whisperRepository.findByToUserIdOrderByCreatedAtDesc(toUserId, pageable);
-        List<WhisperModel> data = list.stream().map(this::toModel).collect(Collectors.toList());
+        List<WhisperModel> data = whisperRepository
+                .findByToUserIdOrderByCreatedAtDesc(toUserId, pageable)
+                .stream().map(this::toModel).collect(Collectors.toList());
         return Messenger.builder().code(200).message("받은 귓속말").data(data).build();
     }
 
     @Override
     public Messenger findSent(Long fromUserId, Pageable pageable) {
-        List<WhisperMessage> list = whisperRepository.findByFromUserIdOrderByCreatedAtDesc(fromUserId, pageable);
-        List<WhisperModel> data = list.stream().map(this::toModel).collect(Collectors.toList());
+        List<WhisperModel> data = whisperRepository
+                .findByFromUserIdOrderByCreatedAtDesc(fromUserId, pageable)
+                .stream().map(this::toModel).collect(Collectors.toList());
         return Messenger.builder().code(200).message("보낸 귓속말").data(data).build();
     }
 
+    @Override
+    public Messenger findConversation(Long me, Long other, Pageable pageable) {
+        List<WhisperModel> data = whisperRepository
+                .findConversation(me, other, pageable)
+                .stream().map(this::toModel).collect(Collectors.toList());
+        return Messenger.builder().code(200).message("대화 스레드").data(data).build();
+    }
+
+    @Override
+    public Messenger findConversationList(Long me) {
+        List<Long> partnerIds = whisperRepository.findConversationPartnerIds(me);
+        List<WhisperConversationSummary> summaries = new ArrayList<>();
+        for (Long partnerId : partnerIds) {
+            List<WhisperMessage> latest = whisperRepository.findLatestBetween(me, partnerId, PageRequest.of(0, 1));
+            if (latest.isEmpty()) continue;
+            WhisperMessage lastMsg = latest.get(0);
+            String partnerName = resolveUsername(partnerId);
+            long unread = whisperRepository.countUnread(me);
+            summaries.add(WhisperConversationSummary.builder()
+                    .partnerId(partnerId)
+                    .partnerName(partnerName)
+                    .lastMessage(lastMsg.getMessage())
+                    .lastMessageAt(lastMsg.getCreatedAt())
+                    .unreadCount(unread)
+                    .build());
+        }
+        // 최신 메시지 순 정렬
+        summaries.sort((a, b) -> {
+            if (a.getLastMessageAt() == null) return 1;
+            if (b.getLastMessageAt() == null) return -1;
+            return b.getLastMessageAt().compareTo(a.getLastMessageAt());
+        });
+        return Messenger.builder().code(200).message("대화 목록").data(summaries).build();
+    }
+
+    @Override
+    @Transactional
+    public Messenger markRead(Long me, Long other) {
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+        int count = whisperRepository.markAsRead(me, other, now);
+        return Messenger.builder().code(200).message(count + "개 읽음 처리").build();
+    }
+
+    private String resolveUsername(Long userId) {
+        if (userId == null) return "알 수 없음";
+        return userRepository.findById(userId)
+                .map(u -> u.getNickname() != null && !u.getNickname().isEmpty() ? u.getNickname() : u.getName())
+                .orElse("사용자 " + userId);
+    }
+
     private WhisperModel toModel(WhisperMessage e) {
-        String fromName = null, toName = null;
-        if (e.getFromUserId() != null) {
-            Optional<User> u = userRepository.findById(e.getFromUserId());
-            fromName = u.map(uu -> uu.getNickname() != null && !uu.getNickname().isEmpty() ? uu.getNickname() : uu.getName()).orElse("사용자 " + e.getFromUserId());
-        }
-        if (e.getToUserId() != null) {
-            Optional<User> u = userRepository.findById(e.getToUserId());
-            toName = u.map(uu -> uu.getNickname() != null && !uu.getNickname().isEmpty() ? uu.getNickname() : uu.getName()).orElse("사용자 " + e.getToUserId());
-        }
         return WhisperModel.builder()
                 .id(e.getId())
                 .fromUserId(e.getFromUserId())
                 .toUserId(e.getToUserId())
-                .fromUsername(fromName)
-                .toUsername(toName)
+                .fromUsername(resolveUsername(e.getFromUserId()))
+                .toUsername(resolveUsername(e.getToUserId()))
                 .message(e.getMessage())
                 .createdAt(e.getCreatedAt())
                 .readAt(e.getReadAt())
