@@ -88,25 +88,49 @@ class ApiClient {
   private isRefreshing = false;
   private refreshPromise: Promise<string> | null = null;
 
+  private retryCount = 0;
+  private static readonly MAX_RETRY = 1;
+
+  private resetRefreshState() {
+    this.isRefreshing = false;
+    this.refreshPromise = null;
+    this.retryCount = 0;
+  }
+
   private async handleErrorResponse(
     response: Response,
     requestedUrl?: string,
     retry?: () => Promise<Response>
   ): Promise<never> {
-    if (response.status === 401 && retry && !requestedUrl?.includes("/auth/refresh")) {
+    if (
+      response.status === 401 &&
+      retry &&
+      !requestedUrl?.includes("/auth/refresh") &&
+      this.retryCount < ApiClient.MAX_RETRY
+    ) {
+      this.retryCount++;
+
+      // 이미 다른 요청이 refresh 중이면 그 결과를 기다림
       if (this.isRefreshing && this.refreshPromise) {
         try {
           await this.refreshPromise;
           const retried = await retry();
-          if (retried.ok) return retried as never;
+          if (retried.ok) {
+            this.resetRefreshState();
+            return retried as never;
+          }
         } catch (e) {
+          this.resetRefreshState();
           if (typeof window !== "undefined") {
             const store = (window as any).__loginStore;
             if (store) store.getState().logout();
           }
           throw e;
         }
+        // 재시도도 실패 → 루프 방지용 리셋 후 에러
+        this.resetRefreshState();
       }
+
       if (!this.isRefreshing) {
         this.isRefreshing = true;
         this.refreshPromise = (async () => {
@@ -119,8 +143,7 @@ class ApiClient {
             }
             return newToken;
           } catch (error) {
-            this.isRefreshing = false;
-            this.refreshPromise = null;
+            this.resetRefreshState();
             if (typeof window !== "undefined") {
               const store = (window as any).__loginStore;
               if (store) store.getState().logout();
@@ -129,20 +152,22 @@ class ApiClient {
           }
         })();
       }
+
       try {
         await this.refreshPromise;
         const retried = await retry();
         if (retried.ok) {
-          this.isRefreshing = false;
-          this.refreshPromise = null;
+          this.resetRefreshState();
           return retried as never;
         }
+        // 새 토큰으로도 실패 → 루프 방지를 위해 리셋
+        this.resetRefreshState();
       } catch (e) {
-        this.isRefreshing = false;
-        this.refreshPromise = null;
+        this.resetRefreshState();
         throw e;
       }
     }
+
     const data = await response.json().catch(() => null);
     const err: any = new Error(data?.message || `HTTP ${response.status}`);
     err.response = { status: response.status, data };
