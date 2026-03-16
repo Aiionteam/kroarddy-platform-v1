@@ -98,6 +98,7 @@ export default function OnboardingPage() {
         dietaryPref: form.dietary_pref || undefined,
         religion:    form.religion    || undefined,
       });
+      sessionStorage.removeItem("onboarding_skipped");
       router.push("/home");
     } catch {
       setError(t("error"));
@@ -211,7 +212,10 @@ export default function OnboardingPage() {
         <div className="flex gap-3 border-t border-gray-100 px-6 py-5">
           <button
             type="button"
-            onClick={() => router.push("/home")}
+            onClick={() => {
+              sessionStorage.setItem("onboarding_skipped", "1");
+              router.push("/home");
+            }}
             className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
           >
             {t("onboarding.later")}
