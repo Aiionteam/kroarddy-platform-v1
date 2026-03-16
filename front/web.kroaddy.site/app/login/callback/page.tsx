@@ -60,9 +60,10 @@ function OAuthCallbackContent() {
         setErrorMessage(error);
         setIsProcessing(false);
       },
-      onRedirect: (path) => router.replace(path),
+      onRedirect: (path) => router.replace(path), // fallback only
     });
 
+    // 라우팅은 onSuccess 내부에서 처리하므로 여기서는 상태만 업데이트
     if (result.success) setStatus("success");
   }, [searchParams, router, setAuthenticated, setLoadingType, setAccessToken, isProcessing]);
 
