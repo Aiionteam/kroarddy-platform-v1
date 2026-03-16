@@ -4,6 +4,9 @@ import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLoginStore } from "@/store";
 import { handleOAuthCallback, extractOAuthParams } from "@/service";
+import { setSharedToken } from "@/lib/api/tokenStore";
+import { getAppUserIdFromToken } from "@/lib/api/auth";
+import { fetchUserProfile } from "@/lib/api/userProfile";
 
 function OAuthCallbackContent() {
   const router = useRouter();
@@ -22,10 +25,13 @@ function OAuthCallbackContent() {
     }
     setIsProcessing(true);
 
-    if (params.token) setAccessToken(params.token);
+    if (params.token) {
+      setSharedToken(params.token);
+      setAccessToken(params.token);
+    }
 
     const result = handleOAuthCallback(params, {
-      onSuccess: (provider) => {
+      onSuccess: async (provider) => {
         setAuthenticated(true);
         setLoadingType(provider);
         if (typeof window !== "undefined") {
@@ -33,6 +39,20 @@ function OAuthCallbackContent() {
           sessionStorage.setItem("loadingType", provider);
         }
         setStatus("success");
+
+        // 프로필 완성 여부 확인 → 미완성이면 온보딩으로
+        try {
+          const userId = getAppUserIdFromToken(params.token ?? undefined);
+          if (userId) {
+            const profile = await fetchUserProfile(userId);
+            if (!profile || !profile.is_complete) {
+              router.replace("/profile/onboarding");
+              return;
+            }
+          }
+        } catch {
+          // 프로필 조회 실패해도 홈으로 이동
+        }
         router.replace("/home");
       },
       onError: (error) => {
@@ -40,9 +60,10 @@ function OAuthCallbackContent() {
         setErrorMessage(error);
         setIsProcessing(false);
       },
-      onRedirect: (path) => router.replace(path),
+      onRedirect: (path) => router.replace(path), // fallback only
     });
 
+    // 라우팅은 onSuccess 내부에서 처리하므로 여기서는 상태만 업데이트
     if (result.success) setStatus("success");
   }, [searchParams, router, setAuthenticated, setLoadingType, setAccessToken, isProcessing]);
 

@@ -2,6 +2,8 @@
  * API Client - 로컬: http://localhost:8080 / 배포: NEXT_PUBLIC_API_URL 필수
  * Vercel 배포 시 환경 변수에 NEXT_PUBLIC_API_URL 을 게이트웨이 URL 로 설정하세요.
  */
+import { getSharedToken, setSharedToken } from "./tokenStore";
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -9,7 +11,6 @@ if (typeof window !== "undefined") {
   if (process.env.NODE_ENV === "development") {
     console.log("[API Client] Base URL:", API_BASE_URL);
   }
-  // 백엔드 없이 배포해도 됨: 페이지는 정상 동작하고, API 호출만 실패 시 위 메시지로 안내
   if (
     process.env.NODE_ENV === "production" &&
     (API_BASE_URL === "http://localhost:8080" || !process.env.NEXT_PUBLIC_API_URL)
@@ -41,20 +42,14 @@ class ApiClient {
     return ApiClient.PUBLIC_PATHS.some((p) => endpoint.startsWith(p) || endpoint.includes(p));
   }
 
-  private getHeaders(endpoint: string = ""): HeadersInit {
+  private getHeaders(_endpoint: string = ""): HeadersInit {
     const headers: HeadersInit = {
       "Content-Type": "application/json",
       Accept: "application/json",
     };
-    if (typeof window !== "undefined") {
-      try {
-        const store = (window as any).__loginStore;
-        if (store) {
-          const token = store.getState().accessToken;
-          if (token) headers["Authorization"] = `Bearer ${token}`;
-        }
-      } catch (_) {}
-    }
+    // tokenStore에서 직접 읽기 — window.__loginStore 타이밍 문제 없음
+    const token = getSharedToken();
+    if (token) headers["Authorization"] = `Bearer ${token}`;
     return headers;
   }
 
@@ -88,13 +83,9 @@ class ApiClient {
   private isRefreshing = false;
   private refreshPromise: Promise<string> | null = null;
 
-  private retryCount = 0;
-  private static readonly MAX_RETRY = 1;
-
   private resetRefreshState() {
     this.isRefreshing = false;
     this.refreshPromise = null;
-    this.retryCount = 0;
   }
 
   private async handleErrorResponse(
@@ -102,15 +93,8 @@ class ApiClient {
     requestedUrl?: string,
     retry?: () => Promise<Response>
   ): Promise<never> {
-    if (
-      response.status === 401 &&
-      retry &&
-      !requestedUrl?.includes("/auth/refresh") &&
-      this.retryCount < ApiClient.MAX_RETRY
-    ) {
-      this.retryCount++;
-
-      // 이미 다른 요청이 refresh 중이면 그 결과를 기다림
+    if (response.status === 401 && retry && !requestedUrl?.includes("/auth/refresh")) {
+      // 이미 refresh 중이면 완료까지 기다린 뒤 재시도
       if (this.isRefreshing && this.refreshPromise) {
         try {
           await this.refreshPromise;
@@ -121,13 +105,9 @@ class ApiClient {
           }
         } catch (e) {
           this.resetRefreshState();
-          if (typeof window !== "undefined") {
-            const store = (window as any).__loginStore;
-            if (store) store.getState().logout();
-          }
+          this.doLogout();
           throw e;
         }
-        // 재시도도 실패 → 루프 방지용 리셋 후 에러
         this.resetRefreshState();
       }
 
@@ -137,6 +117,9 @@ class ApiClient {
           try {
             const { refreshAccessToken } = await import("./auth");
             const newToken = await refreshAccessToken();
+            // tokenStore 동기화 (Zustand는 loginSlice에서 별도 동기화)
+            setSharedToken(newToken);
+            // Zustand도 업데이트 (window.__loginStore는 fallback으로만 사용)
             if (typeof window !== "undefined") {
               const store = (window as any).__loginStore;
               if (store) store.getState().setAccessToken(newToken);
@@ -144,10 +127,7 @@ class ApiClient {
             return newToken;
           } catch (error) {
             this.resetRefreshState();
-            if (typeof window !== "undefined") {
-              const store = (window as any).__loginStore;
-              if (store) store.getState().logout();
-            }
+            this.doLogout();
             throw error;
           }
         })();
@@ -160,7 +140,6 @@ class ApiClient {
           this.resetRefreshState();
           return retried as never;
         }
-        // 새 토큰으로도 실패 → 루프 방지를 위해 리셋
         this.resetRefreshState();
       } catch (e) {
         this.resetRefreshState();
@@ -172,6 +151,14 @@ class ApiClient {
     const err: any = new Error(data?.message || `HTTP ${response.status}`);
     err.response = { status: response.status, data };
     throw err;
+  }
+
+  private doLogout() {
+    if (typeof window !== "undefined") {
+      setSharedToken(null);
+      const store = (window as any).__loginStore;
+      if (store) store.getState().logout();
+    }
   }
 
   async get<T = any>(endpoint: string, options: RequestOptions = {}): Promise<{ data: T }> {

@@ -15,6 +15,7 @@ router = APIRouter(prefix="/api/v1/user-profile", tags=["user-profile"])
 
 def _to_response(profile: UserProfile) -> UserProfileResponse:
     is_complete = all([
+        profile.nationality,
         profile.gender,
         profile.age_band,
         profile.dietary_pref,

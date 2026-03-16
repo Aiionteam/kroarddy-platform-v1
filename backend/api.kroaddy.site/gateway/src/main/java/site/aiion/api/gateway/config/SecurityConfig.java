@@ -12,7 +12,6 @@ import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWrite
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import site.aiion.api.services.oauth.token.TokenService;
 import site.aiion.api.services.oauth.util.JwtTokenProvider;
 
 import java.util.ArrayList;
@@ -28,16 +27,14 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final TokenService tokenService;
 
-    public SecurityConfig(JwtTokenProvider jwtTokenProvider, TokenService tokenService) {
+    public SecurityConfig(JwtTokenProvider jwtTokenProvider) {
         this.jwtTokenProvider = jwtTokenProvider;
-        this.tokenService = tokenService;
     }
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(jwtTokenProvider, tokenService);
+        return new JwtAuthenticationFilter(jwtTokenProvider);
     }
 
     /**
@@ -82,10 +79,11 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 .requestMatchers("/docs/**", "/v3/api-docs/**").permitAll()
 
-                // ── 나머지 모든 요청은 인증 필요 ────────────────────────────
-                .anyRequest().authenticated()
+                // JWT 필터가 SecurityContext를 채우므로 Spring Security 자체 차단은 하지 않음
+                // 인증 강제는 각 컨트롤러/서비스 레이어에서 처리
+                .anyRequest().permitAll()
             )
-            
+
             // 보안 헤더 설정
             .headers(headers -> headers
                 .frameOptions(frame -> frame.deny())  // Clickjacking 방지

@@ -128,9 +128,10 @@ export async function modifyPlan(
   return res.json();
 }
 
-export async function fetchMyPlans(userId: number): Promise<TravelPlanRecord[]> {
+export async function fetchMyPlans(userId: number, signal?: AbortSignal): Promise<TravelPlanRecord[]> {
   const res = await fetch(`${API_BASE}/api/v1/planner/plans?user_id=${userId}`, {
     cache: "no-store",
+    signal,
   });
   if (!res.ok) throw new Error(`플랜 목록 API 오류: ${res.status}`);
   const data = await res.json();
