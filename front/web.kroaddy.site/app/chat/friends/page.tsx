@@ -7,6 +7,7 @@ import {
   listFriends,
   listPendingFriendRequests,
   acceptFriendRequest,
+  removeFriend,
   type FriendsResponse,
 } from "@/lib/api/friends";
 import { sendWhisper } from "@/lib/api/whisper";
@@ -42,6 +43,7 @@ export default function FriendsPage() {
   const [isHydrated, setIsHydrated] = useState(false);
 
   const [blockingId, setBlockingId] = useState<number | null>(null);
+  const [removingId, setRemovingId] = useState<number | null>(null);
 
   // 귓속말 모달
   const [whisperTarget, setWhisperTarget] = useState<WhisperModal | null>(null);
@@ -119,20 +121,44 @@ export default function FriendsPage() {
     setWhisperText("");
   };
 
+  const handleRemoveFriend = async (friend: UserModel) => {
+    const id = Number(friend.id);
+    const name = friend.nickname || friend.name || `사용자 ${friend.id}`;
+    if (!window.confirm(`${name}님을 친구 목록에서 삭제하시겠습니까?`)) return;
+    setRemovingId(id);
+    try {
+      const res = await removeFriend(id);
+      if (res.code === 200) {
+        setMessage({ type: "ok", text: `${name}님을 친구 목록에서 삭제했습니다.` });
+        setFriends((prev) => prev.filter((f) => Number(f.id) !== id));
+      } else {
+        setMessage({ type: "err", text: res.message ?? "친구 삭제에 실패했습니다." });
+      }
+    } catch (_) {
+      setMessage({ type: "err", text: "친구 삭제에 실패했습니다." });
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
   const handleBlock = async (friend: UserModel) => {
     const id = Number(friend.id);
     const name = friend.nickname || friend.name || `사용자 ${friend.id}`;
-    if (!window.confirm(`${name}님을 차단하시겠습니까?\n차단하면 해당 유저의 귓속말을 받지 않고 친구 목록에서도 제거됩니다.`)) return;
+    if (!window.confirm(`${name}님을 차단하시겠습니까?\n차단 시 친구 목록에서도 제거되며 귓속말을 받지 않습니다.`)) return;
     setBlockingId(id);
+    // 즉시 UI에서 제거
+    setFriends((prev) => prev.filter((f) => Number(f.id) !== id));
     try {
       const res = await blockUser(id);
       if (res.code === 200) {
         setMessage({ type: "ok", text: `${name}님을 차단했습니다.` });
-        setFriends((prev) => prev.filter((f) => Number(f.id) !== id));
       } else {
+        // 실패 시 롤백
+        await load();
         setMessage({ type: "err", text: res.message ?? "차단에 실패했습니다." });
       }
     } catch (_) {
+      await load();
       setMessage({ type: "err", text: "차단에 실패했습니다." });
     } finally {
       setBlockingId(null);
@@ -224,6 +250,17 @@ export default function FriendsPage() {
                               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                             </svg>
                             귓속말
+                          </button>
+                          <button
+                            type="button"
+                            disabled={removingId === Number(u.id)}
+                            onClick={() => handleRemoveFriend(u)}
+                            title="친구 삭제"
+                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors disabled:opacity-50"
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="22" y1="11" x2="16" y2="11"/>
+                            </svg>
                           </button>
                           <button
                             type="button"

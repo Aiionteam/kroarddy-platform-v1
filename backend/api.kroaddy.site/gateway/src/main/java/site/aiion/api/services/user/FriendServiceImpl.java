@@ -94,6 +94,16 @@ public class FriendServiceImpl implements FriendService {
         return Messenger.builder().code(200).message("친구 목록").data(friends).build();
     }
 
+    @Override
+    @Transactional
+    public Messenger removeFriend(Long me, Long targetId) {
+        int deleted = friendRequestRepository.deleteBetween(me, targetId);
+        if (deleted == 0) {
+            return Messenger.builder().code(404).message("친구 관계를 찾을 수 없습니다.").build();
+        }
+        return Messenger.builder().code(200).message("친구를 삭제했습니다.").build();
+    }
+
     private UserModel toModel(User u) {
         int h = u.getHonor() != null ? u.getHonor() : 0;
         String tier = h >= 1000 ? "DIAMOND" : h >= 500 ? "PLATINUM" : h >= 100 ? "GOLD" : "SILVER";
