@@ -8,41 +8,62 @@ import { AppSidebar } from "@/components/organisms/AppSidebar";
 import { getAppUserIdFromToken } from "@/lib/api/auth";
 import { fetchUserProfile } from "@/lib/api/userProfile";
 
+const SKIP_KEY = "onboarding_skipped";
+
 export default function HomePage() {
   const { isAuthenticated, logout, accessToken } = useLoginStore();
   const { t } = useLangStore();
   const router = useRouter();
   const appUserId = getAppUserIdFromToken(accessToken ?? undefined);
-  const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
+
+  // null = 아직 로딩 중, true = 배너 표시, false = 숨김
+  const [showBanner, setShowBanner] = useState(false);
+  const [profileChecked, setProfileChecked] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) router.replace("/");
+    if (!isAuthenticated) { router.replace("/"); return; }
   }, [isAuthenticated, router]);
 
   useEffect(() => {
-    if (!appUserId) return;
+    if (!isAuthenticated || !appUserId) return;
+
+    const skipped = sessionStorage.getItem(SKIP_KEY) === "1";
+
     fetchUserProfile(appUserId)
       .then((profile) => {
-        if (!profile || !profile.is_complete) setShowOnboardingBanner(true);
+        if (!profile || !profile.is_complete) {
+          if (skipped) {
+            // 이번 세션에서 이미 "나중에 하기"를 눌렀으면 배너만 표시
+            setShowBanner(true);
+          } else {
+            // 처음 들어오면 바로 온보딩으로 이동
+            router.replace("/profile/onboarding");
+          }
+        }
       })
-      .catch(() => {});
-  }, [appUserId]);
+      .catch(() => {
+        // 프로필 API 오류 → 그냥 홈 유지
+      })
+      .finally(() => setProfileChecked(true));
+  }, [isAuthenticated, appUserId, router]);
 
+  // 프로필 체크 완료 전에는 렌더링 숨김 (리다이렉트 플래시 방지)
   if (!isAuthenticated) return null;
 
   const QUICK_LINKS = [
-    { labelKey: "home.planner",  descKey: "home.planner.desc",  path: "/planner",            emoji: "🗺️" },
-    { labelKey: "home.schedule", descKey: "home.schedule.desc", path: "/planner/schedule",   emoji: "📋" },
-    { labelKey: "home.guide",    descKey: "home.guide.desc",    path: "/guide",              emoji: "📍" },
-    { labelKey: "home.kcontent", descKey: "home.kcontent.desc", path: "/planner/k-content",  emoji: "🎬" },
+    { labelKey: "home.planner",  descKey: "home.planner.desc",  path: "/planner",           emoji: "🗺️" },
+    { labelKey: "home.schedule", descKey: "home.schedule.desc", path: "/planner/schedule",  emoji: "📋" },
+    { labelKey: "home.guide",    descKey: "home.guide.desc",    path: "/guide",             emoji: "📍" },
+    { labelKey: "home.kcontent", descKey: "home.kcontent.desc", path: "/planner/k-content", emoji: "🎬" },
   ] as const;
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-100">
       <AppSidebar onLogout={logout} />
       <main className="flex flex-1 flex-col items-center justify-center overflow-auto px-8 py-12">
-        {/* 온보딩 배너 */}
-        {showOnboardingBanner && (
+
+        {/* "나중에 하기" 후 배너 */}
+        {profileChecked && showBanner && (
           <div className="mb-8 flex w-full max-w-2xl items-center justify-between gap-4 rounded-2xl border border-violet-200 bg-violet-50 px-5 py-4">
             <div className="flex items-center gap-3">
               <span className="text-2xl">✨</span>
@@ -54,7 +75,7 @@ export default function HomePage() {
             <div className="flex shrink-0 gap-2">
               <button
                 type="button"
-                onClick={() => setShowOnboardingBanner(false)}
+                onClick={() => setShowBanner(false)}
                 className="rounded-lg px-3 py-1.5 text-xs text-violet-400 hover:text-violet-600"
               >
                 {t("home.onboarding.close")}
