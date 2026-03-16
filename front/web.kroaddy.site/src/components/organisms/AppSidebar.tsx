@@ -70,12 +70,16 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ onLogout }) => {
   const router = useRouter();
   const pathname = usePathname() ?? "";
 
-  const isActive = (path?: string) =>
-    path &&
-    (pathname === path ||
-      pathname.startsWith(path + "/") ||
-      pathname.startsWith(path + "?") ||
-      (path === "/guide" && pathname.startsWith("/guide/")));
+  const isActive = (path?: string) => {
+    if (!path) return false;
+    if (pathname === path) return true;
+    // 더 구체적인 경로가 있는 경우 상위 경로는 활성화하지 않음
+    const hasMoreSpecific = CATEGORIES.some(
+      (c) => c.path && c.path !== path && c.path.startsWith(path + "/") && pathname.startsWith(c.path)
+    );
+    if (hasMoreSpecific) return false;
+    return pathname.startsWith(path + "/") || pathname.startsWith(path + "?");
+  };
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-gray-200 bg-gray-50">
