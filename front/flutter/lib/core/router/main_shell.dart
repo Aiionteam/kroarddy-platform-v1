@@ -119,17 +119,10 @@ class _AppDrawer extends ConsumerWidget {
               current: location,
             ),
             _DrawerItem(
-              icon: Icons.restaurant_outlined,
-              activeIcon: Icons.restaurant,
-              label: "맛집추천",
-              path: "/guide/restaurant",
-              current: location,
-            ),
-            _DrawerItem(
-              icon: Icons.celebration_outlined,
-              activeIcon: Icons.celebration,
-              label: "행사추천",
-              path: "/guide/event",
+              icon: Icons.place_outlined,
+              activeIcon: Icons.place,
+              label: "장소 추천",
+              path: "/guide",
               current: location,
             ),
             _DrawerItem(

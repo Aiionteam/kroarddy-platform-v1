@@ -8,6 +8,8 @@ class AuthService {
   final Dio _rawDio;
   final TokenStore _tokenStore;
 
+  /// Refresh Token으로 새 Access Token 발급
+  /// 두 토큰 모두 OS 보안 저장소에 저장하여 오프라인 재진입을 지원합니다.
   Future<String> refreshAccessToken() async {
     final refreshToken = await _tokenStore.readRefreshToken();
 

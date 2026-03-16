@@ -60,7 +60,11 @@ class AuthRepository {
     final token = callbackUri.queryParameters["token"]?.trim() ?? "";
     if (token.isEmpty) throw Exception("OAuth 콜백에 token이 없습니다.");
 
-    await _tokenStore.writeTokens(accessToken: token);
+    final refreshToken = callbackUri.queryParameters["refresh_token"]?.trim();
+    await _tokenStore.writeTokens(
+      accessToken: token,
+      refreshToken: refreshToken,
+    );
     return token;
   }
 

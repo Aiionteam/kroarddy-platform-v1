@@ -251,8 +251,14 @@ public class KakaoController {
                     System.out.println("Refresh Token을 HttpOnly 쿠키로 설정 완료");
                 }
                 
-                // 7. 프론트엔드로 리다이렉트 (Access Token만 URL에 포함)
+                // 7. 프론트엔드로 리다이렉트
+                // 모바일 딥링크(http/https가 아닌 커스텀 스킴)인 경우 refresh_token도 URL에 포함
+                boolean isMobileDeepLink = frontendUrl != null && !frontendUrl.startsWith("http");
                 String redirectUrl = frontendUrl + "/login/callback?provider=kakao&token=" + URLEncoder.encode(jwtAccessToken, StandardCharsets.UTF_8);
+                if (isMobileDeepLink && jwtRefreshToken != null && !jwtRefreshToken.isEmpty()) {
+                    redirectUrl += "&refresh_token=" + URLEncoder.encode(jwtRefreshToken, StandardCharsets.UTF_8);
+                    System.out.println("모바일 딥링크 감지: refresh_token을 URL에 포함");
+                }
                 
                 System.out.println("JWT 토큰 생성 완료, 프론트엔드로 리다이렉트: " + redirectUrl);
                 return new RedirectView(redirectUrl);
