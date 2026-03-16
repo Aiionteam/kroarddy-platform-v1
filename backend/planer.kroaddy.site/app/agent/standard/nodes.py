@@ -378,9 +378,13 @@ async def modify_schedule(
         "- Replace only the instructed items' place/title/description/tips\n"
         "- Never change day/date/time or other items\n"
         "- Use only real existing places\n"
+        "- If the requested place/event/movie does NOT exist or is NOT available (e.g. not currently screening, closed, fictional), "
+        "  keep the schedule UNCHANGED and set 'not_possible' to true with a brief reason in 'reason' (1-2 sentences).\n"
+        "- If the request IS fulfilled, set 'not_possible' to false and explain briefly WHY this change is good in 'reason' (1-2 sentences).\n"
         f"{lang_dir}"
         "\nRespond ONLY with valid JSON (no explanation):\n"
-        '{"schedule":[{"day":1,"date":"YYYY-MM-DD","time":"morning","place":"place name","title":"activity title","description":"description","tips":"tip"}],'
+        '{"not_possible":false,"reason":"brief explanation here",'
+        '"schedule":[{"day":1,"date":"YYYY-MM-DD","time":"morning","place":"place name","title":"activity title","description":"description","tips":"tip"}],'
         '"modified_titles":["title of modified item"]}'
     )
 
@@ -388,10 +392,14 @@ async def modify_schedule(
     try:
         response = await _invoke(llm, [HumanMessage(content=prompt)])
         data = _parse_json(response.content)
-        logger.info("일정 수정 완료: %s", data.get("modified_titles", []))
+        not_possible: bool = data.get("not_possible", False)
+        reason: str = data.get("reason", "")
+        logger.info("일정 수정 완료: %s | 불가:%s | 이유:%s", data.get("modified_titles", []), not_possible, reason)
         return {
             "schedule": data.get("schedule", schedule),
             "modified_titles": data.get("modified_titles", []),
+            "not_possible": not_possible,
+            "reason": reason,
         }
     except Exception as e:
         logger.exception("일정 수정 실패: %s", e)

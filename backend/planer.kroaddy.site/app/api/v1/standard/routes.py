@@ -435,15 +435,23 @@ async def modify_plan(
     except Exception as e:
         _check_quota_error(e)
         raise
+
+    not_possible: bool = modified.get("not_possible", False)
+    reason: str = modified.get("reason", "")
     new_schedule = modified.get("schedule", plan.schedule)
-    plan.schedule = new_schedule
-    flag_modified(plan, "schedule")
-    await db.flush()
+
+    # 불가능한 경우 일정 변경 없이 이유만 반환
+    if not not_possible:
+        plan.schedule = new_schedule
+        flag_modified(plan, "schedule")
+        await db.flush()
 
     return {
         "plan_id": plan_id,
         "schedule": new_schedule,
         "modified_titles": modified.get("modified_titles", []),
+        "not_possible": not_possible,
+        "reason": reason,
         "error": modified.get("error"),
     }
 

@@ -23,7 +23,7 @@
   "sidebar": {
     "tourstar": "TourStar", "planner": "Trip Planner", "schedule": "My Plans",
     "guide": "Discover", "groupchat": "Group Chat", "friends": "Friends",
-    "profile": "Settings", "logout": "Logout"
+    "whisper": "Whisper", "profile": "Settings", "logout": "Logout"
   },
   "options": {
     "gender":   { "남성": "Male", "여성": "Female", "기타": "Other", "무응답": "Prefer not to say" },

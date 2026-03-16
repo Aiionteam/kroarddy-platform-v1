@@ -88,6 +88,8 @@ export interface ModifyResponse {
   plan_id: number;
   schedule: ScheduleItem[];
   modified_titles: string[];
+  not_possible?: boolean;
+  reason?: string;
   error?: string;
 }
 
