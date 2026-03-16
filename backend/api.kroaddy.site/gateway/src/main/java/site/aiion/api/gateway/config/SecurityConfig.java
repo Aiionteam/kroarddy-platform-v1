@@ -7,10 +7,13 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import site.aiion.api.services.oauth.token.TokenService;
+import site.aiion.api.services.oauth.util.JwtTokenProvider;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,11 +21,24 @@ import java.util.List;
 
 /**
  * Spring Security 설정
- * 기존 OAuth 컨트롤러와 통합하여 보안 기능 강화
+ * JWT 중앙 인증 필터를 통해 모든 보호 엔드포인트를 일괄 검증
  */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private final JwtTokenProvider jwtTokenProvider;
+    private final TokenService tokenService;
+
+    public SecurityConfig(JwtTokenProvider jwtTokenProvider, TokenService tokenService) {
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.tokenService = tokenService;
+    }
+
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+        return new JwtAuthenticationFilter(jwtTokenProvider, tokenService);
+    }
 
     /**
      * SecurityFilterChain 설정
@@ -34,44 +50,40 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // CSRF 설정
-            // API는 JWT 기반이므로 세션 기반 CSRF는 비활성화
-            // 하지만 OAuth 콜백은 세션을 사용할 수 있으므로 선택적으로 활성화 가능
-            .csrf(csrf -> csrf
-                .ignoringRequestMatchers(
-                    "/api/**",  // API 엔드포인트는 JWT 기반
-                    "/docs/**", // Swagger UI
-                    "/v3/api-docs/**" // Swagger API 문서
-                )
-            )
-            
-            // 세션 정책: STATELESS (JWT 기반 인증)
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/docs/**", "/v3/api-docs/**"))
+
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-            
-            // 요청 인가 설정
-            // 주의: JWT 토큰 검증은 컨트롤러 레벨에서 처리하므로
-            // Spring Security는 모든 API 엔드포인트를 permitAll()로 설정
-            // 실제 인증은 각 컨트롤러에서 JwtTokenUtil/JwtTokenProvider로 검증
+
+            // JWT 중앙 필터 — UsernamePasswordAuthenticationFilter 이전에 실행
+            .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+
             .authorizeHttpRequests(auth -> auth
-                // 모든 API 엔드포인트 허용 (JWT 검증은 컨트롤러 레벨에서 처리)
-                .requestMatchers("/api/**").permitAll()
-                
-                // Swagger UI 및 문서
+                // ── Public: OAuth 인증 플로우 ─────────────────────────────────
+                // Google Cloud Console / Kakao Developers 에 등록된 실제 redirect URI
+                .requestMatchers("/oauth2/**").permitAll()
+
+                // /api/* 하위의 OAuth 진입점 (auth-url, login 요청 등)
                 .requestMatchers(
-                    "/docs/**",                   // Swagger UI
-                    "/v3/api-docs/**"             // Swagger API 문서
+                    "/api/google/auth-url", "/api/google/callback",
+                    "/api/google/login",    "/api/google/token"
                 ).permitAll()
-                
-                // Actuator 엔드포인트
                 .requestMatchers(
-                    "/actuator/health",           // Health check
-                    "/actuator/info"              // Info endpoint
+                    "/api/kakao/auth-url", "/api/kakao/callback",
+                    "/api/kakao/token"
                 ).permitAll()
-                
-                // 기타 요청은 허용
-                .anyRequest().permitAll()
+                .requestMatchers("/api/naver/**").permitAll()
+
+                // ── Public: 토큰 갱신 & 로그아웃 (쿠키 기반, Bearer 불필요) ──
+                .requestMatchers("/api/auth/refresh", "/api/auth/logout").permitAll()
+
+                // ── Public: 인프라 ──────────────────────────────────────────
+                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                .requestMatchers("/docs/**", "/v3/api-docs/**").permitAll()
+
+                // ── 나머지 모든 요청은 인증 필요 ────────────────────────────
+                .anyRequest().authenticated()
             )
             
             // 보안 헤더 설정
