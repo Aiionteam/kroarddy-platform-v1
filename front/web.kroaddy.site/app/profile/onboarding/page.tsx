@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
+import { useLangStore } from "@/store/slices/langSlice";
 import { getAppUserIdFromToken } from "@/lib/api/auth";
 import {
   upsertUserProfile,
@@ -38,32 +39,24 @@ function OptionChip({
   );
 }
 
-const STEPS = [
-  { key: "nationality",  title: "어느 나라에서 오셨나요?",     subtitle: "현지화된 여행 추천에 활용돼요",          options: [...NATIONALITY_OPTIONS] },
-  { key: "gender",       title: "성별을 알려주세요",           subtitle: "맞춤 여행지 추천에 활용돼요",          options: [...GENDER_OPTIONS]      },
-  { key: "age_band",     title: "나이대를 선택해주세요",        subtitle: "연령대에 맞는 루트를 추천해드려요",      options: [...AGE_BAND_OPTIONS]    },
-  { key: "dietary_pref", title: "식습관을 알려주세요",          subtitle: "먹거리 루트 구성에 반영돼요",           options: [...DIETARY_OPTIONS]     },
-  { key: "religion",     title: "종교가 있으신가요?",           subtitle: "여행 장소·음식 선정 시 고려해드려요",    options: [...RELIGION_OPTIONS]    },
-] as const;
-
-type FormKey = (typeof STEPS)[number]["key"];
+type FormKey = "nationality" | "gender" | "age_band" | "dietary_pref" | "religion";
 
 export default function OnboardingPage() {
   const router = useRouter();
   const { isAuthenticated, accessToken } = useLoginStore();
+  const { t, setLangByNationality } = useLangStore();
   const appUserId = getAppUserIdFromToken(accessToken ?? undefined);
 
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<Record<FormKey, string>>({
+    nationality:  "",
     gender:       "",
     age_band:     "",
     dietary_pref: "",
     religion:     "",
-    nationality:  "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [skipped, setSkipped] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -72,11 +65,50 @@ export default function OnboardingPage() {
     }
     if (!appUserId) return;
 
-    // 이미 프로필이 완성된 경우 홈으로
     fetchUserProfile(appUserId).then((profile) => {
       if (profile?.is_complete) router.replace("/home");
     });
   }, [isAuthenticated, appUserId, router]);
+
+  // 국적 선택 시 언어 즉시 변경
+  useEffect(() => {
+    if (form.nationality) {
+      setLangByNationality(form.nationality);
+    }
+  }, [form.nationality, setLangByNationality]);
+
+  const STEPS = [
+    {
+      key: "nationality" as FormKey,
+      title: t("onboarding.nationality.title"),
+      subtitle: t("onboarding.nationality.subtitle"),
+      options: [...NATIONALITY_OPTIONS],
+    },
+    {
+      key: "gender" as FormKey,
+      title: t("onboarding.gender.title"),
+      subtitle: t("onboarding.gender.subtitle"),
+      options: [...GENDER_OPTIONS],
+    },
+    {
+      key: "age_band" as FormKey,
+      title: t("onboarding.age.title"),
+      subtitle: t("onboarding.age.subtitle"),
+      options: [...AGE_BAND_OPTIONS],
+    },
+    {
+      key: "dietary_pref" as FormKey,
+      title: t("onboarding.diet.title"),
+      subtitle: t("onboarding.diet.subtitle"),
+      options: [...DIETARY_OPTIONS],
+    },
+    {
+      key: "religion" as FormKey,
+      title: t("onboarding.religion.title"),
+      subtitle: t("onboarding.religion.subtitle"),
+      options: [...RELIGION_OPTIONS],
+    },
+  ];
 
   const current = STEPS[step];
   const isLast = step === STEPS.length - 1;
@@ -108,8 +140,8 @@ export default function OnboardingPage() {
         nationality: form.nationality  || undefined,
       });
       router.push("/home");
-    } catch (e) {
-      setError("저장 중 오류가 발생했어요. 다시 시도해주세요.");
+    } catch {
+      setError(t("error"));
       setSaving(false);
     }
   };
@@ -120,15 +152,12 @@ export default function OnboardingPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-violet-50 to-indigo-50 px-4">
-      {/* 카드 */}
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
         {/* 헤더 */}
         <div className="mb-6 text-center">
           <div className="mb-3 text-5xl">🗺️</div>
-          <h1 className="text-2xl font-bold text-gray-800">여행 취향 설정</h1>
-          <p className="mt-1 text-sm text-gray-400">
-            AI 맞춤 여행 추천을 위한 정보를 입력해주세요
-          </p>
+          <h1 className="text-2xl font-bold text-gray-800">{t("onboarding.title")}</h1>
+          <p className="mt-1 text-sm text-gray-400">{t("onboarding.subtitle")}</p>
         </div>
 
         {/* 진행 바 */}
@@ -148,6 +177,16 @@ export default function OnboardingPage() {
           <h2 className="text-lg font-bold text-gray-800">{current.title}</h2>
           <p className="mt-0.5 text-sm text-gray-400">{current.subtitle}</p>
         </div>
+
+        {/* 국적 선택 시 언어 변경 힌트 (step 0에만 표시) */}
+        {step === 0 && form.nationality && (
+          <div className="mb-4 flex items-center gap-2 rounded-lg bg-violet-50 px-3 py-2">
+            <span className="text-lg">🌐</span>
+            <p className="text-xs text-violet-600 font-medium">
+              {form.nationality} {t("onboarding.nationality.subtitle").split(" ").slice(-3).join(" ")}
+            </p>
+          </div>
+        )}
 
         {/* 옵션 */}
         <div className="mb-8 flex flex-wrap gap-2">
@@ -173,7 +212,7 @@ export default function OnboardingPage() {
             onClick={handleSkip}
             className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
           >
-            나중에 하기
+            {t("onboarding.later")}
           </button>
           <button
             type="button"
@@ -182,16 +221,15 @@ export default function OnboardingPage() {
             className="flex-1 rounded-xl bg-violet-500 py-3 text-sm font-bold text-white hover:bg-violet-600 disabled:opacity-60 transition-colors"
           >
             {saving
-              ? "저장 중..."
+              ? t("onboarding.saving")
               : isLast
-              ? "완료"
-              : `다음 (${step + 1}/${STEPS.length})`}
+              ? t("onboarding.complete")
+              : `${t("next")} (${step + 1}/${STEPS.length})`}
           </button>
         </div>
 
-        {/* 건너뛰기 안내 */}
         <p className="mt-4 text-center text-xs text-gray-400">
-          나중에 설정 → 여행 프로필에서 변경할 수 있어요
+          {t("onboarding.later")} → {t("sidebar.profile")}
         </p>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import * as authAPI from "@/lib/api/auth";
+import { setSharedToken } from "@/lib/api/tokenStore";
 
 type LoadingType = "login" | "google" | "kakao" | "naver" | "guest" | "logout" | null;
 
@@ -38,7 +39,10 @@ function getCenteredPopupFeatures(width = 500, height = 700): string {
 
 export const useLoginStore = create<LoginState>((set, get) => ({
   ...initialState,
-  setAccessToken: (accessToken) => set({ accessToken }),
+  setAccessToken: (accessToken) => {
+    setSharedToken(accessToken);
+    set({ accessToken });
+  },
   setAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
   setLoadingType: (loadingType) => set({ loadingType }),
 
@@ -56,6 +60,7 @@ export const useLoginStore = create<LoginState>((set, get) => ({
     if (!get().accessToken) {
       try {
         const newToken = await authAPI.refreshAccessToken();
+        setSharedToken(newToken);
         set({ accessToken: newToken });
       } catch (error: any) {
         const isNetworkError =
@@ -219,6 +224,7 @@ export const useLoginStore = create<LoginState>((set, get) => ({
     try {
       await authAPI.logout();
     } catch (_) {}
+    setSharedToken(null);
     set({ ...initialState, isAuthenticated: false, accessToken: null });
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("isAuthenticated");

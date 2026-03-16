@@ -604,28 +604,32 @@ export default function SchedulePage() {
     if (!isAuthenticated) router.replace("/");
   }, [isAuthenticated, router]);
 
-  const loadPlans = useCallback(async () => {
+  const loadPlans = useCallback(async (signal?: AbortSignal) => {
     if (!appUserId) { setLoading(false); return; }
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchMyPlans(appUserId);
+      const data = await fetchMyPlans(appUserId, signal);
+      if (signal?.aborted) return;
       setPlans(data);
-      // 첫 플랜의 시작일이 있으면 해당 달로 이동
       if (data.length > 0 && data[0].start_date) {
         const [y, m] = data[0].start_date.split("-").map(Number);
         setCalYear(y);
         setCalMonth(m);
       }
     } catch (e) {
+      if ((e as Error)?.name === "AbortError") return;
       setError(e instanceof Error ? e.message : "플랜 목록을 불러오지 못했습니다.");
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }, [appUserId]);
 
   useEffect(() => {
-    if (isAuthenticated) loadPlans();
+    if (!isAuthenticated) return;
+    const controller = new AbortController();
+    loadPlans(controller.signal);
+    return () => controller.abort();
   }, [isAuthenticated, loadPlans]);
 
   const handleDelete = useCallback(async (planId: number) => {

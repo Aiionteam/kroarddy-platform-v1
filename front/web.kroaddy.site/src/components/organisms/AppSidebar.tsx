@@ -8,16 +8,9 @@
  */
 import React from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { useLangStore } from "@/store/slices/langSlice";
 
 export type SidebarCategoryId = "chat" | "tourstar" | "schedule" | "planner" | "place";
-
-const CATEGORIES: { id: SidebarCategoryId; label: string; path?: string; icon: React.ReactNode }[] = [
-  { id: "tourstar", label: "투어스타", path: "/tourstar", icon: <TourstarIcon /> },
-  { id: "schedule", label: "일정관리", path: "/planner/schedule", icon: <ScheduleIcon /> },
-  { id: "planner", label: "여행플래너", path: "/planner", icon: <PlannerIcon /> },
-  { id: "place", label: "장소 추천", path: "/guide", icon: <PlaceIcon /> },
-  { id: "chat", label: "단체채팅", path: "/chat/groupchat", icon: <ChatIcon /> },
-];
 
 function ChatIcon() {
   return (
@@ -69,13 +62,19 @@ export interface AppSidebarProps {
 export const AppSidebar: React.FC<AppSidebarProps> = ({ onLogout }) => {
   const router = useRouter();
   const pathname = usePathname() ?? "";
+  const { t } = useLangStore();
 
-  const isActive = (path?: string) => {
-    if (!path) return false;
+  const CATEGORIES: { id: SidebarCategoryId; labelKey: "sidebar.planner" | "sidebar.schedule" | "sidebar.guide" | "sidebar.groupchat"; path: string; icon: React.ReactNode }[] = [
+    { id: "planner",  labelKey: "sidebar.planner",   path: "/planner",          icon: <PlannerIcon /> },
+    { id: "schedule", labelKey: "sidebar.schedule",  path: "/planner/schedule", icon: <ScheduleIcon /> },
+    { id: "place",    labelKey: "sidebar.guide",     path: "/guide",            icon: <PlaceIcon /> },
+    { id: "chat",     labelKey: "sidebar.groupchat", path: "/chat/groupchat",   icon: <ChatIcon /> },
+  ];
+
+  const isActive = (path: string) => {
     if (pathname === path) return true;
-    // 더 구체적인 경로가 있는 경우 상위 경로는 활성화하지 않음
     const hasMoreSpecific = CATEGORIES.some(
-      (c) => c.path && c.path !== path && c.path.startsWith(path + "/") && pathname.startsWith(c.path)
+      (c) => c.path !== path && c.path.startsWith(path + "/") && pathname.startsWith(c.path)
     );
     if (hasMoreSpecific) return false;
     return pathname.startsWith(path + "/") || pathname.startsWith(path + "?");
@@ -89,24 +88,23 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ onLogout }) => {
           onClick={() => router.push("/home")}
           className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent hover:opacity-90"
         >
-          Kroaddy
+          {t("appName")}
         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-2 pt-3">
-        <p className="mb-2 px-2 text-xs font-medium uppercase tracking-wider text-gray-500">카테고리</p>
         <ul className="space-y-0.5">
           {CATEGORIES.map((cat) => (
             <li key={cat.id}>
               <button
                 type="button"
-                onClick={() => (cat.path ? router.push(cat.path) : null)}
+                onClick={() => router.push(cat.path)}
                 className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
                   isActive(cat.path) ? "bg-purple-100 text-purple-800" : "text-gray-700 hover:bg-gray-100"
                 }`}
               >
                 {cat.icon}
-                <span className="truncate">{cat.label}</span>
+                <span className="truncate">{t(cat.labelKey)}</span>
               </button>
             </li>
           ))}
@@ -127,19 +125,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ onLogout }) => {
             <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
             <path d="M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
-          <span>친구목록</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => router.push("/chat/whisper")}
-          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-            pathname.startsWith("/chat/whisper") ? "bg-purple-100 text-purple-800" : "text-gray-700 hover:bg-gray-100"
-          }`}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
-          <span>귓속말</span>
+          <span>{t("sidebar.friends")}</span>
         </button>
         <button
           type="button"
@@ -152,7 +138,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ onLogout }) => {
             <circle cx="12" cy="12" r="3" />
             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3m16.364-6.364l-4.243 4.243M7.879 16.121l-4.243 4.243m12.728 0l-4.243-4.243M7.879 7.879L3.636 3.636" />
           </svg>
-          <span>설정</span>
+          <span>{t("sidebar.profile")}</span>
         </button>
         <button
           type="button"
@@ -164,7 +150,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ onLogout }) => {
             <polyline points="16 17 21 12 16 7" />
             <line x1="21" y1="12" x2="9" y2="12" />
           </svg>
-          <span>로그아웃</span>
+          <span>{t("sidebar.logout")}</span>
         </button>
       </div>
     </aside>
