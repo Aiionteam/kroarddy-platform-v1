@@ -23,7 +23,7 @@
   "sidebar": {
     "tourstar": "투어스타", "planner": "여행플래너", "schedule": "일정관리",
     "guide": "장소 추천", "groupchat": "단체채팅", "friends": "친구목록",
-    "whisper": "귓속말", "profile": "설정", "logout": "로그아웃"
+    "whisper": "귓속말", "profile": "내정보", "logout": "로그아웃"
   },
   "options": {
     "gender":   { "남성": "남성", "여성": "여성", "기타": "기타", "무응답": "무응답" },

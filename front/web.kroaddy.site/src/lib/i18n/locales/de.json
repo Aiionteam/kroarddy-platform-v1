@@ -23,7 +23,7 @@
   "sidebar": {
     "tourstar": "TourStar", "planner": "Reiseplaner", "schedule": "Meine Reisen",
     "guide": "Entdecken", "groupchat": "Gruppenchat", "friends": "Freunde",
-    "whisper": "Flüstern", "profile": "Einstellungen", "logout": "Abmelden"
+    "whisper": "Flüstern", "profile": "Mein Profil", "logout": "Abmelden"
   },
   "options": {
     "gender":   { "남성": "Männlich", "여성": "Weiblich", "기타": "Divers", "무응답": "Keine Angabe" },

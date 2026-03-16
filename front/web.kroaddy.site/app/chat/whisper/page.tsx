@@ -8,6 +8,7 @@ import {
   getConversation,
   sendWhisper,
   markConversationRead,
+  deleteConversation,
   type WhisperModel,
   type WhisperConversationSummary,
 } from "@/lib/api/whisper";
@@ -63,6 +64,8 @@ export default function WhisperPage() {
   // 차단
   const [partnerBlocked, setPartnerBlocked] = useState(false);
   const [blockLoading, setBlockLoading] = useState(false);
+
+  const [deletingConv, setDeletingConv] = useState(false);
 
   // 더보기 메뉴
   const [showMenu, setShowMenu] = useState(false);
@@ -157,6 +160,21 @@ export default function WhisperPage() {
       }
     } catch (_) {}
     finally { setBlockLoading(false); setShowMenu(false); }
+  };
+
+  const handleDeleteConversation = async () => {
+    if (!activePartnerId || deletingConv) return;
+    if (!window.confirm(`${activePartnerName}님과의 대화를 모두 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+    setDeletingConv(true);
+    setShowMenu(false);
+    try {
+      await deleteConversation(activePartnerId);
+      setMessages([]);
+      setActivePartnerId(null);
+      setActivePartnerName("");
+      loadConversations();
+    } catch (_) {}
+    finally { setDeletingConv(false); }
   };
 
   const openNewChat = async () => {
@@ -281,9 +299,21 @@ export default function WhisperPage() {
                 <div className="absolute right-0 top-full z-10 mt-1 w-40 rounded-xl border border-gray-200 bg-white shadow-lg">
                   <button
                     type="button"
+                    disabled={deletingConv}
+                    onClick={handleDeleteConversation}
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
+                    </svg>
+                    {deletingConv ? "삭제 중..." : "대화 삭제"}
+                  </button>
+                  <div className="mx-2 border-t border-gray-100" />
+                  <button
+                    type="button"
                     disabled={blockLoading}
                     onClick={handleBlock}
-                    className={`flex w-full items-center gap-2 px-4 py-2.5 text-sm ${partnerBlocked ? "text-gray-700 hover:bg-gray-50" : "text-red-600 hover:bg-red-50"}`}
+                    className={`flex w-full items-center gap-2 px-4 py-2.5 text-sm ${partnerBlocked ? "text-gray-700 hover:bg-gray-50" : "text-orange-600 hover:bg-orange-50"}`}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
