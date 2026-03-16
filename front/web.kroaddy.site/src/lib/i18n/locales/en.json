@@ -1,0 +1,34 @@
+{
+  "app": { "name": "Kroaddy" },
+  "common": { "save": "Save", "cancel": "Cancel", "next": "Next", "skip": "Skip", "done": "Done", "loading": "Loading...", "error": "Something went wrong", "logout": "Logout" },
+  "onboarding": {
+    "title": "Travel Preferences",
+    "subtitle": "Help us personalize your AI travel recommendations",
+    "later": "Later",
+    "saving": "Saving...",
+    "nationality": { "title": "Country / Nationality", "hint": "The app will switch to your preferred language" },
+    "gender":  { "title": "Gender" },
+    "age":     { "title": "Age Group" },
+    "diet":    { "title": "Dietary Preferences" },
+    "religion":{ "title": "Religion" }
+  },
+  "home": {
+    "subtitle": "Create your perfect trip with AI",
+    "planner":  { "label": "Trip Planner",   "desc": "AI-recommended routes & itineraries" },
+    "schedule": { "label": "My Plans",        "desc": "View your saved travel plans" },
+    "guide":    { "label": "Discover",        "desc": "Restaurants & events in one place" },
+    "kcontent": { "label": "K-Content Planner", "desc": "Plan trips inspired by K-content" },
+    "banner":   { "title": "Set your preferences for better AI recommendations!", "sub": "Add gender, age, diet & religion for personalized routes.", "setup": "Set up", "close": "Close" }
+  },
+  "sidebar": {
+    "tourstar": "TourStar", "planner": "Trip Planner", "schedule": "My Plans",
+    "guide": "Discover", "groupchat": "Group Chat", "friends": "Friends",
+    "profile": "Settings", "logout": "Logout"
+  },
+  "options": {
+    "gender":   { "남성": "Male", "여성": "Female", "기타": "Other", "무응답": "Prefer not to say" },
+    "age":      { "10대": "Teens", "20대": "20s", "30대": "30s", "40대": "40s", "50대": "50s", "60대이상": "60+" },
+    "diet":     { "일반": "Regular", "채식": "Vegetarian", "비건": "Vegan", "할랄": "Halal", "알레르기있음": "Allergies" },
+    "religion": { "없음": "None", "기독교": "Christian", "불교": "Buddhist", "천주교": "Catholic", "이슬람": "Muslim", "기타": "Other" }
+  }
+}

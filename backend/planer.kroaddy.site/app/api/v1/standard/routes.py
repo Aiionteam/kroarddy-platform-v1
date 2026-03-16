@@ -267,34 +267,32 @@ def _plan_to_dict(plan: TravelPlan) -> dict:
 async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depends(get_db)):
     location_name = SLUG_TO_NAME.get(location, location)
     existing_routes: list[str] = req.existing_routes or []
-
     eh = _existing_hash(existing_routes)
-    cache_key = f"{location}:{req.start_date}:{req.end_date}:{eh}"
+    # 언어별 캐시 분리를 위해 user_profile 조회 후 cache_key 확정 (아래 lock 블록에서 재정의)
+    _preliminary_key = f"{location}:{req.start_date}:{req.end_date}:{eh}"
 
-    cached = _routes_cache.get(cache_key)
+    cached = _routes_cache.get(_preliminary_key)
     if cached and time.time() - cached[1] < _ROUTES_TTL:
-        logger.info("루트 L1캐시 히트: %s", cache_key)
+        logger.info("루트 L1캐시 히트: %s", _preliminary_key)
         return {"location": location, "location_name": location_name, "routes": cached[0]}
 
     async with _routes_lock:
-        cached = _routes_cache.get(cache_key)
+        cached = _routes_cache.get(_preliminary_key)
         if cached and time.time() - cached[1] < _ROUTES_TTL:
-            logger.info("루트 L1캐시 히트(lock 내부): %s", cache_key)
+            logger.info("루트 L1캐시 히트(lock 내부): %s", _preliminary_key)
             return {"location": location, "location_name": location_name, "routes": cached[0]}
-
-        db_routes = await _get_routes_from_db(cache_key, db)
-        if db_routes:
-            _routes_cache[cache_key] = (db_routes, time.time())
-            logger.info("루트 L2(DB)캐시 히트: %s (%d건)", cache_key, len(db_routes))
-            return {"location": location, "location_name": location_name, "routes": db_routes}
 
         festivals, user_profile = await asyncio.gather(
             fetch_festivals_for_period(location, location_name, req.start_date, req.end_date),
             fetch_user_profile(req.user_id),
         )
+        nationality = (user_profile or {}).get("nationality", "")
+        lang_code = nationality[:3].lower() if nationality else "ko"  # 캐시 키용 짧은 식별자
+        cache_key = f"{location}:{req.start_date}:{req.end_date}:{eh}:{lang_code}"
+
         logger.info(
-            "행사 연동: location=%s, 건수=%d | 유저 프로필: %s | 기존 제외=%d건",
-            location, len(festivals), bool(user_profile), len(existing_routes),
+            "행사 연동: location=%s, 건수=%d | 유저 프로필: %s (국적=%s) | 기존 제외=%d건",
+            location, len(festivals), bool(user_profile), nationality, len(existing_routes),
         )
 
         state = {
@@ -331,7 +329,11 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
 async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = Depends(get_db)):
     location_name = SLUG_TO_NAME.get(location, location)
 
-    sched_key = f"{location}:{req.route_name}:{req.start_date}:{req.end_date}"
+    # user_profile 조회 (언어 결정 및 개인화용)
+    user_profile = await fetch_user_profile(req.user_id)
+    nationality = (user_profile or {}).get("nationality", "")
+    lang_code = nationality[:3].lower() if nationality else "ko"
+    sched_key = f"{location}:{req.route_name}:{req.start_date}:{req.end_date}:{lang_code}"
 
     cached_sched = _schedule_cache.get(sched_key)
     if cached_sched and time.time() - cached_sched[1] < _SCHEDULE_TTL:
@@ -368,7 +370,11 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
                 "error": None,
             }
 
-        state = {**_base_state(location, req.start_date, req.end_date), "route_name": req.route_name}
+        state = {
+            **_base_state(location, req.start_date, req.end_date),
+            "route_name": req.route_name,
+            "user_profile": user_profile,
+        }
         try:
             result = await schedule_graph.ainvoke(state)
         except Exception as e:
@@ -423,8 +429,9 @@ async def modify_plan(
     if not plan:
         raise HTTPException(status_code=404, detail="플랜을 찾을 수 없거나 수정 권한이 없습니다.")
 
+    user_profile = await fetch_user_profile(req.user_id)
     try:
-        modified = await modify_schedule(plan.schedule or [], req.instruction, plan.location)
+        modified = await modify_schedule(plan.schedule or [], req.instruction, plan.location, user_profile)
     except Exception as e:
         _check_quota_error(e)
         raise
@@ -460,9 +467,10 @@ async def reroll_item(
 
     target_item = schedule[req.item_index]
     location_name = plan.location
+    user_profile = await fetch_user_profile(req.user_id)
 
     try:
-        new_item = await reroll_single_item(target_item, schedule, location_name)
+        new_item = await reroll_single_item(target_item, schedule, location_name, user_profile)
     except Exception as e:
         _check_quota_error(e)
         raise HTTPException(status_code=500, detail=f"리롤 실패: {e}")

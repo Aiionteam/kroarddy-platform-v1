@@ -15,6 +15,7 @@ class ScheduleRequest(BaseModel):
     route_name: str
     start_date: Optional[str] = None
     end_date: Optional[str] = None
+    user_id: Optional[int] = None
 
 
 class SavePlanRequest(BaseModel):
