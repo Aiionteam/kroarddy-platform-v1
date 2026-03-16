@@ -8,6 +8,7 @@ import "../../features/chat/presentation/chat_page.dart";
 import "../../features/chat/presentation/friends_page.dart";
 import "../../features/chat/presentation/whisper_page.dart";
 import "../../features/guide/presentation/event_page.dart";
+import "../../features/guide/presentation/guide_landing_page.dart";
 import "../../features/guide/presentation/restaurant_page.dart";
 import "../../features/home/home_page.dart";
 import "../../features/planner/presentation/planner_page.dart";
@@ -51,6 +52,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: "/planner/schedule",
             builder: (context, state) => const SchedulePage(),
+          ),
+          GoRoute(
+            path: "/guide",
+            builder: (context, state) => const GuideLandingPage(),
           ),
           GoRoute(
             path: "/guide/event",

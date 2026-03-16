@@ -37,15 +37,16 @@ public class AuthController {
      * HttpOnly 쿠키의 Refresh Token을 사용하여 새로운 Access Token 발급
      */
     @PostMapping("/refresh")
-    @Operation(summary = "Access Token 갱신", description = "HttpOnly 쿠키의 Refresh Token으로 새로운 Access Token을 발급합니다.")
+    @Operation(summary = "Access Token 갱신", description = "HttpOnly 쿠키 또는 요청 body의 Refresh Token으로 새로운 Access Token을 발급합니다.")
     public ResponseEntity<Map<String, Object>> refreshAccessToken(
+            @RequestBody(required = false) Map<String, Object> body,
             HttpServletRequest request,
             HttpServletResponse response) {
         
         System.out.println("=== Access Token 갱신 요청 ===");
         
         try {
-            // 1. HttpOnly 쿠키에서 Refresh Token 가져오기
+            // 1. HttpOnly 쿠키에서 Refresh Token 가져오기 (웹 브라우저)
             String refreshToken = null;
             Cookie[] cookies = request.getCookies();
             
@@ -58,8 +59,17 @@ public class AuthController {
                 }
             }
             
+            // 2. 쿠키에 없으면 요청 body에서 가져오기 (모바일 앱)
+            if ((refreshToken == null || refreshToken.isEmpty()) && body != null) {
+                Object bodyToken = body.get("refresh_token");
+                if (bodyToken != null) {
+                    refreshToken = bodyToken.toString().trim();
+                    System.out.println("Refresh Token을 요청 body에서 가져옴 (모바일)");
+                }
+            }
+            
             if (refreshToken == null || refreshToken.isEmpty()) {
-                System.err.println("Refresh Token이 쿠키에 없습니다.");
+                System.err.println("Refresh Token이 쿠키와 body 모두에 없습니다.");
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("success", false);
                 errorResponse.put("message", "Refresh Token이 없습니다. 다시 로그인해주세요.");

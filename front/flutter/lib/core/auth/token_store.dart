@@ -1,5 +1,10 @@
 import "package:flutter_secure_storage/flutter_secure_storage.dart";
 
+/// Access Token과 Refresh Token 모두 OS 보안 저장소에 보관합니다.
+///
+/// 여행 앱 특성상 열악한 네트워크 환경에서도 유효한 AT가 있으면
+/// 서버 호출 없이 즉시 앱 진입이 가능해야 하므로, AT도 영속 저장합니다.
+/// 쿠키 기반 인증은 사용하지 않습니다.
 class TokenStore {
   TokenStore(this._storage);
 

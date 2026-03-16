@@ -7,7 +7,6 @@ import "package:image_picker/image_picker.dart";
 import "../../../core/router/main_shell.dart";
 import "../data/planner_models.dart";
 import "../data/user_content_models.dart";
-import "state/k_content_controller.dart";
 import "state/planner_controller.dart";
 import "state/user_content_controller.dart";
 
@@ -1442,69 +1441,184 @@ class _InputField extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════
 // K-CONTENT TAB
 // ═══════════════════════════════════════════════════════════════
+// ── K-Content 데이터 ─────────────────────────────────────────
+class _KItem {
+  const _KItem(this.title, this.description, this.gradient);
+  final String title;
+  final String description;
+  final List<Color> gradient;
+}
+
+const _kpopItems = [
+  _KItem("HYBE Building", "HYBE Insight museum and label headquarters.", [Color(0xFFFF4D6D), Color(0xFFD63384)]),
+  _KItem("SM Entertainment", "SM Town and SM Entertainment building.", [Color(0xFF7C3AED), Color(0xFF9333EA)]),
+  _KItem("Hongdae K-Pop Street", "Street performances, K-Pop stores.", [Color(0xFFD63384), Color(0xFFE11D74)]),
+  _KItem("K-Pop Store", "Official albums, merch, and photo cards.", [Color(0xFF4F46E5), Color(0xFF7C3AED)]),
+];
+
+const _kdramaItems = [
+  _KItem("Goblin Filming Location", "Famous drama shooting spots.", [Color(0xFFF59E0B), Color(0xFFEA580C)]),
+  _KItem("Itaewon Class Street", "DanBam and the streets of the drama.", [Color(0xFF10B981), Color(0xFF0D9488)]),
+  _KItem("Namsan Tower", "Locks of love and panoramic Seoul.", [Color(0xFF0EA5E9), Color(0xFF3B82F6)]),
+  _KItem("Bukchon Hanok Village", "Traditional hanok alleys.", [Color(0xFFD97706), Color(0xFFE11D48)]),
+];
+
+const _kfoodItems = [
+  _KItem("Gwangjang Market", "Bindaetteok, mayak gimbap, street food.", [Color(0xFFF97316), Color(0xFFD97706)]),
+  _KItem("Myeongdong Street Food", "Tteokbokki, odeng, and sweet treats.", [Color(0xFFEF4444), Color(0xFFF97316)]),
+  _KItem("Korean BBQ", "Samgyeopsal and galbi grill experience.", [Color(0xFFDC2626), Color(0xFFBE185D)]),
+  _KItem("Convenience Store Combo", "Triangle kimbap, ramyeon, soju.", [Color(0xFF84CC16), Color(0xFF22C55E)]),
+];
+
+const _kbeautyItems = [
+  _KItem("Olive Young", "K-Beauty flagship. Skincare and makeup.", [Color(0xFFEC4899), Color(0xFFE11D48)]),
+  _KItem("Myeongdong Beauty Street", "Density of beauty stores and brands.", [Color(0xFFD946EF), Color(0xFFEC4899)]),
+  _KItem("K-Beauty Store", "Sheet masks, serums, cushion compacts.", [Color(0xFF7C3AED), Color(0xFF9333EA)]),
+  _KItem("Skincare Experience Shop", "Facials and personalized skincare.", [Color(0xFFFB7185), Color(0xFFEC4899)]),
+];
+
 class _KContentTab extends ConsumerWidget {
   const _KContentTab();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(kContentControllerProvider);
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text("🎬", style: TextStyle(fontSize: 48)),
+    return ListView(
+      children: [
+        // ── 히어로 배너 ────────────────────────────────────────
+        Container(
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            const SizedBox(height: 20),
-            const Text(
-              "K-콘텐츠 플래너",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: _textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEF3C7),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                "Coming Soon",
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "K-Content Travel",
                 style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFFD97706),
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              "드라마·영화 촬영지 기반 여행 코스\n곧 제공될 예정입니다.",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: _textSecondary, height: 1.6),
-            ),
-            if (state.message.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Text(state.message, style: const TextStyle(fontSize: 12, color: _textSecondary)),
+              const SizedBox(height: 6),
+              Text(
+                "Explore Korea through K-Pop, Drama, Food and Beauty",
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.85),
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF7C3AED),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  "Generate AI Route",
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+              ),
             ],
-          ],
+          ),
         ),
-      ),
+        // ── 콘텐츠 행 ──────────────────────────────────────────
+        _KContentRow(title: "KPOP TOUR", items: _kpopItems),
+        _KContentRow(title: "KDRAMA TOUR", items: _kdramaItems),
+        _KContentRow(title: "KFOOD TOUR", items: _kfoodItems),
+        _KContentRow(title: "KBEAUTY TOUR", items: _kbeautyItems),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+}
+
+class _KContentRow extends StatelessWidget {
+  const _KContentRow({required this.title, required this.items});
+  final String title;
+  final List<_KItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: _textPrimary,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 140,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: items.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, i) {
+              final item = items[i];
+              return Container(
+                width: 160,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: item.gradient,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Spacer(),
+                    Text(
+                      item.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      item.description,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 11,
+                        height: 1.3,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
