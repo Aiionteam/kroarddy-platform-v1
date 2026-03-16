@@ -726,7 +726,7 @@ export default function SchedulePage() {
               <div className="p-6">
                 <div className="rounded-xl bg-red-50 px-5 py-4 text-sm text-red-600">
                   {error}
-                  <button type="button" onClick={loadPlans} className="ml-3 underline text-red-500 hover:text-red-700">다시 시도</button>
+                  <button type="button" onClick={() => loadPlans()} className="ml-3 underline text-red-500 hover:text-red-700">다시 시도</button>
                 </div>
               </div>
             )}
