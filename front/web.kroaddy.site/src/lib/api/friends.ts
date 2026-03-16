@@ -26,3 +26,8 @@ export const listFriends = async (): Promise<FriendsResponse> => {
   const { data } = await apiClient.get<FriendsResponse>("/api/friends");
   return data as FriendsResponse;
 };
+
+export const removeFriend = async (targetId: number): Promise<FriendsResponse> => {
+  const { data } = await apiClient.delete<FriendsResponse>(`/api/friends/${targetId}`);
+  return data as FriendsResponse;
+};
