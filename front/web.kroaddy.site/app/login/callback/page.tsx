@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useLoginStore } from "@/store";
 import { handleOAuthCallback, extractOAuthParams } from "@/service";
 import { setSharedToken } from "@/lib/api/tokenStore";
+import { getAppUserIdFromToken } from "@/lib/api/auth";
+import { fetchUserProfile } from "@/lib/api/userProfile";
 
 function OAuthCallbackContent() {
   const router = useRouter();
@@ -29,7 +31,7 @@ function OAuthCallbackContent() {
     }
 
     const result = handleOAuthCallback(params, {
-      onSuccess: (provider) => {
+      onSuccess: async (provider) => {
         setAuthenticated(true);
         setLoadingType(provider);
         if (typeof window !== "undefined") {
@@ -37,6 +39,20 @@ function OAuthCallbackContent() {
           sessionStorage.setItem("loadingType", provider);
         }
         setStatus("success");
+
+        // 프로필 완성 여부 확인 → 미완성이면 온보딩으로
+        try {
+          const userId = getAppUserIdFromToken(params.token ?? undefined);
+          if (userId) {
+            const profile = await fetchUserProfile(userId);
+            if (!profile || !profile.is_complete) {
+              router.replace("/profile/onboarding");
+              return;
+            }
+          }
+        } catch {
+          // 프로필 조회 실패해도 홈으로 이동
+        }
         router.replace("/home");
       },
       onError: (error) => {
