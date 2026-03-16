@@ -216,6 +216,27 @@ class ApiClient {
     return { data: (data ?? null) as T };
   }
 
+  async patch<T = any>(endpoint: string, body?: any, options: RequestOptions = {}): Promise<{ data: T }> {
+    const url = `${this.baseURL}${endpoint}`;
+    const makeRequest = () =>
+      this.fetchWithTimeout(
+        url,
+        {
+          method: "PATCH",
+          headers: this.getHeaders(endpoint),
+          credentials: "include",
+          body: body ? JSON.stringify(body) : undefined,
+          ...options,
+        },
+        options.timeout || 10000
+      );
+    const response = await makeRequest();
+    if (!response.ok) await this.handleErrorResponse(response, url, makeRequest);
+    const contentType = response.headers.get("content-type");
+    const data = contentType?.includes("application/json") ? await response.json() : await response.text();
+    return { data: (data ?? null) as T };
+  }
+
   async delete<T = any>(endpoint: string, body?: any, options: RequestOptions = {}): Promise<{ data: T }> {
     const url = `${this.baseURL}${endpoint}`;
     const response = await this.fetchWithTimeout(
