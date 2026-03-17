@@ -3,7 +3,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
-import { AppSidebar } from "@/components/organisms/AppSidebar";
+import { AppLayout } from "@/components/organisms/AppLayout";
 
 const MODE_OPTIONS = [
   {
@@ -43,9 +43,8 @@ export default function PlannerPage() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-100">
-      <AppSidebar onLogout={logout} />
-      <main className="flex flex-1 flex-col items-center justify-center bg-gray-100 px-8 py-12">
+    <AppLayout onLogout={logout}>
+      <main className="flex flex-1 flex-col items-center justify-center bg-gray-100 px-4 py-8 md:px-8 md:py-12">
         <div className="mb-10 text-center">
           <h2 className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-3xl font-bold text-transparent">
             여행 플래너
@@ -83,6 +82,6 @@ export default function PlannerPage() {
           ))}
         </div>
       </main>
-    </div>
+    </AppLayout>
   );
 }

@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
-import { AppSidebar } from "@/components/organisms/AppSidebar";
+import { AppLayout } from "@/components/organisms/AppLayout";
 import { getAppUserIdFromToken } from "@/lib/api/auth";
 import {
   polishRoute,
@@ -742,8 +742,7 @@ export default function UserContentPage() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-100">
-      <AppSidebar onLogout={logout} />
+    <AppLayout onLogout={logout}>
       <div className="flex flex-1 flex-col overflow-hidden">
 
         {/* 헤더 */}
@@ -828,6 +827,6 @@ export default function UserContentPage() {
           onClose={() => setDetailRoute(null)}
         />
       )}
-    </div>
+    </AppLayout>
   );
 }

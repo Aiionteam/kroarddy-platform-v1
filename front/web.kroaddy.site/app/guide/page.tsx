@@ -3,7 +3,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
-import { AppSidebar } from "@/components/organisms/AppSidebar";
+import { AppLayout } from "@/components/organisms/AppLayout";
 
 const TABS = [
   { id: "restaurant", label: "맛집 추천", description: "지역별 맛집 탐색", path: "/guide/restaurant" },
@@ -23,8 +23,7 @@ export default function GuideLandingPage() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <AppSidebar onLogout={logout} />
+    <AppLayout onLogout={logout}>
       <main className="flex flex-1 flex-col overflow-hidden">
         <header className="shrink-0 border-b border-gray-200 bg-white px-6 py-5">
           <div className="flex items-center justify-between">
@@ -67,7 +66,7 @@ export default function GuideLandingPage() {
           </div>
         </div>
       </main>
-    </div>
+    </AppLayout>
   );
 }
 

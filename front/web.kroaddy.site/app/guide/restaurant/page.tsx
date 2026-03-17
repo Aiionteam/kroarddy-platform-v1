@@ -3,7 +3,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
-import { AppSidebar } from "@/components/organisms/AppSidebar";
+import { AppLayout } from "@/components/organisms/AppLayout";
 
 export default function RestaurantPage() {
   const router = useRouter();
@@ -18,8 +18,7 @@ export default function RestaurantPage() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <AppSidebar onLogout={logout} />
+    <AppLayout onLogout={logout}>
       <main className="flex flex-1 flex-col overflow-hidden">
         <header className="shrink-0 border-b border-gray-200 bg-white px-6 py-5">
           <h1 className="text-xl font-bold text-gray-800">맛집추천</h1>
@@ -29,6 +28,6 @@ export default function RestaurantPage() {
           <p className="text-gray-400">맛집 추천 콘텐츠가 곧 제공됩니다.</p>
         </div>
       </main>
-    </div>
+    </AppLayout>
   );
 }

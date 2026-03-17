@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
-import { AppSidebar } from "@/components/organisms/AppSidebar";
+import { AppLayout } from "@/components/organisms/AppLayout";
 import {
   buildTourstarImageUrl,
   generateTourstarAutoComment,
@@ -1296,9 +1296,7 @@ export default function TourstarPage() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-100">
-      <AppSidebar onLogout={logout} />
-
+    <AppLayout onLogout={logout}>
       {/* ── 메인 콘텐츠 ── */}
       <main className="flex-1 overflow-y-auto">
         {/* 헤더 */}
@@ -1503,6 +1501,6 @@ export default function TourstarPage() {
         onToggleVisibility={toggleVisibility}
         onAddComment={addComment}
       />
-    </div>
+    </AppLayout>
   );
 }
