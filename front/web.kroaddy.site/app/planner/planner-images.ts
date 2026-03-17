@@ -72,21 +72,21 @@ const IMAGE_MAP: Record<string, string> = {
 
   // ── 광역시 ───────────────────────────────────────────────────
   "busan":        "/image/metropolitan-cities/busan/Type1_더베이101_한국관광공사 김지호_VZJFQa.jpg",
-  "busan-haeundae": "/image/metropolitan-cities/busan/Type1_해운대 추천여행_한국관광공사, 카르스텐_sGh6Ea.jpg",
-  "busan-jjagalchi": "/image/metropolitan-cities/busan/Type1_사직야구장_한국관광공사 이범수_ui1ixa.jpg",
-  "busan-songjeong": "/image/metropolitan-cities/busan/Type1_해운대 추천여행_한국관광공사, 카르스텐_sGh6Ja.jpg",
+  "busan-haeundae": "/image/metropolitan-cities/busan/Type1_해운대 마천루_한국관광공사, 카멜프레스_sGh6Ea.jpg",
+  "busan-jjagalchi": "/image/metropolitan-cities/busan/Type1_부산국제시장_한국관광공사 이범수_ui1ixa.jpg",
+  "busan-songjeong": "/image/metropolitan-cities/busan/Type1_해운대 마천루_한국관광공사, 카멜프레스_sGh6Ja.jpg",
   "daegu":        "/image/metropolitan-cities/daegu/Type1_대구 동성로거리_앙지뉴 필름_0HusGK.jpg",
   "daegu-gimgwangseok": "/image/metropolitan-cities/daegu/Type1_대구 동성로거리_앙지뉴 필름_WKl3rp.jpg",
-  "daegu-suseong": "/image/metropolitan-cities/daegu/Type1_두류공원_한국관광공사 김지호_vgm29a.jpg",
-  "daegu-palgong": "/image/metropolitan-cities/daegu/Type1_두류공원_한국관광공사 이범수_pHoV0a.jpg",
+  "daegu-suseong": "/image/metropolitan-cities/daegu/Type1_서문시장_한국관광공사 김지호_vgm29a.jpg",
+  "daegu-palgong": "/image/metropolitan-cities/daegu/Type1_서문시장_한국관광공사 이범수_pHoV0a.jpg",
   "daejeon":     "/image/metropolitan-cities/daejeon/Type1_대전 엑스포다리_한국관광공사 김지호_atgwSa.jpg",
   "gwangju":     "/image/metropolitan-cities/gwangju/Type1_1913 송정역시장_한국관광공사 김지호_D6QeMa.jpg",
   "incheon":     "/image/metropolitan-cities/incheon/Type1_미래도시 송도_전종훈_qsmMUa.jpg",
   "sejong":      "/image/metropolitan-cities/sejong/Type1_국립세종수목원_김용훈_195a3f.jpg",
   "ulsan":        "/image/metropolitan-cities/ulsan/Type1_간절곶_두잇컴퍼니 노시현_jCdpja.jpg",
   "ulsan-daewangam": "/image/metropolitan-cities/ulsan/Type1_간절곶_두잇컴퍼니 노시현_jCdpsa.jpg",
-  "ulsan-taehwa": "/image/metropolitan-cities/ulsan/Type1_고래바다 여행선 혼_노란_Ef8yza.jpg",
-  "ulsan-bangudae": "/image/metropolitan-cities/ulsan/Type1_화암추 수목원_한국관광공사 박성근_qXtHga.jpg",
+  "ulsan-taehwa": "/image/metropolitan-cities/ulsan/Type1_태화강 국가정원_한국관광공사 박성근_qXtHga.jpg",
+  "ulsan-bangudae": "/image/metropolitan-cities/ulsan/Type1_뱀가마속에서 익어가는 장인의 혼_방경미_Ef8yza.jpg",
 
   // ── 경기 북부 ─────────────────────────────────────────────────
   "dongducheon": "/image/northern-gyeonggi/dongducheon/Type1_벨기에 및 룩셈부르크군 참전기념비_한국관광공사 박성근_hGCkca.jpg",
