@@ -13,7 +13,7 @@ const NOTICES = [
     id: 1,
     badge: "업데이트",
     badgeColor: "bg-purple-100 text-purple-700",
-    title: "TourStar v1.2 업데이트 – AI 일정 재생성 기능 추가",
+    title: "Kroaddy v1.2 업데이트 – AI 일정 재생성 기능 추가",
     date: "2026.03.05",
   },
   {
@@ -203,7 +203,7 @@ function Hero() {
           </h1>
 
           <p className="text-lg text-gray-500 leading-relaxed mb-10 max-w-md">
-            TourStar는 AI가 당신의 취향을 분석해 최적의 여행 루트와 일정을 설계합니다.
+            Kroaddy는 AI가 당신의 취향을 분석해 최적의 여행 루트와 일정을 설계합니다.
             전국 축제 정보부터 그룹 채팅까지, 여행의 모든 것을 한 곳에서.
           </p>
 
@@ -496,7 +496,7 @@ function Download() {
           지금 바로 시작하세요
         </h2>
         <p className="text-purple-200 text-lg mb-12 max-w-xl mx-auto">
-          TourStar를 무료로 다운로드하고 AI가 설계한 나만의 첫 여행을 경험해보세요.
+          Kroaddy를 무료로 다운로드하고 AI가 설계한 나만의 첫 여행을 경험해보세요.
         </p>
 
         <div className="flex flex-wrap justify-center gap-5">
@@ -553,7 +553,7 @@ function Footer() {
               </span>
             </div>
             <p className="text-sm leading-relaxed max-w-xs text-gray-500">
-              AI 기반 맞춤형 여행 플래너 TourStar. 당신만의 특별한 여행을 설계합니다.
+              AI 기반 맞춤형 여행 플래너 Kroaddy. 당신만의 특별한 여행을 설계합니다.
             </p>
           </div>
 
@@ -580,7 +580,7 @@ function Footer() {
         </div>
 
         <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-600">
-          <p>© 2026 TourStar. All rights reserved.</p>
+          <p>© 2026 Kroaddy. All rights reserved.</p>
           <p>사업자등록번호: 000-00-00000 · 대표: 홍길동 · 문의: contact@kroaddy.site</p>
         </div>
       </div>

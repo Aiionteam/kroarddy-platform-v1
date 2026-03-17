@@ -8,10 +8,10 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "TourStar – AI 기반 맞춤형 여행 플래너",
+  title: "Kroaddy – AI 기반 맞춤형 여행 플래너",
   description:
-    "TourStar는 AI가 당신의 취향을 분석해 최적의 여행 루트와 일정을 설계해주는 개인화 여행 플래너 앱입니다.",
-  keywords: ["여행", "AI 여행", "여행 플래너", "투어스타", "TourStar"],
+    "Kroaddy는 AI가 당신의 취향을 분석해 최적의 여행 루트와 일정을 설계해주는 개인화 여행 플래너 앱입니다.",
+  keywords: ["여행", "AI 여행", "여행 플래너", "크로디", "Kroaddy"],
 };
 
 export default function RootLayout({

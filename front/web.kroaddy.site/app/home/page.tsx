@@ -94,7 +94,7 @@ export default function HomePage() {
 
         <div className="mb-10 text-center">
           <h1 className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-4xl font-bold text-transparent">
-            {t("home.greeting")}
+            HOME
           </h1>
           <p className="mt-3 text-gray-500">{t("home.subtitle") }</p>
         </div>
