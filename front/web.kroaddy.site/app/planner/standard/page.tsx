@@ -16,6 +16,9 @@ import { getDestinationImage } from "../planner-images";
 
 function DestCard({ dest, onClick }: { dest: Destination; onClick: () => void }) {
   const imagePath = getDestinationImage(dest.slug);
+  const [imgError, setImgError] = React.useState(false);
+
+  const showPlaceholder = !imagePath || imgError;
 
   return (
     <button
@@ -23,7 +26,7 @@ function DestCard({ dest, onClick }: { dest: Destination; onClick: () => void })
       className="group relative shrink-0 w-80 cursor-pointer rounded-xl overflow-hidden shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-xl hover:z-10"
       style={{ aspectRatio: "16/9" }}
     >
-      {imagePath ? (
+      {!showPlaceholder ? (
         <Image
           src={imagePath}
           alt={dest.name}
@@ -31,12 +34,12 @@ function DestCard({ dest, onClick }: { dest: Destination; onClick: () => void })
           sizes="320px"
           className="object-cover transition-transform duration-300 group-hover:scale-105"
           loading="lazy"
+          onError={() => setImgError(true)}
         />
       ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-          <span className="text-6xl opacity-40 select-none group-hover:scale-110 transition-transform duration-300">
-            {dest.emoji ?? "📍"}
-          </span>
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col items-center justify-center gap-1.5">
+          <span className="text-4xl opacity-30 select-none">{dest.emoji ?? "📍"}</span>
+          <span className="text-[10px] font-medium text-gray-400 tracking-wide select-none">이미지 준비중</span>
         </div>
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
