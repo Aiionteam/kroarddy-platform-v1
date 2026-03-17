@@ -24,7 +24,7 @@ import {
   RELIGION_OPTIONS,
   NATIONALITY_OPTIONS,
 } from "@/lib/api/userProfile";
-import { AppSidebar } from "@/components/organisms/AppSidebar";
+import { AppLayout } from "@/components/organisms/AppLayout";
 
 /** 탈퇴 확인 시 사용자에게 입력시키는 문구 (정확히 일치해야 탈퇴 가능) */
 const DELETE_ACCOUNT_CONFIRM_TEXT = "Delete account";
@@ -187,9 +187,8 @@ export default function SettingsPage() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-100">
-      <AppSidebar onLogout={logout} />
-      <div className="flex-1 overflow-y-auto p-8">
+    <AppLayout onLogout={logout}>
+      <div className="flex-1 overflow-y-auto p-4 md:p-8">
         <div className="mx-auto max-w-lg space-y-6">
           <h1 className="text-2xl font-bold text-gray-800">설정</h1>
           {loading ? (
@@ -377,6 +376,6 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }

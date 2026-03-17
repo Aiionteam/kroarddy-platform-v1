@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
-import { AppSidebar } from "@/components/organisms/AppSidebar";
+import { AppLayout } from "@/components/organisms/AppLayout";
 import {
   fetchRoutes,
   fetchSchedule,
@@ -195,8 +195,7 @@ export default function LocationPlannerPage() {
   }, {});
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <AppSidebar onLogout={logout} />
+    <AppLayout onLogout={logout}>
       <main className="flex flex-1 flex-col overflow-hidden">
         <header className="shrink-0 border-b border-gray-200 bg-white px-6 py-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -464,6 +463,6 @@ export default function LocationPlannerPage() {
           </div>
         </div>
       </main>
-    </div>
+    </AppLayout>
   );
 }

@@ -16,7 +16,7 @@ import { listFriends, type FriendsResponse } from "@/lib/api/friends";
 import { blockUser, unblockUser, isBlocked } from "@/lib/api/block";
 import type { UserModel } from "@/lib/api/user";
 import { getAppUserIdFromToken } from "@/lib/api/auth";
-import { AppSidebar } from "@/components/organisms/AppSidebar";
+import { AppLayout } from "@/components/organisms/AppLayout";
 
 function toConvList(data: any): WhisperConversationSummary[] {
   if (!data) return [];
@@ -188,9 +188,7 @@ export default function WhisperPage() {
   if (!isHydrated || !isAuthenticated) return null;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-100">
-      <AppSidebar onLogout={logout} />
-
+    <AppLayout onLogout={logout}>
       {/* ── 대화 목록 패널 ── */}
       <div className={`flex flex-col border-r border-gray-200 bg-white ${activePartnerId ? "hidden md:flex w-72" : "flex flex-1 md:flex-none md:w-72"}`}>
         <div className="flex items-center justify-between border-b border-gray-200 px-4 py-4">
@@ -477,6 +475,6 @@ export default function WhisperPage() {
           </div>
         </div>
       )}
-    </div>
+    </AppLayout>
   );
 }

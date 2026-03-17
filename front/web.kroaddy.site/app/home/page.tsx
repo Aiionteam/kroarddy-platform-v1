@@ -5,7 +5,7 @@ import React, { useEffect, useState } from "react";
 import { useLoginStore } from "@/store";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { AppSidebar } from "@/components/organisms/AppSidebar";
+import { AppLayout } from "@/components/organisms/AppLayout";
 import { getAppUserIdFromToken } from "@/lib/api/auth";
 import { fetchUserProfile } from "@/lib/api/userProfile";
 
@@ -59,9 +59,8 @@ export default function HomePage() {
   ] as const;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-100">
-      <AppSidebar onLogout={logout} />
-      <main className="flex flex-1 flex-col items-center justify-center overflow-auto px-8 py-12">
+    <AppLayout onLogout={logout}>
+      <main className="flex flex-1 flex-col items-center justify-center overflow-auto px-4 py-8 md:px-8 md:py-12">
 
         {/* "나중에 하기" 후 배너 */}
         {profileChecked && showBanner && (
@@ -99,7 +98,7 @@ export default function HomePage() {
           <p className="mt-3 text-gray-500">{t("home.subtitle") }</p>
         </div>
 
-        <div className="grid w-full max-w-2xl grid-cols-2 gap-4">
+        <div className="grid w-full max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2">
           {QUICK_LINKS.map((link) => (
             <button
               key={link.path}
@@ -114,6 +113,6 @@ export default function HomePage() {
           ))}
         </div>
       </main>
-    </div>
+    </AppLayout>
   );
 }

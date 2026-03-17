@@ -3,7 +3,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
-import { AppSidebar } from "@/components/organisms/AppSidebar";
+import { AppLayout } from "@/components/organisms/AppLayout";
 import { HeroBanner } from "@/components/k-content/HeroBanner";
 import { ContentRow } from "@/components/k-content/ContentRow";
 import type { ContentRowItem } from "@/components/k-content/ContentRow";
@@ -194,8 +194,7 @@ export default function KContentPage() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-100">
-      <AppSidebar onLogout={logout} />
+    <AppLayout onLogout={logout}>
       <div className="flex flex-1 flex-col overflow-hidden bg-gray-100">
         {/* Header */}
         <div className="shrink-0 border-b border-gray-200 bg-white px-6 py-4 flex items-center gap-3">
@@ -260,6 +259,6 @@ export default function KContentPage() {
           </div>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }
