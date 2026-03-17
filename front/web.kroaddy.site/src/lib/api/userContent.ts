@@ -164,3 +164,14 @@ export async function likeUserRoute(routeId: number): Promise<{ id: number; like
   if (!res.ok) throw new Error(`좋아요 오류: ${res.status}`);
   return res.json();
 }
+
+export async function deleteUserRoute(routeId: number, userId: number): Promise<void> {
+  const res = await fetch(
+    `${API_BASE}/api/v1/user-content/routes/${routeId}?user_id=${userId}`,
+    { method: "DELETE", cache: "no-store" }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `삭제 오류: ${res.status}`);
+  }
+}

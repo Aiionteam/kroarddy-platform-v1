@@ -15,6 +15,7 @@ import {
   saveUserRoute,
   fetchUserRoutes,
   likeUserRoute,
+  deleteUserRoute,
   uploadImage,
   validateImageAndGetUploadUrl,
   type UserRoute,
@@ -39,13 +40,17 @@ const GRAD_FALLBACKS = [
 function RouteCard({
   route,
   liked,
+  isOwner,
   onLike,
   onOpen,
+  onDelete,
 }: {
   route: UserRoute;
   liked: boolean;
+  isOwner: boolean;
   onLike: (id: number) => void;
   onOpen: (route: UserRoute) => void;
+  onDelete: (id: number) => void;
 }) {
   const grad = GRAD_FALLBACKS[route.id % GRAD_FALLBACKS.length];
 
@@ -88,6 +93,20 @@ function RouteCard({
         </span>
         <span className="tabular-nums">{route.likes}</span>
       </button>
+
+      {/* 삭제 버튼 (본인 게시물만) */}
+      {isOwner && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(route.id); }}
+          className="absolute top-3 left-3 flex items-center justify-center rounded-full bg-black/30 p-1.5 text-white opacity-0 group-hover:opacity-100 hover:bg-red-500/80 transition-all duration-200"
+          aria-label="삭제"
+          title="내 루트 삭제"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+          </svg>
+        </button>
+      )}
 
       {/* 본문 */}
       <div className="absolute bottom-0 left-0 right-0 p-4">
@@ -708,6 +727,18 @@ export default function UserContentPage() {
     });
   }, []);
 
+  const handleDelete = useCallback(async (id: number) => {
+    if (!userId) return;
+    if (!window.confirm("이 루트를 삭제하시겠습니까?")) return;
+    try {
+      await deleteUserRoute(id, userId);
+      setRoutes((prev) => prev.filter((r) => r.id !== id));
+      if (detailRoute?.id === id) setDetailRoute(null);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "삭제에 실패했습니다.");
+    }
+  }, [userId, detailRoute]);
+
   if (!isAuthenticated) return null;
 
   return (
@@ -769,8 +800,10 @@ export default function UserContentPage() {
                   key={route.id}
                   route={route}
                   liked={likedIds.has(route.id)}
+                  isOwner={!!userId && route.user_id === userId}
                   onLike={handleLike}
                   onOpen={setDetailRoute}
+                  onDelete={handleDelete}
                 />
               ))}
             </div>
