@@ -14,7 +14,7 @@ import {
 import { voteHonor } from "@/lib/api/user";
 import { sendFriendRequest } from "@/lib/api/friends";
 import { sendWhisper } from "@/lib/api/whisper";
-import { AppSidebar } from "@/components/organisms/AppSidebar";
+import { AppLayout } from "@/components/organisms/AppLayout";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const ROOM_LABELS: Record<string, string> = {
@@ -305,8 +305,7 @@ export default function GroupChatPage() {
   );
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-100">
-      <AppSidebar onLogout={logout} />
+    <AppLayout onLogout={logout}>
       <div className="flex flex-1 flex-col overflow-hidden bg-white">
         <header className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <h1 className="text-lg font-semibold text-gray-800">
@@ -585,6 +584,6 @@ export default function GroupChatPage() {
           </div>
         </div>
       )}
-    </div>
+    </AppLayout>
   );
 }

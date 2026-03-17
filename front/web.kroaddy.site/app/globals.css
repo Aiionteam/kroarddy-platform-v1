@@ -4,6 +4,10 @@
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 
+/* 모바일 탭 하이라이트 제거, 터치 영역 최적화 */
+* { -webkit-tap-highlight-color: transparent; }
+input, textarea, select, button { touch-action: manipulation; }
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

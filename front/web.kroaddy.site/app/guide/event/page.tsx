@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
-import { AppSidebar } from "@/components/organisms/AppSidebar";
+import { AppLayout } from "@/components/organisms/AppLayout";
 import {
   fetchFestivals,
   formatFestivalDate,
@@ -146,8 +146,7 @@ export default function EventPage() {
     : allItems;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <AppSidebar onLogout={logout} />
+    <AppLayout onLogout={logout}>
       <main className="flex flex-1 flex-col overflow-hidden">
         {/* 헤더 */}
         <header className="shrink-0 border-b border-gray-200 bg-white px-6 py-4">
@@ -272,7 +271,7 @@ export default function EventPage() {
           </div>
         </div>
       </main>
-    </div>
+    </AppLayout>
   );
 }
 
