@@ -11,11 +11,13 @@ logger = logging.getLogger(__name__)
 
 
 def _s3_client():
+    # endpoint_url을 명시해야 presigned URL에 리전이 포함되어 CORS 통과
     return boto3.client(
         "s3",
         region_name=settings.aws_region,
         aws_access_key_id=settings.aws_access_key_id,
         aws_secret_access_key=settings.aws_secret_access_key,
+        endpoint_url=f"https://s3.{settings.aws_region}.amazonaws.com",
     )
 
 
