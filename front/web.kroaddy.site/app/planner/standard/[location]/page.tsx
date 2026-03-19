@@ -51,7 +51,7 @@ export default function LocationPlannerPage() {
   const appUserId = getAppUserIdFromToken(accessToken ?? undefined);
 
   const [startDate, setStartDate] = useState(todayStr);
-  const [endDate, setEndDate] = useState(() => offsetDate(1));
+  const [endDate, setEndDate] = useState(todayStr);
 
   const routesFetchedRef = useRef<string | null>(null);
 
@@ -221,11 +221,9 @@ export default function LocationPlannerPage() {
                   onChange={(e) => {
                     const newStart = e.target.value;
                     setStartDate(newStart);
-                    // 종료일이 시작일보다 같거나 이전이면 시작일 +1일로 자동 조정
-                    if (endDate <= newStart) {
-                      const d = new Date(newStart);
-                      d.setDate(d.getDate() + 1);
-                      setEndDate(d.toISOString().slice(0, 10));
+                    // 종료일이 시작일보다 이전인 경우에만 시작일과 동일하게 조정 (당일치기 허용)
+                    if (endDate < newStart) {
+                      setEndDate(newStart);
                     }
                     routesFetchedRef.current = null;
                     setRoutes([]);
@@ -240,7 +238,7 @@ export default function LocationPlannerPage() {
                 <input
                   type="date"
                   value={endDate}
-                  min={(() => { const d = new Date(startDate); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); })()}
+                  min={startDate}
                   onChange={(e) => {
                     setEndDate(e.target.value);
                     routesFetchedRef.current = null;
