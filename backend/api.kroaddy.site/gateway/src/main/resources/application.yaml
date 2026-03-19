@@ -60,6 +60,12 @@ spring:
               - RemoveResponseHeader=Access-Control-Allow-Credentials
               - RemoveResponseHeader=Access-Control-Expose-Headers
               - RemoveResponseHeader=Access-Control-Max-Age
+
+          # ── Tourstar 서비스 (8010) ────────────────────────────────────────
+          - id: tourstar
+            uri: ${AI_SERVICE_TOURSTAR_URL:http://tourstar:8010}
+            predicates:
+              - Path=/api/v1/photo-selection,/api/v1/photo-selection/**
   datasource:
     driver-class-name: org.postgresql.Driver
     hikari:
