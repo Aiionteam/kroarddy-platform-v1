@@ -243,6 +243,7 @@ def _base_state(location: str, start_date: Optional[str], end_date: Optional[str
         "end_date": end_date,
         "routes": [],
         "schedule": [],
+        "cost_summary": None,
         "festivals": [],
         "user_profile": None,
         "existing_routes": [],
@@ -404,6 +405,7 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
             "location_name": location_name,
             "route_name": req.route_name,
             "schedule": schedule,
+            "cost_summary": result.get("cost_summary"),
             "error": result.get("error"),
         }
 

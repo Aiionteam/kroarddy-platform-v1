@@ -373,7 +373,14 @@ function DayPlanGroup({
                   </div>
                   {!isRerolling && (
                     <>
-                      <p className="mt-1 text-xs text-gray-500">📍 {item.place}</p>
+                      <div className="mt-1 flex items-center justify-between gap-2">
+                        <p className="text-xs text-gray-500">📍 {item.place}</p>
+                        {item.estimated_cost && (
+                          <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
+                            {item.estimated_cost}
+                          </span>
+                        )}
+                      </div>
                       <p className="mt-0.5 text-xs text-gray-600">{item.description}</p>
                       {item.tips && (
                         <p className="mt-1 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">💡 {item.tips}</p>
@@ -717,7 +724,14 @@ function PlanCard({
 
                           {!isRerolling && (
                             <>
-                              <p className="mt-0.5 text-xs text-gray-500">📍 {item.place}</p>
+                              <div className="mt-0.5 flex items-center justify-between gap-2">
+                                <p className="text-xs text-gray-500">📍 {item.place}</p>
+                                {item.estimated_cost && (
+                                  <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
+                                    {item.estimated_cost}
+                                  </span>
+                                )}
+                              </div>
                               <p className="mt-1 text-xs text-gray-600">{item.description}</p>
                               {item.tips && (
                                 <p className="mt-1.5 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">
