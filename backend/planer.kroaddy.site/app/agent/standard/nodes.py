@@ -342,7 +342,9 @@ async def generate_routes(state: PlannerState) -> PlannerState:
         '"description":"description(≤40chars)","highlights":["place1","place2","place3"]}]}'
     )
 
-    llm = _get_llm_with_search()
+    use_search: bool = state.get("use_search", False)
+    llm = _get_llm_with_search() if use_search else _get_llm()
+    logger.info("루트 생성 LLM: %s", "Google Search grounding" if use_search else "기본 Gemini")
     try:
         response = await _invoke(llm, [HumanMessage(content=prompt)])
         data = _parse_json(response)
@@ -441,7 +443,9 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         '"cost_summary":{{"per_day":[{{"day":1,"total":"₩0"}}],"trip_total":"₩0"}}}}'
     )
 
-    llm = _get_llm_with_search()
+    use_search: bool = state.get("use_search", False)
+    llm = _get_llm_with_search() if use_search else _get_llm()
+    logger.info("일정 생성 LLM: %s", "Google Search grounding" if use_search else "기본 Gemini")
     try:
         response = await _invoke(llm, [HumanMessage(content=prompt)])
         data = _parse_json(response)

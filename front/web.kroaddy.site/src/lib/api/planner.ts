@@ -74,7 +74,7 @@ export interface TravelPlanRecord {
 
 export async function fetchRoutes(
   location: string,
-  opts?: { startDate?: string; endDate?: string; userId?: number; existingRoutes?: string[] }
+  opts?: { startDate?: string; endDate?: string; userId?: number; existingRoutes?: string[]; useSearch?: boolean }
 ): Promise<RoutesResponse> {
   const res = await fetch(`${API_BASE}/api/v1/planner/${location}/routes`, {
     method: "POST",
@@ -84,6 +84,7 @@ export async function fetchRoutes(
       end_date: opts?.endDate ?? null,
       user_id: opts?.userId ?? null,
       existing_routes: opts?.existingRoutes ?? null,
+      use_search: opts?.useSearch ?? false,
     }),
     cache: "no-store",
   });
@@ -183,7 +184,7 @@ export async function savePlan(data: {
 export async function fetchSchedule(
   location: string,
   routeName: string,
-  opts?: { startDate?: string; endDate?: string; userId?: number }
+  opts?: { startDate?: string; endDate?: string; userId?: number; useSearch?: boolean }
 ): Promise<ScheduleResponse> {
   const res = await fetch(`${API_BASE}/api/v1/planner/${location}/schedule`, {
     method: "POST",
@@ -193,6 +194,7 @@ export async function fetchSchedule(
       start_date: opts?.startDate ?? null,
       end_date: opts?.endDate ?? null,
       user_id: opts?.userId ?? null,
+      use_search: opts?.useSearch ?? false,
     }),
     cache: "no-store",
   });
