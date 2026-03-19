@@ -9,6 +9,7 @@ class RoutesRequest(BaseModel):
     end_date: Optional[str] = None
     user_id: Optional[int] = None
     existing_routes: Optional[list[str]] = None
+    use_search: bool = False  # True: Google Search grounding 사용 (느리지만 정확)
 
 
 class ScheduleRequest(BaseModel):
@@ -16,6 +17,7 @@ class ScheduleRequest(BaseModel):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     user_id: Optional[int] = None
+    use_search: bool = False  # True: Google Search grounding 사용
 
 
 class SavePlanRequest(BaseModel):

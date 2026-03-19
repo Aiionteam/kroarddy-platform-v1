@@ -68,13 +68,14 @@ export default function LocationPlannerPage() {
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [savedPlanId, setSavedPlanId] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [useSearch, setUseSearch] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) router.replace("/");
   }, [isAuthenticated, router]);
 
   const loadRoutes = useCallback(async () => {
-    const dedupeKey = `${location}:${startDate}:${endDate}`;
+    const dedupeKey = `${location}:${startDate}:${endDate}:${useSearch}`;
     if (routesFetchedRef.current === dedupeKey) return;
     routesFetchedRef.current = dedupeKey;
 
@@ -109,6 +110,7 @@ export default function LocationPlannerPage() {
         endDate,
         userId: appUserId ?? undefined,
         existingRoutes: existingRoutes.length > 0 ? existingRoutes : undefined,
+        useSearch,
       });
       setRoutes(res.routes);
       if (res.error && res.routes.length === 0) {
@@ -123,7 +125,7 @@ export default function LocationPlannerPage() {
     } finally {
       setRoutesLoading(false);
     }
-  }, [location, startDate, endDate, appUserId]);
+  }, [location, startDate, endDate, appUserId, useSearch]);
 
   useEffect(() => {
     routesFetchedRef.current = null;
@@ -153,7 +155,7 @@ export default function LocationPlannerPage() {
           return;
         }
 
-        const res = await fetchSchedule(location, route.name, { startDate, endDate, userId: appUserId ?? undefined });
+        const res = await fetchSchedule(location, route.name, { startDate, endDate, userId: appUserId ?? undefined, useSearch });
         setSchedule(res.schedule);
         if (res.cost_summary) setCostSummary(res.cost_summary);
         if (res.error && res.schedule.length === 0) {
@@ -168,7 +170,7 @@ export default function LocationPlannerPage() {
         setScheduleLoading(false);
       }
     },
-    [location, startDate, endDate, appUserId]
+    [location, startDate, endDate, appUserId, useSearch]
   );
 
   const handleSavePlan = useCallback(async () => {
@@ -257,20 +259,41 @@ export default function LocationPlannerPage() {
                   className="bg-transparent text-sm text-gray-700 outline-none"
                 />
               </div>
-              <button
-                onClick={loadRoutes}
-                disabled={routesLoading || !startDate || !endDate}
-                className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-50"
-              >
-                {routesLoading ? (
-                  <>
-                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    생성 중…
-                  </>
-                ) : (
-                  <>✨ 루트 생성</>
-                )}
-              </button>
+              <div className="flex flex-col items-end gap-1.5">
+                <button
+                  onClick={loadRoutes}
+                  disabled={routesLoading || !startDate || !endDate}
+                  className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {routesLoading ? (
+                    <>
+                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      생성 중…
+                    </>
+                  ) : (
+                    <>✨ 루트 생성</>
+                  )}
+                </button>
+                <label className="flex cursor-pointer items-center gap-1.5 select-none">
+                  <input
+                    type="checkbox"
+                    checked={useSearch}
+                    onChange={(e) => {
+                      setUseSearch(e.target.checked);
+                      routesFetchedRef.current = null;
+                      setRoutes([]);
+                      setRoutesTriggered(false);
+                      setSelectedRoute(null);
+                      setSchedule([]);
+                      setSavedPlanId(null);
+                    }}
+                    className="h-3.5 w-3.5 accent-indigo-600"
+                  />
+                  <span className="text-xs text-gray-500">
+                    구글 검색 사용 (시간이 걸리지만 정확한 정보를 제공합니다)
+                  </span>
+                </label>
+              </div>
             </div>
           </div>
         </header>
