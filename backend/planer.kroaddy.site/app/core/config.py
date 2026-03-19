@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     # 로컬: localhost / Docker Compose: http://user_info:8004
     user_info_service_url: str = "http://localhost:8004"
 
+    # KOBIS 한국영화진흥위원회 (영화 상영 정보)
+    kobis_api_key: str = ""
+
     # AWS S3 이미지 저장소
     aws_access_key_id: str = ""
     aws_secret_access_key: str = ""

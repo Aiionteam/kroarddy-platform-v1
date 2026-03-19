@@ -11,6 +11,11 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.agent.standard.state import PlannerState
 from app.core.config import settings
+from app.services.search_client import (
+    fetch_boxoffice,
+    format_boxoffice_context,
+    is_movie_query,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +52,12 @@ def _lang_directive(lang: str) -> str:
         f"ENTIRELY in {lang}. JSON keys must stay in English.\n"
     )
 
-# 일일 쿼터 초과 식별자 (재시도해도 무의미)
-_DAILY_QUOTA_MARKER = "GenerateRequestsPerDayPerProjectPerModel"
+# 일일 쿼터 초과 식별자 (재시도해도 무의미) — 여러 패턴 지원
+_DAILY_QUOTA_MARKERS = (
+    "GenerateRequestsPerDayPerProjectPerModel",  # 분당 제한 초과 후 일일 한도
+    "You exceeded your current quota",           # 청구 계획 한도 초과
+    "check your plan and billing details",       # 동일 맥락 추가 식별자
+)
 
 
 def _get_llm() -> ChatGoogleGenerativeAI:
@@ -93,7 +102,8 @@ def _get_fallback_llm():
 
 def _is_daily_quota(err: Exception) -> bool:
     """Gemini 일일 쿼터 초과 에러인지 확인 (재시도 불필요)."""
-    return _DAILY_QUOTA_MARKER in str(err)
+    msg = str(err)
+    return any(marker in msg for marker in _DAILY_QUOTA_MARKERS)
 
 
 async def _invoke(llm: Any, messages: list, *, max_retries: int = 2) -> Any:
@@ -462,9 +472,20 @@ async def modify_schedule(
     lang = _get_lang(user_profile)
     lang_dir = _lang_directive(lang)
     schedule_json = json.dumps(schedule, ensure_ascii=False, separators=(",", ":"))
+
+    # 영화 관련 요청이면 KOBIS 실시간 박스오피스 데이터를 프롬프트에 주입
+    kobis_block = ""
+    if is_movie_query(instruction):
+        movies = await fetch_boxoffice()
+        ctx = format_boxoffice_context(movies)
+        if ctx:
+            kobis_block = f"\n{ctx}\n"
+            logger.info("KOBIS 박스오피스 컨텍스트 주입 (modify_schedule)")
+
     prompt = (
         f'Destination:{location}\n'
         f'Modification instruction:"{instruction}"\n'
+        f"{kobis_block}"
         f"Current schedule (JSON):\n{schedule_json}\n\n"
         "Rules:\n"
         "- Replace only the instructed items' place/title/description/tips\n"
@@ -520,12 +541,26 @@ async def reroll_single_item(
         s["title"] for s in schedule
         if s.get("day") == day and s.get("title") != item.get("title")
     ]
-    ctx = f"Other items same day (no duplicates): {', '.join(same_day_titles)}" if same_day_titles else ""
+    same_day_ctx = (
+        f"Other items same day (no duplicates): {', '.join(same_day_titles)}"
+        if same_day_titles else ""
+    )
+
+    # 영화 관련 항목(제목·장소에 극장/영화 키워드) 리롤 시 KOBIS 컨텍스트 주입
+    kobis_block = ""
+    item_text = f"{item.get('title', '')} {item.get('place', '')}"
+    if is_movie_query(item_text):
+        movies = await fetch_boxoffice()
+        ctx = format_boxoffice_context(movies)
+        if ctx:
+            kobis_block = f"\n{ctx}\n"
+            logger.info("KOBIS 박스오피스 컨텍스트 주입 (reroll_single_item)")
 
     prompt = (
         f"Destination:{location} | Day{day}({date_str}) {time_str}\n"
         f"Replace: {item.get('title')} (📍{item.get('place')})\n"
-        f"{ctx}\n\n"
+        f"{same_day_ctx}\n"
+        f"{kobis_block}\n"
         "Replace with a completely different place/activity. Keep day/date/time identical.\n"
         "Use only real existing places.\n"
         "Include estimated_cost in KRW (e.g. '무료', '₩3,000', '₩15,000~₩20,000').\n"
