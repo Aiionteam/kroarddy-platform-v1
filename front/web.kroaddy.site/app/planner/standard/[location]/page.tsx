@@ -11,6 +11,7 @@ import {
   savePlan,
   type PlanRoute,
   type ScheduleItem,
+  type CostSummary,
 } from "@/lib/api/planner";
 import {
   readRoutes,
@@ -62,6 +63,7 @@ export default function LocationPlannerPage() {
 
   const [selectedRoute, setSelectedRoute] = useState<PlanRoute | null>(null);
   const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
+  const [costSummary, setCostSummary] = useState<CostSummary | null>(null);
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [savedPlanId, setSavedPlanId] = useState<number | null>(null);
@@ -129,6 +131,7 @@ export default function LocationPlannerPage() {
     setRoutes([]);
     setSelectedRoute(null);
     setSchedule([]);
+    setCostSummary(null);
     setSavedPlanId(null);
   }, [location]);
 
@@ -136,24 +139,27 @@ export default function LocationPlannerPage() {
     async (route: PlanRoute) => {
       setSelectedRoute(route);
       setSchedule([]);
+      setCostSummary(null);
       setScheduleError(null);
       setSavedPlanId(null);
       setScheduleLoading(true);
       try {
-        const cached = readSchedule<{ schedule: ScheduleItem[] }>(location, route.name, startDate, endDate);
+        const cached = readSchedule<{ schedule: ScheduleItem[]; cost_summary?: CostSummary }>(location, route.name, startDate, endDate);
         if (cached) {
           console.info("[plannerCache] 일정 캐시 히트:", route.name);
           setSchedule(cached.schedule);
+          if (cached.cost_summary) setCostSummary(cached.cost_summary);
           setScheduleLoading(false);
           return;
         }
 
         const res = await fetchSchedule(location, route.name, { startDate, endDate, userId: appUserId ?? undefined });
         setSchedule(res.schedule);
+        if (res.cost_summary) setCostSummary(res.cost_summary);
         if (res.error && res.schedule.length === 0) {
           setScheduleError(res.error);
         } else if (res.schedule.length > 0) {
-          writeSchedule(location, route.name, startDate, endDate, { schedule: res.schedule });
+          writeSchedule(location, route.name, startDate, endDate, { schedule: res.schedule, cost_summary: res.cost_summary });
           console.info("[plannerCache] 일정 캐시 저장:", route.name);
         }
       } catch (e) {
@@ -162,7 +168,7 @@ export default function LocationPlannerPage() {
         setScheduleLoading(false);
       }
     },
-    [location, startDate, endDate]
+    [location, startDate, endDate, appUserId]
   );
 
   const handleSavePlan = useCallback(async () => {
@@ -389,44 +395,66 @@ export default function LocationPlannerPage() {
 
             {!scheduleLoading && schedule.length > 0 && (
               <div className="flex flex-col md:flex-1 md:overflow-hidden">
-                <div className="shrink-0 border-b border-gray-200 bg-white px-5 py-3 flex items-center justify-between gap-3">
-                  <div>
-                    <h2 className="font-semibold text-gray-800">{selectedRoute?.name} — 추천 일정</h2>
-                    <p className="mt-0.5 text-xs text-gray-400">{startDate} ~ {endDate}</p>
+                <div className="shrink-0 border-b border-gray-200 bg-white px-5 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <h2 className="font-semibold text-gray-800">{selectedRoute?.name} — 추천 일정</h2>
+                      <p className="mt-0.5 text-xs text-gray-400">{startDate} ~ {endDate}</p>
+                    </div>
+                    {savedPlanId ? (
+                      <button
+                        onClick={() => router.push("/planner/schedule")}
+                        className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow hover:bg-emerald-700 transition-colors"
+                      >
+                        ✅ 저장됨 · 일정관리 보기
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleSavePlan}
+                        disabled={isSaving}
+                        className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow hover:bg-indigo-700 disabled:opacity-60 transition-colors"
+                      >
+                        {isSaving ? (
+                          <>
+                            <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            저장 중…
+                          </>
+                        ) : (
+                          <>💾 저장하기</>
+                        )}
+                      </button>
+                    )}
                   </div>
-                  {savedPlanId ? (
-                    <button
-                      onClick={() => router.push("/planner/schedule")}
-                      className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow hover:bg-emerald-700 transition-colors"
-                    >
-                      ✅ 저장됨 · 일정관리 보기
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleSavePlan}
-                      disabled={isSaving}
-                      className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow hover:bg-indigo-700 disabled:opacity-60 transition-colors"
-                    >
-                      {isSaving ? (
-                        <>
-                          <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                          저장 중…
-                        </>
-                      ) : (
-                        <>💾 저장하기</>
-                      )}
-                    </button>
+                  {costSummary && (
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span className="text-xs text-gray-400">예상 총 경비</span>
+                      <span className="rounded-full bg-emerald-50 px-3 py-0.5 text-sm font-bold text-emerald-600">
+                        💰 {costSummary.trip_total}
+                      </span>
+                      {costSummary.per_day.map((d) => (
+                        <span key={d.day} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+                          Day{d.day} {d.total}
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </div>
                 <div className="overflow-auto px-5 py-4 space-y-6 md:flex-1">
                   {Object.entries(dayGroups).map(([day, items]) => (
                     <div key={day}>
-                      <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-indigo-600">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-500 text-xs text-white">
-                          {day}
-                        </span>
-                        {items[0]?.date}
-                      </h3>
+                      <div className="mb-3 flex items-center justify-between">
+                        <h3 className="flex items-center gap-2 text-sm font-bold text-indigo-600">
+                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-500 text-xs text-white">
+                            {day}
+                          </span>
+                          {items[0]?.date}
+                        </h3>
+                        {costSummary?.per_day.find((d) => d.day === Number(day)) && (
+                          <span className="text-xs font-medium text-emerald-600">
+                            소계 {costSummary.per_day.find((d) => d.day === Number(day))!.total}
+                          </span>
+                        )}
+                      </div>
                       <ol className="relative border-l-2 border-indigo-100 pl-5 space-y-4">
                         {items.map((item, idx) => (
                           <li key={idx} className="relative">
@@ -434,13 +462,20 @@ export default function LocationPlannerPage() {
                               {idx + 1}
                             </span>
                             <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
-                              <div className="flex items-center gap-2">
-                                {item.time && (
-                                  <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-400">
-                                    {item.time}
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  {item.time && (
+                                    <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-400">
+                                      {item.time}
+                                    </span>
+                                  )}
+                                  <span className="font-semibold text-gray-900 truncate">{item.title}</span>
+                                </div>
+                                {item.estimated_cost && (
+                                  <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
+                                    {item.estimated_cost}
                                   </span>
                                 )}
-                                <span className="font-semibold text-gray-900">{item.title}</span>
                               </div>
                               <p className="mt-0.5 text-xs text-indigo-500 font-medium">📍 {item.place}</p>
                               <p className="mt-1 text-sm text-gray-600">{item.description}</p>

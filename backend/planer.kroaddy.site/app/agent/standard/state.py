@@ -11,6 +11,7 @@ class PlannerState(TypedDict):
     end_date: Optional[str]
     routes: list             # generate_routes 결과
     schedule: list           # generate_schedule 결과
+    cost_summary: Optional[dict]  # 예상 경비 요약 {"per_day":[...],"trip_total":"₩N"}
     error: Optional[str]
     festivals: list          # 여행 기간 내 해당 지역 행사 목록 (festival 서비스에서 조회)
     user_profile: Optional[dict]  # 사용자 여행 성향 (user_info 서비스에서 조회)
