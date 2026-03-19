@@ -9,130 +9,69 @@ import { ContentRow } from "@/components/k-content/ContentRow";
 import type { ContentRowItem } from "@/components/k-content/ContentRow";
 import { ItineraryPreview } from "@/components/k-content/ItineraryPreview";
 import type { ItineraryDay } from "@/components/k-content/ItineraryPreview";
+import {
+  fetchPackageImages,
+  K_CONTENT_PLACEHOLDER_IMAGE,
+  pickRandomImage,
+} from "@/constants/k-content-images";
 
-// ─── Mock data: K-Content theme rows ───────────────────────────────────────
-
-const KPOP_TOUR_ITEMS: ContentRowItem[] = [
+// ─── Mock data: DB seeded 8 packages (placeholder images) ──────────────────
+const K_CONTENT_PACKAGE_ITEMS: ContentRowItem[] = [
   {
-    id: "kpop-hybe",
-    title: "HYBE Building",
-    description: "HYBE Insight museum and label headquarters. See K-Pop history and merch.",
+    id: "KPOP_01",
+    title: "BTS: 영원한 화양연화",
+    description: "BTS, ARMY, Gangnam, HYBE",
     imageUrl: undefined,
     placeholderGradient: "from-rose-500 to-pink-600",
   },
   {
-    id: "kpop-sm",
-    title: "SM Entertainment",
-    description: "SM Town and SM Entertainment building. K-Pop landmark in Seoul.",
+    id: "KPOP_02",
+    title: "블랙핑크: 힙&럭셔리",
+    description: "BLACKPINK, YG, Luxury, Trend",
     imageUrl: undefined,
     placeholderGradient: "from-violet-500 to-purple-600",
   },
   {
-    id: "kpop-hongdae",
-    title: "Hongdae K-Pop Street",
-    description: "Street performances, K-Pop stores, and idol busking culture.",
+    id: "KPOP_03",
+    title: "세븐틴&스키즈: 퍼포먼스 에너지",
+    description: "SEVENTEEN, Stray Kids, JYP, Performance",
     imageUrl: undefined,
     placeholderGradient: "from-fuchsia-500 to-rose-600",
   },
   {
-    id: "kpop-store",
-    title: "K-Pop Store",
-    description: "Official albums, merch, and photo cards. Must-visit for fans.",
+    id: "KPOP_04",
+    title: "뉴진스&아이브: 하이틴 서울",
+    description: "NewJeans, IVE, Y2K, Seongsu, Hannam",
     imageUrl: undefined,
     placeholderGradient: "from-indigo-500 to-violet-600",
   },
-];
-
-const KDRAMA_TOUR_ITEMS: ContentRowItem[] = [
   {
-    id: "drama-goblin",
-    title: "Goblin Filming Location",
-    description: "Famous drama shooting spots. Quebec-style streets and seaside views.",
+    id: "KPOP_05",
+    title: "SM: 광야 익스프레스",
+    description: "SM, aespa, NCT, Kwangya, Seongsu",
     imageUrl: undefined,
     placeholderGradient: "from-amber-500 to-orange-600",
   },
   {
-    id: "drama-itaewon",
-    title: "Itaewon Class Street",
-    description: "DanBam and the streets that brought the drama to life.",
+    id: "KPOP_06",
+    title: "아이돌 직접 체험하기",
+    description: "Experience, Dance, Recording, Idol-life",
     imageUrl: undefined,
     placeholderGradient: "from-emerald-500 to-teal-600",
   },
   {
-    id: "drama-namsan",
-    title: "Namsan Tower",
-    description: "Locks of love and panoramic Seoul. Featured in countless dramas.",
+    id: "KPOP_07",
+    title: "홍대: 팬덤 문화의 중심",
+    description: "Hongdae, Busking, Album, Fans",
     imageUrl: undefined,
     placeholderGradient: "from-sky-500 to-blue-600",
   },
   {
-    id: "drama-bukchon",
-    title: "Bukchon Hanok Village",
-    description: "Traditional hanok alleys. Classic drama backdrop.",
+    id: "KPOP_08",
+    title: "K-OST & 감성 힐링 서울",
+    description: "IU, OST, Healing, Retro, Seoul",
     imageUrl: undefined,
     placeholderGradient: "from-amber-600 to-rose-600",
-  },
-];
-
-const KFOOD_TOUR_ITEMS: ContentRowItem[] = [
-  {
-    id: "food-gwangjang",
-    title: "Gwangjang Market",
-    description: "Bindaetteok, mayak gimbap, and authentic Korean street food.",
-    imageUrl: undefined,
-    placeholderGradient: "from-orange-500 to-amber-600",
-  },
-  {
-    id: "food-myeongdong",
-    title: "Myeongdong Street Food",
-    description: "Tteokbokki, odeng, and sweet treats. Night market vibes.",
-    imageUrl: undefined,
-    placeholderGradient: "from-red-500 to-orange-600",
-  },
-  {
-    id: "food-bbq",
-    title: "Korean BBQ",
-    description: "Samgyeopsal and galbi. Grill at your table experience.",
-    imageUrl: undefined,
-    placeholderGradient: "from-rose-600 to-red-600",
-  },
-  {
-    id: "food-convenience",
-    title: "Convenience Store Food Combo",
-    description: "Triangle kimbap, ramyeon, and soju. Late-night Korean style.",
-    imageUrl: undefined,
-    placeholderGradient: "from-lime-500 to-green-600",
-  },
-];
-
-const KBEAUTY_TOUR_ITEMS: ContentRowItem[] = [
-  {
-    id: "beauty-olive",
-    title: "Olive Young",
-    description: "K-Beauty flagship. Skincare, makeup, and trending products.",
-    imageUrl: undefined,
-    placeholderGradient: "from-pink-500 to-rose-600",
-  },
-  {
-    id: "beauty-myeongdong",
-    title: "Myeongdong Beauty Street",
-    description: "Density of beauty stores and brand flagship shops.",
-    imageUrl: undefined,
-    placeholderGradient: "from-fuchsia-500 to-pink-600",
-  },
-  {
-    id: "beauty-store",
-    title: "K-Beauty Store",
-    description: "Curated K-Beauty. Sheet masks, serums, and cushion compacts.",
-    imageUrl: undefined,
-    placeholderGradient: "from-violet-500 to-purple-600",
-  },
-  {
-    id: "beauty-experience",
-    title: "Skincare Experience Shop",
-    description: "Facials, treatments, and personalized skincare consultations.",
-    imageUrl: undefined,
-    placeholderGradient: "from-rose-400 to-pink-500",
   },
 ];
 
@@ -171,15 +110,106 @@ const SAMPLE_ITINERARY_DAYS: ItineraryDay[] = [
   },
 ];
 
+const K_DRAMA_EXAMPLE_ITEMS: ContentRowItem[] = [
+  {
+    id: "KDRAMA_01",
+    title: "도깨비 촬영지 투어",
+    description: "인천·서울 주요 촬영 포인트를 따라가는 감성 코스",
+    imageUrl: undefined,
+    placeholderGradient: "from-violet-500 to-indigo-600",
+  },
+  {
+    id: "KDRAMA_02",
+    title: "이태원 클래스 거리",
+    description: "이태원 주요 거리와 분위기 좋은 루프탑 카페 코스",
+    imageUrl: undefined,
+    placeholderGradient: "from-fuchsia-500 to-pink-600",
+  },
+  {
+    id: "KDRAMA_03",
+    title: "남산·북촌 드라마 코스",
+    description: "남산타워, 북촌 한옥길 중심의 클래식 촬영지 투어",
+    imageUrl: undefined,
+    placeholderGradient: "from-sky-500 to-blue-600",
+  },
+];
+
+const K_FOOD_EXAMPLE_ITEMS: ContentRowItem[] = [
+  {
+    id: "KFOOD_01",
+    title: "광장시장 로컬 푸드",
+    description: "빈대떡·마약김밥·육회까지 시장 대표 먹거리 체험",
+    imageUrl: undefined,
+    placeholderGradient: "from-amber-500 to-orange-600",
+  },
+  {
+    id: "KFOOD_02",
+    title: "명동 길거리 음식",
+    description: "명동 야시장 중심으로 간편하고 다양한 K-스트리트푸드",
+    imageUrl: undefined,
+    placeholderGradient: "from-red-500 to-orange-600",
+  },
+  {
+    id: "KFOOD_03",
+    title: "한식 BBQ 나이트",
+    description: "삼겹살, 갈비, 후식까지 이어지는 저녁 집중 코스",
+    imageUrl: undefined,
+    placeholderGradient: "from-rose-600 to-red-600",
+  },
+];
+
+const K_BEAUTY_EXAMPLE_ITEMS: ContentRowItem[] = [
+  {
+    id: "KBEAUTY_01",
+    title: "올리브영 플래그십",
+    description: "스킨케어·메이크업 트렌드를 한 번에 비교 쇼핑",
+    imageUrl: undefined,
+    placeholderGradient: "from-pink-500 to-rose-600",
+  },
+  {
+    id: "KBEAUTY_02",
+    title: "명동 뷰티 스트리트",
+    description: "브랜드 로드샵 중심으로 베스트셀러 빠르게 탐색",
+    imageUrl: undefined,
+    placeholderGradient: "from-fuchsia-500 to-pink-600",
+  },
+  {
+    id: "KBEAUTY_03",
+    title: "스킨케어 체험샵",
+    description: "피부 진단 기반 맞춤 케어와 체험형 뷰티 프로그램",
+    imageUrl: undefined,
+    placeholderGradient: "from-violet-500 to-purple-600",
+  },
+];
+
 // ─── Page ─────────────────────────────────────────────────────────────────
 
 export default function KContentPage() {
   const router = useRouter();
   const { isAuthenticated, logout } = useLoginStore();
+  const [heroImage] = React.useState<string>("/k_content/banner.jpg");
+  const [cardItems, setCardItems] = React.useState<ContentRowItem[]>(K_CONTENT_PACKAGE_ITEMS);
 
   React.useEffect(() => {
     if (!isAuthenticated) router.replace("/");
   }, [isAuthenticated, router]);
+
+  React.useEffect(() => {
+    const run = async () => {
+      const nextItems = await Promise.all(
+        K_CONTENT_PACKAGE_ITEMS.map(async (item) => {
+          const images = await fetchPackageImages(item.id);
+          return {
+            ...item,
+            imageUrl: pickRandomImage(images) ?? K_CONTENT_PLACEHOLDER_IMAGE,
+          };
+        })
+      );
+      setCardItems(nextItems);
+
+    };
+    run();
+  }, []);
 
   const handleCtaClick = () => {
     // Prototype: navigate to planner root or show toast
@@ -187,8 +217,12 @@ export default function KContentPage() {
   };
 
   const handleCardClick = (item: ContentRowItem) => {
-    // Prototype: could open modal or detail page
-    console.info("K-Content card clicked:", item.title);
+    if (item.id.startsWith("KPOP_")) {
+      router.push(`/planner/k-content/${item.id}`);
+      return;
+    }
+    // 나머지 카테고리는 현재 예시 단계
+    alert("해당 카테고리는 준비 중입니다.");
   };
 
   if (!isAuthenticated) return null;
@@ -223,29 +257,31 @@ export default function KContentPage() {
               subtitle="Explore Korea through K-Pop, Drama, Food and Beauty"
               ctaLabel="Generate AI Route"
               onCtaClick={handleCtaClick}
+              backgroundImage={heroImage}
+              cardStyleText
             />
           </div>
 
           {/* Content rows: same tone as Standard mode */}
           <div className="bg-gray-100 px-0 py-6">
             <ContentRow
-              title="KPOP TOUR"
-              items={KPOP_TOUR_ITEMS}
+              title="K-POP"
+              items={cardItems}
               onCardClick={handleCardClick}
             />
             <ContentRow
-              title="KDRAMA TOUR"
-              items={KDRAMA_TOUR_ITEMS}
+              title="K-DRAMA"
+              items={K_DRAMA_EXAMPLE_ITEMS}
               onCardClick={handleCardClick}
             />
             <ContentRow
-              title="KFOOD TOUR"
-              items={KFOOD_TOUR_ITEMS}
+              title="K-FOOD"
+              items={K_FOOD_EXAMPLE_ITEMS}
               onCardClick={handleCardClick}
             />
             <ContentRow
-              title="KBEAUTY TOUR"
-              items={KBEAUTY_TOUR_ITEMS}
+              title="K-BEAUTY"
+              items={K_BEAUTY_EXAMPLE_ITEMS}
               onCardClick={handleCardClick}
             />
           </div>

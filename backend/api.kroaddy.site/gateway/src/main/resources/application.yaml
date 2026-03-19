@@ -14,6 +14,10 @@ server:
 spring:
   application:
     name: tour-site
+  http:
+    client:
+      connect-timeout: 10s       # 연결 타임아웃 10초
+      read-timeout: 180s         # 응답 타임아웃 180초 (Gemini/GPT fallback 대응)
   servlet:
     multipart:
       max-file-size: -1      # 파일 크기 제한 없음 (tourstar 대용량 사진 업로드)
