@@ -312,6 +312,7 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
     start_date = state.get("start_date")
     end_date = state.get("end_date")
     user_profile: dict | None = state.get("user_profile")
+    festivals: list = state.get("festivals") or []
 
     lang = _get_lang(user_profile)
     lang_dir = _lang_directive(lang)
@@ -326,11 +327,33 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
     else:
         date_clause = ""
 
+    # 행사 정보 블록 구성 (기간 내 해당 지역 행사 → 일정에 포함 권장)
+    if festivals:
+        fest_lines: list[str] = []
+        for f in festivals[:5]:
+            name = f.get("fstvlNm", "")
+            place = f.get("opar", "")
+            s = _format_festival_date(f.get("fstvlStartDate", ""))
+            e = _format_festival_date(f.get("fstvlEndDate", ""))
+            content = f.get("fstvlCo", "")[:50]
+            line = f"  • {name} ({place}, {s}~{e})"
+            if content:
+                line += f" – {content}"
+            fest_lines.append(line)
+        festival_block = (
+            "【Local Events During Trip】\n"
+            + "\n".join(fest_lines)
+            + "\n- If any event matches the route theme, include it as a schedule item on the relevant day.\n\n"
+        )
+    else:
+        festival_block = ""
+
     time_labels = "morning|lunch|afternoon|evening" if lang != "Korean" else "오전|점심|오후|저녁"
 
     prompt = (
         f"Destination:{location_name} | Route:{route_name}\n"
         f"{date_clause}\n"
+        f"{festival_block}"
         f"Create a detailed travel itinerary ({num_days} days, 4 items per day).\n\n"
         "Rules:\n"
         "- date field must use YYYY-MM-DD from the DateMapping above\n"

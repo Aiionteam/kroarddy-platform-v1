@@ -370,10 +370,19 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
                 "error": None,
             }
 
+        # 일정 생성에도 행사 정보 반영 (루트 생성과 동일하게 병렬 조회)
+        festivals = await fetch_festivals_for_period(
+            location, location_name, req.start_date, req.end_date
+        )
+        logger.info(
+            "일정 생성 행사 연동: location=%s, 건수=%d", location, len(festivals)
+        )
+
         state = {
             **_base_state(location, req.start_date, req.end_date),
             "route_name": req.route_name,
             "user_profile": user_profile,
+            "festivals": festivals,
         }
         try:
             result = await schedule_graph.ainvoke(state)
