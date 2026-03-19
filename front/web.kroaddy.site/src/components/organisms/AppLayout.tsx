@@ -4,6 +4,7 @@ import "@/lib/i18n/config";
 import React, { useState, useCallback, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { AppSidebar } from "./AppSidebar";
+import { useTokenRefresher } from "@/hooks/useTokenRefresher";
 
 function HamburgerIcon() {
   return (
@@ -23,6 +24,8 @@ export interface AppLayoutProps {
 }
 
 export function AppLayout({ onLogout, children, mobileTitle }: AppLayoutProps) {
+  useTokenRefresher();
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
 
