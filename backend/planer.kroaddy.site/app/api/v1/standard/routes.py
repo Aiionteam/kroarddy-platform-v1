@@ -247,6 +247,7 @@ def _base_state(location: str, start_date: Optional[str], end_date: Optional[str
         "festivals": [],
         "user_profile": None,
         "existing_routes": [],
+        "use_search": False,
         "error": None,
     }
 
@@ -301,6 +302,7 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
             "festivals": festivals,
             "user_profile": user_profile,
             "existing_routes": existing_routes,
+            "use_search": req.use_search,
         }
         try:
             result = await routes_graph.ainvoke(state)
@@ -384,6 +386,7 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
             "route_name": req.route_name,
             "user_profile": user_profile,
             "festivals": festivals,
+            "use_search": req.use_search,
         }
         try:
             result = await schedule_graph.ainvoke(state)
