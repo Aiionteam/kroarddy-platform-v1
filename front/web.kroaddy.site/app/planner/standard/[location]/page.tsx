@@ -35,12 +35,21 @@ const THEME_META: Record<string, { emoji: string; bg: string; text: string }> = 
 const DEFAULT_THEME = { emoji: "✈️", bg: "bg-indigo-100", text: "text-indigo-700" };
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, "0"),
+    String(d.getDate()).padStart(2, "0"),
+  ].join("-");
 }
 function offsetDate(days: number) {
   const d = new Date();
   d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, "0"),
+    String(d.getDate()).padStart(2, "0"),
+  ].join("-");
 }
 
 export default function LocationPlannerPage() {
@@ -97,7 +106,7 @@ export default function LocationPlannerPage() {
         }
       }
 
-      const cached = readRoutes<{ routes: PlanRoute[] }>(location, startDate, endDate, existingRoutes);
+      const cached = readRoutes<{ routes: PlanRoute[] }>(location, startDate, endDate, existingRoutes, useSearch);
       if (cached) {
         console.info("[plannerCache] 루트 캐시 히트:", dedupeKey);
         setRoutes(cached.routes);
@@ -116,7 +125,7 @@ export default function LocationPlannerPage() {
       if (res.error && res.routes.length === 0) {
         setRoutesError(res.error);
       } else if (res.routes.length > 0) {
-        writeRoutes(location, startDate, endDate, existingRoutes, { routes: res.routes });
+        writeRoutes(location, startDate, endDate, existingRoutes, useSearch, { routes: res.routes });
         console.info("[plannerCache] 루트 캐시 저장:", dedupeKey);
       }
     } catch (e) {
@@ -146,7 +155,7 @@ export default function LocationPlannerPage() {
       setSavedPlanId(null);
       setScheduleLoading(true);
       try {
-        const cached = readSchedule<{ schedule: ScheduleItem[]; cost_summary?: CostSummary }>(location, route.name, startDate, endDate);
+        const cached = readSchedule<{ schedule: ScheduleItem[]; cost_summary?: CostSummary }>(location, route.name, startDate, endDate, useSearch);
         if (cached) {
           console.info("[plannerCache] 일정 캐시 히트:", route.name);
           setSchedule(cached.schedule);
@@ -161,7 +170,7 @@ export default function LocationPlannerPage() {
         if (res.error && res.schedule.length === 0) {
           setScheduleError(res.error);
         } else if (res.schedule.length > 0) {
-          writeSchedule(location, route.name, startDate, endDate, { schedule: res.schedule, cost_summary: res.cost_summary });
+          writeSchedule(location, route.name, startDate, endDate, useSearch, { schedule: res.schedule, cost_summary: res.cost_summary });
           console.info("[plannerCache] 일정 캐시 저장:", route.name);
         }
       } catch (e) {

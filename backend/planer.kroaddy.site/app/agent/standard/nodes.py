@@ -2,6 +2,7 @@
 import asyncio
 import json
 import logging
+import random
 import re
 from datetime import datetime, timedelta
 from typing import Any
@@ -59,6 +60,14 @@ _DAILY_QUOTA_MARKERS = (
     "check your plan and billing details",       # 동일 맥락 추가 식별자
 )
 
+# 워커당 동시 Gemini 호출 최대 수 – 429 방지
+# Gemini Tier1: 2000 RPM / 60s = 33 req/s
+# 응답 평균 20s 가정 → 이론 최대 660 동시. 안전 마진 적용 → 워커당 20개
+# uvicorn --workers 2 기준: 전체 최대 동시 호출 = 2 × 20 = 40개
+# asyncio Semaphore는 non-blocking – 대기 요청은 이벤트 루프 차단 없이 yield됨
+_GEMINI_SEMAPHORE = asyncio.Semaphore(20)
+_SEMAPHORE_WAIT_TIMEOUT = 30  # 초 – 실제 서비스에서 30초 대기도 허용
+
 
 def _get_llm() -> ChatGoogleGenerativeAI:
     """Gemini LLM 인스턴스 반환. max_output_tokens는 설정하지 않음.
@@ -106,22 +115,38 @@ def _is_daily_quota(err: Exception) -> bool:
     return any(marker in msg for marker in _DAILY_QUOTA_MARKERS)
 
 
-async def _invoke(llm: Any, messages: list, *, max_retries: int = 2) -> Any:
+async def _invoke(llm: Any, messages: list, *, max_retries: int = 2, plain_fallback: bool = False) -> Any:
     """Gemini 호출 래퍼.
 
+    - Semaphore로 워커당 동시 Gemini 호출 수 제한 (429 예방)
     - 일시적 429 (분당 제한): 지수 백오프 재시도 (최대 2회)
     - 일일 쿼터 초과: OpenAI gpt-5-mini 자동 폴백 (OPENAI_API_KEY 설정 시)
-    - grounding LLM(bind_tools 포함)이 grounding 미지원 에러 시: 일반 LLM으로 재시도
+    - grounding LLM 429 / 미지원 에러 시: 일반 LLM으로 즉시 폴백 (plain_fallback=True)
     """
+    try:
+        await asyncio.wait_for(_GEMINI_SEMAPHORE.acquire(), timeout=_SEMAPHORE_WAIT_TIMEOUT)
+    except asyncio.TimeoutError:
+        raise Exception(
+            f"AI 서버가 바쁩니다 (대기 {_SEMAPHORE_WAIT_TIMEOUT}초 초과). "
+            "잠시 후 다시 시도해 주세요."
+        )
+    try:
+        return await _invoke_inner(llm, messages, max_retries=max_retries, plain_fallback=plain_fallback)
+    finally:
+        _GEMINI_SEMAPHORE.release()
+
+
+async def _invoke_inner(llm: Any, messages: list, *, max_retries: int, plain_fallback: bool) -> Any:
+    """실제 Gemini/GPT 호출 로직 (Semaphore 제어는 _invoke에서 담당)."""
     for attempt in range(max_retries + 1):
         try:
             return await llm.ainvoke(messages)
         except Exception as e:
             msg = str(e)
 
-            # grounding 미지원 모델 에러 → 일반 LLM으로 한 번 재시도
+            # grounding 미지원 모델 에러 → 일반 LLM으로 즉시 폴백
             if "grounding" in msg.lower() or "google_search" in msg.lower():
-                logger.warning("Google Search grounding 미지원 – 일반 LLM으로 재시도")
+                logger.warning("Google Search grounding 미지원 – 일반 LLM으로 즉시 폴백")
                 return await _get_llm().ainvoke(messages)
 
             # 일일 한도 초과 → OpenAI 폴백
@@ -151,15 +176,21 @@ async def _invoke(llm: Any, messages: list, *, max_retries: int = 2) -> Any:
 
                     logger.info("gpt-5-mini 폴백 완료 (content_len=%d)", len(result.content or ""))
                     return result
-                # API 키 없으면 원래 에러 그대로 올림
                 raise
 
-            # 일시적 429 (분당 제한) → 백오프 후 재시도
-            if ("429" in msg or "RESOURCE_EXHAUSTED" in msg) and attempt < max_retries:
-                wait = 2 * (2 ** attempt)  # Tier1: 2초 → 4초
-                logger.warning("Gemini 429 일시 제한 – %d초 대기 후 재시도 (%d/%d)", wait, attempt + 1, max_retries)
-                await asyncio.sleep(wait)
-                continue
+            # 일시적 429 (분당 제한)
+            if "429" in msg or "RESOURCE_EXHAUSTED" in msg:
+                # grounding 호출 중 429 → 백오프 없이 즉시 일반 LLM으로 폴백
+                if plain_fallback:
+                    logger.warning("Gemini grounding 429 → 일반 LLM 즉시 폴백 (재시도 없음)")
+                    return await _get_llm().ainvoke(messages)
+                if attempt < max_retries:
+                    # 지수 백오프 + jitter: 동시 429된 요청들이 같은 시점에 재시도하는 thundering herd 방지
+                    base = 2 * (2 ** attempt)  # 2s → 4s
+                    wait = base + random.uniform(0, base * 0.5)  # ±50% jitter
+                    logger.warning("Gemini 429 일시 제한 – %.1f초 대기 후 재시도 (%d/%d)", wait, attempt + 1, max_retries)
+                    await asyncio.sleep(wait)
+                    continue
             raise
 
 
@@ -346,7 +377,7 @@ async def generate_routes(state: PlannerState) -> PlannerState:
     llm = _get_llm_with_search() if use_search else _get_llm()
     logger.info("루트 생성 LLM: %s", "Google Search grounding" if use_search else "기본 Gemini")
     try:
-        response = await _invoke(llm, [HumanMessage(content=prompt)])
+        response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=use_search)
         data = _parse_json(response)
         routes = data.get("routes", [])
         logger.info(
@@ -447,7 +478,7 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
     llm = _get_llm_with_search() if use_search else _get_llm()
     logger.info("일정 생성 LLM: %s", "Google Search grounding" if use_search else "기본 Gemini")
     try:
-        response = await _invoke(llm, [HumanMessage(content=prompt)])
+        response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=use_search)
         data = _parse_json(response)
         schedule = data.get("schedule", [])
         cost_summary = data.get("cost_summary")
