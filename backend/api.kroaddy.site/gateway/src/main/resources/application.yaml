@@ -53,6 +53,10 @@ spring:
               - RemoveResponseHeader=Access-Control-Allow-Credentials
               - RemoveResponseHeader=Access-Control-Expose-Headers
               - RemoveResponseHeader=Access-Control-Max-Age
+              # AI 호출(Gemini/GPT fallback)은 최대 3분 소요 가능 → 504 방지
+              - name: RequestTimeout
+                args:
+                  timeout: PT180S
 
           # ── User-Info 서비스 (8004) ──────────────────────────────────────
           - id: user-info
