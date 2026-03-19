@@ -8,10 +8,16 @@ server:
   tomcat:
     relaxed-query-chars: "|,{,},[,]"
     relaxed-path-chars: "|,{,},[,]"
+    max-swallow-size: -1  # 업로드 크기 제한 없음
+
 
 spring:
   application:
     name: tour-site
+  servlet:
+    multipart:
+      max-file-size: -1      # 파일 크기 제한 없음 (tourstar 대용량 사진 업로드)
+      max-request-size: -1   # 요청 크기 제한 없음
   main:
     web-application-type: servlet  # servlet 모드 – SseEmitter / JPA / OAuth 컨트롤러와 공존
   threads:
