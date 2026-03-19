@@ -142,7 +142,7 @@ function PlanCalendar({
       <div className="grid grid-cols-7">
         {cells.map((day, idx) => {
           if (!day) {
-            return <div key={`empty-${idx}`} className="h-16 border-b border-r border-gray-50" />;
+            return <div key={`empty-${idx}`} className="h-11 border-b border-r border-gray-50 md:h-16" />;
           }
           const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
           const matched = getPlansOnDate(dateStr, plans);
@@ -155,7 +155,7 @@ function PlanCalendar({
               key={dateStr}
               type="button"
               onClick={() => onSelectDate(isSelected ? null : dateStr)}
-              className={`relative h-16 border-b border-r border-gray-100 p-1 text-left transition-colors
+              className={`relative h-11 border-b border-r border-gray-100 p-1 text-left transition-colors md:h-16
                 ${isSelected ? "bg-indigo-50 ring-2 ring-inset ring-indigo-400" : "hover:bg-gray-50"}
               `}
             >
@@ -684,27 +684,27 @@ export default function SchedulePage() {
     <AppLayout onLogout={logout}>
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* 헤더 */}
-        <header className="shrink-0 border-b border-gray-200 bg-white/90 backdrop-blur-md px-6 py-3.5 flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold text-gray-800">일정 관리</h1>
-            <p className="text-xs text-gray-400">
+        <header className="shrink-0 border-b border-gray-200 bg-white/90 backdrop-blur-md px-4 py-3 flex items-center justify-between gap-2 md:px-6 md:py-3.5">
+          <div className="min-w-0">
+            <h1 className="text-base font-bold text-gray-800 md:text-lg">일정 관리</h1>
+            <p className="truncate text-xs text-gray-400">
               {appUserId ? `저장된 플랜 ${plans.length}개 · 날짜를 클릭하면 그날의 일정을 볼 수 있어요` : "로그인 후 이용 가능"}
             </p>
           </div>
           <button
             type="button"
             onClick={() => router.push("/planner")}
-            className="rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 px-4 py-2 text-sm font-semibold text-white shadow hover:opacity-90 transition-opacity"
+            className="shrink-0 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 px-3 py-2 text-xs font-semibold text-white shadow hover:opacity-90 transition-opacity md:px-4 md:text-sm"
           >
-            + 새 루트 만들기
+            + 새 루트
           </button>
         </header>
 
-        {/* 본문 2-패널 */}
-        <div className="flex flex-1 overflow-hidden">
+        {/* 본문: 모바일 세로 스택 / 데스크톱 2-패널 */}
+        <div className="flex flex-1 flex-col overflow-auto md:flex-row md:overflow-hidden">
 
-          {/* ── 왼쪽: 캘린더 + 범례 ── */}
-          <aside className="w-80 shrink-0 overflow-y-auto border-r border-gray-200 bg-gray-50 p-4 xl:w-96">
+          {/* ── 캘린더 + 범례 ── */}
+          <aside className="shrink-0 border-b border-gray-200 bg-gray-50 p-4 md:w-80 md:border-b-0 md:border-r md:overflow-y-auto xl:w-96">
             {loading ? (
               <div className="animate-pulse rounded-2xl bg-white h-72 shadow-sm" />
             ) : (
@@ -723,8 +723,8 @@ export default function SchedulePage() {
             )}
           </aside>
 
-          {/* ── 오른쪽: 날짜 상세 OR 전체 플랜 리스트 ── */}
-          <main className="flex flex-1 flex-col overflow-hidden bg-white">
+          {/* ── 날짜 상세 OR 전체 플랜 리스트 ── */}
+          <main className="flex flex-1 flex-col overflow-y-auto bg-white md:overflow-hidden">
             {loading && (
               <div className="p-6 space-y-4">
                 {Array.from({ length: 3 }).map((_, i) => (
