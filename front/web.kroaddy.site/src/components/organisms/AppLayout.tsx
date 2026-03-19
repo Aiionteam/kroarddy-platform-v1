@@ -86,8 +86,8 @@ export function AppLayout({ onLogout, children, mobileTitle }: AppLayoutProps) {
           </span>
         </header>
 
-        {/* 페이지 콘텐츠 */}
-        <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
+        {/* 페이지 콘텐츠: 모바일에서 스크롤 허용, 데스크톱에서 overflow-hidden 유지 */}
+        <div className="flex flex-1 flex-col min-h-0 overflow-y-auto md:overflow-hidden">
           {children}
         </div>
       </div>
