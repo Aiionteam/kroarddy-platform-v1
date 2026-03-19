@@ -24,6 +24,10 @@ import {
   type PolishResponse,
   type ValidateImageResult,
 } from "@/lib/api/userContent";
+import {
+  fetchMyPlans,
+  type TravelPlanRecord,
+} from "@/lib/api/planner";
 
 // ────────────────────────────────────────────────────────────
 // 피드 카드 (넷플릭스 스타일)
@@ -243,6 +247,11 @@ function UploadModal({
   const [polishError, setPolishError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // 내 일정 가져오기
+  const [showPlanPicker, setShowPlanPicker] = useState(false);
+  const [myPlans, setMyPlans] = useState<TravelPlanRecord[]>([]);
+  const [plansLoading, setPlansLoading] = useState(false);
+
   const applyFile = (file: File) => {
     if (!file.type.startsWith("image/")) return;
     setImageFile(file);
@@ -292,6 +301,33 @@ function UploadModal({
   const updateStop = (i: number, field: keyof RouteItemInput, val: string) => {
     setStops((s) => s.map((st, idx) => (idx === i ? { ...st, [field]: val } : st)));
   };
+
+  const openPlanPicker = useCallback(async () => {
+    if (!userId) return;
+    if (myPlans.length > 0) { setShowPlanPicker(true); return; }
+    setPlansLoading(true);
+    try {
+      const plans = await fetchMyPlans(userId);
+      setMyPlans(plans);
+      setShowPlanPicker(true);
+    } catch {
+      // ignore
+    } finally {
+      setPlansLoading(false);
+    }
+  }, [userId, myPlans.length]);
+
+  const importFromPlan = useCallback((plan: TravelPlanRecord) => {
+    setTitle(plan.route_name);
+    setLocation(plan.location);
+    setDescription("");
+    const converted: RouteItemInput[] = plan.schedule.map((item) => ({
+      place: item.place,
+      note: item.title,
+    }));
+    setStops(converted.length > 0 ? converted : [{ place: "", note: "" }]);
+    setShowPlanPicker(false);
+  }, []);
 
   const handlePolish = useCallback(async () => {
     const validStops = stops.filter((s) => s.place.trim());
@@ -462,6 +498,63 @@ function UploadModal({
         {/* ── Step 2: 폼 ── */}
         {step === "form" && (
           <div className="px-5 py-4 max-h-[65vh] overflow-y-auto">
+
+            {/* 내 일정 가져오기 버튼 */}
+            <div className="mb-4">
+              <button
+                type="button"
+                onClick={openPlanPicker}
+                disabled={plansLoading || !userId}
+                className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-indigo-300 bg-indigo-50 py-2.5 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 transition-colors"
+              >
+                {plansLoading ? (
+                  <>
+                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent" />
+                    불러오는 중…
+                  </>
+                ) : (
+                  <>📅 저장된 일정에서 가져오기</>
+                )}
+              </button>
+            </div>
+
+            {/* 플랜 피커 */}
+            {showPlanPicker && (
+              <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 overflow-hidden">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-indigo-100">
+                  <span className="text-xs font-bold text-indigo-700">저장된 일정 선택</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowPlanPicker(false)}
+                    className="text-xs text-gray-400 hover:text-gray-600"
+                  >
+                    닫기
+                  </button>
+                </div>
+                {myPlans.length === 0 ? (
+                  <p className="px-3 py-4 text-xs text-center text-gray-400">저장된 일정이 없습니다.</p>
+                ) : (
+                  <div className="max-h-48 overflow-y-auto divide-y divide-indigo-100">
+                    {myPlans.map((plan) => (
+                      <button
+                        key={plan.id}
+                        type="button"
+                        onClick={() => importFromPlan(plan)}
+                        className="w-full flex flex-col gap-0.5 px-3 py-2.5 text-left hover:bg-indigo-100 transition-colors"
+                      >
+                        <span className="text-sm font-semibold text-gray-800 truncate">{plan.route_name}</span>
+                        <span className="text-xs text-gray-500">
+                          {plan.location}
+                          {plan.start_date && ` · ${plan.start_date}${plan.end_date ? ` ~ ${plan.end_date}` : ""}`}
+                          {` · ${plan.schedule.length}개 장소`}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="space-y-3">
               <div>
                 <label className="mb-1 block text-xs font-semibold text-gray-600">루트 제목 *</label>
