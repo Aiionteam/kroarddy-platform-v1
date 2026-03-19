@@ -236,6 +236,26 @@ SLUG_TO_NAME: dict[str, str] = {
     # 제주권
     "jeju":          "제주",
     "seogwipo":      "서귀포",
+    # 경북 주요 관광지 (슬러그 확장)
+    "palgongsan":    "팔공산",
+    "gayasan":       "가야산",
+    "juwangsan":     "주왕산",
+    "nakdonggang":   "낙동강",
+    # 전남 주요 관광지
+    "jirisan":       "지리산",
+    "hallyeohaesang": "한려해상",
+    # 강원 주요 관광지
+    "seoraksan":     "설악산",
+    "odaesan":       "오대산",
+    "chiaksan":      "치악산",
+    # 충북
+    "songnisan":     "속리산",
+    "wolaksan":      "월악산",
+    # 경기
+    "bukhansan":     "북한산",
+    "gwanaksan":     "관악산",
+    # 제주
+    "hallasan":      "한라산",
 }
 
 
