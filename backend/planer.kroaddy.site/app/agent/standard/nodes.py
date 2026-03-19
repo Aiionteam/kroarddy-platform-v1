@@ -63,6 +63,21 @@ def _get_llm() -> ChatGoogleGenerativeAI:
     )
 
 
+def _get_llm_with_search():
+    """Google Search grounding이 활성화된 Gemini LLM.
+
+    Gemini가 영화 상영 여부·신규 오픈·실시간 행사 등을 스스로 검색해
+    정확한 정보를 바탕으로 일정을 생성·수정한다.
+    fallback(OpenAI)은 grounding 미지원이므로 일반 LLM으로 대체한다.
+    """
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-3-flash-preview",
+        temperature=0.4,
+        google_api_key=settings.gemini_api_key,
+    )
+    return llm.bind_tools([{"google_search": {}}])
+
+
 def _get_fallback_llm():
     """Gemini 일일 쿼터 초과 시 gpt-5-mini 폴백 LLM.
 
@@ -85,13 +100,19 @@ async def _invoke(llm: Any, messages: list, *, max_retries: int = 2) -> Any:
     """Gemini 호출 래퍼.
 
     - 일시적 429 (분당 제한): 지수 백오프 재시도 (최대 2회)
-    - 일일 쿼터 초과: OpenAI gpt-4.1-mini 자동 폴백 (OPENAI_API_KEY 설정 시)
+    - 일일 쿼터 초과: OpenAI gpt-5-mini 자동 폴백 (OPENAI_API_KEY 설정 시)
+    - grounding LLM(bind_tools 포함)이 grounding 미지원 에러 시: 일반 LLM으로 재시도
     """
     for attempt in range(max_retries + 1):
         try:
             return await llm.ainvoke(messages)
         except Exception as e:
             msg = str(e)
+
+            # grounding 미지원 모델 에러 → 일반 LLM으로 한 번 재시도
+            if "grounding" in msg.lower() or "google_search" in msg.lower():
+                logger.warning("Google Search grounding 미지원 – 일반 LLM으로 재시도")
+                return await _get_llm().ainvoke(messages)
 
             # 일일 한도 초과 → OpenAI 폴백
             if _is_daily_quota(e):
@@ -133,7 +154,10 @@ async def _invoke(llm: Any, messages: list, *, max_retries: int = 2) -> Any:
 
 
 def _extract_text(content: Any) -> str:
-    """LLM 응답 content에서 텍스트 추출 (str 또는 list 모두 처리)."""
+    """LLM 응답 content에서 텍스트 추출 (str / list / grounding content_blocks 모두 처리).
+
+    Google Search grounding 활성화 시 응답이 content_blocks 형태로 올 수 있음.
+    """
     if isinstance(content, str):
         return content
     if isinstance(content, list):
@@ -142,14 +166,45 @@ def _extract_text(content: Any) -> str:
             if isinstance(part, str):
                 parts.append(part)
             elif isinstance(part, dict):
+                # 일반 content list {"type": "text", "text": "..."}
                 parts.append(part.get("text", ""))
         return "".join(parts)
     return str(content)
 
 
+def _extract_text_from_response(response: Any) -> str:
+    """LLM 응답 객체 전체에서 텍스트 추출.
+
+    grounding 응답은 response.content_blocks 에 텍스트가 담기므로
+    content_blocks → content → additional_kwargs 순으로 폴백한다.
+    """
+    # 1) content_blocks (Google Search grounding 응답)
+    blocks = getattr(response, "content_blocks", None)
+    if blocks:
+        parts = []
+        for block in blocks:
+            if isinstance(block, dict):
+                t = block.get("type", "")
+                if t == "text":
+                    parts.append(block.get("text", ""))
+        text = "".join(parts).strip()
+        if text:
+            return text
+
+    # 2) 일반 content
+    return _extract_text(response.content)
+
+
 def _parse_json(raw: Any) -> dict:
-    """LLM 응답에서 JSON 블록 추출."""
-    text = _extract_text(raw).strip()
+    """LLM 응답(또는 응답 객체)에서 JSON 블록 추출.
+
+    grounding 응답의 content_blocks도 처리한다.
+    """
+    # 응답 객체인 경우 content_blocks → content 순 추출
+    if hasattr(raw, "content") or hasattr(raw, "content_blocks"):
+        text = _extract_text_from_response(raw).strip()
+    else:
+        text = _extract_text(raw).strip()
     if not text:
         logger.error("LLM 응답 본문이 비어 있습니다. raw type=%s, value=%r", type(raw), raw)
         raise ValueError("LLM 응답이 비어 있습니다. 모델이 JSON을 반환하지 않았습니다.")
@@ -277,10 +332,10 @@ async def generate_routes(state: PlannerState) -> PlannerState:
         '"description":"description(≤40chars)","highlights":["place1","place2","place3"]}]}'
     )
 
-    llm = _get_llm()
+    llm = _get_llm_with_search()
     try:
         response = await _invoke(llm, [HumanMessage(content=prompt)])
-        data = _parse_json(response.content)
+        data = _parse_json(response)
         routes = data.get("routes", [])
         logger.info(
             "루트 생성 완료: %s개 (%s, 연동 행사=%d건, 유저 프로필=%s, 기존 제외=%d건)",
@@ -376,10 +431,10 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         '"cost_summary":{{"per_day":[{{"day":1,"total":"₩0"}}],"trip_total":"₩0"}}}}'
     )
 
-    llm = _get_llm()
+    llm = _get_llm_with_search()
     try:
         response = await _invoke(llm, [HumanMessage(content=prompt)])
-        data = _parse_json(response.content)
+        data = _parse_json(response)
         schedule = data.get("schedule", [])
         cost_summary = data.get("cost_summary")
         logger.info(
@@ -425,10 +480,10 @@ async def modify_schedule(
         '"modified_titles":["title of modified item"]}'
     )
 
-    llm = _get_llm()
+    llm = _get_llm_with_search()
     try:
         response = await _invoke(llm, [HumanMessage(content=prompt)])
-        data = _parse_json(response.content)
+        data = _parse_json(response)
         not_possible: bool = data.get("not_possible", False)
         reason: str = data.get("reason", "")
         logger.info("일정 수정 완료: %s | 불가:%s | 이유:%s", data.get("modified_titles", []), not_possible, reason)
@@ -482,10 +537,10 @@ async def reroll_single_item(
         "}"
     )
 
-    llm = _get_llm()
+    llm = _get_llm_with_search()
     try:
         response = await _invoke(llm, [HumanMessage(content=prompt)])
-        new_item = _parse_json(response.content)
+        new_item = _parse_json(response)
         logger.info("항목 리롤 완료: %s → %s", item.get("title"), new_item.get("title"))
         return new_item
     except Exception as e:
