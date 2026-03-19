@@ -156,7 +156,7 @@ async def _invoke(llm: Any, messages: list, *, max_retries: int = 2) -> Any:
 
             # 일시적 429 (분당 제한) → 백오프 후 재시도
             if ("429" in msg or "RESOURCE_EXHAUSTED" in msg) and attempt < max_retries:
-                wait = 4 * (2 ** attempt)  # 4초 → 8초
+                wait = 2 * (2 ** attempt)  # Tier1: 2초 → 4초
                 logger.warning("Gemini 429 일시 제한 – %d초 대기 후 재시도 (%d/%d)", wait, attempt + 1, max_retries)
                 await asyncio.sleep(wait)
                 continue
