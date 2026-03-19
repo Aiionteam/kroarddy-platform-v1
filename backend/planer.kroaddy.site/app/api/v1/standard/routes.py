@@ -27,8 +27,13 @@ router = APIRouter(prefix="/api/v1/planner", tags=["standard"])
 
 
 def _check_quota_error(e: Exception) -> None:
-    """Gemini 429 에러를 사용자 친화적 HTTP 예외로 변환."""
+    """Gemini 에러를 사용자 친화적 HTTP 예외로 변환."""
     msg = str(e)
+
+    # Semaphore 대기 타임아웃 → 503 (서버 과부하)
+    if "AI 서버가 바쁩니다" in msg:
+        raise HTTPException(status_code=503, detail=msg)
+
     if "429" not in msg and "RESOURCE_EXHAUSTED" not in msg:
         return
     if _is_daily_quota(e):
@@ -270,8 +275,9 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
     location_name = SLUG_TO_NAME.get(location, location)
     existing_routes: list[str] = req.existing_routes or []
     eh = _existing_hash(existing_routes)
+    search_tag = "s1" if req.use_search else "s0"
     # 언어별 캐시 분리를 위해 user_profile 조회 후 cache_key 확정 (아래 lock 블록에서 재정의)
-    _preliminary_key = f"{location}:{req.start_date}:{req.end_date}:{eh}"
+    _preliminary_key = f"{location}:{req.start_date}:{req.end_date}:{eh}:{search_tag}"
 
     cached = _routes_cache.get(_preliminary_key)
     if cached and time.time() - cached[1] < _ROUTES_TTL:
@@ -290,7 +296,7 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
         )
         nationality = (user_profile or {}).get("nationality", "")
         lang_code = nationality[:3].lower() if nationality else "ko"  # 캐시 키용 짧은 식별자
-        cache_key = f"{location}:{req.start_date}:{req.end_date}:{eh}:{lang_code}"
+        cache_key = f"{location}:{req.start_date}:{req.end_date}:{eh}:{lang_code}:{search_tag}"
 
         logger.info(
             "행사 연동: location=%s, 건수=%d | 유저 프로필: %s (국적=%s) | 기존 제외=%d건",
@@ -336,7 +342,8 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
     user_profile = await fetch_user_profile(req.user_id)
     nationality = (user_profile or {}).get("nationality", "")
     lang_code = nationality[:3].lower() if nationality else "ko"
-    sched_key = f"{location}:{req.route_name}:{req.start_date}:{req.end_date}:{lang_code}"
+    sched_search_tag = "s1" if req.use_search else "s0"
+    sched_key = f"{location}:{req.route_name}:{req.start_date}:{req.end_date}:{lang_code}:{sched_search_tag}"
 
     cached_sched = _schedule_cache.get(sched_key)
     if cached_sched and time.time() - cached_sched[1] < _SCHEDULE_TTL:
