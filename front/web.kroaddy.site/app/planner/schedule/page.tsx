@@ -457,7 +457,7 @@ function DayPanel({
   const [y, m, day] = d.split("-");
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex flex-col md:h-full">
       {/* 날짜 헤더 */}
       <div className="flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3">
         <div>
@@ -477,7 +477,7 @@ function DayPanel({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+      <div className="px-4 py-3 space-y-4 md:flex-1 md:overflow-y-auto">
         {matched.length === 0 && (
           <p className="py-12 text-center text-sm text-gray-400">
             이 날 등록된 일정이 없습니다
@@ -865,7 +865,7 @@ export default function SchedulePage() {
 
   return (
     <AppLayout onLogout={logout}>
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-auto md:overflow-hidden">
         {/* 헤더 */}
         <header className="shrink-0 border-b border-gray-200 bg-white/90 backdrop-blur-md px-4 py-3 flex items-center justify-between gap-2 md:px-6 md:py-3.5">
           <div className="min-w-0">
@@ -884,7 +884,7 @@ export default function SchedulePage() {
         </header>
 
         {/* 본문: 모바일 세로 스택 / 데스크톱 2-패널 */}
-        <div className="flex flex-1 flex-col overflow-auto md:flex-row md:overflow-hidden">
+        <div className="flex flex-col md:flex-1 md:flex-row md:overflow-hidden">
 
           {/* ── 캘린더 + 범례 ── */}
           <aside className="shrink-0 border-b border-gray-200 bg-gray-50 p-4 md:w-80 md:border-b-0 md:border-r md:overflow-y-auto xl:w-96">
@@ -907,7 +907,7 @@ export default function SchedulePage() {
           </aside>
 
           {/* ── 날짜 상세 OR 전체 플랜 리스트 ── */}
-          <main className="flex flex-1 flex-col overflow-y-auto bg-white md:overflow-hidden">
+          <main className="flex flex-col bg-white md:flex-1 md:overflow-hidden">
             {loading && (
               <div className="p-6 space-y-4">
                 {Array.from({ length: 3 }).map((_, i) => (
@@ -959,7 +959,7 @@ export default function SchedulePage() {
 
             {/* 날짜 선택됨 → DayPanel */}
             {!loading && !error && plans.length > 0 && selectedDate && (
-              <div className="flex-1 overflow-hidden">
+              <div className="md:flex-1 md:overflow-hidden">
                 <DayPanel
                   date={selectedDate}
                   plans={plans}
@@ -972,7 +972,7 @@ export default function SchedulePage() {
 
             {/* 날짜 미선택 → 전체 플랜 리스트 */}
             {!loading && !error && plans.length > 0 && !selectedDate && (
-              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              <div className="p-5 space-y-4 md:flex-1 md:overflow-y-auto">
                 <p className="text-xs text-gray-400">전체 플랜 목록 · 날짜를 클릭하면 해당일 일정만 볼 수 있어요</p>
                 {plans.map((plan, idx) => (
                   <PlanCard
