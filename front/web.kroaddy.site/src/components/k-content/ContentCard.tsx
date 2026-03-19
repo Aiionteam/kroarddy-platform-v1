@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 
 export interface ContentCardProps {
   title: string;
@@ -19,6 +20,11 @@ export function ContentCard({
   placeholderGradient = "from-violet-500 to-indigo-600",
   onClick,
 }: ContentCardProps) {
+  const [imgError, setImgError] = React.useState(false);
+  React.useEffect(() => {
+    setImgError(false);
+  }, [imageUrl]);
+
   return (
     <button
       type="button"
@@ -26,11 +32,15 @@ export function ContentCard({
       className="group relative flex shrink-0 w-72 cursor-pointer overflow-hidden rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-xl hover:z-10 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:ring-offset-gray-100 md:w-80"
       style={{ aspectRatio: "16/9" }}
     >
-      {imageUrl ? (
-        <img
+      {imageUrl && !imgError ? (
+        <Image
           src={imageUrl}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          alt={title}
+          fill
+          sizes="(max-width: 768px) 288px, 320px"
+          onError={() => setImgError(true)}
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
+          loading="lazy"
         />
       ) : (
         <div
