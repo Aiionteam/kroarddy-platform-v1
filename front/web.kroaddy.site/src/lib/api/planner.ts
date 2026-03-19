@@ -31,6 +31,12 @@ export interface ScheduleItem {
   title: string;
   description: string;
   tips?: string;
+  estimated_cost?: string;
+}
+
+export interface CostSummary {
+  per_day: { day: number; total: string }[];
+  trip_total: string;
 }
 
 export interface RoutesResponse {
@@ -45,6 +51,7 @@ export interface ScheduleResponse {
   location_name: string;
   route_name: string;
   schedule: ScheduleItem[];
+  cost_summary?: CostSummary;
   error?: string;
 }
 

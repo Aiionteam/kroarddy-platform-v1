@@ -350,6 +350,12 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
 
     time_labels = "morning|lunch|afternoon|evening" if lang != "Korean" else "오전|점심|오후|저녁"
 
+    # 비용 통화 지시 (기본 KRW, 한국 여행이므로 항상 ₩)
+    cost_note = (
+        "- estimated_cost: cost in KRW (e.g. '무료', '₩3,000', '₩15,000~₩20,000'). "
+        "Include entry fee + typical meal/activity cost.\n"
+    )
+
     prompt = (
         f"Destination:{location_name} | Route:{route_name}\n"
         f"{date_clause}\n"
@@ -359,10 +365,15 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         "- date field must use YYYY-MM-DD from the DateMapping above\n"
         "- Use only real existing places/restaurants/attractions\n"
         f"- time must be one of: {time_labels}\n"
+        f"{cost_note}"
+        "- cost_summary.per_day: sum of estimated_cost for each day (formatted KRW string)\n"
+        "- cost_summary.trip_total: grand total for the entire trip\n"
         f"{lang_dir}"
         "\nRespond ONLY with valid JSON (no explanation):\n"
         f'{{"schedule":[{{"day":1,"date":"{date_example}","time":"morning","place":"place name",'
-        '"title":"activity title(≤20chars)","description":"description(≤60chars)","tips":"tip(≤30chars)"}]}}'
+        '"title":"activity title(≤20chars)","description":"description(≤60chars)",'
+        '"tips":"tip(≤30chars)","estimated_cost":"₩0"}}],'
+        '"cost_summary":{{"per_day":[{{"day":1,"total":"₩0"}}],"trip_total":"₩0"}}}}'
     )
 
     llm = _get_llm()
@@ -370,13 +381,16 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         response = await _invoke(llm, [HumanMessage(content=prompt)])
         data = _parse_json(response.content)
         schedule = data.get("schedule", [])
+        cost_summary = data.get("cost_summary")
         logger.info(
-            "일정 생성 완료: %s개 항목 (%s / %s)", len(schedule), location_name, route_name
+            "일정 생성 완료: %s개 항목 (%s / %s), 총경비=%s",
+            len(schedule), location_name, route_name,
+            (cost_summary or {}).get("trip_total", "N/A"),
         )
-        return {**state, "schedule": schedule, "error": None}
+        return {**state, "schedule": schedule, "cost_summary": cost_summary, "error": None}
     except Exception as e:
         logger.exception("일정 생성 실패: %s", e)
-        return {**state, "schedule": [], "error": str(e)}
+        return {**state, "schedule": [], "cost_summary": None, "error": str(e)}
 
 
 async def modify_schedule(
@@ -459,10 +473,12 @@ async def reroll_single_item(
         f"{ctx}\n\n"
         "Replace with a completely different place/activity. Keep day/date/time identical.\n"
         "Use only real existing places.\n"
+        "Include estimated_cost in KRW (e.g. '무료', '₩3,000', '₩15,000~₩20,000').\n"
         f"{lang_dir}"
         "\nRespond ONLY with valid JSON (no explanation):\n"
         f'{{"day":{day},"date":"{date_str}","time":"{time_str}",'
-        '"place":"place name","title":"activity title","description":"description","tips":"tip"}'
+        '"place":"place name","title":"activity title","description":"description","tips":"tip",'
+        '"estimated_cost":"₩0"}'
         "}"
     )
 
