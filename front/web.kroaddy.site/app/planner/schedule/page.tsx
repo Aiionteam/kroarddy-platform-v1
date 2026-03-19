@@ -54,15 +54,17 @@ function resolveItemDate(item: ScheduleItem, plan: TravelPlanRecord): string | n
   return null;
 }
 
-/** 해당 날짜(YYYY-MM-DD)에 걸린 플랜들과 그날의 아이템 */
+/** 해당 날짜(YYYY-MM-DD)에 걸린 플랜들과 그날의 아이템 (flatIdx 포함) */
 function getPlansOnDate(
   date: string,
   plans: TravelPlanRecord[],
-): { planIdx: number; plan: TravelPlanRecord; items: ScheduleItem[] }[] {
+): { planIdx: number; plan: TravelPlanRecord; items: { item: ScheduleItem; flatIdx: number }[] }[] {
   const dNum = toNum(date);
   return plans
     .map((plan, planIdx) => {
-      const items = plan.schedule.filter((it) => resolveItemDate(it, plan) === date);
+      const items = plan.schedule
+        .map((item, flatIdx) => ({ item, flatIdx }))
+        .filter(({ item }) => resolveItemDate(item, plan) === date);
       const start = plan.start_date ? toNum(plan.start_date) : null;
       const end   = plan.end_date   ? toNum(plan.end_date)   : start;
       const inRange = start !== null && end !== null && start <= dNum && dNum <= end;
@@ -220,6 +222,223 @@ function PlanLegend({ plans }: { plans: TravelPlanRecord[] }) {
 }
 
 // ── 선택된 날짜 일정 패널 ─────────────────────────────────────
+// ── DayPanel 내 단일 플랜 그룹 (리롤 + AI 수정 포함) ──────────
+function DayPlanGroup({
+  planIdx,
+  plan,
+  items,
+  userId,
+  onScheduleChange,
+}: {
+  planIdx: number;
+  plan: TravelPlanRecord;
+  items: { item: ScheduleItem; flatIdx: number }[];
+  userId: number | null;
+  onScheduleChange: (planId: number, schedule: ScheduleItem[]) => void;
+}) {
+  const c = planColor(planIdx);
+  const [rerollingIdx, setRerollingIdx] = useState<number | null>(null);
+  const [rerolledIdx,  setRerolledIdx]  = useState<number | null>(null);
+  const [prompt,       setPrompt]       = useState("");
+  const [modifying,    setModifying]    = useState(false);
+  const [modifyError,  setModifyError]  = useState<string | null>(null);
+  const [modifyResult, setModifyResult] = useState<{ notPossible: boolean; reason: string } | null>(null);
+  const [localSchedule, setLocalSchedule] = useState<ScheduleItem[]>(plan.schedule);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // plan.schedule 외부 변경 시 동기화
+  React.useEffect(() => { setLocalSchedule(plan.schedule); }, [plan.schedule]);
+
+  // items를 localSchedule 기반으로 재계산
+  const localItems = items.map(({ flatIdx }) => ({
+    item: localSchedule[flatIdx] ?? items.find(e => e.flatIdx === flatIdx)!.item,
+    flatIdx,
+  }));
+
+  async function handleReroll(flatIdx: number) {
+    if (rerollingIdx !== null || !userId) return;
+    setRerollingIdx(flatIdx);
+    setRerolledIdx(null);
+    try {
+      const res = await rerollPlanItem(plan.id, flatIdx, userId);
+      setLocalSchedule(res.schedule);
+      onScheduleChange(plan.id, res.schedule);
+      setRerolledIdx(flatIdx);
+      setTimeout(() => setRerolledIdx(null), 3000);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "리롤에 실패했습니다.");
+    } finally {
+      setRerollingIdx(null);
+    }
+  }
+
+  async function handleModify(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = prompt.trim();
+    if (!trimmed || !userId || modifying) return;
+    setModifying(true);
+    setModifyError(null);
+    setModifyResult(null);
+    try {
+      const res = await modifyPlan(plan.id, userId, trimmed);
+      if (res.error) throw new Error(res.error);
+      setLocalSchedule(res.schedule);
+      onScheduleChange(plan.id, res.schedule);
+      setPrompt("");
+      if (res.reason) {
+        setModifyResult({ notPossible: res.not_possible ?? false, reason: res.reason });
+        setTimeout(() => setModifyResult(null), 8000);
+      }
+    } catch (err) {
+      setModifyError(err instanceof Error ? err.message : "수정에 실패했습니다.");
+    } finally {
+      setModifying(false);
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleModify(e as unknown as React.FormEvent);
+    }
+  }
+
+  return (
+    <div className={`overflow-hidden rounded-xl border ${c.border}`}>
+      {/* 플랜 이름 헤더 */}
+      <div className={`flex items-center gap-2 px-3 py-2 ${c.light}`}>
+        <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${c.dot}`} />
+        <span className={`truncate text-xs font-bold ${c.text}`}>
+          {plan.location} · {plan.route_name}
+        </span>
+      </div>
+
+      {/* 일정 목록 */}
+      <div className="bg-white px-3 py-2">
+        {localItems.length === 0 ? (
+          <p className={`py-2 text-xs ${c.text} opacity-60`}>여행 기간 중입니다</p>
+        ) : (
+          <ol className="space-y-2">
+            {localItems.map(({ item, flatIdx }, i) => {
+              const isRerolling = rerollingIdx === flatIdx;
+              const isRerolled  = rerolledIdx  === flatIdx;
+              return (
+                <li key={flatIdx} className={`rounded-lg border p-2.5 transition-all duration-500 ${
+                  isRerolled  ? "border-sky-300 bg-sky-50"
+                  : isRerolling ? "border-indigo-200 bg-indigo-50/50 animate-pulse"
+                  : "border-gray-100 bg-gray-50"
+                }`}>
+                  {isRerolled && (
+                    <span className="mb-1 inline-block rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700">
+                      🔄 새로 생성됨
+                    </span>
+                  )}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex flex-1 min-w-0 items-center gap-2">
+                      <span className={`shrink-0 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white ${c.dot}`}>
+                        {i + 1}
+                      </span>
+                      {item.time && (
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${c.badge} ${c.text}`}>
+                          {item.time}
+                        </span>
+                      )}
+                      <span className="truncate text-sm font-semibold text-gray-800">
+                        {isRerolling ? "생성 중…" : item.title}
+                      </span>
+                    </div>
+                    {/* 리롤 버튼 */}
+                    {userId && (
+                      <button
+                        type="button"
+                        onClick={() => handleReroll(flatIdx)}
+                        disabled={rerollingIdx !== null || modifying}
+                        title="이 일정 다시 생성"
+                        className={`shrink-0 flex h-6 w-6 items-center justify-center rounded-full border transition-all ${
+                          isRerolling
+                            ? "border-indigo-300 bg-indigo-100 text-indigo-500"
+                            : "border-gray-200 bg-white text-gray-400 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600"
+                        } disabled:pointer-events-none disabled:opacity-40`}
+                      >
+                        {isRerolling ? (
+                          <span className="h-3 w-3 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent" />
+                        ) : (
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <polyline points="1 4 1 10 7 10" />
+                            <path d="M3.51 15a9 9 0 1 0 .49-3.5" />
+                          </svg>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  {!isRerolling && (
+                    <>
+                      <p className="mt-1 text-xs text-gray-500">📍 {item.place}</p>
+                      <p className="mt-0.5 text-xs text-gray-600">{item.description}</p>
+                      {item.tips && (
+                        <p className="mt-1 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">💡 {item.tips}</p>
+                      )}
+                    </>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </div>
+
+      {/* AI 수정 프롬프트 */}
+      {userId && (
+        <div className="border-t border-gray-100 bg-gray-50 px-3 py-2.5">
+          <p className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-gray-500">
+            <span>✏️</span> AI에게 일정 수정 요청
+          </p>
+          <form onSubmit={handleModify} className="flex gap-2">
+            <textarea
+              ref={textareaRef}
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder='예) "창덕궁 후원 투어 다른 곳으로 바꿔줘"'
+              rows={2}
+              disabled={modifying || rerollingIdx !== null}
+              className="flex-1 resize-none rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-indigo-300 disabled:opacity-60"
+            />
+            <button
+              type="submit"
+              disabled={!prompt.trim() || modifying || rerollingIdx !== null}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 disabled:pointer-events-none"
+            >
+              {modifying ? (
+                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+              )}
+            </button>
+          </form>
+          {modifyError && (
+            <p className="mt-1.5 text-xs text-red-500">{modifyError}</p>
+          )}
+          {modifyResult && (
+            <div className={`mt-2 flex items-start gap-2 rounded-xl px-3 py-2 text-xs ${
+              modifyResult.notPossible
+                ? "bg-amber-50 text-amber-800 border border-amber-200"
+                : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+            }`}>
+              <span className="mt-0.5 shrink-0">{modifyResult.notPossible ? "⚠️" : "✅"}</span>
+              <p className="leading-relaxed">{modifyResult.reason}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── DayPanel ─────────────────────────────────────────────────
 function DayPanel({
   date,
   plans,
@@ -240,7 +459,7 @@ function DayPanel({
   return (
     <div className="flex h-full flex-col">
       {/* 날짜 헤더 */}
-      <div className="flex items-center justify-between border-b border-gray-100 bg-white px-5 py-3">
+      <div className="flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3">
         <div>
           <span className="text-sm font-bold text-gray-800">
             {parseInt(y)}년 {parseInt(m)}월 {parseInt(day)}일
@@ -264,54 +483,18 @@ function DayPanel({
             이 날 등록된 일정이 없습니다
           </p>
         )}
-        {matched.map(({ planIdx, plan, items }) => {
-          const c = planColor(planIdx);
-          return (
-            <div key={plan.id} className={`rounded-xl border ${c.border} ${c.light} p-3`}>
-              {/* 플랜 이름 */}
-              <div className="mb-2 flex items-center gap-2">
-                <span className={`h-2.5 w-2.5 rounded-full ${c.dot}`} />
-                <span className={`text-xs font-bold ${c.text}`}>
-                  {plan.location} · {plan.route_name}
-                </span>
-              </div>
-
-              {items.length > 0 ? (
-                <ol className="space-y-2">
-                  {items.map((item, i) => (
-                    <DayItem key={i} item={item} color={c} />
-                  ))}
-                </ol>
-              ) : (
-                <p className={`text-xs ${c.text} opacity-60`}>여행 기간 중입니다</p>
-              )}
-            </div>
-          );
-        })}
+        {matched.map(({ planIdx, plan, items }) => (
+          <DayPlanGroup
+            key={plan.id}
+            planIdx={planIdx}
+            plan={plan}
+            items={items}
+            userId={userId}
+            onScheduleChange={onScheduleChange}
+          />
+        ))}
       </div>
     </div>
-  );
-}
-
-function DayItem({ item, color }: { item: ScheduleItem; color: PlanColor }) {
-  return (
-    <li className="rounded-lg border border-white bg-white p-2.5 shadow-sm">
-      <div className="flex items-center gap-2">
-        {item.time && (
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${color.badge} ${color.text}`}>
-            {item.time}
-          </span>
-        )}
-        <span className="text-sm font-semibold text-gray-800">{item.title}</span>
-      </div>
-      {item.place && <p className="mt-0.5 text-xs text-gray-500">📍 {item.place}</p>}
-      {item.description && <p className="mt-1 text-xs text-gray-600">{item.description}</p>}
-      {item.tips && (
-        <p className="mt-1.5 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">
-          💡 {item.tips}
-        </p>
-      )}
-    </li>
   );
 }
 
