@@ -5,13 +5,16 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 /** 응답이 에러일 때 서버 detail 메시지 또는 기본 메시지를 담은 Error를 throw */
 async function throwApiError(res: Response, fallback: string): Promise<never> {
-  if (res.status === 429) {
-    let detail = "AI 사용량이 초과됐습니다. 잠시 후 다시 시도해 주세요.";
+  if (res.status === 429 || res.status === 503) {
+    let detail =
+      res.status === 503
+        ? "AI 서버가 바쁩니다. 잠시 후 다시 시도해 주세요."
+        : "AI 사용량이 초과됐습니다. 잠시 후 다시 시도해 주세요.";
     try {
       const body = await res.json();
       if (body?.detail) detail = body.detail;
     } catch { /* ignore */ }
-    throw new Error(`429: ${detail}`);
+    throw new Error(`${res.status}: ${detail}`);
   }
   throw new Error(`${fallback}: ${res.status}`);
 }

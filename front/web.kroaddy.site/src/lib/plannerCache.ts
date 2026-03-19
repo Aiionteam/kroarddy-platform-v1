@@ -55,22 +55,24 @@ function routesKey(
   startDate: string,
   endDate: string,
   existingRoutes: string[],
+  useSearch: boolean,
 ): string {
   const sorted = [...existingRoutes].sort().join(",");
   const eh = sorted ? shortHash(sorted) : "0";
-  return `${PREFIX}routes:${location}:${startDate}:${endDate}:${eh}`;
+  const st = useSearch ? "s1" : "s0";
+  return `${PREFIX}routes:${location}:${startDate}:${endDate}:${eh}:${st}`;
 }
 
 export function readRoutes<T>(
-  location: string, startDate: string, endDate: string, existingRoutes: string[],
+  location: string, startDate: string, endDate: string, existingRoutes: string[], useSearch: boolean,
 ): T | null {
-  return read<T>(routesKey(location, startDate, endDate, existingRoutes));
+  return read<T>(routesKey(location, startDate, endDate, existingRoutes, useSearch));
 }
 
 export function writeRoutes<T>(
-  location: string, startDate: string, endDate: string, existingRoutes: string[], data: T,
+  location: string, startDate: string, endDate: string, existingRoutes: string[], useSearch: boolean, data: T,
 ): void {
-  write(routesKey(location, startDate, endDate, existingRoutes), data, ROUTES_TTL_MS);
+  write(routesKey(location, startDate, endDate, existingRoutes, useSearch), data, ROUTES_TTL_MS);
 }
 
 /** 저장 완료 후 호출 → 해당 location의 루트 캐시 전체 무효화 (existingRoutes 변경 반영) */
@@ -88,19 +90,20 @@ export function invalidateRoutes(location: string): void {
 // ── 일정 캐시 ──────────────────────────────────────────────
 
 function scheduleKey(
-  location: string, routeName: string, startDate: string, endDate: string,
+  location: string, routeName: string, startDate: string, endDate: string, useSearch: boolean,
 ): string {
-  return `${PREFIX}sched:${location}:${shortHash(routeName)}:${startDate}:${endDate}`;
+  const st = useSearch ? "s1" : "s0";
+  return `${PREFIX}sched:${location}:${shortHash(routeName)}:${startDate}:${endDate}:${st}`;
 }
 
 export function readSchedule<T>(
-  location: string, routeName: string, startDate: string, endDate: string,
+  location: string, routeName: string, startDate: string, endDate: string, useSearch: boolean,
 ): T | null {
-  return read<T>(scheduleKey(location, routeName, startDate, endDate));
+  return read<T>(scheduleKey(location, routeName, startDate, endDate, useSearch));
 }
 
 export function writeSchedule<T>(
-  location: string, routeName: string, startDate: string, endDate: string, data: T,
+  location: string, routeName: string, startDate: string, endDate: string, useSearch: boolean, data: T,
 ): void {
-  write(scheduleKey(location, routeName, startDate, endDate), data, SCHEDULE_TTL_MS);
+  write(scheduleKey(location, routeName, startDate, endDate, useSearch), data, SCHEDULE_TTL_MS);
 }
