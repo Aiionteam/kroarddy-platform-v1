@@ -18,7 +18,7 @@ if _env.exists():
 
 
 app = FastAPI(title="Tourstar Photo Selection Agent", version="0.1.0")
-app.include_router(photo_selection_router, prefix="/v1")
+app.include_router(photo_selection_router, prefix="/api/v1")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
