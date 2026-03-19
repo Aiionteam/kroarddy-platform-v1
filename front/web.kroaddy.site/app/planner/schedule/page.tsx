@@ -457,7 +457,7 @@ function DayPanel({
   const [y, m, day] = d.split("-");
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex flex-col">
       {/* 날짜 헤더 */}
       <div className="flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3">
         <div>
@@ -477,7 +477,7 @@ function DayPanel({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+      <div className="px-4 py-3 space-y-4">
         {matched.length === 0 && (
           <p className="py-12 text-center text-sm text-gray-400">
             이 날 등록된 일정이 없습니다
@@ -865,13 +865,21 @@ export default function SchedulePage() {
 
   return (
     <AppLayout onLogout={logout}>
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* 헤더 */}
-        <header className="shrink-0 border-b border-gray-200 bg-white/90 backdrop-blur-md px-4 py-3 flex items-center justify-between gap-2 md:px-6 md:py-3.5">
+      {/*
+       * 모바일: AppLayout의 overflow-y-auto가 전체 스크롤 담당
+       *         → 이 안에서 flex-col로 캘린더 위/일정 아래 단순 적층
+       * 데스크톱(md:): overflow-hidden + flex-row 2-패널
+       */}
+      <div className="flex flex-1 flex-col md:overflow-hidden">
+
+        {/* ── 헤더 ── */}
+        <header className="shrink-0 border-b border-gray-200 bg-white/90 backdrop-blur-sm px-4 py-3 flex items-center justify-between gap-2 md:px-6 md:py-3.5">
           <div className="min-w-0">
             <h1 className="text-base font-bold text-gray-800 md:text-lg">일정 관리</h1>
             <p className="truncate text-xs text-gray-400">
-              {appUserId ? `저장된 플랜 ${plans.length}개 · 날짜를 클릭하면 그날의 일정을 볼 수 있어요` : "로그인 후 이용 가능"}
+              {appUserId
+                ? `저장된 플랜 ${plans.length}개 · 날짜를 클릭하면 그날의 일정을 볼 수 있어요`
+                : "로그인 후 이용 가능"}
             </p>
           </div>
           <button
@@ -883,31 +891,33 @@ export default function SchedulePage() {
           </button>
         </header>
 
-        {/* 본문: 모바일 세로 스택 / 데스크톱 2-패널 */}
-        <div className="flex flex-1 flex-col overflow-auto md:flex-row md:overflow-hidden">
+        {/* ── 본문 ── */}
+        {/* 모바일: flex-col (위아래 적층, 페이지 전체 스크롤) */}
+        {/* 데스크톱: flex-row (좌우 2-패널, 각각 내부 스크롤) */}
+        <div className="flex flex-col md:flex-1 md:flex-row md:overflow-hidden">
 
-          {/* ── 캘린더 + 범례 ── */}
-          <aside className="shrink-0 border-b border-gray-200 bg-gray-50 p-4 md:w-80 md:border-b-0 md:border-r md:overflow-y-auto xl:w-96">
+          {/* 캘린더 + 범례 */}
+          <aside className="shrink-0 border-b border-gray-200 bg-gray-50 p-4
+                            md:w-80 md:border-b-0 md:border-r md:overflow-y-auto xl:w-96">
             {loading ? (
               <div className="animate-pulse rounded-2xl bg-white h-72 shadow-sm" />
             ) : (
               <>
                 <PlanCalendar
-                  year={calYear}
-                  month={calMonth}
-                  plans={plans}
-                  selectedDate={selectedDate}
+                  year={calYear} month={calMonth}
+                  plans={plans} selectedDate={selectedDate}
                   onSelectDate={setSelectedDate}
-                  onPrevMonth={prevMonth}
-                  onNextMonth={nextMonth}
+                  onPrevMonth={prevMonth} onNextMonth={nextMonth}
                 />
                 <PlanLegend plans={plans} />
               </>
             )}
           </aside>
 
-          {/* ── 날짜 상세 OR 전체 플랜 리스트 ── */}
-          <main className="flex flex-1 flex-col overflow-y-auto bg-white md:overflow-hidden">
+          {/* 메인 콘텐츠 (날짜 상세 or 플랜 목록) */}
+          <main className="bg-white md:flex-1 md:overflow-y-auto">
+
+            {/* 로딩 */}
             {loading && (
               <div className="p-6 space-y-4">
                 {Array.from({ length: 3 }).map((_, i) => (
@@ -924,56 +934,66 @@ export default function SchedulePage() {
               </div>
             )}
 
+            {/* 오류 */}
             {!loading && error && (
               <div className="p-6">
                 <div className="rounded-xl bg-red-50 px-5 py-4 text-sm text-red-600">
                   {error}
-                  <button type="button" onClick={() => loadPlans()} className="ml-3 underline text-red-500 hover:text-red-700">다시 시도</button>
+                  <button type="button" onClick={() => loadPlans()}
+                    className="ml-3 underline text-red-500 hover:text-red-700">
+                    다시 시도
+                  </button>
                 </div>
               </div>
             )}
 
+            {/* 미로그인 */}
             {!loading && !error && !appUserId && (
-              <div className="flex flex-1 flex-col items-center justify-center text-center p-6">
-                <span className="mb-4 text-5xl">🔐</span>
+              <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+                <span className="text-5xl">🔐</span>
                 <p className="text-base font-medium text-gray-600">로그인이 필요합니다</p>
-                <p className="mt-2 text-sm text-gray-400">SNS 로그인 후 여행 플랜이 자동으로 저장됩니다</p>
+                <p className="text-sm text-gray-400">SNS 로그인 후 여행 플랜이 자동으로 저장됩니다</p>
               </div>
             )}
 
+            {/* 플랜 없음 */}
             {!loading && !error && appUserId && plans.length === 0 && (
-              <div className="flex flex-1 flex-col items-center justify-center text-center p-6">
-                <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mb-4 text-gray-300">
+              <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+                <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth="1.5" className="text-gray-300">
                   <rect x="3" y="4" width="18" height="18" rx="2" />
                   <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" />
                   <line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
                 <p className="text-base font-medium text-gray-600">저장된 플랜이 없습니다</p>
-                <p className="mt-2 text-sm text-gray-400">여행플래너에서 루트를 선택하면<br />AI 일정이 자동으로 저장됩니다</p>
+                <p className="text-sm text-gray-400">
+                  여행플래너에서 루트를 선택하면<br />AI 일정이 자동으로 저장됩니다
+                </p>
                 <button type="button" onClick={() => router.push("/planner")}
-                  className="mt-5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 px-5 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90 transition-opacity">
+                  className="rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 px-5 py-2.5
+                             text-sm font-semibold text-white shadow hover:opacity-90 transition-opacity">
                   여행플래너로 이동
                 </button>
               </div>
             )}
 
-            {/* 날짜 선택됨 → DayPanel */}
+            {/* 날짜 선택 → DayPanel (모바일에서 높이 제한 없이 전부 표시) */}
             {!loading && !error && plans.length > 0 && selectedDate && (
-              <div className="flex-1 overflow-hidden">
-                <DayPanel
-                  date={selectedDate}
-                  plans={plans}
-                  userId={appUserId}
-                  onScheduleChange={handleScheduleChange}
-                  onClear={() => setSelectedDate(null)}
-                />
-              </div>
+              <DayPanel
+                date={selectedDate}
+                plans={plans}
+                userId={appUserId}
+                onScheduleChange={handleScheduleChange}
+                onClear={() => setSelectedDate(null)}
+              />
             )}
 
-            {/* 날짜 미선택 → 전체 플랜 리스트 */}
+            {/* 날짜 미선택 → 전체 플랜 목록 */}
             {!loading && !error && plans.length > 0 && !selectedDate && (
-              <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                <p className="text-xs text-gray-400">전체 플랜 목록 · 날짜를 클릭하면 해당일 일정만 볼 수 있어요</p>
+              <div className="p-5 space-y-4">
+                <p className="text-xs text-gray-400">
+                  전체 플랜 목록 · 날짜를 클릭하면 해당일 일정만 볼 수 있어요
+                </p>
                 {plans.map((plan, idx) => (
                   <PlanCard
                     key={plan.id}
