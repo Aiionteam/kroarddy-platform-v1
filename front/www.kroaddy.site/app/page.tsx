@@ -101,7 +101,7 @@ function Navbar() {
             ★
           </div>
           <span className="text-xl font-bold text-gray-900">
-            Tour<span className="text-purple-600">Star</span>
+            K<span className="text-purple-600">roaddy</span>
           </span>
         </div>
 
@@ -549,7 +549,7 @@ function Footer() {
                 ★
               </div>
               <span className="text-xl font-bold text-white">
-                Tour<span className="text-purple-400">Star</span>
+                K<span className="text-purple-400">roaddy</span>
               </span>
             </div>
             <p className="text-sm leading-relaxed max-w-xs text-gray-500">
