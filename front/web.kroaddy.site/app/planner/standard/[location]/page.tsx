@@ -196,7 +196,7 @@ export default function LocationPlannerPage() {
 
   return (
     <AppLayout onLogout={logout}>
-      <main className="flex flex-1 flex-col overflow-hidden">
+      <main className="flex flex-1 flex-col md:overflow-hidden">
         <header className="shrink-0 border-b border-gray-200 bg-white px-6 py-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
@@ -269,8 +269,8 @@ export default function LocationPlannerPage() {
           </div>
         </header>
 
-        <div className="flex flex-1 overflow-hidden">
-          <div className="flex w-full flex-col overflow-auto border-r border-gray-200 bg-white p-5 md:w-[40%]">
+        <div className="flex flex-col md:flex-row md:flex-1 md:overflow-hidden">
+          <div className="flex w-full flex-col border-b border-gray-200 bg-white p-5 md:w-[40%] md:overflow-auto md:border-b-0 md:border-r">
             <h2 className="mb-4 text-sm font-semibold text-gray-500 uppercase tracking-wide">
               AI 추천 루트
             </h2>
@@ -353,7 +353,7 @@ export default function LocationPlannerPage() {
             )}
           </div>
 
-          <div className="flex flex-1 flex-col overflow-hidden bg-gray-50">
+          <div className="flex flex-col bg-gray-50 md:flex-1 md:overflow-hidden">
             {!selectedRoute && !scheduleLoading && (
               <div className="flex flex-1 flex-col items-center justify-center text-center text-gray-400">
                 <span className="mb-3 text-5xl">🗺️</span>
@@ -388,7 +388,7 @@ export default function LocationPlannerPage() {
             )}
 
             {!scheduleLoading && schedule.length > 0 && (
-              <div className="flex flex-1 flex-col overflow-hidden">
+              <div className="flex flex-col md:flex-1 md:overflow-hidden">
                 <div className="shrink-0 border-b border-gray-200 bg-white px-5 py-3 flex items-center justify-between gap-3">
                   <div>
                     <h2 className="font-semibold text-gray-800">{selectedRoute?.name} — 추천 일정</h2>
@@ -418,7 +418,7 @@ export default function LocationPlannerPage() {
                     </button>
                   )}
                 </div>
-                <div className="flex-1 overflow-auto px-5 py-4 space-y-6">
+                <div className="overflow-auto px-5 py-4 space-y-6 md:flex-1">
                   {Object.entries(dayGroups).map(([day, items]) => (
                     <div key={day}>
                       <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-indigo-600">
