@@ -6,13 +6,16 @@ import re
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
+from pydantic import SecretStr
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database.session import get_db
 from app.core.nsfw_filter import check_nsfw_async
 from app.core.storage import generate_presigned_upload_url
+from app.models.user_content_like import UserContentLike
 from app.models.user_content_route import UserContentRoute
 from .schemas import (
     PolishRequest,
@@ -34,7 +37,7 @@ def _get_llm() -> ChatOpenAI:
     return ChatOpenAI(
         model="gpt-5-mini",
         temperature=0.5,
-        api_key=settings.openai_api_key,
+        api_key=SecretStr(settings.openai_api_key),
     )
 
 
@@ -85,7 +88,7 @@ async def _ai_polish(req: PolishRequest) -> dict:
         raise HTTPException(status_code=500, detail=f"AI 폴리시 실패: {e}")
 
 
-def _row_to_card(row: UserContentRoute) -> dict:
+def _row_to_card(row: UserContentRoute, *, liked_by_me: bool = False) -> dict:
     return {
         "id": row.id,
         "user_id": row.user_id,
@@ -96,6 +99,7 @@ def _row_to_card(row: UserContentRoute) -> dict:
         "tags": row.tags or [],
         "image_url": row.image_url,
         "likes": row.likes,
+        "liked_by_me": liked_by_me,
         "created_at": row.created_at.isoformat(),
     }
 
@@ -210,6 +214,7 @@ async def save_route(req: SaveRouteRequest, db: AsyncSession = Depends(get_db)):
 async def list_routes(
     limit: int = 20,
     offset: int = 0,
+    user_id: int | None = None,
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
@@ -219,7 +224,23 @@ async def list_routes(
         .limit(limit)
     )
     rows = result.scalars().all()
-    return {"routes": [_row_to_card(r) for r in rows], "total": len(rows)}
+
+    # 현재 사용자가 좋아요한 route_id Set 조회
+    liked_ids: set[int] = set()
+    if user_id is not None and rows:
+        route_ids = [r.id for r in rows]
+        likes_result = await db.execute(
+            select(UserContentLike.route_id).where(
+                UserContentLike.user_id == user_id,
+                UserContentLike.route_id.in_(route_ids),
+            )
+        )
+        liked_ids = {row[0] for row in likes_result.fetchall()}
+
+    return {
+        "routes": [_row_to_card(r, liked_by_me=(r.id in liked_ids)) for r in rows],
+        "total": len(rows),
+    }
 
 
 @router.get("/routes/{route_id}", summary="유저 루트 상세")
@@ -233,17 +254,37 @@ async def get_route(route_id: int, db: AsyncSession = Depends(get_db)):
     return _row_to_card(row)
 
 
-@router.post("/routes/{route_id}/like", summary="루트 좋아요")
-async def like_route(route_id: int, db: AsyncSession = Depends(get_db)):
+@router.post("/routes/{route_id}/like", summary="루트 좋아요 (사용자당 1회)")
+async def like_route(route_id: int, user_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(UserContentRoute).where(UserContentRoute.id == route_id)
     )
     row = result.scalar_one_or_none()
     if not row:
         raise HTTPException(status_code=404, detail="루트를 찾을 수 없습니다.")
-    row.likes += 1
-    await db.flush()
-    return {"id": route_id, "likes": row.likes}
+
+    # 이미 좋아요한 경우 현재 카운트만 반환 (중복 방지)
+    existing = await db.execute(
+        select(UserContentLike).where(
+            UserContentLike.route_id == route_id,
+            UserContentLike.user_id == user_id,
+        )
+    )
+    if existing.scalar_one_or_none():
+        return {"id": route_id, "likes": row.likes, "already_liked": True}
+
+    try:
+        like = UserContentLike(route_id=route_id, user_id=user_id)
+        db.add(like)
+        row.likes += 1
+        await db.flush()
+    except IntegrityError:
+        # 동시 요청으로 인한 unique constraint 위반 처리
+        await db.rollback()
+        await db.refresh(row)
+        return {"id": route_id, "likes": row.likes, "already_liked": True}
+
+    return {"id": route_id, "likes": row.likes, "already_liked": False}
 
 
 @router.delete("/routes/{route_id}", summary="유저 루트 삭제")

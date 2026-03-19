@@ -782,22 +782,34 @@ export default function UserContentPage() {
   }, [isAuthenticated, router]);
 
   useEffect(() => {
-    fetchUserRoutes()
-      .then(setRoutes)
+    fetchUserRoutes(20, 0, userId)
+      .then((fetched) => {
+        setRoutes(fetched);
+        setLikedIds(new Set(fetched.filter((r) => r.liked_by_me).map((r) => r.id)));
+      })
       .catch(() => setRoutes([]))
       .finally(() => setFeedLoading(false));
-  }, []);
+  }, [userId]);
 
   const handleLike = useCallback(async (id: number) => {
+    if (!userId) return;
     // 낙관적 업데이트: 즉시 하트 채우기 + 카운트 +1
     setLikedIds((prev) => new Set(prev).add(id));
     setRoutes((prev) => {
       const updated = prev.map((r) => r.id === id ? { ...r, likes: r.likes + 1 } : r);
-      // 좋아요 많은 순으로 재정렬
       return [...updated].sort((a, b) => b.likes - a.likes || b.id - a.id);
     });
     try {
-      const res = await likeUserRoute(id);
+      const res = await likeUserRoute(id, userId);
+      if (res.already_liked) {
+        // 이미 좋아요: 낙관적 +1 취소하고 서버 값으로 보정
+        setLikedIds((prev) => new Set(prev).add(id));
+        setRoutes((prev) => {
+          const corrected = prev.map((r) => r.id === id ? { ...r, likes: res.likes } : r);
+          return [...corrected].sort((a, b) => b.likes - a.likes || b.id - a.id);
+        });
+        return;
+      }
       // 서버 반환 좋아요 수로 보정
       setRoutes((prev) => {
         const updated = prev.map((r) => r.id === id ? { ...r, likes: res.likes } : r);
@@ -811,7 +823,7 @@ export default function UserContentPage() {
         return [...reverted].sort((a, b) => b.likes - a.likes || b.id - a.id);
       });
     }
-  }, []);
+  }, [userId]);
 
   const handleSaved = useCallback((saved: UserRoute) => {
     setRoutes((prev) => {

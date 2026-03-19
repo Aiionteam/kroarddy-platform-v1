@@ -33,6 +33,7 @@ export interface UserRoute {
   tags: string[];
   image_url: string | null;
   likes: number;
+  liked_by_me: boolean;
   created_at: string;
 }
 
@@ -146,9 +147,18 @@ export async function saveUserRoute(params: {
   return res.json();
 }
 
-export async function fetchUserRoutes(limit = 20, offset = 0): Promise<UserRoute[]> {
+export async function fetchUserRoutes(
+  limit = 20,
+  offset = 0,
+  userId?: number | null
+): Promise<UserRoute[]> {
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+  });
+  if (userId != null) params.set("user_id", String(userId));
   const res = await fetch(
-    `${API_BASE}/api/v1/user-content/routes?limit=${limit}&offset=${offset}`,
+    `${API_BASE}/api/v1/user-content/routes?${params}`,
     { cache: "no-store" }
   );
   if (!res.ok) throw new Error(`피드 로드 오류: ${res.status}`);
@@ -156,11 +166,14 @@ export async function fetchUserRoutes(limit = 20, offset = 0): Promise<UserRoute
   return data.routes ?? [];
 }
 
-export async function likeUserRoute(routeId: number): Promise<{ id: number; likes: number }> {
-  const res = await fetch(`${API_BASE}/api/v1/user-content/routes/${routeId}/like`, {
-    method: "POST",
-    cache: "no-store",
-  });
+export async function likeUserRoute(
+  routeId: number,
+  userId: number
+): Promise<{ id: number; likes: number; already_liked: boolean }> {
+  const res = await fetch(
+    `${API_BASE}/api/v1/user-content/routes/${routeId}/like?user_id=${userId}`,
+    { method: "POST", cache: "no-store" }
+  );
   if (!res.ok) throw new Error(`좋아요 오류: ${res.status}`);
   return res.json();
 }
