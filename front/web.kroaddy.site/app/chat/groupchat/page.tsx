@@ -11,6 +11,8 @@ import {
   type GroupChatMessage,
   type ChatRoomInfo,
 } from "@/lib/api/groupchat";
+import { getTourstarSharePreview, type TourstarSharePreview } from "@/lib/api/tourstar";
+import { extractTourstarPostIdFromMessage } from "@/lib/tourstar-share";
 import { voteHonor } from "@/lib/api/user";
 import { sendFriendRequest } from "@/lib/api/friends";
 import { sendWhisper } from "@/lib/api/whisper";
@@ -49,6 +51,7 @@ export default function GroupChatPage() {
   const [whisperSending, setWhisperSending] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; userId: number; username: string } | null>(null);
   const [actionMessage, setActionMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [sharePreviewMap, setSharePreviewMap] = useState<Record<string, TourstarSharePreview | null>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -294,6 +297,40 @@ export default function GroupChatPage() {
     return () => document.removeEventListener("mousedown", close);
   }, [contextMenu]);
 
+  useEffect(() => {
+    const postIds = Array.from(
+      new Set(
+        messages
+          .map((msg) => extractTourstarPostIdFromMessage(msg.message ?? ""))
+          .filter((id): id is string => Boolean(id)),
+      ),
+    );
+    const missingIds = postIds.filter((id) => sharePreviewMap[id] === undefined);
+    if (missingIds.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      await Promise.all(
+        missingIds.map(async (postId) => {
+          try {
+            const preview = await getTourstarSharePreview(postId);
+            if (!cancelled) {
+              setSharePreviewMap((prev) => ({ ...prev, [postId]: preview }));
+            }
+          } catch (_) {
+            if (!cancelled) {
+              setSharePreviewMap((prev) => ({ ...prev, [postId]: null }));
+            }
+          }
+        }),
+      );
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [messages, sharePreviewMap]);
+
   if (!isHydrated || !isAuthenticated) return null;
 
   const currentUserId = accessToken ? getUserIdFromToken(accessToken) : null;
@@ -397,6 +434,8 @@ export default function GroupChatPage() {
             <ul className="space-y-3">
               {uniqueMessages.map((msg, index) => {
                 const isMine = myId != null && msg.userId != null && Number(msg.userId) === myId;
+                const sharedPostId = extractTourstarPostIdFromMessage(msg.message ?? "");
+                const sharedPreview = sharedPostId ? sharePreviewMap[sharedPostId] : null;
                 return (
                   <li
                     key={`msg-${msg.id ?? "n"}-${index}`}
@@ -440,7 +479,41 @@ export default function GroupChatPage() {
                           {msg.username ?? `사용자 ${msg.userId}`}
                         </span>
                       )}
-                      <span className="block break-words">{msg.message}</span>
+                      {sharedPostId && sharedPreview ? (
+                        <a
+                          href={`/tourstar?postId=${encodeURIComponent(sharedPostId)}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className={`block overflow-hidden rounded-lg border ${
+                            isMine
+                              ? "border-purple-300 bg-white/10 hover:bg-white/20"
+                              : "border-gray-200 bg-white hover:bg-gray-50"
+                          }`}
+                        >
+                          <div className="flex">
+                            <div
+                              className="h-20 w-20 shrink-0 bg-cover bg-center bg-gray-200"
+                              style={
+                                sharedPreview.thumbnail_url
+                                  ? { backgroundImage: `url(${sharedPreview.thumbnail_url})` }
+                                  : undefined
+                              }
+                            />
+                            <div className="flex min-w-0 flex-1 flex-col justify-center px-2.5 py-2">
+                              <p className={`truncate text-xs font-semibold ${isMine ? "text-white" : "text-gray-800"}`}>
+                                {sharedPreview.title}
+                              </p>
+                              <p className={`mt-0.5 truncate text-[11px] ${isMine ? "text-purple-100" : "text-gray-500"}`}>
+                                {sharedPreview.location}
+                              </p>
+                              <p className={`mt-1 text-[10px] ${isMine ? "text-purple-200" : "text-purple-600"}`}>
+                                Tourstar 게시글 보기
+                              </p>
+                            </div>
+                          </div>
+                        </a>
+                      ) : (
+                        <span className="block break-words">{msg.message}</span>
+                      )}
                       {msg.createdAt && (
                         <span
                           className={`block text-xs mt-0.5 ${isMine ? "text-purple-200" : "text-gray-400"}`}
