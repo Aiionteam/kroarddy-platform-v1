@@ -83,6 +83,15 @@ spring:
               - RemoveResponseHeader=Access-Control-Allow-Credentials
               - RemoveResponseHeader=Access-Control-Expose-Headers
               - RemoveResponseHeader=Access-Control-Max-Age
+
+          # ── Tourstar 정적 파일 (업로드 이미지 미리보기) ───────────────────
+          - id: tourstar-static
+            uri: ${AI_SERVICE_TOURSTAR_URL:http://tourstar:8010}
+            predicates:
+              - Path=/api/tourstar-files/**
+            filters:
+              # /api/tourstar-files/... → /tourstar-files/... 로 경로 변환
+              - RewritePath=/api/tourstar-files/(?<remaining>.*), /tourstar-files/${remaining}
   datasource:
     driver-class-name: org.postgresql.Driver
     hikari:

@@ -291,11 +291,28 @@ def estimate_expression_score(person_count: int, composition: float, tone: float
 
 
 def ensure_cache_env(artifacts_dir: Path) -> None:
-    """현재 프로세스에서 모델 캐시 경로를 artifacts 하위로 강제."""
+    """모델 캐시 경로를 설정하되, 읽기 전용 경로면 /tmp로 안전 폴백."""
+    def _is_writable_dir(path: Path) -> bool:
+        try:
+            path.mkdir(parents=True, exist_ok=True)
+            probe = path / ".write_probe"
+            probe.write_text("ok", encoding="utf-8")
+            probe.unlink(missing_ok=True)
+            return True
+        except Exception:
+            return False
+
+    def _pick_cache_path(preferred: Path, fallback: Path) -> str:
+        return str(preferred) if _is_writable_dir(preferred) else str(fallback)
+
     models_dir = artifacts_dir / "models"
-    os.environ.setdefault("TORCH_HOME", str(models_dir / "torch_cache"))
-    os.environ.setdefault("HF_HOME", str(models_dir / "hf_cache"))
-    os.environ.setdefault("XDG_CACHE_HOME", str(models_dir / "xdg_cache"))
+    torch_pref = Path(os.environ.get("TORCH_HOME", str(models_dir / "torch_cache")))
+    hf_pref = Path(os.environ.get("HF_HOME", str(models_dir / "hf_cache")))
+    xdg_pref = Path(os.environ.get("XDG_CACHE_HOME", str(models_dir / "xdg_cache")))
+
+    os.environ["TORCH_HOME"] = _pick_cache_path(torch_pref, Path("/tmp/tourstar-cache/torch"))
+    os.environ["HF_HOME"] = _pick_cache_path(hf_pref, Path("/tmp/tourstar-cache/hf"))
+    os.environ["XDG_CACHE_HOME"] = _pick_cache_path(xdg_pref, Path("/tmp/tourstar-cache/xdg"))
 
 
 def resolve_device(device_preference: str) -> str:

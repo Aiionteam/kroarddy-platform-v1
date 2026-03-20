@@ -13,10 +13,11 @@ from base64 import b64encode
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import unquote, urlparse
 from uuid import uuid4
 
 import httpx
-from fastapi import APIRouter, File, Header, HTTPException, UploadFile
+from fastapi import APIRouter, File, Header, HTTPException, Request, UploadFile
 from PIL import ExifTags, Image
 
 from ...domain.v1.contracts import (
@@ -25,6 +26,7 @@ from ...domain.v1.contracts import (
     EvaluationRequest,
     GeneratePostRequest,
     GeneratePostResponse,
+    GpsLocationCandidate,
     JobStatusResponse,
     UploadPhotosResponse,
     UploadPipelineJob,
@@ -595,18 +597,98 @@ def _merge_seed_comments(user_comment: str, auto_comment: str) -> str:
     return _dedupe_sentences(merged)
 
 
+def _resolve_local_image_path(raw_path: str) -> Path | None:
+    raw = str(raw_path or "").strip()
+    if not raw:
+        return None
+
+    if raw.startswith("file://"):
+        raw = raw[7:]
+
+    direct = Path(raw)
+    if direct.exists() and direct.is_file():
+        return direct
+
+    parsed = urlparse(raw)
+    if parsed.scheme in {"http", "https"}:
+        request_path = unquote(parsed.path or "")
+    else:
+        request_path = unquote(raw)
+
+    static_prefix = "/tourstar-files/"
+    if not request_path.startswith(static_prefix):
+        return None
+
+    relative = request_path[len(static_prefix):].lstrip("/")
+    if not relative:
+        return None
+
+    artifacts_root = (service_root / "artifacts").resolve()
+    candidate = (artifacts_root / Path(relative)).resolve()
+
+    if candidate != artifacts_root and artifacts_root not in candidate.parents:
+        logger.warning("Rejected image path outside artifacts root: %s", raw_path)
+        return None
+
+    if candidate.exists() and candidate.is_file():
+        return candidate
+    return None
+
+
+def _collect_valid_image_paths(image_paths: list[str], max_images: int) -> list[Path]:
+    valid_paths: list[Path] = []
+    seen: set[str] = set()
+    limit = max(1, min(max_images, 5))
+
+    for raw in image_paths:
+        resolved = _resolve_local_image_path(raw)
+        if resolved is None:
+            continue
+        key = str(resolved)
+        if key in seen:
+            continue
+        seen.add(key)
+        valid_paths.append(resolved)
+        if len(valid_paths) >= limit:
+            break
+
+    return valid_paths
+
+
+def _collect_recent_uploaded_image_paths(max_images: int = 3) -> list[str]:
+    limit = max(1, min(max_images, 5))
+    if not uploads_dir.exists():
+        return []
+
+    batch_dirs = [p for p in uploads_dir.iterdir() if p.is_dir()]
+    batch_dirs.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+
+    out: list[str] = []
+    for batch in batch_dirs[:5]:
+        files = [p for p in batch.iterdir() if p.is_file() and p.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"}]
+        files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+        for fp in files:
+            out.append(str(fp))
+            if len(out) >= limit:
+                return out
+    return out
+
+
+def _build_preview_url(request: Request, batch_id: str, name: str) -> str:
+    relative_url = f"/tourstar-files/uploads/{batch_id}/{name}"
+    public_base = os.getenv("TOURSTAR_PUBLIC_BASE_URL", "").strip().rstrip("/")
+    if public_base:
+        return f"{public_base}{relative_url}"
+    # 프론트가 API_BASE를 prepend하는 경우를 고려해 기본은 상대경로 유지.
+    return relative_url
+
+
 def _extract_visual_signals_with_gpt(
     image_paths: list[str],
     key: str,
     max_images: int = 3,
 ) -> dict[str, list[str]]:
-    valid_paths: list[Path] = []
-    for raw in image_paths:
-        p = Path(raw)
-        if p.exists() and p.is_file():
-            valid_paths.append(p)
-        if len(valid_paths) >= max(1, min(max_images, 5)):
-            break
+    valid_paths = _collect_valid_image_paths(image_paths, max_images=max_images)
     if not valid_paths:
         return {"objects": [], "scenes": [], "tags": []}
 
@@ -991,7 +1073,7 @@ def _reverse_geocode(lat: float, lon: float) -> str:
     return ""
 
 
-def _infer_location_hint_from_gps(image_paths: list[Path]) -> tuple[str, list[dict]]:
+def _infer_location_hint_from_gps(image_paths: list[Path]) -> tuple[str, list[GpsLocationCandidate]]:
     if not image_paths:
         return "", []
     graph = build_metadata_graph()
@@ -1002,18 +1084,18 @@ def _infer_location_hint_from_gps(image_paths: list[Path]) -> tuple[str, list[di
         }
     )
     hint = str(state.get("location_hint") or "").strip()
-    candidates = list(state.get("location_candidates") or [])
+    raw_candidates = list(state.get("location_candidates") or [])
+    candidates: list[GpsLocationCandidate] = []
+    for cand in raw_candidates:
+        try:
+            candidates.append(GpsLocationCandidate.model_validate(cand))
+        except Exception:
+            continue
     return hint, candidates
 
 
 def _generate_auto_comment_with_gpt(image_paths: list[str], max_images: int = 3) -> AutoCommentResponse:
-    valid_paths: list[Path] = []
-    for raw in image_paths:
-        p = Path(raw)
-        if p.exists() and p.is_file():
-            valid_paths.append(p)
-        if len(valid_paths) >= max(1, min(max_images, 5)):
-            break
+    valid_paths = _collect_valid_image_paths(image_paths, max_images=max_images)
 
     gps_location_hint, gps_candidates = _infer_location_hint_from_gps(valid_paths)
 
@@ -1077,33 +1159,36 @@ def _generate_auto_comment_with_gpt(image_paths: list[str], max_images: int = 3)
             {"role": "system", "content": "너는 여행 사진 캡션 분석가다. 반드시 JSON만 출력한다."},
             {"role": "user", "content": content},
         ],
-        "max_completion_tokens": 900,
-        "reasoning_effort": "low",
+        "max_completion_tokens": 1400,
+        "reasoning_effort": "minimal",
     }
     headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
-    try:
-        with httpx.Client(timeout=40.0) as client:
-            res = client.post("https://api.openai.com/v1/chat/completions", headers=headers, json=body)
-            res.raise_for_status()
-            data = res.json()
-    except httpx.HTTPStatusError as exc:
-        body_preview = (exc.response.text or "")[:800]
-        logger.error(
-            "Auto-comment OpenAI HTTP error: status=%s body=%s",
-            exc.response.status_code,
-            body_preview,
-        )
-        raise
-    except httpx.TimeoutException:
-        logger.error(
-            "Auto-comment OpenAI timeout: timeout=%ss, images=%d",
-            40,
-            len(valid_paths),
-        )
-        raise
-    except Exception:
-        logger.exception("Auto-comment OpenAI request failed unexpectedly")
-        raise
+    def _request_openai(payload: dict[str, Any], log_tag: str) -> dict[str, Any] | None:
+        try:
+            with httpx.Client(timeout=40.0) as client:
+                res = client.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+                res.raise_for_status()
+                return res.json()
+        except httpx.HTTPStatusError as exc:
+            body_preview = (exc.response.text or "")[:800]
+            logger.error(
+                "Auto-comment %s OpenAI HTTP error: status=%s body=%s",
+                log_tag,
+                exc.response.status_code,
+                body_preview,
+            )
+        except httpx.TimeoutException:
+            logger.error(
+                "Auto-comment %s OpenAI timeout: timeout=%ss, images=%d",
+                log_tag,
+                40,
+                len(valid_paths),
+            )
+        except Exception:
+            logger.exception("Auto-comment %s OpenAI request failed unexpectedly", log_tag)
+        return None
+
+    data = _request_openai(body, "primary") or {}
 
     choices = data.get("choices") or []
     finish_reason = ""
@@ -1120,6 +1205,31 @@ def _generate_auto_comment_with_gpt(image_paths: list[str], max_images: int = 3)
         )
 
     parsed = _extract_json_object(content_text)
+    if not parsed:
+        fallback_model = os.getenv("OPENAI_AUTO_COMMENT_FALLBACK_MODEL", "gpt-4.1-mini").strip() or "gpt-4.1-mini"
+        retry_body = {
+            "model": fallback_model,
+            "messages": body["messages"],
+            "max_completion_tokens": 700,
+        }
+        retry_data = _request_openai(retry_body, "retry") or {}
+        retry_choices = retry_data.get("choices") or []
+        retry_content = ""
+        retry_finish_reason = ""
+        if retry_choices:
+            retry_finish_reason = str(retry_choices[0].get("finish_reason") or "")
+            retry_message = retry_choices[0].get("message") or {}
+            retry_content = str(retry_message.get("content") or "")
+        if not retry_content:
+            logger.warning(
+                "Auto-comment retry empty content from OpenAI. finish_reason=%s usage=%s",
+                retry_finish_reason,
+                retry_data.get("usage"),
+            )
+        parsed = _extract_json_object(retry_content)
+        if parsed:
+            content_text = retry_content
+
     if not parsed:
         logger.warning(
             "Auto-comment parse warning: empty JSON parsed. content_preview=%s",
@@ -1365,7 +1475,7 @@ def get_job(job_id: str) -> JobStatusResponse:
 
 
 @router.post("/uploads", response_model=UploadPhotosResponse)
-async def upload_photos(files: list[UploadFile] = File(...)) -> UploadPhotosResponse:
+async def upload_photos(request: Request, files: list[UploadFile] = File(...)) -> UploadPhotosResponse:
     if not files:
         raise HTTPException(status_code=400, detail="No files uploaded.")
 
@@ -1395,10 +1505,11 @@ async def upload_photos(files: list[UploadFile] = File(...)) -> UploadPhotosResp
         dst = batch_dir / name
         dst.write_bytes(content)
 
+        preview_url = _build_preview_url(request, batch_id, name)
         saved.append(
             UploadedPhoto(
                 name=file.filename or name,
-                url=f"/tourstar-files/uploads/{batch_id}/{name}",
+                url=str(preview_url),
                 size=len(content),
             )
         )
@@ -1433,13 +1544,21 @@ async def upload_photos(files: list[UploadFile] = File(...)) -> UploadPhotosResp
 
 @router.post("/generate-post", response_model=GeneratePostResponse)
 def generate_post(req: GeneratePostRequest) -> GeneratePostResponse:
-    return _generate_post_with_gpt(req.comment, req.style_filter, req.style_template, req.image_paths)
+    image_paths = [str(p) for p in (req.image_paths or []) if str(p).strip()]
+    if not image_paths:
+        image_paths = _collect_recent_uploaded_image_paths(max_images=3)
+        logger.info("Generate-post fallback image_paths from recent uploads: count=%d", len(image_paths))
+    return _generate_post_with_gpt(req.comment, req.style_filter, req.style_template, image_paths)
 
 
 @router.post("/auto-comment", response_model=AutoCommentResponse)
 def generate_auto_comment(req: AutoCommentRequest) -> AutoCommentResponse:
     try:
-        return _generate_auto_comment_with_gpt(req.image_paths, req.max_images)
+        image_paths = [str(p) for p in (req.image_paths or []) if str(p).strip()]
+        if not image_paths:
+            image_paths = _collect_recent_uploaded_image_paths(max_images=req.max_images)
+            logger.info("Auto-comment fallback image_paths from recent uploads: count=%d", len(image_paths))
+        return _generate_auto_comment_with_gpt(image_paths, req.max_images)
     except Exception:
         logger.exception("Auto-comment failed. Returning fallback comment.")
         # 자동 코멘트는 보조 기능이므로 실패 시에도 기본 문구를 반환한다.
