@@ -13,7 +13,7 @@ import {
   type ScheduleItem,
   type CostSummary,
 } from "@/lib/api/planner";
-import { useNewsStore } from "@/store";
+import { useNewsStore } from "@/store/slices/newsSlice";
 import {
   readRoutes,
   writeRoutes,

@@ -2,7 +2,8 @@
 
 import "@/lib/i18n/config";
 import React, { useEffect, useState } from "react";
-import { useLoginStore, useNewsStore } from "@/store";
+import { useLoginStore } from "@/store";
+import { useNewsStore } from "@/store/slices/newsSlice";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import { getAppUserIdFromToken } from "@/lib/api/auth";
