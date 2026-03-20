@@ -164,10 +164,10 @@ function Top10Card({ item, rank }: { item: ProcessedNewsItem; rank: number }) {
 
       {/* 썸네일 */}
       {item.thumbnail ? (
-        <img src={item.thumbnail} alt="" className="w-full h-40 object-cover"
+        <img src={item.thumbnail} alt="" className="w-full h-56 object-cover object-top"
           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
       ) : (
-        <div className="w-full h-28 bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center text-4xl">
+        <div className="w-full h-40 bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center text-4xl">
           {cat.emoji}
         </div>
       )}
