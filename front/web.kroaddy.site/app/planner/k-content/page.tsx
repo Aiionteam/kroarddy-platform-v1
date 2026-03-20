@@ -187,7 +187,7 @@ const K_BEAUTY_EXAMPLE_ITEMS: ContentRowItem[] = [
 export default function KContentPage() {
   const router = useRouter();
   const { isAuthenticated, logout } = useLoginStore();
-  const [heroImage, setHeroImage] = React.useState<string>("/k_content/banner.jpg");
+  const [heroImage, setHeroImage] = React.useState<string>("/k_content/banner/panorama-downtown-cityscape-seoul-tower-seoul-south-korea.jpg");
   const [cardItems, setCardItems] = React.useState<ContentRowItem[]>(K_CONTENT_PACKAGE_ITEMS);
 
   React.useEffect(() => {
@@ -201,9 +201,9 @@ export default function KContentPage() {
         const res = await fetch("/api/k-content/images/banner", { cache: "no-store" });
         const data = (await res.json()) as { images?: string[] };
         const bannerImages = Array.isArray(data.images) ? data.images : [];
-        setHeroImage(pickRandomImage(bannerImages) ?? "/k_content/banner.jpg");
+        setHeroImage(pickRandomImage(bannerImages) ?? "/k_content/banner/panorama-downtown-cityscape-seoul-tower-seoul-south-korea.jpg");
       } catch {
-        setHeroImage("/k_content/banner.jpg");
+        setHeroImage("/k_content/banner/panorama-downtown-cityscape-seoul-tower-seoul-south-korea.jpg");
       }
 
       const nextItems = await Promise.all(

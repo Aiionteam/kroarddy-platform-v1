@@ -17,3 +17,4 @@ class PlannerState(TypedDict):
     user_profile: Optional[dict]  # 사용자 여행 성향 (user_info 서비스에서 조회)
     existing_routes: Optional[list]  # 이미 저장된 루트명 목록 (AI가 중복 제외)
     use_search: bool                 # True: Google Search grounding 사용 (느리지만 실시간 정확)
+    news_top10: Optional[list]       # GPT 선정 Top10 K-콘텐츠 뉴스 (공연/이벤트 반영용)

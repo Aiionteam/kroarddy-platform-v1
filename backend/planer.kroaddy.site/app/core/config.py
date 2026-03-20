@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     # 공공데이터포털 전국문화축제표준데이터
     data_go_kr_service_key: str = ""
 
+    # 뉴스 서비스 (별도 EC2, https://news.kroaddy.site)
+    news_service_url: str = "https://news.kroaddy.site"
+
     # KOBIS 한국영화진흥위원회 (영화 상영 정보)
     kobis_api_key: str = ""
 
