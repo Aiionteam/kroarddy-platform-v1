@@ -2,7 +2,8 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useLoginStore, useNewsStore } from "@/store";
+import { useLoginStore } from "@/store";
+import { useNewsStore } from "@/store/slices/newsSlice";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import {
   generateKContent,
