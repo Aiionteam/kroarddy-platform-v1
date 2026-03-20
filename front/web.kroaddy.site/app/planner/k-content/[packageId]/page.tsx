@@ -2,13 +2,14 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useLoginStore } from "@/store";
+import { useLoginStore, useNewsStore } from "@/store";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import {
   generateKContent,
   saveKContent,
   type KContentResponse,
 } from "@/service/k_content/k_content";
+import { useNewsStore } from "@/store";
 import { HeroBanner } from "@/components/k-content/HeroBanner";
 import {
   fetchPackageImages,
@@ -210,6 +211,7 @@ export default function KContentPackagePage() {
   const router = useRouter();
   const { packageId } = useParams<{ packageId: string }>();
   const { isAuthenticated, logout, accessToken } = useLoginStore();
+  const newsTop10 = useNewsStore((s) => s.newsTop10);
   const appUserId = getAppUserIdFromToken(accessToken ?? undefined);
 
   const [startDate, setStartDate] = useState(todayStr);
@@ -262,7 +264,7 @@ export default function KContentPackagePage() {
       const res = await generateKContent(
         packageId,
         { travel_start_date: startDate, travel_end_date: endDate },
-        { startDate, endDate, locationName: "Seoul" }
+        { startDate, endDate, locationName: "Seoul", newsTop10: newsTop10.length > 0 ? newsTop10 : undefined }
       );
       const parsed = parseResponse(res, startDate);
       setSchedule(parsed.schedule);

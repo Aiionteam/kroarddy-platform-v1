@@ -12,18 +12,18 @@ from app.agent.k_content.graph import k_content_graph
 from app.api.v1.standard.routes import save_plan
 from app.api.v1.standard.schemas import SavePlanRequest
 from app.core.database.session import get_db
+from app.services.news_client import fetch_news_top10
 
 router = APIRouter(prefix="/api/v1/k-content", tags=["k-content"])
 
 
 class KContentGenerateRequest(BaseModel):
     package_id: str
-    # Standard과 동일하게 날짜 문자열을 사용(YYYY-MM-DD). 없으면 기본값 사용.
     start_date: Optional[str] = None
     end_date: Optional[str] = None
-    # agent prompt의 Destination으로 사용. 없으면 빈 문자열로 동작할 수 있음.
     location_name: Optional[str] = None
     user_profile: Optional[Dict[str, Any]] = None
+    news_top10: Optional[list] = None  # 프론트에서 전달한 뉴스 Top10 (없으면 직접 fetch)
 
 
 class KContentSaveRequest(BaseModel):
@@ -84,6 +84,9 @@ async def health():
 @router.post("/generate", summary="K-Content 하이브리드 일정 생성")
 async def generate_k_itinerary(req: KContentGenerateRequest):
     try:
+        # 뉴스 Top10: 프론트에서 이미 가져온 데이터가 있으면 재사용, 없으면 직접 fetch
+        news_top10 = req.news_top10 if req.news_top10 else await fetch_news_top10(req.start_date, req.end_date)
+
         # LangGraph State: KContentState(KContent agent)에서 필요한 키만 넣습니다.
         initial_state = {
             "package_id": req.package_id,
@@ -92,6 +95,7 @@ async def generate_k_itinerary(req: KContentGenerateRequest):
             "start_date": req.start_date,
             "end_date": req.end_date,
             "user_profile": req.user_profile or {},
+            "news_top10": news_top10,
         }
 
         result = await k_content_graph.ainvoke(initial_state)

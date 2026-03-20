@@ -2,7 +2,7 @@
 
 import "@/lib/i18n/config";
 import React, { useEffect, useState } from "react";
-import { useLoginStore } from "@/store";
+import { useLoginStore, useNewsStore } from "@/store";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import { getAppUserIdFromToken } from "@/lib/api/auth";
@@ -31,6 +31,7 @@ function getCatStyle(cat: string) {
 
 export default function HomePage() {
   const { isAuthenticated, logout, accessToken } = useLoginStore();
+  const { setNewsTop10 } = useNewsStore();
   const router = useRouter();
   const appUserId = getAppUserIdFromToken(accessToken ?? undefined);
 
@@ -62,7 +63,14 @@ export default function HomePage() {
   useEffect(() => {
     if (!isAuthenticated) return;
     fetchProcessedNews(0)
-      .then(setData)
+      .then((d) => {
+        setData(d);
+        // 플래너에서 재활용할 수 있도록 Zustand store에 저장 (썸네일 제외)
+        if (d.top10?.length) {
+          const slim = d.top10.map(({ thumbnail: _t, ...rest }) => rest);
+          setNewsTop10(slim);
+        }
+      })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [isAuthenticated]);

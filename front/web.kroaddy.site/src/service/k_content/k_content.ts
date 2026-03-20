@@ -25,6 +25,7 @@ interface KContentGenerateRequest {
   end_date?: string | null;
   location_name?: string | null;
     user_profile?: KContentUserProfile;
+  news_top10?: object[] | null;
 }
 
 async function throwApiError(res: Response, fallback: string): Promise<never> {
@@ -53,6 +54,7 @@ export async function generateKContent(
     startDate?: string;
     endDate?: string;
     locationName?: string;
+    newsTop10?: object[];
   }
 ): Promise<KContentResponse> {
     const payload: KContentGenerateRequest = {
@@ -61,6 +63,7 @@ export async function generateKContent(
     end_date: options?.endDate ?? null,
     location_name: options?.locationName ?? null,
         user_profile,
+    news_top10: options?.newsTop10 ?? null,
     };
 
     let res: Response;
