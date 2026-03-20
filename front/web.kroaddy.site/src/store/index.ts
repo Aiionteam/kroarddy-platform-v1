@@ -1,2 +1,2 @@
 export * from "./slices/loginSlice";
-export * from "./slices/newsSlice";
+export { useNewsStore, type SlimNewsItem } from "./slices/newsSlice";
