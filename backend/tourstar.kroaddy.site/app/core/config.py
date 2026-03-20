@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     aws_secret_access_key: str = ""
     aws_region: str = "ap-northeast-2"
     s3_bucket_name: str = "kroaddy-tourstar-images"
+    s3_presigned_expires: int = 3600
     # 공개 URL 베이스 (S3 direct)
     # 예: https://kroaddy-tourstar-images.s3.ap-northeast-2.amazonaws.com
     s3_public_base_url: str = ""

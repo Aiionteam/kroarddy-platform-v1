@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useLoginStore } from "@/store";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import {
   buildTourstarImageUrl,
+  buildTourstarShareUrl,
   createTourstarComment,
   createTourstarPost,
   generateTourstarAutoComment,
@@ -839,9 +840,10 @@ interface DetailModalProps {
   onToggleLike: (id: string) => void;
   onToggleVisibility: (id: string) => void;
   onAddComment: (postId: string, content: string) => Promise<void> | void;
+  onShare: (postId: string) => Promise<void> | void;
 }
 
-function PostDetailModal({ post, onClose, onToggleLike, onToggleVisibility, onAddComment }: DetailModalProps) {
+function PostDetailModal({ post, onClose, onToggleLike, onToggleVisibility, onAddComment, onShare }: DetailModalProps) {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [commentInput, setCommentInput] = useState("");
 
@@ -1043,6 +1045,13 @@ function PostDetailModal({ post, onClose, onToggleLike, onToggleVisibility, onAd
               </button>
               <span className="text-xs text-gray-400">댓글 {post.comments.length}개</span>
               <span className="text-xs text-gray-300">사진 {post.photos.length}장</span>
+              <button
+                type="button"
+                onClick={() => onShare(post.id)}
+                className="ml-auto rounded-md border border-purple-200 bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700 hover:bg-purple-100"
+              >
+                공유 링크 복사
+              </button>
             </div>
           </div>
         </div>
@@ -1238,6 +1247,7 @@ function mapRecordToPost(record: TourstarPostRecord): TourPost {
 
 export default function TourstarPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isAuthenticated, logout } = useLoginStore();
 
   /* ── 상태 ── */
@@ -1271,6 +1281,14 @@ export default function TourstarPage() {
       cancelled = true;
     };
   }, [isAuthenticated]);
+
+  React.useEffect(() => {
+    const requestedPostId = searchParams.get("postId");
+    if (!requestedPostId || posts.length === 0) return;
+    const target = posts.find((item) => item.id === requestedPostId);
+    if (!target) return;
+    setDetailPost(target);
+  }, [posts, searchParams]);
 
   /* ── 필터링 ── */
   const filteredPosts = useMemo(() => {
@@ -1349,6 +1367,16 @@ export default function TourstarPage() {
       prev.map((p) => (p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p)),
     );
     setDetailPost((prev) => (prev && prev.id === postId ? { ...prev, comments: [...prev.comments, newComment] } : prev));
+  };
+
+  const sharePost = async (postId: string) => {
+    const shareUrl = buildTourstarShareUrl(postId);
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      window.alert("공유 링크를 복사했어요. 채팅창에 붙여넣어 주세요.");
+    } catch (_) {
+      window.prompt("아래 링크를 복사해 채팅에 공유하세요.", shareUrl);
+    }
   };
 
   const deletePost = (id: string) => {
@@ -1562,6 +1590,7 @@ export default function TourstarPage() {
         onToggleLike={toggleLike}
         onToggleVisibility={toggleVisibility}
         onAddComment={addComment}
+        onShare={sharePost}
       />
     </AppLayout>
   );
