@@ -18,8 +18,8 @@ export async function GET() {
     const images = files.map((file) => `/k_content/banner/${file}`);
     return NextResponse.json({ images });
   } catch {
-    // fallback: 폴더가 없거나 비어있으면 단일 배너 파일 사용
-    return NextResponse.json({ images: ["/k_content/banner.jpg"] });
+    // fallback: 폴더가 없거나 비어있으면 기본 배너 사용
+    return NextResponse.json({ images: ["/k_content/banner/panorama-downtown-cityscape-seoul-tower-seoul-south-korea.jpg"] });
   }
 }
 

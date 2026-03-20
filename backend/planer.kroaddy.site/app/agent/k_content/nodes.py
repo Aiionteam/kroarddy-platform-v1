@@ -22,6 +22,7 @@ from app.core.config import settings
 from app.core.database.session import AsyncSessionLocal
 from app.models.k_content import KContentPackage, KContentPlace
 from app.agent.standard.state import PlannerState
+from app.services.news_client import build_news_block_for_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -331,6 +332,7 @@ async def generate_k_schedule_node(state: KContentState) -> KContentState:
     start_date = state.get("start_date")
     end_date = state.get("end_date")
     user_profile: dict | None = state.get("user_profile")
+    news_top10: list = state.get("news_top10") or []
 
     db_places: list[dict[str, Any]] = state.get("db_places") or []
     package_meta: dict = state.get("package_meta") or {}
@@ -361,6 +363,8 @@ async def generate_k_schedule_node(state: KContentState) -> KContentState:
 
     db_places_json = json.dumps(db_places, ensure_ascii=False, separators=(",", ":"))
     user_block = _build_user_profile_block(user_profile, lang=lang)
+    # K-content에서는 날짜 내 뉴스 이벤트를 특히 강조
+    news_block = build_news_block_for_prompt(news_top10, location_name, for_k_content=True)
 
     package_title = package_meta.get("title_en", "")
     if lang == "Korean" and package_meta.get("title_ko"):
@@ -393,6 +397,7 @@ async def generate_k_schedule_node(state: KContentState) -> KContentState:
         f"\n【db_places (core recommendation list, optional-by-route-efficiency)】\n"
         f"{anchors_lines and ''.join(anchors_lines) or '[]'}\n"
         f"\nRaw db_places JSON (for exact matching):\n{db_places_json}\n\n"
+        f"{news_block}"
         f"{user_block}"
         f"\nCreate a detailed travel itinerary ({num_days} days, 4 items per day).\n\n"
         "Rules:\n"

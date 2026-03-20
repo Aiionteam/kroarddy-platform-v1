@@ -18,6 +18,7 @@ from app.core.database.session import get_db
 from app.models.travel_plan import TravelPlan
 from app.models.plan_cache import RouteCache, ScheduleCache
 from app.services.festival_client import fetch_festivals_for_period
+from app.services.news_client import fetch_news_top10
 from app.services.user_info_client import fetch_user_profile
 from .schemas import ModifyRequest, RerollItemRequest, RoutesRequest, SavePlanRequest, ScheduleRequest
 
@@ -273,6 +274,7 @@ def _base_state(location: str, start_date: Optional[str], end_date: Optional[str
         "user_profile": None,
         "existing_routes": [],
         "use_search": False,
+        "news_top10": [],
         "error": None,
     }
 
@@ -310,17 +312,25 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
             logger.info("루트 L1캐시 히트(lock 내부): %s", _preliminary_key)
             return {"location": location, "location_name": location_name, "routes": cached[0]}
 
-        festivals, user_profile = await asyncio.gather(
+        # 뉴스 Top10: 프론트에서 이미 가져온 데이터가 있으면 재사용 (API 호출 절약)
+        _has_client_news = bool(req.news_top10)
+        festivals, user_profile, news_top10 = await asyncio.gather(
             fetch_festivals_for_period(location, location_name, req.start_date, req.end_date),
             fetch_user_profile(req.user_id),
+            asyncio.sleep(0) if _has_client_news else fetch_news_top10(req.start_date, req.end_date),
         )
+        if _has_client_news:
+            news_top10 = req.news_top10  # type: ignore[assignment]
+
         nationality = (user_profile or {}).get("nationality", "")
         lang_code = nationality[:3].lower() if nationality else "ko"  # 캐시 키용 짧은 식별자
         cache_key = f"{location}:{req.start_date}:{req.end_date}:{eh}:{lang_code}:{search_tag}"
 
         logger.info(
-            "행사 연동: location=%s, 건수=%d | 유저 프로필: %s (국적=%s) | 기존 제외=%d건",
-            location, len(festivals), bool(user_profile), nationality, len(existing_routes),
+            "행사 연동: location=%s, 건수=%d | 뉴스 Top10: %d건(%s) | 유저 프로필: %s (국적=%s) | 기존 제외=%d건",
+            location, len(festivals), len(news_top10 or []),
+            "client" if _has_client_news else "fetched",
+            bool(user_profile), nationality, len(existing_routes),
         )
 
         state = {
@@ -329,6 +339,7 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
             "user_profile": user_profile,
             "existing_routes": existing_routes,
             "use_search": req.use_search,
+            "news_top10": news_top10,
         }
         try:
             result = await routes_graph.ainvoke(state)
@@ -400,12 +411,20 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
                 "error": None,
             }
 
-        # 일정 생성에도 행사 정보 반영 (루트 생성과 동일하게 병렬 조회)
-        festivals = await fetch_festivals_for_period(
-            location, location_name, req.start_date, req.end_date
+        # 일정 생성에도 행사·뉴스 정보 반영
+        # 뉴스 Top10: 프론트에서 이미 가져온 데이터가 있으면 재사용
+        _has_client_news_s = bool(req.news_top10)
+        festivals, news_top10 = await asyncio.gather(
+            fetch_festivals_for_period(location, location_name, req.start_date, req.end_date),
+            asyncio.sleep(0) if _has_client_news_s else fetch_news_top10(req.start_date, req.end_date),
         )
+        if _has_client_news_s:
+            news_top10 = req.news_top10  # type: ignore[assignment]
+
         logger.info(
-            "일정 생성 행사 연동: location=%s, 건수=%d", location, len(festivals)
+            "일정 생성 연동: location=%s, 행사=%d건, 뉴스Top10=%d건(%s)",
+            location, len(festivals), len(news_top10 or []),
+            "client" if _has_client_news_s else "fetched",
         )
 
         state = {
@@ -414,6 +433,7 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
             "user_profile": user_profile,
             "festivals": festivals,
             "use_search": req.use_search,
+            "news_top10": news_top10,
         }
         try:
             result = await schedule_graph.ainvoke(state)

@@ -12,6 +12,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.agent.standard.state import PlannerState
 from app.core.config import settings
+from app.services.news_client import build_news_block_for_prompt
 from app.services.search_client import (
     fetch_boxoffice,
     format_boxoffice_context,
@@ -310,6 +311,7 @@ async def generate_routes(state: PlannerState) -> PlannerState:
     """노드 1: 여행지 루트 7개 추천 (행사/먹거리/명소/럭셔리/가성비/가족/커플 테마)."""
     location_name = state.get("location_name") or state["location"]
     festivals: list = state.get("festivals") or []
+    news_top10: list = state.get("news_top10") or []
     user_profile: dict | None = state.get("user_profile")
     existing_routes: list = state.get("existing_routes") or []
     start_date = state.get("start_date")
@@ -345,6 +347,7 @@ async def generate_routes(state: PlannerState) -> PlannerState:
     lang = _get_lang(user_profile)
     user_block = _build_user_profile_block(user_profile, lang)
     lang_dir = _lang_directive(lang)
+    news_block = build_news_block_for_prompt(news_top10, location_name, for_k_content=False)
 
     if existing_routes:
         quoted = ", ".join(f'"{r}"' for r in existing_routes)
@@ -357,7 +360,7 @@ async def generate_routes(state: PlannerState) -> PlannerState:
 
     prompt = (
         f"여행지:{location_name} | {period_clause.strip()}\n"
-        f"{user_block}{exclude_block}{festival_block}"
+        f"{user_block}{exclude_block}{festival_block}{news_block}"
         "아래 7가지 테마의 루트를 각 1개씩 순서대로 작성하세요:\n"
         f"1.{festival_theme_desc.split(':',1)[-1].strip()}\n"
         "2.먹거리:재래시장·먹자골목·특산물 중심\n"
@@ -411,9 +414,11 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
     end_date = state.get("end_date")
     user_profile: dict | None = state.get("user_profile")
     festivals: list = state.get("festivals") or []
+    news_top10: list = state.get("news_top10") or []
 
     lang = _get_lang(user_profile)
     lang_dir = _lang_directive(lang)
+    news_block = build_news_block_for_prompt(news_top10, location_name, for_k_content=False)
 
     date_list = _build_date_list(start_date, end_date)
     num_days = len(date_list) if date_list else _TRAVEL_DAYS_DEFAULT
@@ -457,7 +462,7 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
     prompt = (
         f"Destination:{location_name} | Route:{route_name}\n"
         f"{date_clause}\n"
-        f"{festival_block}"
+        f"{festival_block}{news_block}"
         f"Create a detailed travel itinerary ({num_days} days, 4 items per day).\n\n"
         "Rules:\n"
         "- date field must use YYYY-MM-DD from the DateMapping above\n"

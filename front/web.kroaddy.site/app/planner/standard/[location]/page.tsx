@@ -13,6 +13,7 @@ import {
   type ScheduleItem,
   type CostSummary,
 } from "@/lib/api/planner";
+import { useNewsStore } from "@/store";
 import {
   readRoutes,
   writeRoutes,
@@ -56,6 +57,7 @@ export default function LocationPlannerPage() {
   const router = useRouter();
   const { location } = useParams<{ location: string }>();
   const { isAuthenticated, logout, accessToken } = useLoginStore();
+  const newsTop10 = useNewsStore((s) => s.newsTop10);
 
   const locationName = SLUG_TO_NAME[location] ?? location;
   const appUserId = getAppUserIdFromToken(accessToken ?? undefined);
@@ -120,6 +122,7 @@ export default function LocationPlannerPage() {
         userId: appUserId ?? undefined,
         existingRoutes: existingRoutes.length > 0 ? existingRoutes : undefined,
         useSearch,
+        newsTop10: newsTop10.length > 0 ? newsTop10 : undefined,
       });
       setRoutes(res.routes);
       if (res.error && res.routes.length === 0) {
@@ -164,7 +167,13 @@ export default function LocationPlannerPage() {
           return;
         }
 
-        const res = await fetchSchedule(location, route.name, { startDate, endDate, userId: appUserId ?? undefined, useSearch });
+        const res = await fetchSchedule(location, route.name, {
+          startDate,
+          endDate,
+          userId: appUserId ?? undefined,
+          useSearch,
+          newsTop10: newsTop10.length > 0 ? newsTop10 : undefined,
+        });
         setSchedule(res.schedule);
         if (res.cost_summary) setCostSummary(res.cost_summary);
         if (res.error && res.schedule.length === 0) {

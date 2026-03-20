@@ -3,6 +3,7 @@
  */
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
+
 /** 응답이 에러일 때 서버 detail 메시지 또는 기본 메시지를 담은 Error를 throw */
 async function throwApiError(res: Response, fallback: string): Promise<never> {
   if (res.status === 429 || res.status === 503) {
@@ -77,7 +78,14 @@ export interface TravelPlanRecord {
 
 export async function fetchRoutes(
   location: string,
-  opts?: { startDate?: string; endDate?: string; userId?: number; existingRoutes?: string[]; useSearch?: boolean }
+  opts?: {
+    startDate?: string;
+    endDate?: string;
+    userId?: number;
+    existingRoutes?: string[];
+    useSearch?: boolean;
+    newsTop10?: object[];
+  }
 ): Promise<RoutesResponse> {
   const res = await fetch(`${API_BASE}/api/v1/planner/${location}/routes`, {
     method: "POST",
@@ -88,6 +96,7 @@ export async function fetchRoutes(
       user_id: opts?.userId ?? null,
       existing_routes: opts?.existingRoutes ?? null,
       use_search: opts?.useSearch ?? false,
+      news_top10: opts?.newsTop10 ?? null,
     }),
     cache: "no-store",
   });
@@ -187,7 +196,13 @@ export async function savePlan(data: {
 export async function fetchSchedule(
   location: string,
   routeName: string,
-  opts?: { startDate?: string; endDate?: string; userId?: number; useSearch?: boolean }
+  opts?: {
+    startDate?: string;
+    endDate?: string;
+    userId?: number;
+    useSearch?: boolean;
+    newsTop10?: object[];
+  }
 ): Promise<ScheduleResponse> {
   const res = await fetch(`${API_BASE}/api/v1/planner/${location}/schedule`, {
     method: "POST",
@@ -198,6 +213,7 @@ export async function fetchSchedule(
       end_date: opts?.endDate ?? null,
       user_id: opts?.userId ?? null,
       use_search: opts?.useSearch ?? false,
+      news_top10: opts?.newsTop10 ?? null,
     }),
     cache: "no-store",
   });
