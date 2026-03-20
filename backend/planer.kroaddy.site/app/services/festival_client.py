@@ -1,5 +1,13 @@
-"""행사 서비스 클라이언트 – 여행 기간·지역에 해당하는 축제 목록 조회."""
+"""행사 서비스 – data.go.kr 전국문화축제표준데이터 직접 조회.
+
+festival.kroaddy.site 별도 서비스 없이 planer 내부에서 직접 호출.
+인메모리 캐시(10분 TTL)로 반복 요청 최소화.
+"""
+import asyncio
 import logging
+import re
+import time
+from calendar import monthrange
 from datetime import datetime
 from typing import Optional
 
@@ -9,116 +17,289 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# 지역 슬러그 → 주소/개최장소 매칭 키워드
+FESTIVAL_BASE = "http://api.data.go.kr/openapi/tn_pubr_public_cltur_fstvl_api"
+
+# ─── 인메모리 캐시 (워커 내 공유) ───────────────────────────
+_CACHE_RAW: list[dict] | None = None
+_CACHE_EXPIRES_AT: float = 0.0
+_CACHE_TTL = 600        # 10분 신선
+_CACHE_STALE_TTL = 3600 # 1시간 stale fallback
+_CACHE_LOCK = asyncio.Lock()
+
+# ─── 지역 슬러그 → 축제 필터 키워드 ─────────────────────────
 _LOCATION_KEYWORDS: dict[str, list[str]] = {
-    # 특별시·광역시
-    "seoul":         ["서울"],
-    "busan":         ["부산"],
-    "daegu":         ["대구"],
-    "incheon":       ["인천"],
-    "gwangju":       ["광주광역시", "광주 광역", "광주시"],
-    "daejeon":       ["대전"],
-    "ulsan":         ["울산"],
-    "sejong":        ["세종"],
-    # 수도권 (경기)
-    "suwon":         ["수원"],
-    "yongin":        ["용인"],
-    "goyang":        ["고양"],
-    "hwaseong":      ["화성"],
-    "seongnam":      ["성남"],
-    "bucheon":       ["부천"],
-    "namyangju":     ["남양주"],
-    "ansan":         ["안산"],
-    "pyeongtaek":    ["평택"],
-    "anyang":        ["안양"],
-    "siheung":       ["시흥"],
-    "paju":          ["파주"],
-    "gimpo":         ["김포"],
-    "uijeongbu":     ["의정부"],
-    "gwangju-g":     ["경기 광주", "광주시 경기"],
-    "hanam":         ["하남"],
-    "gwangmyeong":   ["광명"],
-    "gunpo":         ["군포"],
-    "osan":          ["오산"],
-    "yangju":        ["양주"],
-    "icheon":        ["이천"],
-    "guri":          ["구리"],
-    "anseong":       ["안성"],
-    "uiwang":        ["의왕"],
-    "pocheon":       ["포천"],
-    "yeoju":         ["여주"],
-    "dongducheon":   ["동두천"],
-    "gwacheon":      ["과천"],
-    "gapyeong":      ["가평"],
-    "yangpyeong":    ["양평"],
-    # 강원
-    "chuncheon":     ["춘천"],
-    "wonju":         ["원주"],
-    "gangneung":     ["강릉"],
-    "donghae":       ["동해"],
-    "taebaek":       ["태백"],
-    "sokcho":        ["속초"],
-    "samcheok":      ["삼척"],
-    "yangyang":      ["양양"],
-    "pyeongchang":   ["평창"],
-    "jeongseon":     ["정선"],
-    "inje":          ["인제"],
-    "goseong-gw":    ["고성"],
-    # 충청
-    "cheongju":      ["청주"],
-    "chungju":       ["충주"],
-    "jecheon":       ["제천"],
-    "danyang":       ["단양"],
-    "cheonan":       ["천안"],
-    "gongju":        ["공주"],
-    "boryeong":      ["보령"],
-    "asan":          ["아산"],
-    "seosan":        ["서산"],
-    "nonsan":        ["논산"],
-    "dangjin":       ["당진"],
-    "taean":         ["태안"],
-    "buyeo":         ["부여"],
-    # 전라
-    "jeonju":        ["전주"],
-    "gunsan":        ["군산"],
-    "iksan":         ["익산"],
-    "jeongeup":      ["정읍"],
-    "namwon":        ["남원"],
-    "gimje":         ["김제"],
-    "mokpo":         ["목포"],
-    "yeosu":         ["여수"],
-    "suncheon":      ["순천"],
-    "naju":          ["나주"],
-    "gwangyang":     ["광양"],
-    "damyang":       ["담양"],
-    "boseong":       ["보성"],
-    "wando":         ["완도"],
-    # 경상
-    "pohang":        ["포항"],
-    "gyeongju":      ["경주"],
-    "gimcheon":      ["김천"],
-    "andong":        ["안동"],
-    "gumi":          ["구미"],
-    "yeongju":       ["영주"],
-    "yeongcheon":    ["영천"],
-    "sangju":        ["상주"],
-    "mungyeong":     ["문경"],
-    "gyeongsan":     ["경산"],
-    "changwon":      ["창원"],
-    "jinju":         ["진주"],
-    "tongyeong":     ["통영"],
-    "sacheon":       ["사천"],
-    "gimhae":        ["김해"],
-    "miryang":       ["밀양"],
-    "geoje":         ["거제"],
-    "yangsan":       ["양산"],
-    "namhae":        ["남해"],
-    "hapcheon":      ["합천"],
-    # 제주
-    "jeju":          ["제주"],
-    "seogwipo":      ["서귀포"],
+    "seoul":          ["서울"],
+    "busan":          ["부산"],
+    "daegu":          ["대구"],
+    "incheon":        ["인천"],
+    "gwangju":        ["광주광역시", "광주 광역", "광주시"],
+    "daejeon":        ["대전"],
+    "ulsan":          ["울산"],
+    "sejong":         ["세종"],
+    "suwon":          ["수원"],
+    "yongin":         ["용인"],
+    "goyang":         ["고양"],
+    "hwaseong":       ["화성"],
+    "seongnam":       ["성남"],
+    "bucheon":        ["부천"],
+    "namyangju":      ["남양주"],
+    "ansan":          ["안산"],
+    "pyeongtaek":     ["평택"],
+    "anyang":         ["안양"],
+    "siheung":        ["시흥"],
+    "paju":           ["파주"],
+    "gimpo":          ["김포"],
+    "uijeongbu":      ["의정부"],
+    "gwangju-g":      ["경기 광주", "광주시 경기"],
+    "hanam":          ["하남"],
+    "gwangmyeong":    ["광명"],
+    "gunpo":          ["군포"],
+    "osan":           ["오산"],
+    "yangju":         ["양주"],
+    "icheon":         ["이천"],
+    "guri":           ["구리"],
+    "anseong":        ["안성"],
+    "uiwang":         ["의왕"],
+    "pocheon":        ["포천"],
+    "yeoju":          ["여주"],
+    "dongducheon":    ["동두천"],
+    "gwacheon":       ["과천"],
+    "gapyeong":       ["가평"],
+    "yangpyeong":     ["양평"],
+    "chuncheon":      ["춘천"],
+    "wonju":          ["원주"],
+    "gangneung":      ["강릉"],
+    "donghae":        ["동해"],
+    "taebaek":        ["태백"],
+    "sokcho":         ["속초"],
+    "samcheok":       ["삼척"],
+    "yangyang":       ["양양"],
+    "pyeongchang":    ["평창"],
+    "jeongseon":      ["정선"],
+    "inje":           ["인제"],
+    "goseong-gw":     ["고성"],
+    "cheongju":       ["청주"],
+    "chungju":        ["충주"],
+    "jecheon":        ["제천"],
+    "danyang":        ["단양"],
+    "cheonan":        ["천안"],
+    "gongju":         ["공주"],
+    "boryeong":       ["보령"],
+    "asan":           ["아산"],
+    "seosan":         ["서산"],
+    "nonsan":         ["논산"],
+    "dangjin":        ["당진"],
+    "taean":          ["태안"],
+    "buyeo":          ["부여"],
+    "jeonju":         ["전주"],
+    "gunsan":         ["군산"],
+    "iksan":          ["익산"],
+    "jeongeup":       ["정읍"],
+    "namwon":         ["남원"],
+    "gimje":          ["김제"],
+    "mokpo":          ["목포"],
+    "yeosu":          ["여수"],
+    "suncheon":       ["순천"],
+    "naju":           ["나주"],
+    "gwangyang":      ["광양"],
+    "damyang":        ["담양"],
+    "boseong":        ["보성"],
+    "wando":          ["완도"],
+    "pohang":         ["포항"],
+    "gyeongju":       ["경주"],
+    "gimcheon":       ["김천"],
+    "andong":         ["안동"],
+    "gumi":           ["구미"],
+    "yeongju":        ["영주"],
+    "yeongcheon":     ["영천"],
+    "sangju":         ["상주"],
+    "mungyeong":      ["문경"],
+    "gyeongsan":      ["경산"],
+    "changwon":       ["창원"],
+    "jinju":          ["진주"],
+    "tongyeong":      ["통영"],
+    "sacheon":        ["사천"],
+    "gimhae":         ["김해"],
+    "miryang":        ["밀양"],
+    "geoje":          ["거제"],
+    "yangsan":        ["양산"],
+    "namhae":         ["남해"],
+    "hapcheon":       ["합천"],
+    "jeju":           ["제주"],
+    "seogwipo":       ["서귀포"],
+    # 관광지 슬러그
+    "palgongsan":     ["팔공산", "대구", "경북"],
+    "gayasan":        ["가야산", "합천", "성주"],
+    "juwangsan":      ["주왕산", "청송"],
+    "nakdonggang":    ["낙동강"],
+    "jirisan":        ["지리산", "구례", "남원", "함양", "산청"],
+    "hallyeohaesang": ["한려해상", "통영", "거제", "남해"],
+    "seoraksan":      ["설악산", "속초", "인제", "양양"],
+    "odaesan":        ["오대산", "평창", "홍천"],
+    "chiaksan":       ["치악산", "원주"],
+    "songnisan":      ["속리산", "보은", "괴산"],
+    "wolaksan":       ["월악산", "제천", "단양"],
+    "bukhansan":      ["북한산", "서울", "고양", "양주"],
+    "gwanaksan":      ["관악산", "서울", "안양"],
+    "hallasan":       ["한라산", "제주"],
 }
 
+
+# ─── data.go.kr 호출 (동기 – httpx.Client, JS 챌린지 처리) ──
+
+def _fetch_raw(num_of_rows: int = 500) -> list[dict]:
+    """data.go.kr 전국문화축제표준데이터 동기 조회. 실패 시 빈 리스트."""
+    key = settings.data_go_kr_service_key
+    if not key:
+        logger.warning("DATA_GO_KR_SERVICE_KEY 미설정 – 행사 정보 없음")
+        return []
+
+    params: dict = {
+        "serviceKey": key,
+        "pageNo": 1,
+        "numOfRows": num_of_rows,
+        "type": "json",
+    }
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/122.0.0.0 Safari/537.36"
+        ),
+        "Accept": "application/json, text/html, */*",
+        "Accept-Language": "ko-KR,ko;q=0.9",
+        "Referer": "https://www.data.go.kr/",
+    }
+
+    with httpx.Client(timeout=30.0, follow_redirects=True, max_redirects=10,
+                      verify=False, headers=headers) as client:
+        r = client.get(FESTIVAL_BASE, params=params)
+        for _ in range(4):
+            body = r.text
+            if not body.lstrip().startswith("<"):
+                break
+            if "서비스 안내" in body or "서비스 점검" in body:
+                logger.warning("data.go.kr 서비스 점검 중")
+                return []
+            redirect = _extract_js_redirect(body, str(r.url))
+            if not redirect:
+                logger.warning("JS 챌린지 파싱 실패")
+                return []
+            r = client.get(redirect)
+        else:
+            return []
+
+        try:
+            data = r.json()
+        except Exception:
+            return []
+
+    return _parse_items(data)
+
+
+def _extract_js_redirect(html: str, base_url: str) -> str | None:
+    from urllib.parse import urljoin
+    m = re.search(r"var\s+x\s*=\s*\{o:'([^']*)',t:'([^']*)',h:'([^']*)'\}", html)
+    if m:
+        return urljoin(base_url, m.group(2) + m.group(3) + m.group(1))
+    m2 = re.search(r"var\s+x\s*=\s*\{o:'([^']+)'[^}]*\}", html)
+    if m2 and "/openapi/" in m2.group(1):
+        from urllib.parse import urljoin
+        return urljoin(base_url, m2.group(1))
+    m3 = re.search(r"location\.assign\(['\"]([^'\"]+)['\"]", html)
+    if m3:
+        from urllib.parse import urljoin
+        return urljoin(base_url, m3.group(1))
+    return None
+
+
+def _parse_items(data: dict) -> list[dict]:
+    resp = data.get("response") or {}
+    body = data.get("body") or resp.get("body") or {}
+    items_node = body.get("items")
+    if items_node is not None:
+        if isinstance(items_node, list):
+            return items_node
+        if isinstance(items_node, dict):
+            raw = items_node.get("item")
+            if raw is not None:
+                return raw if isinstance(raw, list) else [raw]
+    raw = body.get("item")
+    if raw is not None:
+        return raw if isinstance(raw, list) else [raw]
+    top = data.get("items")
+    if isinstance(top, list):
+        return top
+    if isinstance(top, dict) and top.get("item") is not None:
+        r = top["item"]
+        return r if isinstance(r, list) else [r]
+    return []
+
+
+def _date_int(s: str) -> int | None:
+    digits = re.sub(r"\D", "", str(s))[:8]
+    if len(digits) != 8:
+        return None
+    try:
+        return int(digits)
+    except ValueError:
+        return None
+
+
+def _normalize(s: str) -> str:
+    digits = re.sub(r"\D", "", str(s))[:8]
+    return digits if len(digits) == 8 else ""
+
+
+def _normalize_item(item: dict) -> dict:
+    return {
+        "fstvlNm":       item.get("fstvlNm")       or item.get("축제명")         or "",
+        "opar":          item.get("opar")           or item.get("개최장소")       or "",
+        "fstvlStartDate": _normalize(item.get("fstvlStartDate") or item.get("축제시작일자") or ""),
+        "fstvlEndDate":   _normalize(item.get("fstvlEndDate")   or item.get("축제종료일자") or ""),
+        "fstvlCo":       item.get("fstvlCo")        or item.get("축제내용")       or "",
+        "rdnmadr":       item.get("rdnmadr")        or item.get("소재지도로명주소") or "",
+        "lnmadr":        item.get("lnmadr")         or item.get("소재지지번주소")  or "",
+    }
+
+
+# ─── 캐시 갱신 ───────────────────────────────────────────────
+
+async def _get_raw_cached() -> list[dict]:
+    """인메모리 캐시에서 전체 행사 목록 반환 (만료 시 재조회)."""
+    global _CACHE_RAW, _CACHE_EXPIRES_AT
+    now = time.time()
+
+    if _CACHE_RAW is not None and now < _CACHE_EXPIRES_AT:
+        return _CACHE_RAW
+
+    if _CACHE_LOCK.locked() and _CACHE_RAW is not None:
+        return _CACHE_RAW  # 다른 코루틴이 갱신 중 → stale 즉시 반환
+
+    async with _CACHE_LOCK:
+        if _CACHE_RAW is not None and time.time() < _CACHE_EXPIRES_AT:
+            return _CACHE_RAW
+        try:
+            loop = asyncio.get_event_loop()
+            items = await loop.run_in_executor(None, _fetch_raw)
+            if items:
+                _CACHE_RAW = items
+                _CACHE_EXPIRES_AT = time.time() + _CACHE_TTL
+                logger.info("행사 캐시 갱신 완료 (%d건)", len(items))
+            else:
+                # 조회 실패 → stale 유지
+                if _CACHE_RAW is not None:
+                    _CACHE_EXPIRES_AT = time.time() + _CACHE_STALE_TTL
+                    logger.warning("행사 API 빈 응답 – stale 캐시 연장")
+        except Exception as e:
+            logger.warning("행사 캐시 갱신 실패: %s", e)
+            if _CACHE_RAW is not None:
+                _CACHE_EXPIRES_AT = time.time() + _CACHE_STALE_TTL
+
+    return _CACHE_RAW or []
+
+
+# ─── 공개 인터페이스 ──────────────────────────────────────────
 
 async def fetch_festivals_for_period(
     location: str,
@@ -126,73 +307,62 @@ async def fetch_festivals_for_period(
     start_date: Optional[str],
     end_date: Optional[str],
 ) -> list[dict]:
-    """여행 기간 및 지역에 해당하는 행사 목록 반환.
-
-    festival 서비스의 /api/v1/festivals?year=&month= 를 호출하고
-    지역 키워드로 필터링한다. 실패 시 빈 리스트를 반환해 플랜 생성을 계속 진행한다.
-    """
-    festival_url = getattr(settings, "festival_service_url", "")
-    if not festival_url or not start_date or not end_date:
+    """여행 기간·지역에 해당하는 행사 목록 반환."""
+    if not start_date or not end_date:
         return []
 
     try:
         start_dt = datetime.strptime(start_date, "%Y-%m-%d")
-        end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+        end_dt   = datetime.strptime(end_date,   "%Y-%m-%d")
     except ValueError:
         return []
 
-    # 여행 기간에 걸쳐 있는 월 수집
+    # 여행 기간에 걸친 월 목록
     months: set[tuple[int, int]] = set()
     cur = start_dt.replace(day=1)
     while cur <= end_dt:
         months.add((cur.year, cur.month))
-        if cur.month == 12:
-            cur = cur.replace(year=cur.year + 1, month=1)
-        else:
-            cur = cur.replace(month=cur.month + 1)
+        cur = cur.replace(month=cur.month + 1) if cur.month < 12 else cur.replace(year=cur.year + 1, month=1)
 
-    # 지역 키워드 (슬러그 매핑 우선, 없으면 한글 지명)
+    raw = await _get_raw_cached()
+    if not raw:
+        return []
+
     keywords = _LOCATION_KEYWORDS.get(location, [location_name])
 
     all_items: list[dict] = []
     seen: set[str] = set()
 
-    async with httpx.AsyncClient(timeout=8.0) as client:
-        for year, month in sorted(months):
-            try:
-                resp = await client.get(
-                    f"{festival_url}/api/v1/festivals",
-                    params={"year": year, "month": month},
-                )
-                if resp.status_code != 200:
-                    logger.warning("행사 API 응답 오류: status=%d (year=%d month=%d)", resp.status_code, year, month)
-                    continue
+    for year, month in sorted(months):
+        _, last = monthrange(year, month)
+        first_day = year * 10000 + month * 100 + 1
+        last_day  = year * 10000 + month * 100 + last
 
-                data = resp.json()
-                items = data.get("items", [])
+        for item in raw:
+            start_d = _date_int(item.get("fstvlStartDate") or item.get("축제시작일자") or "")
+            end_s   = item.get("fstvlEndDate") or item.get("축제종료일자") or ""
+            end_d   = _date_int(end_s) or start_d or 99991231
+            if start_d is None:
+                continue
+            if not (start_d <= last_day and end_d >= first_day):
+                continue
 
-                for item in items:
-                    # 지역 키워드 필터
-                    addr_text = (
-                        item.get("opar", "")
-                        + item.get("rdnmadr", "")
-                        + item.get("lnmadr", "")
-                    )
-                    if not any(kw in addr_text for kw in keywords):
-                        continue
+            addr = (
+                item.get("opar", "")
+                + item.get("rdnmadr", "")
+                + item.get("lnmadr", "")
+            )
+            if not any(kw in addr for kw in keywords):
+                continue
 
-                    # 중복 제거 (축제명 + 시작일 기준)
-                    dedup_key = item.get("fstvlNm", "") + item.get("fstvlStartDate", "")
-                    if dedup_key in seen:
-                        continue
-                    seen.add(dedup_key)
-                    all_items.append(item)
-
-            except Exception as e:
-                logger.warning("행사 데이터 조회 실패 (year=%d month=%d): %s", year, month, e)
+            dedup = (item.get("fstvlNm") or "") + (item.get("fstvlStartDate") or "")
+            if dedup in seen:
+                continue
+            seen.add(dedup)
+            all_items.append(_normalize_item(item))
 
     logger.info(
-        "행사 필터 결과: location=%s, 기간=%s~%s, 건수=%d",
+        "행사 필터 결과: location=%s 기간=%s~%s 건수=%d",
         location_name, start_date, end_date, len(all_items),
     )
     return all_items

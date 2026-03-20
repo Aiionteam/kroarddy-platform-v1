@@ -4,22 +4,41 @@ import "@/lib/i18n/config";
 import React, { useEffect, useState } from "react";
 import { useLoginStore } from "@/store";
 import { useRouter } from "next/navigation";
-import { useTranslation } from "react-i18next";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import { getAppUserIdFromToken } from "@/lib/api/auth";
 import { fetchUserProfile } from "@/lib/api/userProfile";
+import {
+  fetchProcessedNews,
+  timeAgo,
+  type ProcessedNewsItem,
+  type ProcessedNewsResponse,
+} from "@/lib/api/news";
 
 const SKIP_KEY = "onboarding_skipped";
 
+const CATEGORY_STYLE: Record<string, { bg: string; text: string; emoji: string }> = {
+  "공연/이벤트": { bg: "bg-pink-100",   text: "text-pink-700",   emoji: "🎤" },
+  "전시/문화":   { bg: "bg-amber-100",  text: "text-amber-700",  emoji: "🎨" },
+  "장소/스팟":   { bg: "bg-green-100",  text: "text-green-700",  emoji: "📍" },
+  "교통/생활":   { bg: "bg-blue-100",   text: "text-blue-700",   emoji: "🚇" },
+  "기타":        { bg: "bg-gray-100",   text: "text-gray-600",   emoji: "📰" },
+};
+
+function getCatStyle(cat: string) {
+  return CATEGORY_STYLE[cat] ?? CATEGORY_STYLE["기타"];
+}
+
 export default function HomePage() {
   const { isAuthenticated, logout, accessToken } = useLoginStore();
-  const { t } = useTranslation();
   const router = useRouter();
   const appUserId = getAppUserIdFromToken(accessToken ?? undefined);
 
-  // null = 아직 로딩 중, true = 배너 표시, false = 숨김
-  const [showBanner, setShowBanner] = useState(false);
+  const [showBanner, setShowBanner]         = useState(false);
   const [profileChecked, setProfileChecked] = useState(false);
+
+  const [data, setData]       = useState<ProcessedNewsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) { router.replace("/"); return; }
@@ -27,92 +46,249 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!isAuthenticated || !appUserId) return;
-
     const skipped = sessionStorage.getItem(SKIP_KEY) === "1";
-
     fetchUserProfile(appUserId)
       .then((profile) => {
         if (!profile || !profile.is_complete) {
-          if (skipped) {
-            // 이번 세션에서 이미 "나중에 하기"를 눌렀으면 배너만 표시
-            setShowBanner(true);
-          } else {
-            // 처음 들어오면 바로 온보딩으로 이동
-            router.replace("/profile/onboarding");
-          }
+          if (skipped) setShowBanner(true);
+          else router.replace("/profile/onboarding");
         }
       })
-      .catch(() => {
-        // 프로필 API 오류 → 그냥 홈 유지
-      })
+      .catch(() => {})
       .finally(() => setProfileChecked(true));
   }, [isAuthenticated, appUserId, router]);
 
-  // 프로필 체크 완료 전에는 렌더링 숨김 (리다이렉트 플래시 방지)
-  if (!isAuthenticated) return null;
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetchProcessedNews(60)
+      .then(setData)
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  }, [isAuthenticated]);
 
-  const QUICK_LINKS = [
-    { label: t("home.planner.label"),  desc: t("home.planner.desc"),  path: "/planner",           emoji: "🗺️" },
-    { label: t("home.schedule.label"), desc: t("home.schedule.desc"), path: "/planner/schedule",  emoji: "📋" },
-    { label: t("home.guide.label"),    desc: t("home.guide.desc"),    path: "/guide",             emoji: "📍" },
-    { label: t("home.kcontent.label"), desc: t("home.kcontent.desc"), path: "/planner/k-content", emoji: "🎬" },
-  ] as const;
+  if (!isAuthenticated) return null;
 
   return (
     <AppLayout onLogout={logout}>
-      <main className="flex flex-1 flex-col items-center justify-center overflow-auto px-4 py-8 md:px-8 md:py-12">
+      <main className="flex flex-1 flex-col overflow-auto bg-gray-50">
 
-        {/* "나중에 하기" 후 배너 */}
+        {/* 온보딩 배너 */}
         {profileChecked && showBanner && (
-          <div className="mb-8 flex w-full max-w-2xl items-center justify-between gap-4 rounded-2xl border border-violet-200 bg-violet-50 px-5 py-4">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">✨</span>
-              <div>
-                <p className="text-sm font-bold text-violet-800">{t("home.banner.title")}</p>
-                <p className="text-xs text-violet-500">{t("home.banner.sub")}</p>
-              </div>
-            </div>
+          <div className="mx-4 mt-4 flex items-center justify-between gap-4 rounded-2xl border border-violet-200 bg-violet-50 px-5 py-3">
+            <p className="text-sm font-bold text-violet-800">✨ 여행 프로필을 완성하면 맞춤 추천을 받을 수 있어요</p>
             <div className="flex shrink-0 gap-2">
-              <button
-                type="button"
-                onClick={() => setShowBanner(false)}
-                className="rounded-lg px-3 py-1.5 text-xs text-violet-400 hover:text-violet-600"
-              >
-                {t("home.banner.close")}
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push("/profile/onboarding")}
-                className="rounded-lg bg-violet-500 px-4 py-1.5 text-xs font-bold text-white hover:bg-violet-600"
-              >
-                {t("home.banner.setup")}
-              </button>
+              <button type="button" onClick={() => setShowBanner(false)} className="text-xs text-violet-400 hover:text-violet-600">닫기</button>
+              <button type="button" onClick={() => router.push("/profile/onboarding")} className="rounded-lg bg-violet-500 px-3 py-1.5 text-xs font-bold text-white">설정하기</button>
             </div>
           </div>
         )}
 
-        <div className="mb-10 text-center">
-          <h1 className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-4xl font-bold text-transparent">
-            HOME
-          </h1>
-          <p className="mt-3 text-gray-500">{t("home.subtitle") }</p>
-        </div>
+        <div className="px-4 py-6 space-y-8">
 
-        <div className="grid w-full max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2">
-          {QUICK_LINKS.map((link) => (
-            <button
-              key={link.path}
-              type="button"
-              onClick={() => router.push(link.path)}
-              className="flex flex-col items-start gap-2 rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition-all hover:border-purple-300 hover:shadow-md"
-            >
-              <span className="text-3xl">{link.emoji}</span>
-              <span className="font-semibold text-gray-800">{link.label}</span>
-              <span className="text-sm text-gray-400">{link.desc}</span>
-            </button>
-          ))}
+          {/* ── 로딩 ── */}
+          {loading && (
+            <>
+              <Section title="🏆 오늘의 Top 10" sub="AI가 선정한 여행자 필수 뉴스">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} large />)}
+                </div>
+              </Section>
+              <Section title="📰 전체 뉴스">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+                </div>
+              </Section>
+            </>
+          )}
+
+          {/* ── 에러 ── */}
+          {!loading && error && (
+            <div className="flex flex-col items-center py-24 gap-3 text-gray-400">
+              <span className="text-5xl">📡</span>
+              <p className="text-sm">뉴스를 불러오지 못했습니다.</p>
+              <button type="button" onClick={() => { setError(false); setLoading(true); fetchProcessedNews(60).then(setData).catch(() => setError(true)).finally(() => setLoading(false)); }} className="text-xs text-purple-500 hover:underline">다시 시도</button>
+            </div>
+          )}
+
+          {/* ── 데이터 ── */}
+          {!loading && data && (
+            <>
+              {/* TOP 10 */}
+              <Section title="🏆 오늘의 Top 10" sub="GPT가 선정한 여행자 필수 뉴스">
+                {data.top10.length === 0 ? (
+                  <EmptyState text="아직 AI 분석이 진행 중입니다. 잠시 후 새로고침 해주세요." />
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {data.top10.map((item, idx) => (
+                      <Top10Card key={item.id} item={item} rank={idx + 1} />
+                    ))}
+                  </div>
+                )}
+              </Section>
+
+              {/* 나머지 뉴스 */}
+              {data.rest.length > 0 && (
+                <Section title="📋 더 많은 뉴스" sub="지역별 최신 정보">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {data.rest.map((item) => (
+                      <RestCard key={item.id} item={item} />
+                    ))}
+                  </div>
+                </Section>
+              )}
+            </>
+          )}
         </div>
       </main>
     </AppLayout>
+  );
+}
+
+/* ── 섹션 래퍼 ── */
+function Section({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <div className="mb-3">
+        <h2 className="text-lg font-bold text-gray-800">{title}</h2>
+        {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/* ── Top10 카드 (크고 화려하게) ── */
+function Top10Card({ item, rank }: { item: ProcessedNewsItem; rank: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const cat = getCatStyle(item.category);
+
+  return (
+    <div className="relative rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+      {/* 순위 배지 */}
+      <div className="absolute top-3 left-3 z-10 flex items-center gap-1">
+        <span className={`rounded-full w-7 h-7 flex items-center justify-center text-xs font-black shadow ${rank <= 3 ? "bg-yellow-400 text-white" : "bg-gray-800 text-white"}`}>
+          {rank}
+        </span>
+      </div>
+
+      {/* 썸네일 */}
+      {item.thumbnail ? (
+        <img src={item.thumbnail} alt="" className="w-full h-40 object-cover"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+      ) : (
+        <div className="w-full h-28 bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center text-4xl">
+          {cat.emoji}
+        </div>
+      )}
+
+      <div className="p-4 space-y-2">
+        {/* 카테고리 + 지역 + 날짜 */}
+        <div className="flex flex-wrap gap-1.5 items-center">
+          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cat.bg} ${cat.text}`}>
+            {cat.emoji} {item.category}
+          </span>
+          {item.location && item.location !== "전국" && (
+            <span className="rounded-full px-2 py-0.5 text-xs bg-gray-100 text-gray-500">
+              📍 {item.location}
+            </span>
+          )}
+          {item.date_mentioned && (
+            <span className="rounded-full px-2 py-0.5 text-xs bg-indigo-50 text-indigo-500 font-semibold">
+              📅 {item.date_mentioned}
+            </span>
+          )}
+        </div>
+
+        {/* 제목 */}
+        <h3 className="text-sm font-bold text-gray-800 leading-snug">{item.title}</h3>
+
+        {/* 요약 */}
+        {item.summary && (
+          <div>
+            <p className={`text-xs text-gray-500 leading-relaxed ${expanded ? "" : "line-clamp-3"}`}>
+              {item.summary}
+            </p>
+            {item.summary.length > 80 && (
+              <button type="button" onClick={() => setExpanded(!expanded)} className="text-xs text-purple-500 hover:underline mt-0.5">
+                {expanded ? "접기" : "더 보기"}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* 출처 + 시간 */}
+        <div className="flex items-center gap-1.5 text-xs text-gray-300 pt-1">
+          <span className="font-medium text-purple-400">{item.source}</span>
+          <span>·</span>
+          <span>{timeAgo(item.published)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── 나머지 뉴스 카드 (작고 간결하게) ── */
+function RestCard({ item }: { item: ProcessedNewsItem }) {
+  const [expanded, setExpanded] = useState(false);
+  const cat = getCatStyle(item.category);
+
+  return (
+    <div className="rounded-xl bg-white border border-gray-100 p-3.5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-2">
+      <div className="flex flex-wrap gap-1 items-center">
+        <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cat.bg} ${cat.text}`}>
+          {cat.emoji} {item.category}
+        </span>
+        {item.location && item.location !== "전국" && (
+          <span className="text-xs text-gray-400">📍 {item.location}</span>
+        )}
+        {item.date_mentioned && (
+          <span className="text-xs text-indigo-400 font-semibold">📅 {item.date_mentioned}</span>
+        )}
+      </div>
+
+      <h3 className="text-xs font-bold text-gray-800 leading-snug line-clamp-2">{item.title}</h3>
+
+      {item.summary && (
+        <div>
+          <p className={`text-xs text-gray-400 leading-relaxed ${expanded ? "" : "line-clamp-2"}`}>
+            {item.summary}
+          </p>
+          {item.summary.length > 60 && (
+            <button type="button" onClick={() => setExpanded(!expanded)} className="text-xs text-purple-400 hover:underline">
+              {expanded ? "접기" : "더 보기"}
+            </button>
+          )}
+        </div>
+      )}
+
+      <div className="flex items-center gap-1 text-xs text-gray-300 mt-auto">
+        <span className="text-purple-300">{item.source}</span>
+        <span>·</span>
+        <span>{timeAgo(item.published)}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ── 스켈레톤 ── */
+function SkeletonCard({ large }: { large?: boolean }) {
+  return (
+    <div className={`animate-pulse rounded-2xl bg-white p-4 shadow-sm space-y-3 ${large ? "h-52" : "h-36"}`}>
+      <div className="h-3 w-20 bg-gray-200 rounded-full" />
+      <div className="h-4 bg-gray-200 rounded w-4/5" />
+      <div className="space-y-1.5">
+        <div className="h-3 bg-gray-100 rounded" />
+        <div className="h-3 bg-gray-100 rounded w-5/6" />
+      </div>
+    </div>
+  );
+}
+
+/* ── 빈 상태 ── */
+function EmptyState({ text }: { text: string }) {
+  return (
+    <div className="rounded-2xl bg-gray-50 border border-dashed border-gray-200 p-8 text-center text-sm text-gray-400">
+      {text}
+    </div>
   );
 }

@@ -32,6 +32,19 @@ spring:
       server:
         webmvc:
           routes:
+          # ── News 서비스 (8005) – RSS 뉴스 크롤링
+          - id: news
+            uri: ${AI_SERVICE_NEWS_URL:http://news:8005}
+            predicates:
+              - Path=/api/v1/news,/api/v1/news/**
+            filters:
+              - RemoveResponseHeader=Access-Control-Allow-Origin
+              - RemoveResponseHeader=Access-Control-Allow-Methods
+              - RemoveResponseHeader=Access-Control-Allow-Headers
+              - RemoveResponseHeader=Access-Control-Allow-Credentials
+              - RemoveResponseHeader=Access-Control-Expose-Headers
+              - RemoveResponseHeader=Access-Control-Max-Age
+
           # ── Festival 서비스 (8002) ───────────────────────────────────────
           - id: festival
             uri: ${AI_SERVICE_FESTIVAL_URL:http://festival:8002}
