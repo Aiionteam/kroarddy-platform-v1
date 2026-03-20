@@ -26,6 +26,7 @@ services:
       AI_SERVICE_TOURPLANER_URL: http://planer:8003
       AI_SERVICE_USER_INFO_URL: http://profile:8004
       AI_SERVICE_TOURSTAR_URL: http://tourstar:8010
+      AI_SERVICE_NEWS_URL: http://news:8005
     ports:
       - "8080:8080"
     depends_on:
@@ -33,6 +34,7 @@ services:
       - planer
       - profile
       - tourstar
+      - news
     restart: unless-stopped
     dns:
       - 8.8.8.8
@@ -89,6 +91,21 @@ services:
       - ./backend/profile.kroaddy.site/.env
     ports:
       - "8004:8004"
+    restart: unless-stopped
+    networks:
+      - kroaddy-net
+
+  # ── News API (뉴스 RSS 크롤링 + GPT 분류, 포트 8005) ────────────────────
+  news:
+    build:
+      context: ./backend/news.kroaddy.site
+      dockerfile: Dockerfile
+    image: necromancer1234/news.kroaddy.site:latest
+    container_name: kroaddy-news
+    env_file:
+      - ./backend/news.kroaddy.site/.env
+    ports:
+      - "8005:8005"
     restart: unless-stopped
     networks:
       - kroaddy-net
