@@ -32,7 +32,7 @@ export function HeroBanner({
 
   return (
     <section
-      className="relative flex min-h-[280px] w-full flex-col justify-end overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm px-8 pb-10 pt-12 md:min-h-[320px] md:px-12"
+      className="relative flex min-h-[220px] w-full flex-col justify-end overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-6 pt-8 shadow-sm sm:min-h-[260px] sm:px-6 md:min-h-[320px] md:px-12 md:pb-10 md:pt-12"
     >
       {backgroundImage && !imgError ? (
         <Image
@@ -57,10 +57,10 @@ export function HeroBanner({
         <h1
           className={
             cardStyleText && backgroundImage && !imgError
-              ? "text-3xl font-bold tracking-tight text-white drop-shadow-md md:text-4xl"
+              ? "text-2xl font-bold tracking-tight text-white drop-shadow-md sm:text-3xl md:text-4xl"
               : solidTitle
-              ? "text-3xl font-bold tracking-tight text-gray-900 md:text-4xl"
-              : "bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-3xl font-bold tracking-tight text-transparent md:text-4xl"
+              ? "text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl md:text-4xl"
+              : "bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-2xl font-bold tracking-tight text-transparent sm:text-3xl md:text-4xl"
           }
         >
           {title}

@@ -41,7 +41,7 @@ export function ContentRow({ title, items, onCardClick }: ContentRowProps) {
           type="button"
           onClick={() => scroll("left")}
           aria-label="Scroll left"
-          className="absolute left-0 top-0 z-10 flex h-full w-10 items-center justify-center bg-gradient-to-r from-gray-100/90 to-transparent text-gray-600 opacity-0 transition-opacity hover:opacity-100 hover:text-gray-900 focus:opacity-100 group-hover/row:opacity-100"
+          className="absolute left-0 top-0 z-10 hidden h-full w-10 items-center justify-center bg-gradient-to-r from-gray-100/90 to-transparent text-gray-600 opacity-0 transition-opacity hover:opacity-100 hover:text-gray-900 focus:opacity-100 group-hover/row:opacity-100 md:flex"
         >
           ‹
         </button>
@@ -65,7 +65,7 @@ export function ContentRow({ title, items, onCardClick }: ContentRowProps) {
           type="button"
           onClick={() => scroll("right")}
           aria-label="Scroll right"
-          className="absolute right-0 top-0 z-10 flex h-full w-10 items-center justify-center bg-gradient-to-l from-gray-100/90 to-transparent text-gray-600 opacity-0 transition-opacity hover:opacity-100 hover:text-gray-900 focus:opacity-100 group-hover/row:opacity-100"
+          className="absolute right-0 top-0 z-10 hidden h-full w-10 items-center justify-center bg-gradient-to-l from-gray-100/90 to-transparent text-gray-600 opacity-0 transition-opacity hover:opacity-100 hover:text-gray-900 focus:opacity-100 group-hover/row:opacity-100 md:flex"
         >
           ›
         </button>
