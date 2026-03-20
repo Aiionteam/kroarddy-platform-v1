@@ -115,3 +115,42 @@ class AutoCommentResponse(BaseModel):
     time_of_day: str = ""
     gps_candidates: list[GpsLocationCandidate] = Field(default_factory=list)
 
+
+class CreatePostRequest(BaseModel):
+    user_id: int | None = None
+    title: str
+    location: str = ""
+    comment: str = ""
+    visibility: Literal["public", "private"] = "public"
+    tags: list[str] = Field(default_factory=list)
+    image_paths: list[str] = Field(default_factory=list, description="로컬 artifacts 경로")
+    selected_scores: dict | None = None
+
+
+class CommentResponse(BaseModel):
+    id: str
+    post_id: str
+    author: str
+    content: str
+    created_at: datetime
+
+
+class PostResponse(BaseModel):
+    id: str
+    user_id: int | None = None
+    title: str
+    location: str
+    comment: str
+    visibility: Literal["public", "private"]
+    tags: list[str] = Field(default_factory=list)
+    photo_urls: list[str] = Field(default_factory=list)
+    selected_scores: dict | None = None
+    created_at: datetime
+    updated_at: datetime
+    comments: list[CommentResponse] = Field(default_factory=list)
+
+
+class AddCommentRequest(BaseModel):
+    author: str = "me"
+    content: str = Field(min_length=1, max_length=1000)
+

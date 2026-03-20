@@ -23,6 +23,7 @@ elif _parent_env.exists():
 # 모델 import (Base.metadata 등록용)
 from app.core.database.base import Base
 from app.models.tourstar_post import TourstarPost  # noqa: F401 – 모델 등록
+from app.models.tourstar_comment import TourstarPostComment  # noqa: F401 – 모델 등록
 
 from app.core.config import settings
 
