@@ -47,10 +47,11 @@ export interface ProcessedNewsItem {
   link: string;
   title: string;
   summary: string;
+  gpt_summary: string;     // GPT가 여행자용으로 재작성한 요약
   source: string;
   published: string;
   thumbnail: string | null;
-  category: string;        // 공연/이벤트 | 전시/문화 | 장소/스팟 | 교통/생활 | 기타
+  category: string;        // 공연/콘서트 | 드라마/영화 | K-pop/아이돌 | 축제/전시 | 장소/핫플 | 기타
   location: string;        // 지역명
   date_mentioned: string | null;
   relevance_score: number;

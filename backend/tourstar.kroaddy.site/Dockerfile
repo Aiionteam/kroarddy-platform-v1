@@ -3,9 +3,9 @@ FROM python:3.10-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    TORCH_HOME=/app/artifacts/models/torch_cache \
-    HF_HOME=/app/artifacts/models/hf_cache \
-    XDG_CACHE_HOME=/app/artifacts/models/xdg_cache
+    TORCH_HOME=/tmp/tourstar-cache/torch \
+    HF_HOME=/tmp/tourstar-cache/hf \
+    XDG_CACHE_HOME=/tmp/tourstar-cache/xdg
 
 WORKDIR /app
 

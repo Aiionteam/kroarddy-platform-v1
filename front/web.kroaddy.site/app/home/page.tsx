@@ -17,10 +17,11 @@ import {
 const SKIP_KEY = "onboarding_skipped";
 
 const CATEGORY_STYLE: Record<string, { bg: string; text: string; emoji: string }> = {
-  "공연/이벤트": { bg: "bg-pink-100",   text: "text-pink-700",   emoji: "🎤" },
-  "전시/문화":   { bg: "bg-amber-100",  text: "text-amber-700",  emoji: "🎨" },
-  "장소/스팟":   { bg: "bg-green-100",  text: "text-green-700",  emoji: "📍" },
-  "교통/생활":   { bg: "bg-blue-100",   text: "text-blue-700",   emoji: "🚇" },
+  "공연/콘서트": { bg: "bg-pink-100",   text: "text-pink-700",   emoji: "🎤" },
+  "드라마/영화": { bg: "bg-purple-100", text: "text-purple-700", emoji: "🎬" },
+  "K-pop/아이돌":{ bg: "bg-rose-100",   text: "text-rose-700",   emoji: "⭐" },
+  "축제/전시":   { bg: "bg-amber-100",  text: "text-amber-700",  emoji: "🎨" },
+  "장소/핫플":   { bg: "bg-green-100",  text: "text-green-700",  emoji: "📍" },
   "기타":        { bg: "bg-gray-100",   text: "text-gray-600",   emoji: "📰" },
 };
 
@@ -60,7 +61,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    fetchProcessedNews(60)
+    fetchProcessedNews(0)
       .then(setData)
       .catch(() => setError(true))
       .finally(() => setLoading(false));
@@ -106,7 +107,7 @@ export default function HomePage() {
             <div className="flex flex-col items-center py-24 gap-3 text-gray-400">
               <span className="text-5xl">📡</span>
               <p className="text-sm">뉴스를 불러오지 못했습니다.</p>
-              <button type="button" onClick={() => { setError(false); setLoading(true); fetchProcessedNews(60).then(setData).catch(() => setError(true)).finally(() => setLoading(false)); }} className="text-xs text-purple-500 hover:underline">다시 시도</button>
+              <button type="button" onClick={() => { setError(false); setLoading(true); fetchProcessedNews(0).then(setData).catch(() => setError(true)).finally(() => setLoading(false)); }} className="text-xs text-purple-500 hover:underline">다시 시도</button>
             </div>
           )}
 
@@ -126,16 +127,6 @@ export default function HomePage() {
                 )}
               </Section>
 
-              {/* 나머지 뉴스 */}
-              {data.rest.length > 0 && (
-                <Section title="📋 더 많은 뉴스" sub="지역별 최신 정보">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {data.rest.map((item) => (
-                      <RestCard key={item.id} item={item} />
-                    ))}
-                  </div>
-                </Section>
-              )}
             </>
           )}
         </div>
@@ -202,13 +193,13 @@ function Top10Card({ item, rank }: { item: ProcessedNewsItem; rank: number }) {
         {/* 제목 */}
         <h3 className="text-sm font-bold text-gray-800 leading-snug">{item.title}</h3>
 
-        {/* 요약 */}
-        {item.summary && (
+        {/* 요약 - GPT 재작성 우선, 없으면 원본 */}
+        {(item.gpt_summary || item.summary) && (
           <div>
-            <p className={`text-xs text-gray-500 leading-relaxed ${expanded ? "" : "line-clamp-3"}`}>
-              {item.summary}
+            <p className={`text-xs leading-relaxed ${item.gpt_summary ? "text-gray-700" : "text-gray-500"} ${expanded ? "" : "line-clamp-3"}`}>
+              {item.gpt_summary || item.summary}
             </p>
-            {item.summary.length > 80 && (
+            {(item.gpt_summary || item.summary).length > 80 && (
               <button type="button" onClick={() => setExpanded(!expanded)} className="text-xs text-purple-500 hover:underline mt-0.5">
                 {expanded ? "접기" : "더 보기"}
               </button>
@@ -248,12 +239,12 @@ function RestCard({ item }: { item: ProcessedNewsItem }) {
 
       <h3 className="text-xs font-bold text-gray-800 leading-snug line-clamp-2">{item.title}</h3>
 
-      {item.summary && (
+      {(item.gpt_summary || item.summary) && (
         <div>
-          <p className={`text-xs text-gray-400 leading-relaxed ${expanded ? "" : "line-clamp-2"}`}>
-            {item.summary}
+          <p className={`text-xs leading-relaxed ${item.gpt_summary ? "text-gray-600" : "text-gray-400"} ${expanded ? "" : "line-clamp-2"}`}>
+            {item.gpt_summary || item.summary}
           </p>
-          {item.summary.length > 60 && (
+          {(item.gpt_summary || item.summary).length > 60 && (
             <button type="button" onClick={() => setExpanded(!expanded)} className="text-xs text-purple-400 hover:underline">
               {expanded ? "접기" : "더 보기"}
             </button>
