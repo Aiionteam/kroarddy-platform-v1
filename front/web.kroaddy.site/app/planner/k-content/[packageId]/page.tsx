@@ -10,7 +10,6 @@ import {
   saveKContent,
   type KContentResponse,
 } from "@/service/k_content/k_content";
-import { useNewsStore } from "@/store";
 import { HeroBanner } from "@/components/k-content/HeroBanner";
 import {
   fetchPackageImages,
