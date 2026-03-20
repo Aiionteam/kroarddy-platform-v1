@@ -11,6 +11,14 @@ export interface KContentResponse {
     cost_summary?: Record<string, unknown> | null;
 }
 
+export interface KContentSaveResponse {
+    success: boolean;
+    plan_id: number;
+    location: string;
+    location_name: string;
+    route_name: string;
+}
+
 interface KContentGenerateRequest {
     package_id: string;
   start_date?: string | null;
@@ -75,5 +83,47 @@ export async function generateKContent(
         return (await res.json()) as KContentResponse;
     } catch {
         throw new Error("K-Content API 오류: 응답 파싱 실패");
+    }
+}
+
+export async function saveKContent(data: {
+    packageMeta: Record<string, unknown>;
+    schedule: Record<string, unknown>[];
+    places?: Record<string, unknown>[];
+    costSummary?: Record<string, unknown> | null;
+    userId?: number;
+    location?: string;
+    startDate?: string;
+    endDate?: string;
+}): Promise<KContentSaveResponse> {
+    let res: Response;
+    try {
+        res = await fetch(`${API_BASE}/api/v1/k-content/save`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                package_meta: data.packageMeta,
+                schedule: data.schedule,
+                places: data.places ?? [],
+                cost_summary: data.costSummary ?? null,
+                user_id: data.userId ?? null,
+                location: data.location ?? "K-Content",
+                start_date: data.startDate ?? null,
+                end_date: data.endDate ?? null,
+            }),
+            cache: "no-store",
+        });
+    } catch {
+        throw new Error("K-Content 저장 API 호출 실패: 네트워크 오류");
+    }
+
+    if (!res.ok) {
+        await throwApiError(res, "K-Content 저장 API 오류");
+    }
+
+    try {
+        return (await res.json()) as KContentSaveResponse;
+    } catch {
+        throw new Error("K-Content 저장 API 오류: 응답 파싱 실패");
     }
 }

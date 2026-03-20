@@ -29,7 +29,7 @@ export function ContentCard({
     <button
       type="button"
       onClick={onClick}
-      className="group relative flex shrink-0 w-72 cursor-pointer overflow-hidden rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-xl hover:z-10 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:ring-offset-gray-100 md:w-80"
+      className="group relative flex shrink-0 w-[78vw] max-w-[320px] cursor-pointer overflow-hidden rounded-xl shadow-sm transition-all duration-200 hover:scale-[1.03] hover:shadow-xl hover:z-10 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:ring-offset-gray-100 sm:w-72 md:w-80"
       style={{ aspectRatio: "16/9" }}
     >
       {imageUrl && !imgError ? (
