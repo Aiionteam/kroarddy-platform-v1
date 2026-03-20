@@ -6,10 +6,14 @@ import { useLoginStore } from "@/store";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import {
   buildTourstarImageUrl,
+  createTourstarComment,
+  createTourstarPost,
   generateTourstarAutoComment,
   generateTourstarPost,
   getTourstarJobStatus,
+  listTourstarPosts,
   localArtifactPathToUrl,
+  type TourstarPostRecord,
   type TourstarStyleFilter,
   uploadTourstarPhotos,
 } from "@/lib/api/tourstar";
@@ -230,7 +234,7 @@ function HeartIcon({ filled }: { filled: boolean }) {
 interface CreateModalProps {
   open: boolean;
   onClose: () => void;
-  onCreate: (post: Omit<TourPost, "id" | "likes" | "liked" | "comments">) => void;
+  onCreate: (post: Omit<TourPost, "id" | "likes" | "liked" | "comments">) => Promise<void> | void;
   onJobStatusChange?: (status: string) => void;
 }
 
@@ -798,19 +802,24 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
               } finally {
                 setIsGeneratingPost(false);
               }
-              onCreate({
-                title: generated.title,
-                location: generated.location,
-                date: new Date().toISOString().split("T")[0],
-                comment: generated.comment,
-                visibility: form.visibility,
-                photos: selectedPhotos,
-                tags: generated.tags,
-              });
-              setForm({ comment: "", styleFilter: "AUTO", styleTemplate: "", visibility: "public" });
-              setPhotos([]);
-              onJobStatusChange?.("AI 게시글 생성 완료");
-              onClose();
+              try {
+                await onCreate({
+                  title: generated.title,
+                  location: generated.location,
+                  date: new Date().toISOString().split("T")[0],
+                  comment: generated.comment,
+                  visibility: form.visibility,
+                  photos: selectedPhotos,
+                  tags: generated.tags,
+                });
+                setForm({ comment: "", styleFilter: "AUTO", styleTemplate: "", visibility: "public" });
+                setPhotos([]);
+                onJobStatusChange?.("AI 게시글 생성 완료");
+                onClose();
+              } catch (error) {
+                console.error(error);
+                onJobStatusChange?.("게시글 저장 실패");
+              }
             }}
             disabled={isGeneratingPost}
             className="rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:opacity-90 transition-opacity"
@@ -829,7 +838,7 @@ interface DetailModalProps {
   onClose: () => void;
   onToggleLike: (id: string) => void;
   onToggleVisibility: (id: string) => void;
-  onAddComment: (postId: string, content: string) => void;
+  onAddComment: (postId: string, content: string) => Promise<void> | void;
 }
 
 function PostDetailModal({ post, onClose, onToggleLike, onToggleVisibility, onAddComment }: DetailModalProps) {
@@ -1198,6 +1207,35 @@ function GridCard({ post, onClick }: GridCardProps) {
 }
 
 /* ═══════════════════════ 메인 페이지 ═══════════════════════ */
+function mapRecordToPost(record: TourstarPostRecord): TourPost {
+  const photos: TourPhoto[] = (record.photo_urls || []).map((url, idx) => ({
+    id: `photo-${record.id}-${idx}`,
+    gradient: randomGradient(),
+    selected: true,
+    imageUrl: buildTourstarImageUrl(url),
+    fileName: url.split("/").pop() || `photo-${idx + 1}`,
+  }));
+
+  return {
+    id: record.id,
+    title: record.title,
+    location: record.location || "위치 미확인",
+    date: (record.created_at || "").slice(0, 10) || new Date().toISOString().slice(0, 10),
+    comment: record.comment,
+    visibility: record.visibility,
+    photos,
+    likes: 0,
+    liked: false,
+    tags: record.tags || [],
+    comments: (record.comments || []).map((item) => ({
+      id: item.id,
+      author: item.author,
+      content: item.content,
+      createdAt: "방금 전",
+    })),
+  };
+}
+
 export default function TourstarPage() {
   const router = useRouter();
   const { isAuthenticated, logout } = useLoginStore();
@@ -1215,6 +1253,24 @@ export default function TourstarPage() {
       router.replace("/");
     }
   }, [isAuthenticated, router]);
+
+  React.useEffect(() => {
+    if (!isAuthenticated) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = await listTourstarPosts();
+        if (!cancelled) {
+          setPosts(rows.map(mapRecordToPost));
+        }
+      } catch (error) {
+        console.error("[tourstar] 게시글 목록 조회 실패:", error);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated]);
 
   /* ── 필터링 ── */
   const filteredPosts = useMemo(() => {
@@ -1265,28 +1321,34 @@ export default function TourstarPage() {
     );
   };
 
-  const createPost = (newPost: Omit<TourPost, "id" | "likes" | "liked" | "comments">) => {
-    setPosts((prev) => [
-      { ...newPost, id: Date.now().toString(), likes: 0, liked: false, comments: [] },
-      ...prev,
-    ]);
+  const createPost = async (newPost: Omit<TourPost, "id" | "likes" | "liked" | "comments">) => {
+    const sourceImagePaths = newPost.photos
+      .map((photo) => photo.sourceImagePath)
+      .filter((path): path is string => Boolean(path && path.trim()));
+
+    const saved = await createTourstarPost({
+      title: newPost.title,
+      location: newPost.location,
+      comment: newPost.comment,
+      visibility: newPost.visibility,
+      tags: newPost.tags,
+      image_paths: sourceImagePaths,
+    });
+    setPosts((prev) => [mapRecordToPost(saved), ...prev]);
   };
 
-  const addComment = (postId: string, content: string) => {
+  const addComment = async (postId: string, content: string) => {
+    const saved = await createTourstarComment(postId, { author: "me", content });
     const newComment: TourPostComment = {
-      id: `comment-${Date.now()}`,
-      author: "me",
-      content,
+      id: saved.id,
+      author: saved.author,
+      content: saved.content,
       createdAt: "방금 전",
     };
     setPosts((prev) =>
       prev.map((p) => (p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p)),
     );
-    setDetailPost((prev) =>
-      prev && prev.id === postId
-        ? { ...prev, comments: [...prev.comments, newComment] }
-        : prev,
-    );
+    setDetailPost((prev) => (prev && prev.id === postId ? { ...prev, comments: [...prev.comments, newComment] } : prev));
   };
 
   const deletePost = (id: string) => {
