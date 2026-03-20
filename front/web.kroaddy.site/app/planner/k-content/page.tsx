@@ -187,7 +187,7 @@ const K_BEAUTY_EXAMPLE_ITEMS: ContentRowItem[] = [
 export default function KContentPage() {
   const router = useRouter();
   const { isAuthenticated, logout } = useLoginStore();
-  const [heroImage] = React.useState<string>("/k_content/banner.jpg");
+  const [heroImage, setHeroImage] = React.useState<string>("/k_content/banner.jpg");
   const [cardItems, setCardItems] = React.useState<ContentRowItem[]>(K_CONTENT_PACKAGE_ITEMS);
 
   React.useEffect(() => {
@@ -196,6 +196,16 @@ export default function KContentPage() {
 
   React.useEffect(() => {
     const run = async () => {
+      // 상단 배너 이미지 랜덤 (public/k_content/banner/*)
+      try {
+        const res = await fetch("/api/k-content/images/banner", { cache: "no-store" });
+        const data = (await res.json()) as { images?: string[] };
+        const bannerImages = Array.isArray(data.images) ? data.images : [];
+        setHeroImage(pickRandomImage(bannerImages) ?? "/k_content/banner.jpg");
+      } catch {
+        setHeroImage("/k_content/banner.jpg");
+      }
+
       const nextItems = await Promise.all(
         K_CONTENT_PACKAGE_ITEMS.map(async (item) => {
           const images = await fetchPackageImages(item.id);
@@ -206,7 +216,6 @@ export default function KContentPage() {
         })
       );
       setCardItems(nextItems);
-
     };
     run();
   }, []);
@@ -231,7 +240,7 @@ export default function KContentPage() {
     <AppLayout onLogout={logout}>
       <div className="flex flex-1 flex-col overflow-hidden bg-gray-100">
         {/* Header */}
-        <div className="shrink-0 border-b border-gray-200 bg-white px-6 py-4 flex items-center gap-3">
+        <div className="shrink-0 border-b border-gray-200 bg-white px-4 py-3 flex items-center gap-3 sm:px-6 sm:py-4">
           <button
             type="button"
             onClick={() => router.push("/planner")}
@@ -251,7 +260,7 @@ export default function KContentPage() {
         {/* Scrollable body: Hero + Rows (dark) + Itinerary (gray) */}
         <div className="flex-1 overflow-y-auto">
           {/* Hero */}
-          <div className="px-6 pt-6 pb-4">
+          <div className="px-4 pt-4 pb-3 sm:px-6 sm:pt-6 sm:pb-4">
             <HeroBanner
               title="K-Content Travel"
               subtitle="Explore Korea through K-Pop, Drama, Food and Beauty"
@@ -287,7 +296,7 @@ export default function KContentPage() {
           </div>
 
           {/* Itinerary preview */}
-          <div className="px-6 py-8">
+          <div className="px-4 py-6 sm:px-6 sm:py-8">
             <ItineraryPreview
               title="K-POP Fan Tour in Seoul"
               days={SAMPLE_ITINERARY_DAYS}

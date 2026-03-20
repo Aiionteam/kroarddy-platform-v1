@@ -4,13 +4,18 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
 import { AppLayout } from "@/components/organisms/AppLayout";
-import { generateKContent, type KContentResponse } from "@/service/k_content/k_content";
+import {
+  generateKContent,
+  saveKContent,
+  type KContentResponse,
+} from "@/service/k_content/k_content";
 import { HeroBanner } from "@/components/k-content/HeroBanner";
 import {
   fetchPackageImages,
   K_CONTENT_PLACEHOLDER_IMAGE,
   pickRandomImage,
 } from "@/constants/k-content-images";
+import { getAppUserIdFromToken } from "@/lib/api/auth";
 
 type KScheduleItem = {
   day: number;
@@ -204,7 +209,8 @@ function parseResponse(res: KContentResponse, startDate: string): {
 export default function KContentPackagePage() {
   const router = useRouter();
   const { packageId } = useParams<{ packageId: string }>();
-  const { isAuthenticated, logout } = useLoginStore();
+  const { isAuthenticated, logout, accessToken } = useLoginStore();
+  const appUserId = getAppUserIdFromToken(accessToken ?? undefined);
 
   const [startDate, setStartDate] = useState(todayStr);
   const [endDate, setEndDate] = useState(() => offsetDate(1));
@@ -212,10 +218,13 @@ export default function KContentPackagePage() {
   const [schedule, setSchedule] = useState<KScheduleItem[]>([]);
   const [costSummary, setCostSummary] = useState<KCostSummary | null>(null);
   const [packageMeta, setPackageMeta] = useState<KPackageMeta | null>(null);
+  const [places, setPlaces] = useState<Record<string, unknown>[]>([]);
 
   const [triggered, setTriggered] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedPlanId, setSavedPlanId] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [lang, setLang] = useState<"ko" | "en">("ko");
   const [heroImage, setHeroImage] = useState<string | null>(null);
 
@@ -248,6 +257,7 @@ export default function KContentPackagePage() {
     setError(null);
     setSchedule([]);
     setCostSummary(null);
+    setSavedPlanId(null);
     try {
       const res = await generateKContent(
         packageId,
@@ -258,6 +268,7 @@ export default function KContentPackagePage() {
       setSchedule(parsed.schedule);
       setCostSummary(parsed.costSummary);
       if (parsed.packageMeta?.package_id) setPackageMeta(parsed.packageMeta);
+      setPlaces(Array.isArray(res.places) ? (res.places as Record<string, unknown>[]) : []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "일정을 불러오지 못했습니다.");
     } finally {
@@ -273,6 +284,52 @@ export default function KContentPackagePage() {
     tags: CATALOG[packageId]?.tags,
   } : null);
 
+  const handleSavePlan = useCallback(async () => {
+    if (schedule.length === 0 || isSaving) return;
+    setIsSaving(true);
+    try {
+      const fallbackMeta: Record<string, unknown> = {
+        package_id: packageId,
+        category: "K-POP",
+        title_ko: selectedMeta?.title_ko ?? packageId,
+        title_en: selectedMeta?.title_en ?? "K-Content package",
+        tags: selectedMeta?.tags ?? "",
+      };
+      const payloadMeta = (packageMeta as unknown as Record<string, unknown>) ?? fallbackMeta;
+      const saveSchedule = schedule.map((item) => ({ ...item })) as Record<string, unknown>[];
+      const saveCostSummary = costSummary as unknown as Record<string, unknown> | null;
+
+      const res = await saveKContent({
+        packageMeta: payloadMeta,
+        schedule: saveSchedule,
+        places,
+        costSummary: saveCostSummary,
+        userId: appUserId ?? undefined,
+        location: "K-Content",
+        startDate,
+        endDate,
+      });
+      setSavedPlanId(res.plan_id);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "저장에 실패했습니다.");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [
+    schedule,
+    isSaving,
+    packageId,
+    selectedMeta?.title_ko,
+    selectedMeta?.title_en,
+    selectedMeta?.tags,
+    packageMeta,
+    costSummary,
+    places,
+    appUserId,
+    startDate,
+    endDate,
+  ]);
+
   const dayGroups = useMemo(() => {
     return schedule.reduce<Record<number, KScheduleItem[]>>((acc, item) => {
       (acc[item.day] ??= []).push(item);
@@ -285,7 +342,7 @@ export default function KContentPackagePage() {
   return (
     <AppLayout onLogout={logout}>
       <main className="flex flex-1 flex-col md:overflow-hidden">
-        <header className="shrink-0 border-b border-gray-200 bg-white px-6 py-4">
+        <header className="shrink-0 border-b border-gray-200 bg-white px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <button
@@ -341,7 +398,7 @@ export default function KContentPackagePage() {
         </header>
 
         <div className="flex flex-col md:flex-row md:flex-1 md:overflow-hidden">
-          <div className="flex w-full flex-col border-b border-gray-200 bg-white p-5 md:w-[40%] md:overflow-auto md:border-b-0 md:border-r">
+          <div className="flex w-full flex-col border-b border-gray-200 bg-white p-4 sm:p-5 md:w-[40%] md:overflow-auto md:border-b-0 md:border-r">
             <div className="mb-4">
               <HeroBanner
                 title={selectedMeta?.title_ko ?? packageId}
@@ -356,8 +413,8 @@ export default function KContentPackagePage() {
             </h2>
 
             <div className="rounded-xl border border-gray-200 bg-white p-4">
-              <div className="flex items-start gap-3">
-                <span className="mt-0.5 text-2xl">🎬</span>
+              <div className="flex items-start gap-2 sm:gap-3">
+                <span className="mt-0.5 text-xl sm:text-2xl">🎬</span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-gray-900">{selectedMeta?.title_ko ?? packageId}</span>
@@ -365,7 +422,7 @@ export default function KContentPackagePage() {
                       K-POP
                     </span>
                   </div>
-                  <p className="mt-1 text-sm text-gray-500">{selectedMeta?.title_en ?? "K-Content package"}</p>
+                  <p className="mt-1 text-xs text-gray-500 sm:text-sm">{selectedMeta?.title_en ?? "K-Content package"}</p>
                   <div className="mt-2 flex flex-wrap gap-1">
                     {(selectedMeta?.tags ?? "")
                       .split(",")
@@ -444,6 +501,29 @@ export default function KContentPackagePage() {
                       <h2 className="font-semibold text-gray-800">{selectedMeta?.title_ko ?? packageId} — 추천 일정</h2>
                       <p className="mt-0.5 text-xs text-gray-400">{startDate} ~ {endDate}</p>
                     </div>
+                    {savedPlanId ? (
+                      <button
+                        onClick={() => router.push("/planner/schedule")}
+                        className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow hover:bg-emerald-700 transition-colors"
+                      >
+                        ✅ 저장됨 · 일정관리 보기
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleSavePlan}
+                        disabled={isSaving}
+                        className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow hover:bg-indigo-700 disabled:opacity-60 transition-colors"
+                      >
+                        {isSaving ? (
+                          <>
+                            <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            저장 중…
+                          </>
+                        ) : (
+                          <>💾 저장하기</>
+                        )}
+                      </button>
+                    )}
                   </div>
                   {costSummary && (
                     <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -459,7 +539,7 @@ export default function KContentPackagePage() {
                     </div>
                   )}
                 </div>
-                <div className="overflow-auto px-5 py-4 space-y-6 md:flex-1">
+                <div className="overflow-auto px-4 py-4 space-y-6 sm:px-5 md:flex-1">
                   {Object.entries(dayGroups).map(([day, items]) => (
                     <div key={day}>
                       <div className="mb-3 flex items-center justify-between">
