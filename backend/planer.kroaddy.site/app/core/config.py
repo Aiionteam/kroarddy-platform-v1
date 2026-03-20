@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     # 로컬: localhost / Docker Compose: http://user_info:8004
     user_info_service_url: str = "http://localhost:8004"
 
+    # 공공데이터포털 전국문화축제표준데이터
+    data_go_kr_service_key: str = ""
+
     # KOBIS 한국영화진흥위원회 (영화 상영 정보)
     kobis_api_key: str = ""
 
