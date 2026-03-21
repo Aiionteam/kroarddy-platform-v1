@@ -154,3 +154,12 @@ class AddCommentRequest(BaseModel):
     author: str = "me"
     content: str = Field(min_length=1, max_length=1000)
 
+
+class SharePreviewResponse(BaseModel):
+    id: str
+    title: str
+    location: str
+    thumbnail_url: str
+    visibility: Literal["public", "private"]
+    created_at: datetime
+

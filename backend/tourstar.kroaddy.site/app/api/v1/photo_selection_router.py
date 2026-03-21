@@ -36,6 +36,7 @@ from ...domain.v1.contracts import (
     GpsLocationCandidate,
     JobStatusResponse,
     PostResponse,
+    SharePreviewResponse,
     UploadPhotosResponse,
     UploadPipelineJob,
     UploadedPhoto,
@@ -700,11 +701,15 @@ def _sanitize_s3_filename(name: str) -> str:
 
 def _get_s3_client() -> Any:
     import boto3  # type: ignore[import-not-found]
+    from botocore.config import Config  # type: ignore[import-not-found]
 
     kwargs: dict[str, Any] = {"region_name": settings.aws_region}
     if settings.aws_access_key_id and settings.aws_secret_access_key:
         kwargs["aws_access_key_id"] = settings.aws_access_key_id
         kwargs["aws_secret_access_key"] = settings.aws_secret_access_key
+    # 글로벌(s3.amazonaws.com) 대신 리전 엔드포인트를 사용해 presigned URL 안정성 확보
+    kwargs["endpoint_url"] = f"https://s3.{settings.aws_region}.amazonaws.com"
+    kwargs["config"] = Config(signature_version="s3v4", s3={"addressing_style": "virtual"})
     return boto3.client("s3", **kwargs)
 
 
@@ -712,6 +717,40 @@ def _build_s3_public_url(key: str) -> str:
     if settings.s3_public_base_url.strip():
         return f"{settings.s3_public_base_url.rstrip('/')}/{key}"
     return f"https://{settings.s3_bucket_name}.s3.{settings.aws_region}.amazonaws.com/{key}"
+
+
+def _extract_s3_key_from_url(url: str) -> str | None:
+    parsed = urlparse(url or "")
+    if not parsed.scheme or not parsed.netloc:
+        return None
+    path = (parsed.path or "").lstrip("/")
+    return path or None
+
+
+def _build_s3_view_url(stored_url: str) -> str:
+    raw = (stored_url or "").strip()
+    if not raw:
+        return raw
+    if not raw.startswith("http://") and not raw.startswith("https://"):
+        return raw
+
+    # 공개 베이스 URL/공개 버킷을 쓰는 경우는 원본 URL 유지
+    if settings.s3_public_base_url.strip():
+        return raw
+
+    key = _extract_s3_key_from_url(raw)
+    if not key:
+        return raw
+    try:
+        client = _get_s3_client()
+        return client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": settings.s3_bucket_name, "Key": key},
+            ExpiresIn=max(60, int(settings.s3_presigned_expires)),
+        )
+    except Exception:
+        logger.exception("Failed to generate presigned URL for key=%s", key)
+        return raw
 
 
 def _upload_local_image_to_s3(local_file: Path) -> str:
@@ -754,7 +793,7 @@ def _to_post_response(row: TourstarPost, comments: list[TourstarPostComment]) ->
         comment=row.comment or "",
         visibility=visibility,
         tags=list(row.tags or []),
-        photo_urls=list(row.photo_urls or []),
+        photo_urls=[_build_s3_view_url(str(url)) for url in list(row.photo_urls or [])],
         selected_scores=row.selected_scores or None,
         created_at=row.created_at,
         updated_at=row.updated_at,
@@ -1721,4 +1760,25 @@ async def add_post_comment(
     await db.flush()
     await db.refresh(comment)
     return _to_comment_response(comment)
+
+
+@router.get("/posts/{post_id}/share-preview", response_model=SharePreviewResponse)
+async def get_post_share_preview(post_id: int, db: AsyncSession = Depends(get_db)) -> SharePreviewResponse:
+    post = (await db.execute(select(TourstarPost).where(TourstarPost.id == post_id))).scalar_one_or_none()
+    if post is None:
+        raise HTTPException(status_code=404, detail=f"Post not found: {post_id}")
+
+    visibility: Literal["public", "private"] = (
+        "private" if (post.visibility or "public") == "private" else "public"
+    )
+    photo_urls = list(post.photo_urls or [])
+    thumbnail = _build_s3_view_url(str(photo_urls[0])) if photo_urls else ""
+    return SharePreviewResponse(
+        id=str(post.id),
+        title=post.title or "투어스타 게시글",
+        location=post.location or "위치 미확인",
+        thumbnail_url=thumbnail,
+        visibility=visibility,
+        created_at=post.created_at,
+    )
 
