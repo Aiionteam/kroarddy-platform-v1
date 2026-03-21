@@ -82,6 +82,38 @@ export interface AutoCommentResponse {
   }>;
 }
 
+export interface TourstarComment {
+  id: string;
+  post_id: string;
+  author: string;
+  content: string;
+  created_at: string;
+}
+
+export interface TourstarPostRecord {
+  id: string;
+  user_id?: number | null;
+  title: string;
+  location: string;
+  comment: string;
+  visibility: "public" | "private";
+  tags: string[];
+  photo_urls: string[];
+  selected_scores?: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+  comments: TourstarComment[];
+}
+
+export interface TourstarSharePreview {
+  id: string;
+  title: string;
+  location: string;
+  thumbnail_url: string;
+  visibility: "public" | "private";
+  created_at: string;
+}
+
 export type TourstarStyleFilter =
   | "AUTO"
   | "INTJ"
@@ -200,4 +232,67 @@ export async function generateTourstarAutoComment(
     throw new Error(`투어스타 자동 코멘트 API 오류: ${res.status}`);
   }
   return res.json();
+}
+
+export async function listTourstarPosts(): Promise<TourstarPostRecord[]> {
+  const res = await fetch(toApiUrl("/v1/photo-selection/posts"), { cache: "no-store" });
+  if (!res.ok) {
+    throw new Error(`투어스타 게시물 조회 API 오류: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function createTourstarPost(payload: {
+  user_id?: number;
+  title: string;
+  location: string;
+  comment: string;
+  visibility: "public" | "private";
+  tags: string[];
+  image_paths: string[];
+  selected_scores?: Record<string, unknown>;
+}): Promise<TourstarPostRecord> {
+  const res = await fetch(toApiUrl("/v1/photo-selection/posts"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`투어스타 게시물 저장 API 오류: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function createTourstarComment(
+  postId: string,
+  payload: { author?: string; content: string },
+): Promise<TourstarComment> {
+  const res = await fetch(toApiUrl(`/v1/photo-selection/posts/${postId}/comments`), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`투어스타 댓글 저장 API 오류: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function getTourstarSharePreview(postId: string): Promise<TourstarSharePreview> {
+  const res = await fetch(toApiUrl(`/v1/photo-selection/posts/${postId}/share-preview`), {
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`투어스타 공유 미리보기 API 오류: ${res.status}`);
+  }
+  return res.json();
+}
+
+export function buildTourstarShareUrl(postId: string): string {
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}/tourstar?postId=${encodeURIComponent(postId)}`;
+  }
+  return `https://web.kroaddy.site/tourstar?postId=${encodeURIComponent(postId)}`;
 }

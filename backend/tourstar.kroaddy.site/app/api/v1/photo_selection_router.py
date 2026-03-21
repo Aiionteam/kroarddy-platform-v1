@@ -12,27 +12,38 @@ from difflib import SequenceMatcher
 from base64 import b64encode
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import unquote, urlparse
 from uuid import uuid4
 
 import httpx
-from fastapi import APIRouter, File, Header, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Request, UploadFile
 from PIL import ExifTags, Image
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from ...core.config import settings
+from ...core.database.session import get_db
 from ...domain.v1.contracts import (
+    AddCommentRequest,
     AutoCommentRequest,
     AutoCommentResponse,
+    CommentResponse,
+    CreatePostRequest,
     EvaluationRequest,
     GeneratePostRequest,
     GeneratePostResponse,
     GpsLocationCandidate,
     JobStatusResponse,
+    PostResponse,
+    SharePreviewResponse,
     UploadPhotosResponse,
     UploadPipelineJob,
     UploadedPhoto,
 )
 from ...domain.v1.graph import build_metadata_graph
+from ...models.tourstar_comment import TourstarPostComment
+from ...models.tourstar_post import TourstarPost
 from ...domain.v1.state import store, worker
 
 
@@ -681,6 +692,113 @@ def _build_preview_url(request: Request, batch_id: str, name: str) -> str:
         return f"{public_base}{relative_url}"
     # 프론트가 API_BASE를 prepend하는 경우를 고려해 기본은 상대경로 유지.
     return relative_url
+
+
+def _sanitize_s3_filename(name: str) -> str:
+    cleaned = re.sub(r"[^0-9A-Za-z._-]+", "_", name.strip())
+    return cleaned or f"image_{uuid4().hex}.jpg"
+
+
+def _get_s3_client() -> Any:
+    import boto3  # type: ignore[import-not-found]
+    from botocore.config import Config  # type: ignore[import-not-found]
+
+    kwargs: dict[str, Any] = {"region_name": settings.aws_region}
+    if settings.aws_access_key_id and settings.aws_secret_access_key:
+        kwargs["aws_access_key_id"] = settings.aws_access_key_id
+        kwargs["aws_secret_access_key"] = settings.aws_secret_access_key
+    # 글로벌(s3.amazonaws.com) 대신 리전 엔드포인트를 사용해 presigned URL 안정성 확보
+    kwargs["endpoint_url"] = f"https://s3.{settings.aws_region}.amazonaws.com"
+    kwargs["config"] = Config(signature_version="s3v4", s3={"addressing_style": "virtual"})
+    return boto3.client("s3", **kwargs)
+
+
+def _build_s3_public_url(key: str) -> str:
+    if settings.s3_public_base_url.strip():
+        return f"{settings.s3_public_base_url.rstrip('/')}/{key}"
+    return f"https://{settings.s3_bucket_name}.s3.{settings.aws_region}.amazonaws.com/{key}"
+
+
+def _extract_s3_key_from_url(url: str) -> str | None:
+    parsed = urlparse(url or "")
+    if not parsed.scheme or not parsed.netloc:
+        return None
+    path = (parsed.path or "").lstrip("/")
+    return path or None
+
+
+def _build_s3_view_url(stored_url: str) -> str:
+    raw = (stored_url or "").strip()
+    if not raw:
+        return raw
+    if not raw.startswith("http://") and not raw.startswith("https://"):
+        return raw
+
+    # 공개 베이스 URL/공개 버킷을 쓰는 경우는 원본 URL 유지
+    if settings.s3_public_base_url.strip():
+        return raw
+
+    key = _extract_s3_key_from_url(raw)
+    if not key:
+        return raw
+    try:
+        client = _get_s3_client()
+        return client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": settings.s3_bucket_name, "Key": key},
+            ExpiresIn=max(60, int(settings.s3_presigned_expires)),
+        )
+    except Exception:
+        logger.exception("Failed to generate presigned URL for key=%s", key)
+        return raw
+
+
+def _upload_local_image_to_s3(local_file: Path) -> str:
+    bucket = settings.s3_bucket_name.strip()
+    if not bucket:
+        raise HTTPException(status_code=500, detail="S3 bucket name is not configured.")
+
+    content_type = mimetypes.guess_type(local_file.name)[0] or "application/octet-stream"
+    safe_name = _sanitize_s3_filename(local_file.name)
+    s3_key = f"posts/{datetime.utcnow().strftime('%Y/%m/%d')}/{uuid4().hex}_{safe_name}"
+    client = _get_s3_client()
+    client.upload_file(
+        str(local_file),
+        bucket,
+        s3_key,
+        ExtraArgs={"ContentType": content_type},
+    )
+    return _build_s3_public_url(s3_key)
+
+
+def _to_comment_response(row: TourstarPostComment) -> CommentResponse:
+    return CommentResponse(
+        id=str(row.id),
+        post_id=str(row.post_id),
+        author=row.author,
+        content=row.content,
+        created_at=row.created_at,
+    )
+
+
+def _to_post_response(row: TourstarPost, comments: list[TourstarPostComment]) -> PostResponse:
+    visibility: Literal["public", "private"] = (
+        "private" if (row.visibility or "public") == "private" else "public"
+    )
+    return PostResponse(
+        id=str(row.id),
+        user_id=row.user_id,
+        title=row.title or "",
+        location=row.location or "",
+        comment=row.comment or "",
+        visibility=visibility,
+        tags=list(row.tags or []),
+        photo_urls=[_build_s3_view_url(str(url)) for url in list(row.photo_urls or [])],
+        selected_scores=row.selected_scores or None,
+        created_at=row.created_at,
+        updated_at=row.updated_at,
+        comments=[_to_comment_response(item) for item in comments],
+    )
 
 
 def _extract_visual_signals_with_gpt(
@@ -1563,4 +1681,104 @@ def generate_auto_comment(req: AutoCommentRequest) -> AutoCommentResponse:
         logger.exception("Auto-comment failed. Returning fallback comment.")
         # 자동 코멘트는 보조 기능이므로 실패 시에도 기본 문구를 반환한다.
         return AutoCommentResponse(comment="오늘 여행 무드가 좋아서 기록 남김 ✨")
+
+
+@router.get("/posts", response_model=list[PostResponse])
+async def list_posts(db: AsyncSession = Depends(get_db)) -> list[PostResponse]:
+    posts = (
+        (await db.execute(select(TourstarPost).order_by(TourstarPost.created_at.desc())))
+        .scalars()
+        .all()
+    )
+    if not posts:
+        return []
+
+    post_ids = [int(post.id) for post in posts]
+    comments = (
+        (
+            await db.execute(
+                select(TourstarPostComment)
+                .where(TourstarPostComment.post_id.in_(post_ids))
+                .order_by(TourstarPostComment.created_at.asc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    comment_map: dict[int, list[TourstarPostComment]] = {}
+    for item in comments:
+        comment_map.setdefault(int(item.post_id), []).append(item)
+
+    return [_to_post_response(post, comment_map.get(int(post.id), [])) for post in posts]
+
+
+@router.post("/posts", response_model=PostResponse)
+async def create_post(req: CreatePostRequest, db: AsyncSession = Depends(get_db)) -> PostResponse:
+    photo_urls: list[str] = []
+    for raw_path in req.image_paths:
+        local_path = _resolve_local_image_path(raw_path)
+        if local_path is None:
+            continue
+        try:
+            photo_urls.append(_upload_local_image_to_s3(local_path))
+        except Exception:
+            logger.exception("S3 upload failed: %s", local_path)
+            raise HTTPException(status_code=500, detail=f"Failed to upload image to S3: {local_path.name}")
+
+    post = TourstarPost(
+        user_id=req.user_id,
+        title=req.title,
+        location=req.location,
+        comment=req.comment,
+        visibility=req.visibility,
+        tags=req.tags,
+        photo_urls=photo_urls,
+        selected_scores=req.selected_scores,
+    )
+    db.add(post)
+    await db.flush()
+    await db.refresh(post)
+    return _to_post_response(post, [])
+
+
+@router.post("/posts/{post_id}/comments", response_model=CommentResponse)
+async def add_post_comment(
+    post_id: int,
+    req: AddCommentRequest,
+    db: AsyncSession = Depends(get_db),
+) -> CommentResponse:
+    post = (await db.execute(select(TourstarPost).where(TourstarPost.id == post_id))).scalar_one_or_none()
+    if post is None:
+        raise HTTPException(status_code=404, detail=f"Post not found: {post_id}")
+
+    comment = TourstarPostComment(
+        post_id=post_id,
+        author=req.author.strip() or "me",
+        content=req.content.strip(),
+    )
+    db.add(comment)
+    await db.flush()
+    await db.refresh(comment)
+    return _to_comment_response(comment)
+
+
+@router.get("/posts/{post_id}/share-preview", response_model=SharePreviewResponse)
+async def get_post_share_preview(post_id: int, db: AsyncSession = Depends(get_db)) -> SharePreviewResponse:
+    post = (await db.execute(select(TourstarPost).where(TourstarPost.id == post_id))).scalar_one_or_none()
+    if post is None:
+        raise HTTPException(status_code=404, detail=f"Post not found: {post_id}")
+
+    visibility: Literal["public", "private"] = (
+        "private" if (post.visibility or "public") == "private" else "public"
+    )
+    photo_urls = list(post.photo_urls or [])
+    thumbnail = _build_s3_view_url(str(photo_urls[0])) if photo_urls else ""
+    return SharePreviewResponse(
+        id=str(post.id),
+        title=post.title or "투어스타 게시글",
+        location=post.location or "위치 미확인",
+        thumbnail_url=thumbnail,
+        visibility=visibility,
+        created_at=post.created_at,
+    )
 

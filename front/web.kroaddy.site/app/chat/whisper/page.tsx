@@ -16,6 +16,8 @@ import { listFriends, type FriendsResponse } from "@/lib/api/friends";
 import { blockUser, unblockUser, isBlocked } from "@/lib/api/block";
 import type { UserModel } from "@/lib/api/user";
 import { getAppUserIdFromToken } from "@/lib/api/auth";
+import { getTourstarSharePreview, type TourstarSharePreview } from "@/lib/api/tourstar";
+import { extractTourstarPostIdFromMessage } from "@/lib/tourstar-share";
 import { AppLayout } from "@/components/organisms/AppLayout";
 
 function toConvList(data: any): WhisperConversationSummary[] {
@@ -69,6 +71,7 @@ export default function WhisperPage() {
 
   // 더보기 메뉴
   const [showMenu, setShowMenu] = useState(false);
+  const [sharePreviewMap, setSharePreviewMap] = useState<Record<string, TourstarSharePreview | null>>({});
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -96,6 +99,40 @@ export default function WhisperPage() {
     if (!isAuthenticated) return;
     loadConversations();
   }, [isAuthenticated, loadConversations]);
+
+  useEffect(() => {
+    const postIds = Array.from(
+      new Set(
+        messages
+          .map((msg) => extractTourstarPostIdFromMessage(msg.message ?? ""))
+          .filter((id): id is string => Boolean(id)),
+      ),
+    );
+    const missingIds = postIds.filter((id) => sharePreviewMap[id] === undefined);
+    if (missingIds.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      await Promise.all(
+        missingIds.map(async (postId) => {
+          try {
+            const preview = await getTourstarSharePreview(postId);
+            if (!cancelled) {
+              setSharePreviewMap((prev) => ({ ...prev, [postId]: preview }));
+            }
+          } catch (_) {
+            if (!cancelled) {
+              setSharePreviewMap((prev) => ({ ...prev, [postId]: null }));
+            }
+          }
+        }),
+      );
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [messages, sharePreviewMap]);
 
   const openConversation = useCallback(async (partnerId: number, partnerName: string) => {
     setActivePartnerId(partnerId);
@@ -336,6 +373,8 @@ export default function WhisperPage() {
             ) : (
               messages.map((msg, i) => {
                 const isMe = msg.fromUserId === myId;
+                const sharedPostId = extractTourstarPostIdFromMessage(msg.message ?? "");
+                const sharedPreview = sharedPostId ? sharePreviewMap[sharedPostId] : null;
                 return (
                   <div key={msg.id ?? i} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                     {!isMe && (
@@ -351,7 +390,40 @@ export default function WhisperPage() {
                             : "rounded-bl-sm bg-gray-100 text-gray-800"
                         }`}
                       >
-                        {msg.message}
+                        {sharedPostId && sharedPreview ? (
+                          <a
+                            href={`/tourstar?postId=${encodeURIComponent(sharedPostId)}`}
+                            className={`block overflow-hidden rounded-lg border ${
+                              isMe
+                                ? "border-purple-300 bg-white/10 hover:bg-white/20"
+                                : "border-gray-200 bg-white hover:bg-gray-50"
+                            }`}
+                          >
+                            <div className="flex">
+                              <div
+                                className="h-20 w-20 shrink-0 bg-cover bg-center bg-gray-200"
+                                style={
+                                  sharedPreview.thumbnail_url
+                                    ? { backgroundImage: `url(${sharedPreview.thumbnail_url})` }
+                                    : undefined
+                                }
+                              />
+                              <div className="flex min-w-0 flex-1 flex-col justify-center px-2.5 py-2">
+                                <p className={`truncate text-xs font-semibold ${isMe ? "text-white" : "text-gray-800"}`}>
+                                  {sharedPreview.title}
+                                </p>
+                                <p className={`mt-0.5 truncate text-[11px] ${isMe ? "text-purple-100" : "text-gray-500"}`}>
+                                  {sharedPreview.location}
+                                </p>
+                                <p className={`mt-1 text-[10px] ${isMe ? "text-purple-200" : "text-purple-600"}`}>
+                                  Tourstar 게시글 보기
+                                </p>
+                              </div>
+                            </div>
+                          </a>
+                        ) : (
+                          msg.message
+                        )}
                       </div>
                       <span className="text-[10px] text-gray-400">{fmtTime(msg.createdAt)}</span>
                     </div>
