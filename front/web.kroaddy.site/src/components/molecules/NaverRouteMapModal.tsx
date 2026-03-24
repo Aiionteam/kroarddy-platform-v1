@@ -108,7 +108,7 @@ export function NaverRouteMapModal({ places, planName, onClose }: NaverRouteMapM
                 border:2.5px solid #fff;
                 box-shadow:0 2px 8px rgba(0,0,0,.35);
               ">${idx + 1}</div>`,
-              anchor: new naver.maps.Point(15, 15),
+              anchor: { x: 15, y: 15 },
             },
           });
           return latlng;
