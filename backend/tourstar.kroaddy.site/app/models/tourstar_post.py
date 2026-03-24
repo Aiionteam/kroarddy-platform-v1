@@ -19,6 +19,7 @@ class TourstarPost(Base, TimestampMixin):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
+    author_nickname: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
     title: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
     location: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
