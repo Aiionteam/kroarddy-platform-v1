@@ -2,57 +2,146 @@
 
 import React, { useEffect, useRef, useState } from "react";
 
-const PLANER_API =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-
-interface GeocodeResult {
-  x: string;
-  y: string;
-  address: string;
-  road_address: string;
-}
+const NAVER_CLIENT_ID =
+  process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID || "8cy39wy7um";
 
 interface NaverMapModalProps {
   placeName: string;
   onClose: () => void;
 }
 
+declare global {
+  interface Window {
+    naver: {
+      maps: {
+        Map: new (el: HTMLElement, opts: object) => NaverMap;
+        LatLng: new (lat: number, lng: number) => NaverLatLng;
+        Marker: new (opts: object) => unknown;
+        Service: {
+          geocode: (
+            opts: { query: string },
+            cb: (status: string, resp: NaverGeocodeResponse) => void
+          ) => void;
+          Status: { OK: string };
+        };
+        Event: {
+          addListener: (
+            target: unknown,
+            event: string,
+            handler: () => void
+          ) => void;
+        };
+        MapTypeId: { NORMAL: string };
+      };
+    };
+  }
+}
+
+interface NaverMap {
+  setCenter(latlng: NaverLatLng): void;
+}
+interface NaverLatLng {
+  lat(): number;
+  lng(): number;
+}
+interface NaverGeocodeResponse {
+  addresses?: { x: string; y: string; roadAddress?: string; jibunAddress?: string }[];
+}
+
+function loadNaverMapsScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (window.naver?.maps) {
+      resolve();
+      return;
+    }
+    const existing = document.getElementById("naver-maps-sdk");
+    if (existing) {
+      existing.addEventListener("load", () => resolve());
+      existing.addEventListener("error", reject);
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = "naver-maps-sdk";
+    script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${NAVER_CLIENT_ID}&submodules=geocoder`;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Naver Maps SDK 로드 실패"));
+    document.head.appendChild(script);
+  });
+}
+
 export function NaverMapModal({ placeName, onClose }: NaverMapModalProps) {
-  const [status, setStatus] = useState<"loading" | "ok" | "error">("loading");
-  const [geo, setGeo] = useState<GeocodeResult | null>(null);
-  const [zoom, setZoom] = useState(15);
+  const mapRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const [status, setStatus] = useState<"loading" | "ok" | "error">("loading");
+  const [address, setAddress] = useState("");
 
   useEffect(() => {
     let cancelled = false;
+    let mapInstance: NaverMap | null = null;
 
-    async function load() {
-      setStatus("loading");
+    async function init() {
       try {
-        const res = await fetch(
-          `${PLANER_API}/api/v1/maps/geocode?query=${encodeURIComponent(placeName)}`
+        await loadNaverMapsScript();
+        if (cancelled || !mapRef.current) return;
+
+        const { naver } = window;
+
+        // 초기 지도 생성 (서울 중심)
+        mapInstance = new naver.maps.Map(mapRef.current, {
+          center: new naver.maps.LatLng(37.5665, 126.9780),
+          zoom: 14,
+          mapTypeId: naver.maps.MapTypeId.NORMAL,
+        });
+
+        // 장소명 → 좌표
+        naver.maps.Service.geocode(
+          { query: placeName },
+          (status, response) => {
+            if (cancelled) return;
+
+            if (
+              status !== naver.maps.Service.Status.OK ||
+              !response.addresses ||
+              response.addresses.length === 0
+            ) {
+              setStatus("error");
+              return;
+            }
+
+            const addr = response.addresses[0];
+            const lat = parseFloat(addr.y);
+            const lng = parseFloat(addr.x);
+            const latlng = new naver.maps.LatLng(lat, lng);
+
+            mapInstance!.setCenter(latlng);
+            new naver.maps.Marker({
+              position: latlng,
+              map: mapInstance,
+              title: placeName,
+            });
+
+            setAddress(addr.roadAddress || addr.jibunAddress || "");
+            setStatus("ok");
+          }
         );
-        if (!res.ok) throw new Error("위치를 찾을 수 없습니다.");
-        const data: GeocodeResult = await res.json();
-        if (!cancelled) {
-          setGeo(data);
-          setStatus("ok");
-        }
       } catch {
         if (!cancelled) setStatus("error");
       }
     }
 
-    load();
-    return () => { cancelled = true; };
+    init();
+    return () => {
+      cancelled = true;
+    };
   }, [placeName]);
 
-  // 오버레이 클릭으로 닫기
+  // 오버레이 클릭 닫기
   function handleOverlayClick(e: React.MouseEvent<HTMLDivElement>) {
     if (e.target === overlayRef.current) onClose();
   }
 
-  // ESC 키로 닫기
+  // ESC 키 닫기
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -60,10 +149,6 @@ export function NaverMapModal({ placeName, onClose }: NaverMapModalProps) {
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [onClose]);
-
-  const mapSrc =
-    geo &&
-    `${PLANER_API}/api/v1/maps/static-map?lat=${geo.y}&lng=${geo.x}&w=480&h=320&zoom=${zoom}`;
 
   return (
     <div
@@ -93,58 +178,39 @@ export function NaverMapModal({ placeName, onClose }: NaverMapModalProps) {
 
         {/* 지도 영역 */}
         <div className="relative bg-gray-100" style={{ height: 320 }}>
+          {/* 지도 div는 항상 렌더링 (SDK가 DOM에 직접 그림) */}
+          <div ref={mapRef} className="h-full w-full" />
+
           {status === "loading" && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-50">
               <span className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-400 border-t-transparent" />
-              <p className="text-xs text-gray-500">위치를 검색하는 중…</p>
+              <p className="text-xs text-gray-500">지도를 불러오는 중…</p>
             </div>
           )}
+
           {status === "error" && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-6 text-center">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-6 text-center bg-gray-50">
               <span className="text-3xl">🗺️</span>
               <p className="text-sm font-medium text-gray-600">위치를 찾을 수 없습니다</p>
               <p className="text-xs text-gray-400">정확한 장소명으로 다시 시도해 보세요</p>
             </div>
           )}
-          {status === "ok" && mapSrc && (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={mapSrc}
-              alt={`${placeName} 지도`}
-              className="h-full w-full object-cover"
-            />
-          )}
         </div>
 
-        {/* 하단 정보 + 줌 컨트롤 */}
-        {status === "ok" && geo && (
-          <div className="border-t border-gray-100 px-4 py-3">
-            <p className="text-xs text-gray-500 truncate">
-              {geo.road_address || geo.address || "주소 정보 없음"}
-            </p>
-            <div className="mt-2 flex items-center gap-2">
-              <span className="text-xs text-gray-400">줌</span>
-              <input
-                type="range"
-                min={10}
-                max={20}
-                value={zoom}
-                onChange={(e) => setZoom(Number(e.target.value))}
-                className="flex-1 accent-indigo-500"
-              />
-              <span className="w-6 text-right text-xs text-gray-500">{zoom}</span>
-
-              <a
-                href={`https://map.naver.com/v5/search/${encodeURIComponent(placeName)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ml-2 shrink-0 rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-100 transition-colors"
-              >
-                네이버지도로 열기 ↗
-              </a>
-            </div>
-          </div>
-        )}
+        {/* 하단 정보 */}
+        <div className="border-t border-gray-100 px-4 py-3 flex items-center justify-between gap-3">
+          <p className="text-xs text-gray-500 truncate flex-1">
+            {status === "ok" ? (address || "주소 정보 없음") : placeName}
+          </p>
+          <a
+            href={`https://map.naver.com/v5/search/${encodeURIComponent(placeName)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-100 transition-colors"
+          >
+            네이버지도로 열기 ↗
+          </a>
+        </div>
       </div>
     </div>
   );
