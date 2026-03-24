@@ -8,7 +8,8 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "https://api.kroaddy.site";
 
 interface NaverRouteMapModalProps {
-  places: { name: string; title: string }[];
+  /** lat/lng 있으면 place-search 없이 바로 사용 */
+  places: { name: string; title: string; lat?: number; lng?: number }[];
   planName: string;
   onClose: () => void;
 }
@@ -110,18 +111,25 @@ export function NaverRouteMapModal({ places, planName, onClose }: NaverRouteMapM
           mapTypeId: naver.maps.MapTypeId.NORMAL,
         });
 
-        // ── 1단계: place-search (장소명 → 좌표) ───────────────────
+        // ── 1단계: 좌표 확보 (저장된 좌표 우선, 없으면 place-search fallback) ──
         const coords: { lng: number; lat: number; idx: number; name: string }[] = [];
         const failed = new Set<string>();
 
         for (let i = 0; i < validPlaces.length; i++) {
           if (cancelled) return;
-          const placeName = validPlaces[i].name;
-          const coord = await searchPlace(placeName);
-          if (coord) {
-            coords.push({ ...coord, idx: i, name: placeName });
+          const p = validPlaces[i];
+
+          // DB에 저장된 좌표가 있으면 API 호출 없이 바로 사용
+          if (p.lat !== undefined && p.lng !== undefined && isFinite(p.lat) && isFinite(p.lng)) {
+            coords.push({ lng: p.lng, lat: p.lat, idx: i, name: p.name });
           } else {
-            failed.add(placeName);
+            // 좌표 없는 경우에만 place-search 호출
+            const coord = await searchPlace(p.name);
+            if (coord) {
+              coords.push({ ...coord, idx: i, name: p.name });
+            } else {
+              failed.add(p.name);
+            }
           }
           if (!cancelled) setResolved(i + 1);
         }

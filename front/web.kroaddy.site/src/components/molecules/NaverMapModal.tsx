@@ -7,6 +7,10 @@ const NAVER_CLIENT_ID =
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "https://api.kroaddy.site";
 
+const ZOOM_MIN = 6;   // 전국 수준
+const ZOOM_MAX = 19;  // 건물 수준
+const ZOOM_DEFAULT = 15;
+
 interface NaverMapModalProps {
   placeName: string;
   /** Gemini/Geocoding으로 확보한 좌표 – 있으면 API 호출 없이 즉시 정적 지도 표시 */
@@ -15,13 +19,13 @@ interface NaverMapModalProps {
   onClose: () => void;
 }
 
-/** raster-cors 정적 지도 URL (HTTP Referer 인증 – 서비스 URL 등록 필요) */
-function buildStaticMapUrl(lng: number, lat: number): string {
+/** raster-cors 정적 지도 URL – scale=2(레티나)로 고화질 */
+function buildStaticMapUrl(lng: number, lat: number, level: number): string {
   const pos    = `${lng}%20${lat}`;
   const marker = `type:d|size:mid|pos:${pos}`;
   return (
     `https://maps.apigw.ntruss.com/map-static/v2/raster-cors` +
-    `?w=400&h=320&center=${lng},${lat}&level=15` +
+    `?w=600&h=480&center=${lng},${lat}&level=${level}&scale=2` +
     `&markers=${marker}` +
     `&X-NCP-APIGW-API-KEY-ID=${NAVER_CLIENT_ID}`
   );
@@ -29,17 +33,19 @@ function buildStaticMapUrl(lng: number, lat: number): string {
 
 export function NaverMapModal({ placeName, lat, lng, onClose }: NaverMapModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
-  const [status, setStatus]             = useState<"loading" | "ok" | "error">("loading");
-  const [staticMapUrl, setStaticMapUrl] = useState("");
-  const [address, setAddress]           = useState("");
+  const [status, setStatus]       = useState<"loading" | "ok" | "error">("loading");
+  const [coords, setCoords]       = useState<{ lat: number; lng: number } | null>(null);
+  const [address, setAddress]     = useState("");
+  const [zoom, setZoom]           = useState(ZOOM_DEFAULT);
 
+  // 좌표 확보 (초기 1회)
   useEffect(() => {
     let cancelled = false;
 
     async function init() {
-      // ── 좌표 이미 있으면 API 호출 없이 즉시 표시 ──────────────
+      // ── 저장된 좌표가 있으면 즉시 사용 ───────────────────────
       if (lat !== undefined && lng !== undefined && isFinite(lat) && isFinite(lng)) {
-        setStaticMapUrl(buildStaticMapUrl(lng, lat));
+        setCoords({ lat, lng });
         setStatus("ok");
         return;
       }
@@ -54,7 +60,8 @@ export function NaverMapModal({ placeName, lat, lng, onClose }: NaverMapModalPro
         const data = await res.json();
         const resLng = parseFloat(data.x);
         const resLat = parseFloat(data.y);
-        setStaticMapUrl(buildStaticMapUrl(resLng, resLat));
+        if (!isFinite(resLng) || !isFinite(resLat)) { setStatus("error"); return; }
+        setCoords({ lat: resLat, lng: resLng });
         setAddress(data.address || "");
         setStatus("ok");
       } catch {
@@ -66,6 +73,7 @@ export function NaverMapModal({ placeName, lat, lng, onClose }: NaverMapModalPro
     return () => { cancelled = true; };
   }, [placeName, lat, lng]);
 
+  // ESC 닫기
   useEffect(() => {
     const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", fn);
@@ -75,6 +83,11 @@ export function NaverMapModal({ placeName, lat, lng, onClose }: NaverMapModalPro
   function handleOverlayClick(e: React.MouseEvent<HTMLDivElement>) {
     if (e.target === overlayRef.current) onClose();
   }
+
+  const staticMapUrl =
+    status === "ok" && coords
+      ? buildStaticMapUrl(coords.lng, coords.lat, zoom)
+      : "";
 
   return (
     <div
@@ -102,7 +115,7 @@ export function NaverMapModal({ placeName, lat, lng, onClose }: NaverMapModalPro
         </div>
 
         {/* 지도 영역 */}
-        <div className="relative bg-gray-100" style={{ height: 320 }}>
+        <div className="relative bg-gray-100" style={{ height: 360 }}>
           {status === "loading" && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-50">
               <span className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-400 border-t-transparent" />
@@ -135,9 +148,41 @@ export function NaverMapModal({ placeName, lat, lng, onClose }: NaverMapModalPro
               <p className="text-xs text-gray-400">새로 생성한 일정은 지도가 자동 표시됩니다</p>
             </div>
           )}
+
+          {/* 확대/축소 버튼 – 지도 우측 하단 오버레이 */}
+          {status === "ok" && (
+            <div className="absolute bottom-3 right-3 flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => setZoom((z) => Math.max(ZOOM_MIN, z - 1))}
+                disabled={zoom <= ZOOM_MIN}
+                aria-label="확대"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/90 text-gray-700 shadow-md hover:bg-white disabled:opacity-30 transition-colors text-lg font-bold leading-none"
+              >
+                +
+              </button>
+              <button
+                type="button"
+                onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z + 1))}
+                disabled={zoom >= ZOOM_MAX}
+                aria-label="축소"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/90 text-gray-700 shadow-md hover:bg-white disabled:opacity-30 transition-colors text-lg font-bold leading-none"
+              >
+                −
+              </button>
+              <button
+                type="button"
+                onClick={() => setZoom(ZOOM_DEFAULT)}
+                aria-label="기본 배율"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/90 text-gray-700 shadow-md hover:bg-white transition-colors text-[10px] font-semibold"
+              >
+                ⊙
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* 하단 – 에러 상태에선 숨김 (에러 overlay에 버튼이 있음) */}
+        {/* 하단 – 에러 상태에선 숨김 */}
         {status !== "error" && (
           <div className="flex items-center justify-between gap-3 border-t border-gray-100 px-4 py-3">
             <p className="flex-1 truncate text-xs text-gray-500">
