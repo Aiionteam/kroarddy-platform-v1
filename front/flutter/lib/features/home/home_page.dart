@@ -1,15 +1,30 @@
 import "package:flutter/material.dart";
 import "package:go_router/go_router.dart";
+import "package:flutter_riverpod/flutter_riverpod.dart";
 
 import "../../core/router/main_shell.dart";
+import "state/news_context.dart";
 
 const _primary = Color(0xFF7C3AED);
 const _textPrimary = Color(0xFF1F2937);
 const _textSecondary = Color(0xFF6B7280);
 const _bgPage = Color(0xFFF8F7FF);
 
-class HomePage extends StatelessWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
+
+  @override
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(newsContextProvider.notifier).loadTop10();
+    });
+  }
 
   static const _quickLinks = [
     _QuickLink(

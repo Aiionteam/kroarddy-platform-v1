@@ -70,6 +70,27 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(false);
 
+  const loadNews = React.useCallback(async () => {
+    if (!isAuthenticated || !accessToken) return;
+    setLoading(true);
+    setError(false);
+    try {
+      const d = await fetchProcessedNews(0, accessToken);
+      setData(d);
+      if (d.top10?.length) {
+        const slim = d.top10.map(({ thumbnail: _t, ...rest }) => rest);
+        setNewsTop10(slim);
+      } else {
+        setNewsTop10([]);
+      }
+    } catch (e) {
+      console.error("[home] fetchProcessedNews failed", e);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated, accessToken, setNewsTop10]);
+
   useEffect(() => {
     if (!isAuthenticated) { router.replace("/"); return; }
   }, [isAuthenticated, router]);
@@ -89,6 +110,7 @@ export default function HomePage() {
   }, [isAuthenticated, appUserId, router]);
 
   useEffect(() => {
+<<<<<<< Updated upstream
     if (!isAuthenticated) return;
     fetchProcessedNews(0)
       .then((d) => {
@@ -101,6 +123,11 @@ export default function HomePage() {
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [isAuthenticated]);
+=======
+    if (!isAuthenticated || !accessToken) return;
+    loadNews();
+  }, [isAuthenticated, accessToken, loadNews]);
+>>>>>>> Stashed changes
 
   if (!isAuthenticated) return null;
 
@@ -128,7 +155,7 @@ export default function HomePage() {
             <div className="flex flex-col items-center py-16 gap-3 text-gray-400">
               <span className="text-4xl">📡</span>
               <p className="text-sm">뉴스를 불러오지 못했습니다.</p>
-              <button type="button" onClick={() => { setError(false); setLoading(true); fetchProcessedNews(0).then(setData).catch(() => setError(true)).finally(() => setLoading(false)); }} className="text-xs text-purple-500 hover:underline">다시 시도</button>
+              <button type="button" onClick={loadNews} className="text-xs text-purple-500 hover:underline">다시 시도</button>
             </div>
           )}
           {!loading && data && (

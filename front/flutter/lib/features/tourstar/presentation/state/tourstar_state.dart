@@ -15,6 +15,9 @@ class TourstarState {
     required this.rankedImages,
     required this.selectedImagePaths,
     required this.generatedPost,
+    required this.serverPosts,
+    required this.postsLoading,
+    this.openPostId,
   });
 
   factory TourstarState.initial() {
@@ -30,6 +33,9 @@ class TourstarState {
       rankedImages: <RankedImage>[],
       selectedImagePaths: <String>{},
       generatedPost: null,
+      serverPosts: <TourstarPostRecord>[],
+      postsLoading: false,
+      openPostId: null,
     );
   }
 
@@ -45,6 +51,13 @@ class TourstarState {
   final Set<String> selectedImagePaths;
   final GeneratePostResponse? generatedPost;
 
+  // ── 서버 게시글 ───────────────────────────────────────────────
+  final List<TourstarPostRecord> serverPosts;
+  final bool postsLoading;
+
+  /// 딥링크로 바로 열어야 할 post ID
+  final String? openPostId;
+
   TourstarState copyWith({
     bool? loading,
     String? statusMessage,
@@ -59,6 +72,10 @@ class TourstarState {
     GeneratePostResponse? generatedPost,
     bool clearGeneratedPost = false,
     bool clearDateFilter = false,
+    List<TourstarPostRecord>? serverPosts,
+    bool? postsLoading,
+    String? openPostId,
+    bool clearOpenPostId = false,
   }) {
     return TourstarState(
       loading: loading ?? this.loading,
@@ -72,6 +89,9 @@ class TourstarState {
       rankedImages: rankedImages ?? this.rankedImages,
       selectedImagePaths: selectedImagePaths ?? this.selectedImagePaths,
       generatedPost: clearGeneratedPost ? null : (generatedPost ?? this.generatedPost),
+      serverPosts: serverPosts ?? this.serverPosts,
+      postsLoading: postsLoading ?? this.postsLoading,
+      openPostId: clearOpenPostId ? null : (openPostId ?? this.openPostId),
     );
   }
 }

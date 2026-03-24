@@ -1,10 +1,15 @@
 import "dart:io";
 
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:image_picker/image_picker.dart";
 
+// ignore_for_file: avoid_catches_without_on_clauses
+
 import "../../../core/router/main_shell.dart";
+import "../data/tourstar_models.dart";
+import "../data/tourstar_repository.dart";
 import "state/tourstar_controller.dart";
 
 // ── Design tokens ────────────────────────────────────────────
@@ -35,92 +40,60 @@ const _mbtiGroups = [
   _MbtiGroup("탐험/즉흥형 (SP)", ["ISTP", "ISFP", "ESTP", "ESFP"]),
 ];
 
-// ── Local post model ─────────────────────────────────────────
-class _TourPost {
-  _TourPost({
-    required this.id,
-    required this.title,
-    required this.location,
-    required this.date,
-    required this.comment,
-    required this.tags,
-    required this.photoFiles,
-    this.visibility = "public",
-    this.likes = 0,
-    this.liked = false,
-    this.comments = const [],
-  });
-
-  final String id;
-  final String title;
-  final String location;
-  final String date;
-  final String comment;
-  final List<String> tags;
-  final List<XFile> photoFiles;
-  String visibility;
-  int likes;
-  bool liked;
-  List<String> comments;
-}
-
 // ═════════════════════════════════════════════════════════════
 class TourstarPage extends ConsumerStatefulWidget {
-  const TourstarPage({super.key});
+  const TourstarPage({super.key, this.initialPostId});
+
+  /// 딥링크나 채팅 카드에서 바로 열 게시글 ID
+  final String? initialPostId;
 
   @override
   ConsumerState<TourstarPage> createState() => _TourstarPageState();
 }
 
 class _TourstarPageState extends ConsumerState<TourstarPage> {
-  final List<_TourPost> _posts = [];
   String _filter = "all";
   bool _gridView = false;
 
-  List<_TourPost> get _filtered {
-    if (_filter == "all") return _posts;
-    return _posts.where((p) => p.visibility == _filter).toList();
+  List<TourstarPostRecord> get _serverPosts =>
+      ref.read(tourstarControllerProvider).serverPosts;
+
+  List<TourstarPostRecord> get _filtered {
+    final all = ref.read(tourstarControllerProvider).serverPosts;
+    if (_filter == "all") return all;
+    return all.where((p) => p.visibility == _filter).toList();
   }
 
-  Map<String, int> get _stats => {
-        "total": _posts.length,
-        "photos": _posts.fold(0, (a, p) => a + p.photoFiles.length),
-        "likes": _posts.fold(0, (a, p) => a + p.likes),
-        "public": _posts.where((p) => p.visibility == "public").length,
-      };
+  Map<String, int> get _stats {
+    final posts = ref.read(tourstarControllerProvider).serverPosts;
+    return {
+      "total": posts.length,
+      "photos": posts.fold(0, (a, p) => a + p.photoUrls.length),
+      "likes": 0,
+      "public": posts.where((p) => p.visibility == "public").length,
+    };
+  }
 
-  void _toggleLike(String id) {
-    setState(() {
-      for (final p in _posts) {
-        if (p.id == id) {
-          p.liked = !p.liked;
-          p.likes += p.liked ? 1 : -1;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(tourstarControllerProvider.notifier).loadPosts().then((_) {
+        if (!mounted) return;
+        final id = widget.initialPostId;
+        if (id != null && id.isNotEmpty) {
+          final post = ref
+              .read(tourstarControllerProvider)
+              .serverPosts
+              .where((p) => p.id == id)
+              .firstOrNull;
+          if (post != null) _openDetail(post);
         }
-      }
+      });
     });
   }
 
-  void _toggleVisibility(String id) {
-    setState(() {
-      for (final p in _posts) {
-        if (p.id == id) {
-          p.visibility = p.visibility == "public" ? "private" : "public";
-        }
-      }
-    });
-  }
-
-  void _addComment(String id, String content) {
-    setState(() {
-      for (final p in _posts) {
-        if (p.id == id) {
-          p.comments = [...p.comments, content];
-        }
-      }
-    });
-  }
-
-  void _openDetail(_TourPost post) {
+  void _openDetail(TourstarPostRecord post) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -128,9 +101,9 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
       backgroundColor: Colors.transparent,
       builder: (_) => _PostDetailSheet(
         post: post,
-        onLike: (id) { _toggleLike(id); setState(() {}); },
-        onToggleVisibility: (id) { _toggleVisibility(id); setState(() {}); },
-        onAddComment: (id, c) { _addComment(id, c); setState(() {}); },
+        onAddComment: (id, c) {
+          ref.read(tourstarControllerProvider.notifier).addComment(id, c);
+        },
       ),
     );
   }
@@ -142,16 +115,24 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _CreatePostSheet(
-        onCreated: (post) => setState(() => _posts.insert(0, post)),
-      ),
+      builder: (_) => const _CreatePostSheet(),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final stats = _stats;
-    final filtered = _filtered;
+    // 상태 구독 - serverPosts / postsLoading 변화 시 rebuild
+    final tourState = ref.watch(tourstarControllerProvider);
+    final allPosts = tourState.serverPosts;
+    final filtered = _filter == "all"
+        ? allPosts
+        : allPosts.where((p) => p.visibility == _filter).toList();
+    final stats = {
+      "total": allPosts.length,
+      "photos": allPosts.fold(0, (a, p) => a + p.photoUrls.length),
+      "likes": 0,
+      "public": allPosts.where((p) => p.visibility == "public").length,
+    };
 
     return Scaffold(
       backgroundColor: _kGray100,
@@ -385,7 +366,14 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
           ),
 
           // ── Posts ────────────────────────────────────────
-          if (filtered.isEmpty)
+          if (tourState.postsLoading)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 48),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            )
+          else if (filtered.isEmpty)
             SliverToBoxAdapter(
               child: _EmptyState(onTap: _openCreate),
             )
@@ -418,7 +406,6 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                     child: _FeedCard(
                       post: filtered[i],
                       onTap: () => _openDetail(filtered[i]),
-                      onLike: _toggleLike,
                     ),
                   ),
                   childCount: filtered.length,
@@ -641,16 +628,16 @@ class _FeedCard extends StatelessWidget {
   const _FeedCard({
     required this.post,
     required this.onTap,
-    required this.onLike,
   });
-  final _TourPost post;
+  final TourstarPostRecord post;
   final VoidCallback onTap;
-  final void Function(String) onLike;
 
   @override
   Widget build(BuildContext context) {
-    final firstPhoto =
-        post.photoFiles.isNotEmpty ? post.photoFiles.first : null;
+    final thumbUrl = post.photoUrls.isNotEmpty ? post.photoUrls.first : null;
+    final dateStr = post.createdAt != null
+        ? "${post.createdAt!.year}-${post.createdAt!.month.toString().padLeft(2, '0')}-${post.createdAt!.day.toString().padLeft(2, '0')}"
+        : "";
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -676,26 +663,14 @@ class _FeedCard extends StatelessWidget {
                 children: [
                   AspectRatio(
                     aspectRatio: 16 / 10,
-                    child: firstPhoto != null
-                        ? Image.file(
-                            File(firstPhoto.path),
+                    child: thumbUrl != null
+                        ? Image.network(
+                            thumbUrl,
                             fit: BoxFit.cover,
                             width: double.infinity,
+                            errorBuilder: (_, __, ___) => _PhotoPlaceholder(),
                           )
-                        : Container(
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [_kPurple2, _kPink],
-                              ),
-                            ),
-                            child: const Center(
-                              child: Icon(
-                                Icons.photo,
-                                size: 40,
-                                color: Colors.white54,
-                              ),
-                            ),
-                          ),
+                        : _PhotoPlaceholder(),
                   ),
                   Positioned(
                     top: 10,
@@ -707,12 +682,12 @@ class _FeedCard extends StatelessWidget {
                           : _kGray700.withValues(alpha: 0.8),
                     ),
                   ),
-                  if (post.photoFiles.length > 1)
+                  if (post.photoUrls.length > 1)
                     Positioned(
                       top: 10,
                       right: 10,
                       child: _Badge(
-                        label: "${post.photoFiles.length}",
+                        label: "${post.photoUrls.length}",
                         color: Colors.black54,
                       ),
                     ),
@@ -725,43 +700,15 @@ class _FeedCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          post.title,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: _kGray800,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => onLike(post.id),
-                        child: Row(
-                          children: [
-                            Icon(
-                              post.liked
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              size: 16,
-                              color: post.liked ? _kPink : _kGray400,
-                            ),
-                            const SizedBox(width: 3),
-                            Text(
-                              "${post.likes}",
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: post.liked ? _kPink : _kGray400,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  Text(
+                    post.title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: _kGray800,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Row(
@@ -772,32 +719,23 @@ class _FeedCard extends StatelessWidget {
                         color: _kGray400,
                       ),
                       const SizedBox(width: 2),
-                      Text(
-                        post.location,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: _kGray500,
+                      Expanded(
+                        child: Text(
+                          post.location,
+                          style: const TextStyle(fontSize: 11, color: _kGray500),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const Text(
-                        " · ",
-                        style: TextStyle(color: _kGray400),
-                      ),
-                      Text(
-                        post.date,
-                        style:
-                            const TextStyle(fontSize: 11, color: _kGray400),
-                      ),
+                      if (dateStr.isNotEmpty) ...[
+                        const Text(" · ", style: TextStyle(color: _kGray400)),
+                        Text(dateStr, style: const TextStyle(fontSize: 11, color: _kGray400)),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 8),
                   Text(
                     post.comment,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: _kGray700,
-                      height: 1.5,
-                    ),
+                    style: const TextStyle(fontSize: 12, color: _kGray700, height: 1.5),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -810,21 +748,12 @@ class _FeedCard extends StatelessWidget {
                           .take(3)
                           .map(
                             (tag) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
                                 color: _kGray100,
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Text(
-                                "#$tag",
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: _kGray700,
-                                ),
-                              ),
+                              child: Text("#$tag", style: const TextStyle(fontSize: 10, color: _kGray700)),
                             ),
                           )
                           .toList(),
@@ -833,17 +762,9 @@ class _FeedCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(
-                        Icons.chat_bubble_outline,
-                        size: 12,
-                        color: _kGray400,
-                      ),
+                      const Icon(Icons.chat_bubble_outline, size: 12, color: _kGray400),
                       const SizedBox(width: 4),
-                      Text(
-                        "댓글 ${post.comments.length}",
-                        style:
-                            const TextStyle(fontSize: 11, color: _kGray500),
-                      ),
+                      Text("댓글 ${post.comments.length}", style: const TextStyle(fontSize: 11, color: _kGray500)),
                     ],
                   ),
                 ],
@@ -856,16 +777,28 @@ class _FeedCard extends StatelessWidget {
   }
 }
 
+// ── Photo Placeholder ──────────────────────────────────────
+class _PhotoPlaceholder extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(colors: [_kPurple2, _kPink]),
+      ),
+      child: const Center(child: Icon(Icons.photo, size: 40, color: Colors.white54)),
+    );
+  }
+}
+
 // ── Grid Card ────────────────────────────────────────────────
 class _GridCard extends StatelessWidget {
   const _GridCard({required this.post, required this.onTap});
-  final _TourPost post;
+  final TourstarPostRecord post;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final firstPhoto =
-        post.photoFiles.isNotEmpty ? post.photoFiles.first : null;
+    final thumbUrl = post.photoUrls.isNotEmpty ? post.photoUrls.first : null;
     return GestureDetector(
       onTap: onTap,
       child: ClipRRect(
@@ -873,13 +806,16 @@ class _GridCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            firstPhoto != null
-                ? Image.file(File(firstPhoto.path), fit: BoxFit.cover)
+            thumbUrl != null
+                ? Image.network(thumbUrl, fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(colors: [_kPurple2, _kPink]),
+                      ),
+                    ))
                 : Container(
                     decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [_kPurple2, _kPink],
-                      ),
+                      gradient: LinearGradient(colors: [_kPurple2, _kPink]),
                     ),
                   ),
             Positioned(
@@ -891,12 +827,12 @@ class _GridCard extends StatelessWidget {
                 fontSize: 8,
               ),
             ),
-            if (post.photoFiles.length > 1)
+            if (post.photoUrls.length > 1)
               Positioned(
                 top: 4,
                 right: 4,
                 child: _Badge(
-                  label: "+${post.photoFiles.length}",
+                  label: "+${post.photoUrls.length}",
                   color: Colors.black54,
                   fontSize: 8,
                 ),
@@ -936,25 +872,21 @@ class _Badge extends StatelessWidget {
 }
 
 // ══════════════════════════════════════════════════════════════
-// Post Detail Sheet
+// Post Detail Sheet (서버 기반)
 // ══════════════════════════════════════════════════════════════
-class _PostDetailSheet extends StatefulWidget {
+class _PostDetailSheet extends ConsumerStatefulWidget {
   const _PostDetailSheet({
     required this.post,
-    required this.onLike,
-    required this.onToggleVisibility,
     required this.onAddComment,
   });
-  final _TourPost post;
-  final void Function(String) onLike;
-  final void Function(String) onToggleVisibility;
-  final void Function(String, String) onAddComment;
+  final TourstarPostRecord post;
+  final void Function(String postId, String content) onAddComment;
 
   @override
-  State<_PostDetailSheet> createState() => _PostDetailSheetState();
+  ConsumerState<_PostDetailSheet> createState() => _PostDetailSheetState();
 }
 
-class _PostDetailSheetState extends State<_PostDetailSheet> {
+class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
   int _photoIdx = 0;
   final _ctrl = TextEditingController();
 
@@ -964,9 +896,25 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
     super.dispose();
   }
 
+  Future<void> _copyShareLink(TourstarPostRecord post) async {
+    final url = TourstarRepository.buildShareUrl(post.id);
+    await Clipboard.setData(ClipboardData(text: url));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("공유 링크가 클립보드에 복사되었습니다.")),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final post = widget.post;
+    // 댓글 실시간 반영: state에서 최신 post를 찾아 사용
+    final allPosts = ref.watch(tourstarControllerProvider).serverPosts;
+    final post = allPosts.where((p) => p.id == widget.post.id).firstOrNull ??
+        widget.post;
+    final dateStr = post.createdAt != null
+        ? "${post.createdAt!.year}-${post.createdAt!.month.toString().padLeft(2, '0')}-${post.createdAt!.day.toString().padLeft(2, '0')}"
+        : "";
+
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -1002,11 +950,19 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
                       children: [
                         AspectRatio(
                           aspectRatio: 4 / 3,
-                          child: post.photoFiles.isNotEmpty
-                              ? Image.file(
-                                  File(post.photoFiles[_photoIdx].path),
+                          child: post.photoUrls.isNotEmpty
+                              ? Image.network(
+                                  post.photoUrls[_photoIdx],
                                   fit: BoxFit.cover,
                                   width: double.infinity,
+                                  errorBuilder: (_, __, ___) =>
+                                      Container(
+                                        decoration: const BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [_kPurple2, _kPink],
+                                          ),
+                                        ),
+                                      ),
                                 )
                               : Container(
                                   decoration: const BoxDecoration(
@@ -1016,7 +972,7 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
                                   ),
                                 ),
                         ),
-                        if (post.photoFiles.length > 1) ...[
+                        if (post.photoUrls.length > 1) ...[
                           Positioned(
                             left: 8,
                             top: 0,
@@ -1025,17 +981,11 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
                               child: IconButton(
                                 onPressed: () => setState(
                                   () => _photoIdx = (_photoIdx - 1 +
-                                          post.photoFiles.length) %
-                                      post.photoFiles.length,
+                                          post.photoUrls.length) %
+                                      post.photoUrls.length,
                                 ),
-                                icon: const Icon(
-                                  Icons.chevron_left,
-                                  color: Colors.white,
-                                  size: 32,
-                                ),
-                                style: IconButton.styleFrom(
-                                  backgroundColor: Colors.black38,
-                                ),
+                                icon: const Icon(Icons.chevron_left, color: Colors.white, size: 32),
+                                style: IconButton.styleFrom(backgroundColor: Colors.black38),
                               ),
                             ),
                           ),
@@ -1046,17 +996,10 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
                             child: Center(
                               child: IconButton(
                                 onPressed: () => setState(
-                                  () => _photoIdx = (_photoIdx + 1) %
-                                      post.photoFiles.length,
+                                  () => _photoIdx = (_photoIdx + 1) % post.photoUrls.length,
                                 ),
-                                icon: const Icon(
-                                  Icons.chevron_right,
-                                  color: Colors.white,
-                                  size: 32,
-                                ),
-                                style: IconButton.styleFrom(
-                                  backgroundColor: Colors.black38,
-                                ),
+                                icon: const Icon(Icons.chevron_right, color: Colors.white, size: 32),
+                                style: IconButton.styleFrom(backgroundColor: Colors.black38),
                               ),
                             ),
                           ),
@@ -1067,18 +1010,14 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: List.generate(
-                                post.photoFiles.length,
+                                post.photoUrls.length,
                                 (i) => AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
                                   width: i == _photoIdx ? 16 : 6,
                                   height: 6,
-                                  margin: const EdgeInsets.symmetric(
-                                    horizontal: 2,
-                                  ),
+                                  margin: const EdgeInsets.symmetric(horizontal: 2),
                                   decoration: BoxDecoration(
-                                    color: i == _photoIdx
-                                        ? Colors.white
-                                        : Colors.white54,
+                                    color: i == _photoIdx ? Colors.white : Colors.white54,
                                     borderRadius: BorderRadius.circular(3),
                                   ),
                                 ),
@@ -1099,45 +1038,25 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
                               Expanded(
                                 child: Text(
                                   post.title,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: _kGray800,
-                                  ),
+                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _kGray800),
                                 ),
                               ),
-                              GestureDetector(
-                                onTap: () {
-                                  widget.onToggleVisibility(post.id);
-                                  setState(() {});
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 5,
+                              // 공개 배지
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: post.visibility == "public" ? const Color(0xFFECFDF5) : _kGray100,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: post.visibility == "public" ? const Color(0xFF6EE7B7) : _kGray200,
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: post.visibility == "public"
-                                        ? const Color(0xFFECFDF5)
-                                        : _kGray100,
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: post.visibility == "public"
-                                          ? const Color(0xFF6EE7B7)
-                                          : _kGray200,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    post.visibility == "public"
-                                        ? "공개"
-                                        : "비공개",
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: post.visibility == "public"
-                                          ? const Color(0xFF059669)
-                                          : _kGray500,
-                                    ),
+                                ),
+                                child: Text(
+                                  post.visibility == "public" ? "공개" : "비공개",
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: post.visibility == "public" ? const Color(0xFF059669) : _kGray500,
                                   ),
                                 ),
                               ),
@@ -1146,40 +1065,21 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
                           const SizedBox(height: 6),
                           Row(
                             children: [
-                              const Icon(
-                                Icons.location_on_outlined,
-                                size: 14,
-                                color: _kGray400,
-                              ),
+                              const Icon(Icons.location_on_outlined, size: 14, color: _kGray400),
                               const SizedBox(width: 4),
-                              Text(
-                                post.location,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: _kGray500,
-                                ),
+                              Expanded(
+                                child: Text(post.location, style: const TextStyle(fontSize: 12, color: _kGray500)),
                               ),
-                              const Text(
-                                " · ",
-                                style: TextStyle(color: _kGray400),
-                              ),
-                              Text(
-                                post.date,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: _kGray400,
-                                ),
-                              ),
+                              if (dateStr.isNotEmpty) ...[
+                                const Text(" · ", style: TextStyle(color: _kGray400)),
+                                Text(dateStr, style: const TextStyle(fontSize: 12, color: _kGray400)),
+                              ],
                             ],
                           ),
                           const SizedBox(height: 12),
                           Text(
                             post.comment,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: _kGray700,
-                              height: 1.6,
-                            ),
+                            style: const TextStyle(fontSize: 14, color: _kGray700, height: 1.6),
                           ),
                           if (post.tags.isNotEmpty) ...[
                             const SizedBox(height: 12),
@@ -1189,83 +1089,47 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
                               children: post.tags
                                   .map(
                                     (tag) => Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 5,
-                                      ),
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                       decoration: BoxDecoration(
                                         color: _kPurpleLight,
-                                        borderRadius:
-                                            BorderRadius.circular(20),
+                                        borderRadius: BorderRadius.circular(20),
                                       ),
-                                      child: Text(
-                                        "#$tag",
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: _kPurple,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
+                                      child: Text("#$tag", style: const TextStyle(fontSize: 12, color: _kPurple, fontWeight: FontWeight.w500)),
                                     ),
                                   )
                                   .toList(),
                             ),
                           ],
                           const SizedBox(height: 16),
+                          // ── 액션 바 (댓글 수, 사진 수, 공유 버튼) ──
                           Row(
                             children: [
+                              const Icon(Icons.chat_bubble_outline, size: 18, color: _kGray400),
+                              const SizedBox(width: 4),
+                              Text("댓글 ${post.comments.length}", style: const TextStyle(color: _kGray500, fontSize: 13)),
+                              const SizedBox(width: 20),
+                              const Icon(Icons.photo_library_outlined, size: 18, color: _kGray400),
+                              const SizedBox(width: 4),
+                              Text("사진 ${post.photoUrls.length}장", style: const TextStyle(color: _kGray500, fontSize: 13)),
+                              const Spacer(),
+                              // ── 공유 링크 복사 버튼 ──
                               GestureDetector(
-                                onTap: () {
-                                  widget.onLike(post.id);
-                                  setState(() {});
-                                },
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      post.liked
-                                          ? Icons.favorite
-                                          : Icons.favorite_border,
-                                      color:
-                                          post.liked ? _kPink : _kGray400,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      "${post.likes}",
-                                      style: TextStyle(
-                                        color:
-                                            post.liked ? _kPink : _kGray400,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 20),
-                              const Icon(
-                                Icons.chat_bubble_outline,
-                                size: 18,
-                                color: _kGray400,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                "댓글 ${post.comments.length}",
-                                style: const TextStyle(
-                                  color: _kGray500,
-                                  fontSize: 13,
-                                ),
-                              ),
-                              const SizedBox(width: 20),
-                              const Icon(
-                                Icons.photo_library_outlined,
-                                size: 18,
-                                color: _kGray400,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                "사진 ${post.photoFiles.length}장",
-                                style: const TextStyle(
-                                  color: _kGray500,
-                                  fontSize: 13,
+                                onTap: () => _copyShareLink(post),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: _kPurpleLight,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: const Color(0xFFD8B4FE)),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.share_outlined, size: 14, color: _kPurple),
+                                      SizedBox(width: 4),
+                                      Text("공유", style: TextStyle(fontSize: 12, color: _kPurple, fontWeight: FontWeight.w600)),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ],
@@ -1273,33 +1137,24 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
                           const Divider(height: 28, color: _kGray100),
                           Text(
                             "댓글 ${post.comments.length}개",
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: _kGray700,
-                            ),
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _kGray700),
                           ),
                           const SizedBox(height: 8),
                           if (post.comments.isEmpty)
-                            const Text(
-                              "첫 댓글을 남겨보세요.",
-                              style: TextStyle(fontSize: 12, color: _kGray400),
-                            )
+                            const Text("첫 댓글을 남겨보세요.", style: TextStyle(fontSize: 12, color: _kGray400))
                           else
                             ...post.comments.map(
                               (c) => Container(
                                 margin: const EdgeInsets.only(bottom: 8),
                                 padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: _kGray100,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  c,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: _kGray700,
-                                  ),
+                                decoration: BoxDecoration(color: _kGray100, borderRadius: BorderRadius.circular(10)),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (c.author.isNotEmpty)
+                                      Text(c.author, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _kGray700)),
+                                    Text(c.content, style: const TextStyle(fontSize: 12, color: _kGray700)),
+                                  ],
                                 ),
                               ),
                             ),
@@ -1312,20 +1167,12 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
                                   style: const TextStyle(fontSize: 13),
                                   decoration: InputDecoration(
                                     hintText: "댓글을 입력하세요",
-                                    hintStyle: const TextStyle(
-                                      color: _kGray400,
-                                      fontSize: 13,
-                                    ),
+                                    hintStyle: const TextStyle(color: _kGray400, fontSize: 13),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: const BorderSide(
-                                        color: _kGray200,
-                                      ),
+                                      borderSide: const BorderSide(color: _kGray200),
                                     ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 10,
-                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                   ),
                                 ),
                               ),
@@ -1336,25 +1183,11 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
                                   if (text.isEmpty) return;
                                   widget.onAddComment(post.id, text);
                                   _ctrl.clear();
-                                  setState(() {});
                                 },
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _kPurple,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Text(
-                                    "등록",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                  decoration: BoxDecoration(color: _kPurple, borderRadius: BorderRadius.circular(12)),
+                                  child: const Text("등록", style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
                                 ),
                               ),
                             ],
@@ -1378,8 +1211,7 @@ class _PostDetailSheetState extends State<_PostDetailSheet> {
 // Create Post Sheet
 // ══════════════════════════════════════════════════════════════
 class _CreatePostSheet extends ConsumerStatefulWidget {
-  const _CreatePostSheet({required this.onCreated});
-  final void Function(_TourPost) onCreated;
+  const _CreatePostSheet();
 
   @override
   ConsumerState<_CreatePostSheet> createState() => _CreatePostSheetState();
@@ -1389,6 +1221,26 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
   String _visibility = "public";
   String? _openGroup;
   final _commentCtrl = TextEditingController();
+
+  Widget _buildRankedPreview(String sourceImage) {
+    final resolved = TourstarRepository.toDisplayImageUrl(sourceImage);
+    if (resolved.startsWith("http://") || resolved.startsWith("https://")) {
+      return Image.network(
+        resolved,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Center(
+          child: Icon(Icons.image_outlined, color: _kGray400),
+        ),
+      );
+    }
+    return Image.file(
+      File(sourceImage),
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => const Center(
+        child: Icon(Icons.image_outlined, color: _kGray400),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -1723,17 +1575,7 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                                     child: ClipRRect(
                                       borderRadius:
                                           BorderRadius.circular(8),
-                                      child: Image.file(
-                                        File(img.sourceImage),
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (ctx0, err0, trace0) =>
-                                            const Center(
-                                          child: Icon(
-                                            Icons.image_outlined,
-                                            color: _kGray400,
-                                          ),
-                                        ),
-                                      ),
+                                      child: _buildRankedPreview(img.sourceImage),
                                     ),
                                   ),
                                   Positioned(
@@ -2018,186 +1860,33 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                         ),
                       ],
                     ),
-                    // ── Generated result ─────────────────────
-                    if (state.generatedPost != null) ...[
-                      const SizedBox(height: 20),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [
-                              Color(0xFFF5F3FF),
-                              Color(0xFFFCE7F3),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: const Color(0xFFEDE9FE),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Row(
-                              children: [
-                                Icon(
-                                  Icons.auto_awesome,
-                                  color: _kPurple,
-                                  size: 16,
-                                ),
-                                SizedBox(width: 6),
-                                Text(
-                                  "AI 생성 결과",
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                    color: _kPurple,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Divider(
-                              height: 16,
-                              color: Color(0xFFEDE9FE),
-                            ),
-                            Text(
-                              state.generatedPost!.title,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: _kGray800,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.location_on_outlined,
-                                  size: 14,
-                                  color: _kGray400,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  state.generatedPost!.location,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: _kGray500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              state.generatedPost!.comment,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: _kGray700,
-                                height: 1.6,
-                              ),
-                            ),
-                            if (state.generatedPost!.tags.isNotEmpty) ...[
-                              const SizedBox(height: 10),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 6,
-                                children: state.generatedPost!.tags
-                                    .map(
-                                      (tag) => Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                          border: Border.all(
-                                            color:
-                                                const Color(0xFFD8B4FE),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          "#$tag",
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            color: _kPurple,
-                                          ),
-                                        ),
-                                      ),
-                                    )
-                                    .toList(),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
                     // ── Actions ──────────────────────────────
                     const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed:
-                                state.loading ? null : ctrl.generatePost,
-                            icon: const Icon(Icons.auto_awesome, size: 16),
-                            label: Text(
-                              state.loading ? "생성중..." : "AI 게시글 생성",
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: _kPurple,
-                              side: const BorderSide(color: _kPurple),
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: state.loading
+                            ? null
+                            : () async {
+                                final ok =
+                                    await ctrl.publishPost(visibility: _visibility);
+                                if (ok && mounted) Navigator.pop(context);
+                              },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: _kPurple,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        if (state.generatedPost != null) ...[
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: FilledButton(
-                              onPressed: () {
-                                final gp = state.generatedPost!;
-                                final post = _TourPost(
-                                  id: DateTime.now()
-                                      .millisecondsSinceEpoch
-                                      .toString(),
-                                  title: gp.title,
-                                  location: gp.location,
-                                  date: DateTime.now()
-                                      .toString()
-                                      .substring(0, 10),
-                                  comment: gp.comment,
-                                  tags: gp.tags,
-                                  photoFiles: state.pickedFiles,
-                                  visibility: _visibility,
-                                );
-                                widget.onCreated(post);
-                                Navigator.pop(context);
-                              },
-                              style: FilledButton.styleFrom(
-                                backgroundColor: _kPurple,
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: const Text(
-                                "게시하기",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
+                        child: Text(
+                          state.loading ? "게시중..." : "게시하기",
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                           ),
-                        ],
-                      ],
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 24),
                   ],
