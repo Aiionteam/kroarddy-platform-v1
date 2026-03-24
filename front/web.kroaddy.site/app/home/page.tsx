@@ -192,14 +192,16 @@ function Top10Carousel({ items }: { items: ProcessedNewsItem[] }) {
           ‹
         </button>
 
-        {/* 카드: 썸네일(위) + 내용(아래) */}
+        {/* 카드: 전체 높이 고정 → 썸네일 65% / 내용 35% */}
         <div
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
           className="flex-1 min-w-0 rounded-2xl bg-white border border-gray-100 shadow-md overflow-hidden flex flex-col"
+          style={{ height: 320 }}
         >
-          {/* 12시 — 썸네일 */}
-          <div className="relative w-full h-48 bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center overflow-hidden shrink-0">
+          {/* 12시 — 썸네일 (65%) */}
+          <div className="relative w-full bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center overflow-hidden"
+            style={{ flex: "0 0 65%" }}>
             {item.thumbnail ? (
               <img
                 src={item.thumbnail}
@@ -217,10 +219,11 @@ function Top10Carousel({ items }: { items: ProcessedNewsItem[] }) {
             </div>
           </div>
 
-          {/* 6시 — 내용 */}
-          <div className="flex flex-col gap-2 p-3">
+          {/* 6시 — 내용 (35%) */}
+          <div className="flex flex-col justify-between p-3 overflow-hidden"
+            style={{ flex: "0 0 35%" }}>
             {/* 카테고리 + 지역 + 날짜 */}
-            <div className="flex flex-wrap gap-1.5 items-center">
+            <div className="flex flex-wrap gap-1 items-center">
               <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${cat.bg} ${cat.text}`}>
                 {cat.emoji} {item.category}
               </span>
@@ -241,7 +244,7 @@ function Top10Carousel({ items }: { items: ProcessedNewsItem[] }) {
 
             {/* 요약 */}
             {(item.gpt_summary || item.summary) && (
-              <p className="text-xs leading-relaxed text-gray-500 line-clamp-2">
+              <p className="text-[11px] leading-relaxed text-gray-500 line-clamp-1">
                 {item.gpt_summary || item.summary}
               </p>
             )}
@@ -302,20 +305,20 @@ function Top10Carousel({ items }: { items: ProcessedNewsItem[] }) {
 function CarouselSkeleton() {
   return (
     <div className="flex items-stretch gap-2">
-      <div className="shrink-0 w-8 rounded-xl bg-gray-100" />
-      <div className="flex-1 animate-pulse rounded-2xl bg-white border border-gray-100 shadow-md overflow-hidden flex flex-col">
-        <div className="w-full h-48 bg-gray-200 shrink-0" />
-        <div className="p-3 space-y-2.5">
+      <div className="shrink-0 w-8 rounded-xl bg-gray-100" style={{ height: 320 }} />
+      <div className="flex-1 animate-pulse rounded-2xl bg-white border border-gray-100 shadow-md overflow-hidden flex flex-col" style={{ height: 320 }}>
+        <div className="bg-gray-200" style={{ flex: "0 0 65%" }} />
+        <div className="p-3 flex flex-col gap-2 justify-between" style={{ flex: "0 0 35%" }}>
           <div className="flex gap-2">
             <div className="h-5 w-20 bg-gray-200 rounded-full" />
             <div className="h-5 w-16 bg-gray-100 rounded-full" />
           </div>
           <div className="h-4 bg-gray-200 rounded w-5/6" />
           <div className="h-3 bg-gray-100 rounded w-full" />
-          <div className="h-3 bg-gray-100 rounded w-4/5" />
+          <div className="h-3 bg-gray-200 rounded w-1/3" />
         </div>
       </div>
-      <div className="shrink-0 w-8 rounded-xl bg-gray-100" />
+      <div className="shrink-0 w-8 rounded-xl bg-gray-100" style={{ height: 320 }} />
     </div>
   );
 }
