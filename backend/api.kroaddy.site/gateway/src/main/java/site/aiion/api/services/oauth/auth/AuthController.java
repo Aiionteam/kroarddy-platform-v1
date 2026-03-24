@@ -13,6 +13,7 @@ import site.aiion.api.services.user.common.domain.Messenger;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import site.aiion.api.services.oauth.util.CookieUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -82,13 +83,8 @@ public class AuthController {
             if (!jwtTokenProvider.validateToken(refreshToken)) {
                 System.err.println("Refresh Token이 유효하지 않습니다.");
                 
-                // 쿠키 삭제 (설정 시와 동일한 Secure 값으로 삭제)
-                Cookie expiredCookie = new Cookie("refresh_token", null);
-                expiredCookie.setMaxAge(0);
-                expiredCookie.setPath("/");
-                expiredCookie.setHttpOnly(true);
-                expiredCookie.setSecure(request.isSecure());
-                response.addCookie(expiredCookie);
+                // 쿠키 삭제 (ResponseCookie 사용 — HttpOnly 직렬화 보장)
+                CookieUtil.expireRefreshTokenCookie(response, request.isSecure());
                 
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("success", false);
@@ -218,13 +214,8 @@ public class AuthController {
                 System.out.println("쿠키에 Refresh Token이 없습니다. (이미 로그아웃되었거나 쿠키가 만료됨)");
             }
             
-            // 3. HttpOnly 쿠키 삭제 (설정 시와 동일한 Secure 값으로 삭제)
-            Cookie expiredCookie = new Cookie("refresh_token", null);
-            expiredCookie.setMaxAge(0);
-            expiredCookie.setPath("/");
-            expiredCookie.setHttpOnly(true);
-            expiredCookie.setSecure(request.isSecure());
-            response.addCookie(expiredCookie);
+            // 3. HttpOnly 쿠키 삭제 (ResponseCookie 사용 — HttpOnly 직렬화 보장)
+            CookieUtil.expireRefreshTokenCookie(response, request.isSecure());
             
             System.out.println("Refresh Token 쿠키 삭제 완료");
             
@@ -239,13 +230,8 @@ public class AuthController {
             System.err.println("로그아웃 중 오류 발생: " + e.getMessage());
             e.printStackTrace();
             
-            // 오류가 발생해도 쿠키는 삭제
-            Cookie expiredCookie = new Cookie("refresh_token", null);
-            expiredCookie.setMaxAge(0);
-            expiredCookie.setPath("/");
-            expiredCookie.setHttpOnly(true);
-            expiredCookie.setSecure(request.isSecure());
-            response.addCookie(expiredCookie);
+            // 오류가 발생해도 쿠키는 삭제 (ResponseCookie 사용)
+            CookieUtil.expireRefreshTokenCookie(response, request.isSecure());
             
             Map<String, Object> successResponse = new HashMap<>();
             successResponse.put("success", true);

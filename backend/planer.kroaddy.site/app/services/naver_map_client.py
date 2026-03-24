@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 _GEOCODE_URL    = "https://maps.apigw.ntruss.com/map-geocode/v2/geocode"
 _STATIC_MAP_URL = "https://maps.apigw.ntruss.com/map-static/v2/raster"
-_DIRECTIONS_URL = "https://maps.apigw.ntruss.com/map-direction-15/v1/driving"
+_DIRECTIONS_URL = "https://maps.apigw.ntruss.com/map-direction/v1/driving"
 # 네이버 지역 검색 API (장소명 → 좌표, developers.naver.com)
 _SEARCH_LOCAL_URL = "https://openapi.naver.com/v1/search/local.json"
 
@@ -153,26 +153,27 @@ async def get_directions(
     goal_lng: float,
     goal_lat: float,
     waypoints: list[tuple[float, float]] | None = None,
-) -> list[list[float]] | None:
-    """Directions 15 API로 실제 도로 경로 좌표 배열 반환.
+) -> dict | None:
+    """Directions 5 API로 실제 도로 경로 반환.
 
     Args:
-        waypoints: [(lng, lat), ...] 최대 15개
+        waypoints: [(lng, lat), ...] 최대 5개 (Directions 5 제한)
 
     Returns:
-        [[lng, lat], [lng, lat], ...] 또는 None
+        {"path": [[lng, lat], ...], "summary": {"distance": m, "duration": ms}} or None
     """
     if not settings.naver_map_client_id or not settings.naver_map_client_secret:
         logger.warning("네이버 Maps API 키가 설정되지 않았습니다.")
         return None
 
-    params: dict = {
+    params: dict[str, str] = {
         "start": f"{start_lng},{start_lat}",
         "goal":  f"{goal_lng},{goal_lat}",
         "option": "traoptimal",
     }
     if waypoints:
-        params["waypoints"] = "|".join(f"{lng},{lat}" for lng, lat in waypoints)
+        # Directions 5 최대 5개 경유지 제한
+        params["waypoints"] = "|".join(f"{lng},{lat}" for lng, lat in waypoints[:5])
 
     async with httpx.AsyncClient(timeout=15.0) as client:
         try:
@@ -188,7 +189,15 @@ async def get_directions(
             for key in ("traoptimal", "trafast", "tracomfort", "traavoidtoll"):
                 route_list = routes.get(key)
                 if route_list:
-                    return route_list[0].get("path", [])
+                    r = route_list[0]
+                    summary = r.get("summary", {})
+                    return {
+                        "path": r.get("path", []),
+                        "summary": {
+                            "distance": summary.get("distance", 0),  # 미터
+                            "duration": summary.get("duration", 0),  # 밀리초
+                        },
+                    }
 
             return None
         except Exception as e:
