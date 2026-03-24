@@ -154,8 +154,8 @@ export function NaverMapModal({ placeName, lat, lng, onClose }: NaverMapModalPro
             <div className="absolute bottom-3 right-3 flex flex-col gap-1">
               <button
                 type="button"
-                onClick={() => setZoom((z) => Math.max(ZOOM_MIN, z - 1))}
-                disabled={zoom <= ZOOM_MIN}
+                onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z + 1))}
+                disabled={zoom >= ZOOM_MAX}
                 aria-label="확대"
                 className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/90 text-gray-700 shadow-md hover:bg-white disabled:opacity-30 transition-colors text-lg font-bold leading-none"
               >
@@ -163,8 +163,8 @@ export function NaverMapModal({ placeName, lat, lng, onClose }: NaverMapModalPro
               </button>
               <button
                 type="button"
-                onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z + 1))}
-                disabled={zoom >= ZOOM_MAX}
+                onClick={() => setZoom((z) => Math.max(ZOOM_MIN, z - 1))}
+                disabled={zoom <= ZOOM_MIN}
                 aria-label="축소"
                 className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/90 text-gray-700 shadow-md hover:bg-white disabled:opacity-30 transition-colors text-lg font-bold leading-none"
               >

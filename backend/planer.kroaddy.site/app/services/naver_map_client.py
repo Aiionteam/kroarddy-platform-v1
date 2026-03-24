@@ -153,20 +153,20 @@ async def get_directions(
     goal_lng: float,
     goal_lat: float,
     waypoints: list[tuple[float, float]] | None = None,
-) -> list[list[float]] | None:
-    """Directions 15 API로 실제 도로 경로 좌표 배열 반환.
+) -> dict | None:
+    """Directions 15 API로 실제 도로 경로 반환.
 
     Args:
         waypoints: [(lng, lat), ...] 최대 15개
 
     Returns:
-        [[lng, lat], [lng, lat], ...] 또는 None
+        {"path": [[lng, lat], ...], "summary": {"distance": m, "duration": ms}} or None
     """
     if not settings.naver_map_client_id or not settings.naver_map_client_secret:
         logger.warning("네이버 Maps API 키가 설정되지 않았습니다.")
         return None
 
-    params: dict = {
+    params: dict[str, str] = {
         "start": f"{start_lng},{start_lat}",
         "goal":  f"{goal_lng},{goal_lat}",
         "option": "traoptimal",
@@ -188,7 +188,15 @@ async def get_directions(
             for key in ("traoptimal", "trafast", "tracomfort", "traavoidtoll"):
                 route_list = routes.get(key)
                 if route_list:
-                    return route_list[0].get("path", [])
+                    r = route_list[0]
+                    summary = r.get("summary", {})
+                    return {
+                        "path": r.get("path", []),
+                        "summary": {
+                            "distance": summary.get("distance", 0),  # 미터
+                            "duration": summary.get("duration", 0),  # 밀리초
+                        },
+                    }
 
             return None
         except Exception as e:

@@ -75,7 +75,7 @@ async def get_route_directions(body: DirectionsRequest):
     """
     wp = [(w.lng, w.lat) for w in body.waypoints] if body.waypoints else None
 
-    path = await get_directions(
+    result = await get_directions(
         start_lng=body.start.lng,
         start_lat=body.start.lat,
         goal_lng=body.goal.lng,
@@ -83,7 +83,7 @@ async def get_route_directions(body: DirectionsRequest):
         waypoints=wp,
     )
 
-    if path is None:
+    if result is None:
         raise HTTPException(status_code=502, detail="경로를 계산할 수 없습니다.")
 
-    return {"path": path}
+    return result
