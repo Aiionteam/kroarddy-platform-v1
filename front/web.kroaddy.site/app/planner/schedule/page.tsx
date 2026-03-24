@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
 import { AppLayout } from "@/components/organisms/AppLayout";
+import { NaverMapModal } from "@/components/molecules/NaverMapModal";
 import {
   fetchMyPlans,
   deletePlan,
@@ -244,6 +245,7 @@ function DayPlanGroup({
   const [modifyError,  setModifyError]  = useState<string | null>(null);
   const [modifyResult, setModifyResult] = useState<{ notPossible: boolean; reason: string } | null>(null);
   const [localSchedule, setLocalSchedule] = useState<ScheduleItem[]>(plan.schedule);
+  const [mapPlace, setMapPlace] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // plan.schedule 외부 변경 시 동기화
@@ -374,7 +376,14 @@ function DayPlanGroup({
                   {!isRerolling && (
                     <>
                       <div className="mt-1 flex items-center justify-between gap-2">
-                        <p className="text-xs text-gray-500">📍 {item.place}</p>
+                        <button
+                          type="button"
+                          onClick={() => item.place && setMapPlace(item.place)}
+                          className="flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600 hover:underline transition-colors text-left"
+                          title="지도에서 보기"
+                        >
+                          📍 {item.place}
+                        </button>
                         {item.estimated_cost && (
                           <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
                             {item.estimated_cost}
@@ -393,6 +402,10 @@ function DayPlanGroup({
           </ol>
         )}
       </div>
+
+      {mapPlace && (
+        <NaverMapModal placeName={mapPlace} onClose={() => setMapPlace(null)} />
+      )}
 
       {/* AI 수정 프롬프트 */}
       {userId && (
@@ -528,6 +541,7 @@ function PlanCard({
   const [modifyError, setModifyError] = useState<string | null>(null);
   const [modifyResult, setModifyResult] = useState<{ notPossible: boolean; reason: string } | null>(null);
   const [highlightedTitles, setHighlightedTitles] = useState<Set<string>>(new Set());
+  const [mapPlace, setMapPlace] = useState<string | null>(null);
   // 리롤 중인 항목 인덱스 (전체 schedule 배열 기준)
   const [rerollingIdx, setRerollingIdx] = useState<number | null>(null);
   const [rerolledIdx, setRerolledIdx] = useState<number | null>(null);
@@ -725,7 +739,14 @@ function PlanCard({
                           {!isRerolling && (
                             <>
                               <div className="mt-0.5 flex items-center justify-between gap-2">
-                                <p className="text-xs text-gray-500">📍 {item.place}</p>
+                                <button
+                                  type="button"
+                                  onClick={() => item.place && setMapPlace(item.place)}
+                                  className="flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600 hover:underline transition-colors text-left"
+                                  title="지도에서 보기"
+                                >
+                                  📍 {item.place}
+                                </button>
                                 {item.estimated_cost && (
                                   <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
                                     {item.estimated_cost}
@@ -798,6 +819,10 @@ function PlanCard({
             {!userId && <p className="mt-1 text-xs text-gray-400">로그인 후 수정 기능 이용 가능</p>}
           </div>
         </>
+      )}
+
+      {mapPlace && (
+        <NaverMapModal placeName={mapPlace} onClose={() => setMapPlace(null)} />
       )}
     </div>
   );
