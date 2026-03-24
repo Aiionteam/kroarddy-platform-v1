@@ -6,15 +6,17 @@ const NAVER_CLIENT_ID =
   process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID || "8cy39wy7um";
 
 interface NaverRouteMapModalProps {
-  /** 순서대로 나열된 장소명 배열 */
   places: { name: string; title: string }[];
   planName: string;
   onClose: () => void;
 }
 
+// window.naver는 src/types/naver-maps.d.ts 에서 any로 선언됨
+
 function loadNaverMapsScript(): Promise<void> {
   return new Promise((resolve, reject) => {
-    if (window.naver?.maps) { resolve(); return; }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((window as any).naver?.maps) { resolve(); return; }
     const existing = document.getElementById("naver-maps-sdk");
     if (existing) {
       existing.addEventListener("load", () => resolve());
@@ -22,10 +24,10 @@ function loadNaverMapsScript(): Promise<void> {
       return;
     }
     const s = document.createElement("script");
-    s.id = "naver-maps-sdk";
-    s.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${NAVER_CLIENT_ID}&submodules=geocoder`;
+    s.id    = "naver-maps-sdk";
+    s.src   = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${NAVER_CLIENT_ID}&submodules=geocoder`;
     s.async = true;
-    s.onload = () => resolve();
+    s.onload  = () => resolve();
     s.onerror = () => reject(new Error("SDK load failed"));
     document.head.appendChild(s);
   });
@@ -37,10 +39,10 @@ const MARKER_COLORS = [
 ];
 
 export function NaverRouteMapModal({ places, planName, onClose }: NaverRouteMapModalProps) {
-  const mapRef    = useRef<HTMLDivElement>(null);
+  const mapRef     = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
-  const [status, setStatus]   = useState<"loading" | "ok" | "error">("loading");
-  const [resolved, setResolved] = useState(0);
+  const [status, setStatus]         = useState<"loading" | "ok" | "error">("loading");
+  const [resolved, setResolved]     = useState(0);
   const [failedNames, setFailedNames] = useState<Set<string>>(new Set());
 
   const validPlaces = places.filter((p) => p.name?.trim());
@@ -53,7 +55,8 @@ export function NaverRouteMapModal({ places, planName, onClose }: NaverRouteMapM
         await loadNaverMapsScript();
         if (cancelled || !mapRef.current) return;
 
-        const { naver } = window;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const naver = (window as any).naver;
 
         const map = new naver.maps.Map(mapRef.current, {
           center: new naver.maps.LatLng(37.5665, 126.978),
@@ -64,7 +67,6 @@ export function NaverRouteMapModal({ places, planName, onClose }: NaverRouteMapM
         const coords: { lat: number; lng: number; idx: number; name: string }[] = [];
         const failed = new Set<string>();
 
-        // 순서대로 geocode (병렬 시 rate limit 위험 → 순차)
         for (let i = 0; i < validPlaces.length; i++) {
           if (cancelled) return;
           const placeName = validPlaces[i].name;
@@ -72,6 +74,7 @@ export function NaverRouteMapModal({ places, planName, onClose }: NaverRouteMapM
           await new Promise<void>((res) => {
             naver.maps.Service.geocode(
               { query: placeName },
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (stat: string, resp: any) => {
                 if (stat === naver.maps.Service.Status.OK && resp.addresses?.length) {
                   const a = resp.addresses[0];
@@ -91,30 +94,21 @@ export function NaverRouteMapModal({ places, planName, onClose }: NaverRouteMapM
 
         if (coords.length === 0) { setStatus("error"); return; }
 
-        // 번호 마커
         const latLngs = coords.map(({ lat, lng, idx, name }) => {
           const latlng = new naver.maps.LatLng(lat, lng);
-          const color = MARKER_COLORS[idx % MARKER_COLORS.length];
+          const color  = MARKER_COLORS[idx % MARKER_COLORS.length];
           new naver.maps.Marker({
             position: latlng,
             map,
             title: name,
             icon: {
-              content: `<div style="
-                display:flex;align-items:center;justify-content:center;
-                width:30px;height:30px;border-radius:50%;
-                background:${color};color:#fff;
-                font-size:13px;font-weight:700;
-                border:2.5px solid #fff;
-                box-shadow:0 2px 8px rgba(0,0,0,.35);
-              ">${idx + 1}</div>`,
+              content: `<div style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:${color};color:#fff;font-size:13px;font-weight:700;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);">${idx + 1}</div>`,
               anchor: { x: 15, y: 15 },
             },
           });
           return latlng;
         });
 
-        // 경로 폴리라인
         if (latLngs.length > 1) {
           new naver.maps.Polyline({
             map,
@@ -126,7 +120,6 @@ export function NaverRouteMapModal({ places, planName, onClose }: NaverRouteMapM
           });
         }
 
-        // 전체 bounds에 맞추기
         if (coords.length === 1) {
           map.setCenter(latLngs[0]);
           map.setZoom(14);
@@ -170,44 +163,39 @@ export function NaverRouteMapModal({ places, planName, onClose }: NaverRouteMapM
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
     >
       <div
-        className="relative flex w-full max-w-lg flex-col rounded-2xl bg-white shadow-2xl overflow-hidden"
+        className="relative flex w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
         style={{ maxHeight: "90vh" }}
       >
-        {/* ── 헤더 ── */}
+        {/* 헤더 */}
         <div className="flex shrink-0 items-center justify-between bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-3">
           <div className="flex min-w-0 items-center gap-2">
             <span className="text-lg">🗺️</span>
             <div className="min-w-0">
               <p className="truncate text-sm font-bold text-white">{planName}</p>
-              <p className="text-[11px] text-white/70">
-                전체 경로 · {validPlaces.length}개 경유지
-              </p>
+              <p className="text-[11px] text-white/70">전체 경로 · {validPlaces.length}개 경유지</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors"
             aria-label="닫기"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
 
-        {/* ── 로딩 배너 ── */}
+        {/* 로딩 배너 */}
         {status === "loading" && (
           <div className="flex shrink-0 items-center gap-2 border-b border-indigo-100 bg-indigo-50 px-4 py-1.5">
             <span className="h-3 w-3 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent" />
-            <p className="text-xs text-indigo-700">
-              위치 검색 중… {resolved} / {validPlaces.length}
-            </p>
+            <p className="text-xs text-indigo-700">위치 검색 중… {resolved} / {validPlaces.length}</p>
           </div>
         )}
 
-        {/* ── 지도 ── */}
+        {/* 지도 */}
         <div className="relative shrink-0 bg-gray-100" style={{ height: 360 }}>
           <div ref={mapRef} className="h-full w-full" />
           {status === "error" && (
@@ -218,23 +206,20 @@ export function NaverRouteMapModal({ places, planName, onClose }: NaverRouteMapM
           )}
         </div>
 
-        {/* ── 경유지 순서 목록 ── */}
+        {/* 경유지 목록 */}
         <div className="flex-1 overflow-y-auto">
-          <div className="px-4 py-3 space-y-2">
+          <div className="space-y-2 px-4 py-3">
             {validPlaces.map((p, idx) => {
-              const color = MARKER_COLORS[idx % MARKER_COLORS.length];
+              const color    = MARKER_COLORS[idx % MARKER_COLORS.length];
               const isFailed = failedNames.has(p.name);
               return (
                 <div key={idx} className="flex items-center gap-2.5">
-                  {/* 번호 뱃지 */}
                   <span
                     className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
                     style={{ background: color }}
                   >
                     {idx + 1}
                   </span>
-
-                  {/* 장소/제목 */}
                   <div className="min-w-0 flex-1">
                     <p className={`text-xs font-semibold leading-tight ${isFailed ? "text-gray-300 line-through" : "text-gray-800"}`}>
                       {p.title}
@@ -243,8 +228,6 @@ export function NaverRouteMapModal({ places, planName, onClose }: NaverRouteMapM
                       📍 {p.name}
                     </p>
                   </div>
-
-                  {/* 화살표 (마지막 제외) */}
                   {idx < validPlaces.length - 1 && (
                     <svg className="shrink-0 text-gray-300" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="9 18 15 12 9 6" />
