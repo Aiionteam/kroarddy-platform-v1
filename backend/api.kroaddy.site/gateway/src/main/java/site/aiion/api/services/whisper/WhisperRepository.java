@@ -56,9 +56,13 @@ public interface WhisperRepository extends JpaRepository<WhisperMessage, Long> {
             """)
     List<WhisperMessage> findLatestBetween(@Param("me") Long me, @Param("other") Long other, Pageable pageable);
 
-    /** 내가 받은 메시지 중 아직 안 읽은 개수 */
+    /** 내가 받은 메시지 중 아직 안 읽은 개수 (전체) */
     @Query("SELECT COUNT(w) FROM WhisperMessage w WHERE w.toUserId = :me AND w.readAt IS NULL")
     long countUnread(@Param("me") Long me);
+
+    /** 특정 상대방으로부터 받은 안 읽은 메시지 수 (대화별) */
+    @Query("SELECT COUNT(w) FROM WhisperMessage w WHERE w.toUserId = :me AND w.fromUserId = :other AND w.readAt IS NULL")
+    long countUnreadFrom(@Param("me") Long me, @Param("other") Long other);
 
     /** 특정 대화의 안 읽은 메시지 읽음 처리 */
     @Modifying

@@ -32,11 +32,23 @@ function loadNaverMapsScript(): Promise<void> {
   });
 }
 
+/** raster-cors 정적 지도 URL 생성 (HTTP Referer 인증) */
+function buildStaticMapUrl(lng: number, lat: number): string {
+  const pos = `${lng}%20${lat}`;
+  const marker = `type:d|size:mid|pos:${pos}`;
+  return (
+    `https://maps.apigw.ntruss.com/map-static/v2/raster-cors` +
+    `?w=400&h=320&center=${lng},${lat}&level=15` +
+    `&markers=${marker}` +
+    `&X-NCP-APIGW-API-KEY-ID=${NAVER_CLIENT_ID}`
+  );
+}
+
 export function NaverMapModal({ placeName, onClose }: NaverMapModalProps) {
-  const mapRef     = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
-  const [status, setStatus]   = useState<"loading" | "ok" | "error">("loading");
-  const [address, setAddress] = useState("");
+  const [status, setStatus]         = useState<"loading" | "ok" | "error">("loading");
+  const [staticMapUrl, setStaticMapUrl] = useState("");
+  const [address, setAddress]       = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -44,33 +56,31 @@ export function NaverMapModal({ placeName, onClose }: NaverMapModalProps) {
     async function init() {
       try {
         await loadNaverMapsScript();
-        if (cancelled || !mapRef.current) return;
+        if (cancelled) return;
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const naver = (window as any).naver;
-
-        const mapInstance = new naver.maps.Map(mapRef.current, {
-          center: new naver.maps.LatLng(37.5665, 126.978),
-          zoom: 14,
-          mapTypeId: naver.maps.MapTypeId.NORMAL,
-        });
 
         naver.maps.Service.geocode(
           { query: placeName },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (geocodeStatus: string, response: any) => {
             if (cancelled) return;
+
+            // SDK v2 응답: response.v2.addresses
             if (
               geocodeStatus !== naver.maps.Service.Status.OK ||
-              !response.addresses?.length
+              !response.v2?.addresses?.length
             ) {
               setStatus("error");
               return;
             }
-            const addr   = response.addresses[0];
-            const latlng = new naver.maps.LatLng(parseFloat(addr.y), parseFloat(addr.x));
-            mapInstance.setCenter(latlng);
-            new naver.maps.Marker({ position: latlng, map: mapInstance, title: placeName });
+
+            const addr = response.v2.addresses[0];
+            const lng  = parseFloat(addr.x);
+            const lat  = parseFloat(addr.y);
+
+            setStaticMapUrl(buildStaticMapUrl(lng, lat));
             setAddress(addr.roadAddress || addr.jibunAddress || "");
             setStatus("ok");
           }
@@ -119,15 +129,26 @@ export function NaverMapModal({ placeName, onClose }: NaverMapModalProps) {
           </button>
         </div>
 
-        {/* 지도 */}
+        {/* 지도 영역 (320px) */}
         <div className="relative bg-gray-100" style={{ height: 320 }}>
-          <div ref={mapRef} className="h-full w-full" />
           {status === "loading" && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-50">
               <span className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-400 border-t-transparent" />
               <p className="text-xs text-gray-500">지도를 불러오는 중…</p>
             </div>
           )}
+
+          {status === "ok" && staticMapUrl && (
+            /* raster-cors 정적 지도 이미지 */
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={staticMapUrl}
+              alt={placeName}
+              className="h-full w-full object-cover"
+              onError={() => setStatus("error")}
+            />
+          )}
+
           {status === "error" && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-50 p-6 text-center">
               <span className="text-3xl">🗺️</span>

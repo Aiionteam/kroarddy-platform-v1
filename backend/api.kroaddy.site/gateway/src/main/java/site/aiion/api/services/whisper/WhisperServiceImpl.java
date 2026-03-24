@@ -77,7 +77,7 @@ public class WhisperServiceImpl implements WhisperService {
             if (latest.isEmpty()) continue;
             WhisperMessage lastMsg = latest.get(0);
             String partnerName = resolveUsername(partnerId);
-            long unread = whisperRepository.countUnread(me);
+            long unread = whisperRepository.countUnreadFrom(me, partnerId);
             summaries.add(WhisperConversationSummary.builder()
                     .partnerId(partnerId)
                     .partnerName(partnerName)

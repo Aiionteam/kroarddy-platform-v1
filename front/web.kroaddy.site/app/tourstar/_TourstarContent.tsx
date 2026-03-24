@@ -757,18 +757,27 @@ export default function TourstarContent() {
   const { isAuthenticated, logout, accessToken } = useLoginStore();
   const [authorName, setAuthorName] = useState("내 여행기록");
 
-  /* 닉네임 조회 — settings/page.tsx 와 동일한 패턴 */
+  /* 닉네임 조회 */
   React.useEffect(() => {
     if (!isAuthenticated || !accessToken) return;
+
+    /* 세션 캐시 — 같은 세션 내 재방문 시 즉시 반영 */
+    const cached = sessionStorage.getItem("_tourstar_author");
+    if (cached) setAuthorName(cached);
+
     const userId = getUserIdFromToken(accessToken);
     if (!userId) return;
     let cancelled = false;
     (async () => {
       try {
         const res = await findUserById(Number(userId));
-        if (!cancelled && res.code === 200 && res.data) {
-          const name = res.data.nickname ?? res.data.name ?? "";
-          if (name) setAuthorName(name);
+        /* code 필드 값에 무관하게 data가 있으면 사용, || 로 빈 문자열도 처리 */
+        if (!cancelled && res.data) {
+          const name = (res.data.nickname || res.data.name || "").trim();
+          if (name) {
+            setAuthorName(name);
+            sessionStorage.setItem("_tourstar_author", name);
+          }
         }
       } catch (err) {
         console.error("[tourstar] 닉네임 조회 실패:", err);

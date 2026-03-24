@@ -4,6 +4,8 @@ import React, { useEffect, useRef, useState } from "react";
 
 const NAVER_CLIENT_ID =
   process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID || "8cy39wy7um";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL || "https://api.kroaddy.site";
 
 interface NaverRouteMapModalProps {
   places: { name: string; title: string }[];
@@ -38,11 +40,42 @@ const MARKER_COLORS = [
   "#f97316","#eab308","#22c55e","#14b8a6",
 ];
 
+/** Directions 15 API로 실제 도로 경로 좌표 배열 반환 */
+async function fetchDirectionsPath(
+  coords: { lng: number; lat: number }[]
+): Promise<[number, number][] | null> {
+  if (coords.length < 2) return null;
+
+  // Directions 15: 최대 15 경유지 (총 17개 지점)
+  const limited = coords.slice(0, 17);
+  const start     = limited[0];
+  const goal      = limited[limited.length - 1];
+  const waypoints = limited.slice(1, -1);
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/maps/directions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        start:     { lng: start.lng,  lat: start.lat },
+        goal:      { lng: goal.lng,   lat: goal.lat  },
+        waypoints: waypoints.map((w) => ({ lng: w.lng, lat: w.lat })),
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.path as [number, number][];
+  } catch {
+    return null;
+  }
+}
+
 export function NaverRouteMapModal({ places, planName, onClose }: NaverRouteMapModalProps) {
   const mapRef     = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
-  const [status, setStatus]         = useState<"loading" | "ok" | "error">("loading");
-  const [resolved, setResolved]     = useState(0);
+  const [status, setStatus]           = useState<"loading" | "ok" | "error">("loading");
+  const [resolved, setResolved]       = useState(0);
+  const [phase, setPhase]             = useState<"geocoding" | "routing">("geocoding");
   const [failedNames, setFailedNames] = useState<Set<string>>(new Set());
 
   const validPlaces = places.filter((p) => p.name?.trim());
@@ -64,7 +97,8 @@ export function NaverRouteMapModal({ places, planName, onClose }: NaverRouteMapM
           mapTypeId: naver.maps.MapTypeId.NORMAL,
         });
 
-        const coords: { lat: number; lng: number; idx: number; name: string }[] = [];
+        // ── 1단계: 순차 geocoding ──────────────────────────────────
+        const coords: { lng: number; lat: number; idx: number; name: string }[] = [];
         const failed = new Set<string>();
 
         for (let i = 0; i < validPlaces.length; i++) {
@@ -76,9 +110,18 @@ export function NaverRouteMapModal({ places, planName, onClose }: NaverRouteMapM
               { query: placeName },
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (stat: string, resp: any) => {
-                if (stat === naver.maps.Service.Status.OK && resp.addresses?.length) {
-                  const a = resp.addresses[0];
-                  coords.push({ lat: parseFloat(a.y), lng: parseFloat(a.x), idx: i, name: placeName });
+                // SDK v2 응답: resp.v2.addresses
+                if (
+                  stat === naver.maps.Service.Status.OK &&
+                  resp.v2?.addresses?.length
+                ) {
+                  const a = resp.v2.addresses[0];
+                  coords.push({
+                    lng: parseFloat(a.x),
+                    lat: parseFloat(a.y),
+                    idx: i,
+                    name: placeName,
+                  });
                 } else {
                   failed.add(placeName);
                 }
@@ -94,7 +137,15 @@ export function NaverRouteMapModal({ places, planName, onClose }: NaverRouteMapM
 
         if (coords.length === 0) { setStatus("error"); return; }
 
-        const latLngs = coords.map(({ lat, lng, idx, name }) => {
+        // ── 2단계: Directions 15 경로 조회 ────────────────────────
+        setPhase("routing");
+        const sortedCoords = coords.sort((a, b) => a.idx - b.idx);
+        const routePath = await fetchDirectionsPath(sortedCoords);
+
+        if (cancelled) return;
+
+        // ── 3단계: 마커 표시 ───────────────────────────────────────
+        const latLngs = coords.map(({ lng, lat, idx, name }) => {
           const latlng = new naver.maps.LatLng(lat, lng);
           const color  = MARKER_COLORS[idx % MARKER_COLORS.length];
           new naver.maps.Marker({
@@ -109,7 +160,19 @@ export function NaverRouteMapModal({ places, planName, onClose }: NaverRouteMapM
           return latlng;
         });
 
-        if (latLngs.length > 1) {
+        // ── 4단계: 경로 폴리라인 ──────────────────────────────────
+        if (routePath && routePath.length > 1) {
+          // Directions 15 실제 도로 경로 [[lng, lat], ...]
+          const roadPath = routePath.map(([lng, lat]) => new naver.maps.LatLng(lat, lng));
+          new naver.maps.Polyline({
+            map,
+            path: roadPath,
+            strokeColor: "#6366f1",
+            strokeWeight: 4,
+            strokeOpacity: 0.85,
+          });
+        } else if (latLngs.length > 1) {
+          // Directions 실패 시 직선 폴리라인 fallback
           new naver.maps.Polyline({
             map,
             path: latLngs,
@@ -120,6 +183,7 @@ export function NaverRouteMapModal({ places, planName, onClose }: NaverRouteMapM
           });
         }
 
+        // ── 5단계: 뷰포트 조정 ────────────────────────────────────
         if (coords.length === 1) {
           map.setCenter(latLngs[0]);
           map.setZoom(14);
@@ -191,7 +255,11 @@ export function NaverRouteMapModal({ places, planName, onClose }: NaverRouteMapM
         {status === "loading" && (
           <div className="flex shrink-0 items-center gap-2 border-b border-indigo-100 bg-indigo-50 px-4 py-1.5">
             <span className="h-3 w-3 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent" />
-            <p className="text-xs text-indigo-700">위치 검색 중… {resolved} / {validPlaces.length}</p>
+            <p className="text-xs text-indigo-700">
+              {phase === "geocoding"
+                ? `위치 검색 중… ${resolved} / ${validPlaces.length}`
+                : "경로 계산 중…"}
+            </p>
           </div>
         )}
 
