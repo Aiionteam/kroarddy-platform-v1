@@ -110,24 +110,9 @@ export default function HomePage() {
   }, [isAuthenticated, appUserId, router]);
 
   useEffect(() => {
-<<<<<<< Updated upstream
-    if (!isAuthenticated) return;
-    fetchProcessedNews(0)
-      .then((d) => {
-        setData(d);
-        if (d.top10?.length) {
-          const slim = d.top10.map(({ thumbnail: _t, ...rest }) => rest);
-          setNewsTop10(slim);
-        }
-      })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  }, [isAuthenticated]);
-=======
     if (!isAuthenticated || !accessToken) return;
     loadNews();
   }, [isAuthenticated, accessToken, loadNews]);
->>>>>>> Stashed changes
 
   if (!isAuthenticated) return null;
 
