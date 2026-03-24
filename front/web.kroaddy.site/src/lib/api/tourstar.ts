@@ -292,6 +292,27 @@ export async function getTourstarSharePreview(postId: string): Promise<TourstarS
   return res.json();
 }
 
+export async function updateTourstarPost(
+  postId: string,
+  payload: {
+    title?: string;
+    location?: string;
+    comment?: string;
+    tags?: string[];
+  },
+): Promise<TourstarPostRecord> {
+  const res = await fetch(toApiUrl(`/v1/photo-selection/posts/${postId}`), {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`투어스타 게시물 수정 API 오류: ${res.status}`);
+  }
+  return res.json();
+}
+
 export function buildTourstarShareUrl(postId: string): string {
   if (typeof window !== "undefined") {
     return `${window.location.origin}/tourstar?postId=${encodeURIComponent(postId)}`;
