@@ -299,6 +299,8 @@ export async function updateTourstarPost(
     location?: string;
     comment?: string;
     tags?: string[];
+    keep_photo_urls?: string[];
+    image_paths?: string[];
   },
 ): Promise<TourstarPostRecord> {
   const res = await fetch(toApiUrl(`/v1/photo-selection/posts/${postId}`), {
@@ -307,10 +309,47 @@ export async function updateTourstarPost(
     body: JSON.stringify(payload),
     cache: "no-store",
   });
-  if (!res.ok) {
-    throw new Error(`투어스타 게시물 수정 API 오류: ${res.status}`);
+  if (res.ok) {
+    return res.json();
   }
-  return res.json();
+  // 일부 게이트웨이 환경에서 PATCH가 차단될 수 있어 POST fallback 제공
+  if (res.status === 404 || res.status === 405) {
+    const fallbackRes = await fetch(toApiUrl(`/v1/photo-selection/posts/${postId}/update`), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    });
+    if (!fallbackRes.ok) {
+      throw new Error(`투어스타 게시물 수정 API 오류: ${fallbackRes.status}`);
+    }
+    return fallbackRes.json();
+  }
+  throw new Error(`투어스타 게시물 수정 API 오류: ${res.status}`);
+}
+
+export async function deleteTourstarPost(postId: string, userId: number): Promise<void> {
+  const q = new URLSearchParams({ user_id: String(userId) });
+  const res = await fetch(`${toApiUrl(`/v1/photo-selection/posts/${postId}`)}?${q.toString()}`, {
+    method: "DELETE",
+    cache: "no-store",
+  });
+  if (res.ok || res.status === 204) {
+    return;
+  }
+  if (res.status === 404 || res.status === 405) {
+    const fallbackRes = await fetch(toApiUrl(`/v1/photo-selection/posts/${postId}/delete`), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId }),
+      cache: "no-store",
+    });
+    if (fallbackRes.ok || fallbackRes.status === 204) {
+      return;
+    }
+    throw new Error(`투어스타 게시물 삭제 API 오류: ${fallbackRes.status}`);
+  }
+  throw new Error(`투어스타 게시물 삭제 API 오류: ${res.status}`);
 }
 
 export function buildTourstarShareUrl(postId: string): string {
