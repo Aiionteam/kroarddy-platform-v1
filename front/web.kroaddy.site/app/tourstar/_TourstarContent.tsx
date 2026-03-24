@@ -3,7 +3,8 @@
 import React, { useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLoginStore } from "@/store";
-import { getNicknameFromToken } from "@/lib/api/auth";
+import { getUserIdFromToken } from "@/lib/api/auth";
+import { findUserById } from "@/lib/api/user";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import {
   buildTourstarImageUrl,
@@ -754,7 +755,27 @@ export default function TourstarContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, logout, accessToken } = useLoginStore();
-  const authorName = getNicknameFromToken(accessToken ?? undefined) ?? "내 여행기록";
+  const [authorName, setAuthorName] = useState("내 여행기록");
+
+  /* 닉네임 조회 — settings/page.tsx 와 동일한 패턴 */
+  React.useEffect(() => {
+    if (!isAuthenticated || !accessToken) return;
+    const userId = getUserIdFromToken(accessToken);
+    if (!userId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await findUserById(Number(userId));
+        if (!cancelled && res.code === 200 && res.data) {
+          const name = res.data.nickname ?? res.data.name ?? "";
+          if (name) setAuthorName(name);
+        }
+      } catch (err) {
+        console.error("[tourstar] 닉네임 조회 실패:", err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isAuthenticated, accessToken]);
 
   const [posts, setPosts] = useState<TourPost[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("feed");
@@ -776,6 +797,15 @@ export default function TourstarContent() {
     })();
     return () => { cancelled = true; };
   }, [isAuthenticated]);
+
+  /* authorName이 실제 닉네임으로 바뀌면, author_nickname이 없는 기존 포스트도 갱신 */
+  React.useEffect(() => {
+    if (authorName === "내 여행기록") return;
+    setPosts((prev) =>
+      prev.map((p) => (p.author === "내 여행기록" ? { ...p, author: authorName } : p))
+    );
+    setDetailPost((prev) => (prev && prev.author === "내 여행기록" ? { ...prev, author: authorName } : prev));
+  }, [authorName]);
 
   React.useEffect(() => {
     const requestedPostId = searchParams.get("postId");
@@ -840,9 +870,11 @@ export default function TourstarContent() {
         </header>
         <div className="mx-auto max-w-5xl px-6 py-6 space-y-6">
           <div className="flex items-center gap-6 rounded-2xl bg-white border border-gray-100 p-6 shadow-sm">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-2xl font-bold text-white shadow-lg shadow-purple-200">T</div>
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-2xl font-bold text-white shadow-lg shadow-purple-200">
+              {authorName.slice(0, 1).toUpperCase()}
+            </div>
             <div className="flex-1">
-              <h2 className="text-lg font-bold text-gray-800">내 여행기록</h2>
+              <h2 className="text-lg font-bold text-gray-800">{authorName}</h2>
               <p className="mt-0.5 text-xs text-gray-400">소중한 여행의 순간들을 기록하고 공유하세요</p>
               <div className="mt-3 flex gap-6">
                 {[{ label: "게시물", value: stats.total, color: "text-gray-800" }, { label: "사진", value: stats.totalPhotos, color: "text-gray-800" }, { label: "좋아요", value: stats.totalLikes, color: "text-pink-500" }, { label: "공개", value: stats.public, color: "text-emerald-600" }, { label: "비공개", value: stats.private, color: "text-gray-500" }].map((s) => (
