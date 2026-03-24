@@ -41,7 +41,7 @@ _BROWSER_HEADERS = {
 }
 
 _CACHE: dict[str, tuple[list[dict], float]] = {}
-_CACHE_TTL = 15 * 60
+_CACHE_TTL = 6 * 60 * 60  # 6시간 (스케줄러 주기와 동일)
 _CACHE_LOCKS: dict[str, asyncio.Lock] = {cat: asyncio.Lock() for cat in RSS_FEEDS}
 
 
