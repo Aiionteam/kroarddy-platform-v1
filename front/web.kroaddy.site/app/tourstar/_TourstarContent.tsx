@@ -16,6 +16,7 @@ import {
   getTourstarJobStatus,
   listTourstarPosts,
   localArtifactPathToUrl,
+  deleteTourstarPost,
   updateTourstarPost,
   type TourstarPostRecord,
   type TourstarStyleFilter,
@@ -532,26 +533,83 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
 interface EditModalProps {
   post: TourPost | null;
   onClose: () => void;
-  onSave: (postId: string, updates: { title: string; location: string; comment: string; tags: string[] }) => Promise<void>;
+  onSave: (postId: string, updates: {
+    title: string;
+    location: string;
+    comment: string;
+    tags: string[];
+    keepPhotoUrls: string[];
+    newImagePaths: string[];
+  }) => Promise<void>;
+  onDelete: (postId: string) => Promise<boolean>;
 }
 
-function EditPostModal({ post, onClose, onSave }: EditModalProps) {
+function EditPostModal({ post, onClose, onSave, onDelete }: EditModalProps) {
   const [title, setTitle] = useState(post?.title ?? "");
   const [location, setLocation] = useState(post?.location === "위치 미확인" ? "" : (post?.location ?? ""));
-  const [comment, setComment] = useState(post?.comment ?? "");
+  const [comment, setComment] = useState(stripHashtags(post?.comment ?? ""));
   const [tagsInput, setTagsInput] = useState((post?.tags ?? []).join(", "));
+  const [existingPhotos, setExistingPhotos] = useState<Array<{ id: string; imageUrl: string; keep: boolean }>>([]);
+  const [newPhotos, setNewPhotos] = useState<TourPhoto[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   React.useEffect(() => {
     if (post) {
       setTitle(post.title);
       setLocation(post.location === "위치 미확인" ? "" : post.location);
-      setComment(post.comment);
+      setComment(stripHashtags(post.comment));
       setTagsInput(post.tags.join(", "));
+      setExistingPhotos(
+        post.photos
+          .map((p, idx) => ({ id: `existing-${idx}`, imageUrl: p.imageUrl || "", keep: true }))
+          .filter((p) => !!p.imageUrl),
+      );
+      setNewPhotos([]);
     }
   }, [post]);
 
   if (!post) return null;
+
+  const handleUploadNewPhotos = async (files: File[]) => {
+    if (files.length === 0 || uploading) return;
+    const imageFiles = files.filter((file) => file.type.startsWith("image/"));
+    if (imageFiles.length === 0) return;
+    setUploading(true);
+    try {
+      const result = await uploadTourstarPhotos(imageFiles);
+      const mapped: TourPhoto[] = result.uploaded.map((item, idx) => ({
+        id: `edit-upload-${Date.now()}-${idx}`,
+        gradient: randomGradient(),
+        selected: true,
+        imageUrl: buildTourstarImageUrl(item.url),
+        sourceImagePath: item.url,
+        fileName: item.name,
+      }));
+      setNewPhotos((prev) => [...prev, ...mapped]);
+    } catch (error) {
+      console.error(error);
+      window.alert("사진 업로드에 실패했습니다.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!post) return;
+    setDeleting(true);
+    try {
+      const ok = await onDelete(post.id);
+      if (ok) onClose();
+    } catch (error) {
+      console.error(error);
+      window.alert("삭제에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!title.trim()) return;
@@ -564,10 +622,17 @@ function EditPostModal({ post, onClose, onSave }: EditModalProps) {
       await onSave(post.id, {
         title: title.trim(),
         location: location.trim() || "위치 미확인",
-        comment,
+        comment: stripHashtags(comment),
         tags,
+        keepPhotoUrls: existingPhotos.filter((p) => p.keep).map((p) => p.imageUrl),
+        newImagePaths: newPhotos
+          .map((p) => p.sourceImagePath)
+          .filter((v): v is string => Boolean(v && v.trim())),
       });
       onClose();
+    } catch (error) {
+      console.error(error);
+      window.alert("게시글 수정에 실패했습니다. 잠시 후 다시 시도해주세요.");
     } finally {
       setSaving(false);
     }
@@ -602,18 +667,78 @@ function EditPostModal({ post, onClose, onSave }: EditModalProps) {
               className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none resize-none" />
           </div>
           <div>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="block text-xs font-medium text-gray-500">사진 수정</label>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="rounded-md border border-dashed border-gray-300 px-2 py-1 text-[11px] text-gray-500 hover:border-purple-300 hover:text-purple-600 transition-colors disabled:opacity-50"
+              >
+                {uploading ? "업로드 중..." : "+ 사진 추가"}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={async (e) => {
+                  await handleUploadNewPhotos(e.target.files ? Array.from(e.target.files) : []);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {existingPhotos.map((photo) => (
+                <button
+                  key={photo.id}
+                  type="button"
+                  onClick={() => setExistingPhotos((prev) => prev.map((p) => p.id === photo.id ? { ...p, keep: !p.keep } : p))}
+                  className={`relative aspect-square overflow-hidden rounded-lg border transition-all ${
+                    photo.keep ? "border-purple-300 ring-2 ring-purple-200" : "border-gray-200 opacity-40"
+                  }`}
+                >
+                  <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${photo.imageUrl})` }} />
+                  <div className={`absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full text-white ${photo.keep ? "bg-purple-500" : "bg-black/30"}`}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>
+                  </div>
+                </button>
+              ))}
+              {newPhotos.map((photo) => (
+                <button
+                  key={photo.id}
+                  type="button"
+                  onClick={() => setNewPhotos((prev) => prev.filter((p) => p.id !== photo.id))}
+                  className="relative aspect-square overflow-hidden rounded-lg border border-emerald-300 ring-2 ring-emerald-200"
+                  title="클릭하면 추가한 사진이 제거됩니다."
+                >
+                  <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${photo.imageUrl})` }} />
+                  <div className="absolute top-1 right-1 rounded-full bg-emerald-500 px-1 text-[10px] text-white">신규</div>
+                </button>
+              ))}
+            </div>
+            <p className="mt-1 text-[10px] text-gray-400">기존 사진은 클릭해서 유지/제거를 선택할 수 있고, 신규 사진은 클릭하면 목록에서 제거됩니다.</p>
+          </div>
+          <div>
             <label className="mb-1 block text-xs font-medium text-gray-500">태그 (쉼표 또는 공백으로 구분)</label>
             <input type="text" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)}
               placeholder="예: 겨울산책, 힐링, 여행기록"
               className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none" />
           </div>
         </div>
-        <div className="mt-6 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors">취소</button>
-          <button type="button" onClick={handleSave} disabled={saving || !title.trim()}
-            className="rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:opacity-90 transition-opacity disabled:opacity-50">
-            {saving ? "저장중..." : "저장"}
+        <div className="mt-6 flex items-center justify-between gap-2">
+          <button type="button" onClick={handleDelete} disabled={saving || deleting}
+            className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50">
+            {deleting ? "삭제중..." : "게시글 삭제"}
           </button>
+          <div className="flex gap-2">
+            <button type="button" onClick={onClose} className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors">취소</button>
+            <button type="button" onClick={handleSave} disabled={saving || deleting || !title.trim()}
+              className="rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:opacity-90 transition-opacity disabled:opacity-50">
+              {saving ? "저장중..." : "저장"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -629,9 +754,10 @@ interface DetailModalProps {
   onShare: (postId: string) => Promise<void> | void;
   onEdit: (post: TourPost) => void;
   onBookmark: (id: string) => void;
+  onDeletePost: (postId: string) => Promise<boolean>;
 }
 
-function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, onEdit, onBookmark }: DetailModalProps) {
+function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, onEdit, onBookmark, onDeletePost }: DetailModalProps) {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [commentInput, setCommentInput] = useState("");
 
@@ -681,11 +807,21 @@ function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, o
             </div>
             <div className="flex items-center gap-1.5">
               {post.isOwner ? (
-                <button type="button" onClick={() => onEdit(post)}
-                  className="flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-600 hover:bg-blue-100 transition-colors">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                  수정
-                </button>
+                <>
+                  <button type="button" onClick={() => onEdit(post)}
+                    className="flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-600 hover:bg-blue-100 transition-colors">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                    수정
+                  </button>
+                  <button type="button" onClick={async () => {
+                    const ok = await onDeletePost(post.id);
+                    if (ok) onClose();
+                  }}
+                    className="flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-medium text-red-600 hover:bg-red-100 transition-colors">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                    삭제
+                  </button>
+                </>
               ) : (
                 <button type="button" onClick={() => onBookmark(post.id)}
                   className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${post.bookmarked ? "border-amber-300 bg-amber-50 text-amber-600 hover:bg-amber-100" : "border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100"}`}>
@@ -748,13 +884,14 @@ function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, o
 }
 
 /* ───────────────────── 게시물 카드 (피드 뷰) ───────────────────── */
-function FeedCard({ post, onClick, onToggleLike, onShare, onBookmark, onEdit }: {
+function FeedCard({ post, onClick, onToggleLike, onShare, onBookmark, onEdit, onDeletePost }: {
   post: TourPost;
   onClick: () => void;
   onToggleLike: (id: string) => void;
   onShare: (id: string) => void;
   onBookmark: (id: string) => void;
   onEdit: (post: TourPost) => void;
+  onDeletePost: (postId: string) => Promise<boolean>;
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all hover:shadow-md">
@@ -773,11 +910,21 @@ function FeedCard({ post, onClick, onToggleLike, onShare, onBookmark, onEdit }: 
           )}
         </div>
         {post.isOwner ? (
-          <button type="button" onClick={(e) => { e.stopPropagation(); onEdit(post); }}
-            className="rounded-full p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-500 transition-colors"
-            title="수정">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-          </button>
+          <div className="flex items-center gap-0.5">
+            <button type="button" onClick={(e) => { e.stopPropagation(); onEdit(post); }}
+              className="rounded-full p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-500 transition-colors"
+              title="수정">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+            </button>
+            <button type="button" onClick={(e) => {
+              e.stopPropagation();
+              void onDeletePost(post.id);
+            }}
+              className="rounded-full p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+              title="삭제">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+            </button>
+          </div>
         ) : (
           <button type="button" onClick={(e) => { e.stopPropagation(); onBookmark(post.id); }}
             className={`rounded-full p-1.5 transition-colors ${post.bookmarked ? "text-amber-500 hover:text-amber-600" : "text-gray-300 hover:text-amber-400"}`}
@@ -885,6 +1032,7 @@ function mapRecordToPost(
     gradient: randomGradient(),
     selected: true,
     imageUrl: buildTourstarImageUrl(url),
+    sourceImagePath: url,
     fileName: url.split("/").pop() || `photo-${idx + 1}`,
   }));
   return {
@@ -1095,8 +1243,49 @@ export default function TourstarContent() {
     setPosts((prev) => [mapRecordToPost(saved, authorName, currentUserId, bookmarkedIds), ...prev]);
   };
 
-  const updatePostData = async (postId: string, updates: { title: string; location: string; comment: string; tags: string[] }) => {
-    const saved = await updateTourstarPost(postId, updates);
+  const deletePost = async (postId: string): Promise<boolean> => {
+    if (!currentUserId) {
+      window.alert("로그인 정보를 확인할 수 없어 삭제할 수 없습니다.");
+      return false;
+    }
+    if (!window.confirm("이 게시글을 삭제할까요? 삭제 후에는 복구할 수 없습니다.")) {
+      return false;
+    }
+    try {
+      await deleteTourstarPost(postId, currentUserId);
+      setBookmarkedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(postId);
+        localStorage.setItem(`tourstar_bookmarks_${currentUserId}`, JSON.stringify([...next]));
+        return next;
+      });
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+      setDetailPost((prev) => (prev?.id === postId ? null : prev));
+      setEditTargetPost((prev) => (prev?.id === postId ? null : prev));
+      return true;
+    } catch (error) {
+      console.error(error);
+      window.alert("삭제에 실패했습니다. 본인 게시글인지 확인하거나 잠시 후 다시 시도해주세요.");
+      return false;
+    }
+  };
+
+  const updatePostData = async (postId: string, updates: {
+    title: string;
+    location: string;
+    comment: string;
+    tags: string[];
+    keepPhotoUrls: string[];
+    newImagePaths: string[];
+  }) => {
+    const saved = await updateTourstarPost(postId, {
+      title: updates.title,
+      location: updates.location,
+      comment: updates.comment,
+      tags: updates.tags,
+      keep_photo_urls: updates.keepPhotoUrls,
+      image_paths: updates.newImagePaths,
+    });
     const updated = mapRecordToPost(saved, authorName, currentUserId, bookmarkedIds);
     setPosts((prev) => prev.map((p) => p.id === postId ? updated : p));
     setDetailPost((prev) => prev && prev.id === postId ? updated : prev);
@@ -1237,7 +1426,7 @@ export default function TourstarContent() {
                 {filteredPosts.map((post) => (
                   <FeedCard key={post.id} post={post} onClick={() => setDetailPost(post)}
                     onToggleLike={toggleLike} onShare={sharePost}
-                    onBookmark={toggleBookmark} onEdit={(p) => setEditTargetPost(p)} />
+                    onBookmark={toggleBookmark} onEdit={(p) => setEditTargetPost(p)} onDeletePost={deletePost} />
                 ))}
               </div>
             ) : (
@@ -1277,7 +1466,7 @@ export default function TourstarContent() {
       </main>
 
       <CreatePostModal open={createOpen} onClose={() => setCreateOpen(false)} onCreate={createPost} onJobStatusChange={setAnalysisStatus} />
-      <EditPostModal post={editTargetPost} onClose={() => setEditTargetPost(null)} onSave={updatePostData} />
+      <EditPostModal post={editTargetPost} onClose={() => setEditTargetPost(null)} onSave={updatePostData} onDelete={deletePost} />
       <PostDetailModal
         post={detailPost}
         onClose={() => setDetailPost(null)}
@@ -1286,6 +1475,7 @@ export default function TourstarContent() {
         onShare={sharePost}
         onEdit={(p) => { setDetailPost(null); setEditTargetPost(p); }}
         onBookmark={toggleBookmark}
+        onDeletePost={deletePost}
       />
     </AppLayout>
   );

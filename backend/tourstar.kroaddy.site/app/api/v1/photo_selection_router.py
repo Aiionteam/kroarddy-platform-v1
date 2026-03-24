@@ -17,8 +17,9 @@ from urllib.parse import unquote, urlparse
 from uuid import uuid4
 
 import httpx
-from fastapi import APIRouter, Depends, File, Header, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, Request, Response, UploadFile
 from PIL import ExifTags, Image
+from sqlalchemy import delete as sql_delete
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,6 +31,7 @@ from ...domain.v1.contracts import (
     AutoCommentResponse,
     CommentResponse,
     CreatePostRequest,
+    DeletePostRequest,
     EvaluationRequest,
     GeneratePostRequest,
     GeneratePostResponse,
@@ -1757,6 +1759,29 @@ async def update_post(post_id: int, req: UpdatePostRequest, db: AsyncSession = D
         post.comment = req.comment
     if req.tags is not None:
         post.tags = req.tags
+    if req.keep_photo_urls is not None or req.image_paths is not None:
+        next_photo_urls: list[str] = []
+        for raw_url in list(req.keep_photo_urls or []):
+            raw = str(raw_url or "").strip()
+            if not raw:
+                continue
+            key = _extract_s3_key_from_url(raw)
+            if key:
+                next_photo_urls.append(_build_s3_public_url(key))
+            else:
+                next_photo_urls.append(raw)
+
+        for raw_path in list(req.image_paths or []):
+            local_path = _resolve_local_image_path(raw_path)
+            if local_path is None:
+                continue
+            try:
+                next_photo_urls.append(_upload_local_image_to_s3(local_path))
+            except Exception:
+                logger.exception("S3 upload failed during post update: %s", local_path)
+                raise HTTPException(status_code=500, detail=f"Failed to upload image to S3: {local_path.name}")
+
+        post.photo_urls = next_photo_urls
     await db.flush()
     comments = (
         (await db.execute(
@@ -1764,6 +1789,47 @@ async def update_post(post_id: int, req: UpdatePostRequest, db: AsyncSession = D
         )).scalars().all()
     )
     return _to_post_response(post, list(comments))
+
+
+@router.post("/posts/{post_id}/update", response_model=PostResponse)
+async def update_post_via_post(
+    post_id: int,
+    req: UpdatePostRequest,
+    db: AsyncSession = Depends(get_db),
+) -> PostResponse:
+    # 게이트웨이/프록시가 PATCH 메서드를 제한하는 환경을 위한 호환 엔드포인트
+    return await update_post(post_id, req, db)
+
+
+async def _delete_post_core(post_id: int, user_id: int, db: AsyncSession) -> None:
+    post = (await db.execute(select(TourstarPost).where(TourstarPost.id == post_id))).scalar_one_or_none()
+    if post is None:
+        raise HTTPException(status_code=404, detail=f"Post not found: {post_id}")
+    if post.user_id is not None and int(post.user_id) != int(user_id):
+        raise HTTPException(status_code=403, detail="본인이 작성한 게시글만 삭제할 수 있습니다.")
+    await db.execute(sql_delete(TourstarPost).where(TourstarPost.id == post_id))
+    await db.flush()
+
+
+@router.delete("/posts/{post_id}")
+async def delete_post(
+    post_id: int,
+    user_id: int = Query(..., ge=1, description="현재 로그인 사용자 ID"),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    await _delete_post_core(post_id, user_id, db)
+    return Response(status_code=204)
+
+
+@router.post("/posts/{post_id}/delete")
+async def delete_post_via_post(
+    post_id: int,
+    req: DeletePostRequest,
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    # DELETE 메서드가 차단되는 환경용
+    await _delete_post_core(post_id, req.user_id, db)
+    return Response(status_code=204)
 
 
 @router.post("/posts/{post_id}/comments", response_model=CommentResponse)

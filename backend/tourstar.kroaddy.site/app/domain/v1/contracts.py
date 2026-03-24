@@ -157,6 +157,12 @@ class UpdatePostRequest(BaseModel):
     location: str | None = None
     comment: str | None = None
     tags: list[str] | None = None
+    keep_photo_urls: list[str] | None = None
+    image_paths: list[str] | None = None
+
+
+class DeletePostRequest(BaseModel):
+    user_id: int = Field(..., ge=1, description="삭제를 요청하는 로그인 사용자 ID")
 
 
 class AddCommentRequest(BaseModel):
