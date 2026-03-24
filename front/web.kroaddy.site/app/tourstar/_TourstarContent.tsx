@@ -757,18 +757,25 @@ export default function TourstarContent() {
   const { isAuthenticated, logout, accessToken } = useLoginStore();
   const [authorName, setAuthorName] = useState("내 여행기록");
 
+  /* 닉네임 조회 — settings/page.tsx 와 동일한 패턴 */
   React.useEffect(() => {
-    if (!accessToken) return;
+    if (!isAuthenticated || !accessToken) return;
     const userId = getUserIdFromToken(accessToken);
     if (!userId) return;
-    findUserById(Number(userId))
-      .then((res) => {
-        if (res.code === 200 && res.data) {
-          setAuthorName(res.data.nickname || res.data.name || "내 여행기록");
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await findUserById(Number(userId));
+        if (!cancelled && res.code === 200 && res.data) {
+          const name = res.data.nickname ?? res.data.name ?? "";
+          if (name) setAuthorName(name);
         }
-      })
-      .catch(() => {});
-  }, [accessToken]);
+      } catch (err) {
+        console.error("[tourstar] 닉네임 조회 실패:", err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isAuthenticated, accessToken]);
 
   const [posts, setPosts] = useState<TourPost[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("feed");
@@ -790,6 +797,15 @@ export default function TourstarContent() {
     })();
     return () => { cancelled = true; };
   }, [isAuthenticated]);
+
+  /* authorName이 실제 닉네임으로 바뀌면, author_nickname이 없는 기존 포스트도 갱신 */
+  React.useEffect(() => {
+    if (authorName === "내 여행기록") return;
+    setPosts((prev) =>
+      prev.map((p) => (p.author === "내 여행기록" ? { ...p, author: authorName } : p))
+    );
+    setDetailPost((prev) => (prev && prev.author === "내 여행기록" ? { ...prev, author: authorName } : prev));
+  }, [authorName]);
 
   React.useEffect(() => {
     const requestedPostId = searchParams.get("postId");
