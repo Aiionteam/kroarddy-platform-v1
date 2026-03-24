@@ -37,6 +37,7 @@ from ...domain.v1.contracts import (
     JobStatusResponse,
     PostResponse,
     SharePreviewResponse,
+    UpdatePostRequest,
     UploadPhotosResponse,
     UploadPipelineJob,
     UploadedPhoto,
@@ -1741,6 +1742,28 @@ async def create_post(req: CreatePostRequest, db: AsyncSession = Depends(get_db)
     await db.flush()
     await db.refresh(post)
     return _to_post_response(post, [])
+
+
+@router.patch("/posts/{post_id}", response_model=PostResponse)
+async def update_post(post_id: int, req: UpdatePostRequest, db: AsyncSession = Depends(get_db)) -> PostResponse:
+    post = (await db.execute(select(TourstarPost).where(TourstarPost.id == post_id))).scalar_one_or_none()
+    if post is None:
+        raise HTTPException(status_code=404, detail=f"Post not found: {post_id}")
+    if req.title is not None:
+        post.title = req.title
+    if req.location is not None:
+        post.location = req.location
+    if req.comment is not None:
+        post.comment = req.comment
+    if req.tags is not None:
+        post.tags = req.tags
+    await db.flush()
+    comments = (
+        (await db.execute(
+            select(TourstarPostComment).where(TourstarPostComment.post_id == post_id)
+        )).scalars().all()
+    )
+    return _to_post_response(post, list(comments))
 
 
 @router.post("/posts/{post_id}/comments", response_model=CommentResponse)
