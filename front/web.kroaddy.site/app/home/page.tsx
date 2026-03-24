@@ -201,40 +201,6 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* ══════════════════════════════════════════════════
-              5. 유저 추천 루트 바로가기 배너
-          ══════════════════════════════════════════════════ */}
-          <section>
-            <button
-              type="button"
-              onClick={() => router.push("/planner/user-content")}
-              className="w-full rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 px-5 py-4 flex items-center justify-between shadow-md hover:opacity-90 transition-opacity"
-            >
-              <div className="text-left">
-                <p className="text-sm font-black text-white">👥 다른 여행자의 추천 루트</p>
-                <p className="text-xs text-white/80 mt-0.5">실제 여행자들이 공유한 루트를 확인해보세요</p>
-              </div>
-              <span className="text-white text-xl font-bold">›</span>
-            </button>
-          </section>
-
-          {/* ══════════════════════════════════════════════════
-              6. AI 플래너 홍보 배너
-          ══════════════════════════════════════════════════ */}
-          <section>
-            <button
-              type="button"
-              onClick={() => router.push("/planner")}
-              className="w-full rounded-2xl bg-gradient-to-r from-pink-500 to-rose-500 px-5 py-4 flex items-center justify-between shadow-md hover:opacity-90 transition-opacity"
-            >
-              <div className="text-left">
-                <p className="text-sm font-black text-white">✨ AI 여행 일정 만들기</p>
-                <p className="text-xs text-white/80 mt-0.5">날짜와 여행지를 입력하면 AI가 완성해드려요</p>
-              </div>
-              <span className="text-white text-xl font-bold">›</span>
-            </button>
-          </section>
-
         </div>
       </main>
     </AppLayout>
@@ -260,17 +226,42 @@ function SectionHeader({ title, action, onAction }: {
 }
 
 /* ══════════════════════════════════════════════════════════
-   뉴스 배너 캐러셀 (전체 너비, 오버레이 텍스트 스타일)
+   뉴스 배너 캐러셀 — 네이버 쇼핑 스타일 멀티카드 슬라이드
+   - 한 번에 카드 2장 + 오른쪽 살짝 보이기(peek)
+   - 클릭 시 해당 기사로 이동, 10초 자동 슬라이드
 ══════════════════════════════════════════════════════════ */
+
+// 카드별 폴백 그라데이션 (썸네일 없을 때)
+const CARD_GRADIENTS = [
+  "from-violet-500 to-purple-700",
+  "from-pink-500 to-rose-600",
+  "from-sky-500 to-blue-600",
+  "from-amber-400 to-orange-500",
+  "from-emerald-400 to-teal-600",
+  "from-fuchsia-500 to-pink-600",
+  "from-indigo-500 to-violet-600",
+  "from-rose-400 to-pink-600",
+  "from-cyan-400 to-sky-500",
+  "from-lime-400 to-green-500",
+];
+
 function NewsBanner({ items }: { items: ProcessedNewsItem[] }) {
-  const [cur, setCur] = useState(0);
+  const [offset, setOffset] = useState(0);   // 슬라이드 이동 인덱스 (카드 단위)
   const touchStartX = useRef<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const total = items.length;
+
+  // 한 번에 넘길 카드 수
+  const STEP = 2;
+  // 최대 offset: 끝에서 2장 보이도록
+  const maxOffset = Math.max(0, total - STEP);
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => setCur((c) => (c + 1) % total), 10000);
+    timerRef.current = setInterval(() => {
+      setOffset((o) => (o + STEP >= total ? 0 : o + STEP));
+    }, 10000);
   }, [total]);
 
   useEffect(() => {
@@ -278,9 +269,15 @@ function NewsBanner({ items }: { items: ProcessedNewsItem[] }) {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [resetTimer]);
 
-  const prev = useCallback(() => { setCur((c) => (c - 1 + total) % total); resetTimer(); }, [total, resetTimer]);
-  const next = useCallback(() => { setCur((c) => (c + 1) % total); resetTimer(); }, [total, resetTimer]);
-  const goTo = useCallback((i: number) => { setCur(i); resetTimer(); }, [resetTimer]);
+  const prev = useCallback(() => {
+    setOffset((o) => Math.max(0, o - STEP));
+    resetTimer();
+  }, [resetTimer]);
+
+  const next = useCallback(() => {
+    setOffset((o) => (o + STEP >= total ? 0 : o + STEP));
+    resetTimer();
+  }, [total, resetTimer]);
 
   const onTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0]?.clientX ?? null; };
   const onTouchEnd   = (e: React.TouchEvent) => {
@@ -290,90 +287,115 @@ function NewsBanner({ items }: { items: ProcessedNewsItem[] }) {
     touchStartX.current = null;
   };
 
-  const item = items[cur]!;
-  const rank = cur + 1;
-  const cat = getCatStyle(item.category);
+  // 카드 너비: "calc(50% - 6px)" → 2장 보이고 오른쪽 peek
+  const CARD_W = "calc(50% - 6px)";
 
   return (
-    <div className="relative select-none w-full" style={{ height: 260 }}
-      onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+    <div className="select-none w-full">
+      {/* 슬라이드 트랙 영역 */}
+      <div className="relative overflow-hidden w-full px-3"
+        onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
 
-      {/* 배경 이미지 */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-100 to-pink-100">
-        {item.thumbnail && (
-          <img
-            src={item.thumbnail}
-            alt=""
-            className="w-full h-full object-cover"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-          />
-        )}
+        {/* 트랙 */}
+        <div
+          ref={trackRef}
+          className="flex gap-3 transition-transform duration-500 ease-in-out"
+          style={{ transform: `translateX(calc(-${offset} * (${CARD_W} + 12px)))` }}
+        >
+          {items.map((item, i) => {
+            const rank = i + 1;
+            const cat = getCatStyle(item.category);
+            const grad = CARD_GRADIENTS[i % CARD_GRADIENTS.length]!;
+
+            return (
+              <a
+                key={item.id ?? i}
+                href={item.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 relative rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:scale-[1.01] transition-all"
+                style={{ width: CARD_W, height: 200 }}
+              >
+                {/* 배경: 썸네일 or 그라데이션 */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${grad}`}>
+                  {item.thumbnail && (
+                    <img
+                      src={item.thumbnail}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                  )}
+                </div>
+
+                {/* 오버레이 */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/10" />
+
+                {/* 순위 배지 */}
+                <div className={`absolute top-2.5 left-2.5 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shadow z-10
+                  ${rank <= 3 ? "bg-yellow-400 text-white" : "bg-black/60 text-white backdrop-blur-sm"}`}>
+                  {rank}
+                </div>
+
+                {/* 카테고리 배지 */}
+                <div className="absolute top-2.5 right-2.5 z-10">
+                  <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${cat.bg} ${cat.text}`}>
+                    {cat.emoji}
+                  </span>
+                </div>
+
+                {/* 하단 텍스트 */}
+                <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 z-10">
+                  {item.location && item.location !== "전국" && (
+                    <p className="text-[10px] text-white/70 mb-0.5">📍 {item.location}</p>
+                  )}
+                  <h3 className="text-xs font-bold text-white leading-snug line-clamp-2 drop-shadow mb-1">
+                    {item.title}
+                  </h3>
+                  <div className="flex items-center gap-1 text-[10px] text-white/60">
+                    <span className="font-medium text-white/80 truncate max-w-[80px]">{item.source}</span>
+                    <span>·</span>
+                    <span className="shrink-0">{timeAgo(item.published)}</span>
+                  </div>
+                </div>
+              </a>
+            );
+          })}
+        </div>
       </div>
 
-      {/* 하단 그라데이션 오버레이 */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
-
-      {/* 순위 배지 */}
-      <div className={`absolute top-3 left-4 w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-lg z-10
-        ${rank <= 3 ? "bg-yellow-400 text-white" : "bg-gray-800/80 text-white backdrop-blur-sm"}`}>
-        {rank}
-      </div>
-
-      {/* 좌우 화살표 */}
-      <button type="button" onClick={prev} aria-label="이전"
-        className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/50 transition-colors text-lg font-bold">
-        ‹
-      </button>
-      <button type="button" onClick={next} aria-label="다음"
-        className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/50 transition-colors text-lg font-bold">
-        ›
-      </button>
-
-      {/* 하단 텍스트 오버레이 */}
-      <div className="absolute bottom-0 left-0 right-0 px-4 pb-3 z-10">
-        {/* 카테고리 + 날짜 */}
-        <div className="flex flex-wrap gap-1.5 mb-1.5 items-center">
-          <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${cat.bg} ${cat.text}`}>
-            {cat.emoji} {item.category}
+      {/* 컨트롤 바: 카운터 + 화살표 */}
+      <div className="flex items-center justify-between px-4 mt-2.5">
+        {/* 도트 인디케이터 (페이지 단위) */}
+        <div className="flex gap-1 items-center">
+          {Array.from({ length: Math.ceil(total / STEP) }).map((_, pi) => {
+            const active = Math.floor(offset / STEP) === pi;
+            return (
+              <button
+                key={pi}
+                type="button"
+                onClick={() => { setOffset(pi * STEP > maxOffset ? maxOffset : pi * STEP); resetTimer(); }}
+                className={`rounded-full transition-all duration-200
+                  ${active ? "w-5 h-1.5 bg-purple-500" : "w-1.5 h-1.5 bg-gray-300 hover:bg-purple-300"}`}
+                aria-label={`${pi + 1}페이지`}
+              />
+            );
+          })}
+          <span className="text-[10px] text-gray-400 ml-1">
+            <span className="font-bold text-gray-600">{Math.floor(offset / STEP) + 1}</span>/{Math.ceil(total / STEP)}
           </span>
-          {item.location && item.location !== "전국" && (
-            <span className="text-[11px] text-white/80">📍 {item.location}</span>
-          )}
-          {item.date_mentioned && (
-            <span className="text-[11px] text-white/80 font-semibold">📅 {item.date_mentioned}</span>
-          )}
         </div>
 
-        {/* 제목 */}
-        <h3 className="text-sm font-black text-white leading-snug line-clamp-2 drop-shadow mb-1">{item.title}</h3>
-
-        {/* 요약 */}
-        {(item.gpt_summary || item.summary) && (
-          <p className="text-[11px] text-white/80 line-clamp-1 mb-2">
-            {item.gpt_summary || item.summary}
-          </p>
-        )}
-
-        {/* 출처 + 기사 링크 + 도트 */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            {/* 도트 인디케이터 */}
-            {items.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => goTo(i)}
-                className={`rounded-full transition-all duration-200
-                  ${i === cur ? "w-4 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/40 hover:bg-white/70"}`}
-                aria-label={`${i + 1}번째 뉴스`}
-              />
-            ))}
-            <span className="text-[10px] text-white/60 ml-1">{cur + 1}/{total}</span>
-          </div>
-          <a href={item.link} target="_blank" rel="noopener noreferrer"
-            className="text-[11px] font-semibold text-white/90 hover:text-white bg-white/20 backdrop-blur-sm rounded-full px-2.5 py-0.5 transition-colors">
-            기사 보기 →
-          </a>
+        {/* 화살표 버튼 */}
+        <div className="flex gap-1.5">
+          <button type="button" onClick={prev} aria-label="이전"
+            className="w-7 h-7 rounded-full bg-gray-100 text-gray-500 hover:bg-purple-100 hover:text-purple-600 flex items-center justify-center text-base font-bold shadow-sm transition-colors">
+            ‹
+          </button>
+          <button type="button" onClick={next} aria-label="다음"
+            className="w-7 h-7 rounded-full bg-gray-100 text-gray-500 hover:bg-purple-100 hover:text-purple-600 flex items-center justify-center text-base font-bold shadow-sm transition-colors">
+            ›
+          </button>
         </div>
       </div>
     </div>
@@ -383,11 +405,14 @@ function NewsBanner({ items }: { items: ProcessedNewsItem[] }) {
 /* ── 배너 스켈레톤 ── */
 function BannerSkeleton() {
   return (
-    <div className="w-full animate-pulse bg-gray-200" style={{ height: 260 }}>
-      <div className="absolute bottom-4 left-4 right-4 space-y-2">
-        <div className="h-3 w-24 bg-gray-300 rounded-full" />
-        <div className="h-4 bg-gray-300 rounded w-3/4" />
-        <div className="h-3 bg-gray-300 rounded w-1/2" />
+    <div className="w-full px-3">
+      <div className="flex gap-3">
+        {[0, 1].map((i) => (
+          <div key={i} className="shrink-0 animate-pulse rounded-2xl bg-gray-200 overflow-hidden"
+            style={{ width: "calc(50% - 6px)", height: 200 }}>
+            <div className="h-full bg-gradient-to-b from-gray-200 to-gray-300" />
+          </div>
+        ))}
       </div>
     </div>
   );
