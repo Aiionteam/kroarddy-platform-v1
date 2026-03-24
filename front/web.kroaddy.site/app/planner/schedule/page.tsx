@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import { NaverMapModal } from "@/components/molecules/NaverMapModal";
+import { NaverRouteMapModal } from "@/components/molecules/NaverRouteMapModal";
 import {
   fetchMyPlans,
   deletePlan,
@@ -246,6 +247,7 @@ function DayPlanGroup({
   const [modifyResult, setModifyResult] = useState<{ notPossible: boolean; reason: string } | null>(null);
   const [localSchedule, setLocalSchedule] = useState<ScheduleItem[]>(plan.schedule);
   const [mapPlace, setMapPlace] = useState<string | null>(null);
+  const [routeMapOpen, setRouteMapOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // plan.schedule 외부 변경 시 동기화
@@ -310,9 +312,17 @@ function DayPlanGroup({
       {/* 플랜 이름 헤더 */}
       <div className={`flex items-center gap-2 px-3 py-2 ${c.light}`}>
         <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${c.dot}`} />
-        <span className={`truncate text-xs font-bold ${c.text}`}>
+        <span className={`flex-1 truncate text-xs font-bold ${c.text}`}>
           {plan.location} · {plan.route_name}
         </span>
+        <button
+          type="button"
+          onClick={() => setRouteMapOpen(true)}
+          className={`shrink-0 rounded-lg border ${c.border} bg-white px-2 py-0.5 text-[11px] font-medium ${c.text} hover:opacity-80 transition-opacity`}
+          title="전체 경유지 경로 보기"
+        >
+          🗺️ 전체 경로
+        </button>
       </div>
 
       {/* 일정 목록 */}
@@ -405,6 +415,16 @@ function DayPlanGroup({
 
       {mapPlace && (
         <NaverMapModal placeName={mapPlace} onClose={() => setMapPlace(null)} />
+      )}
+
+      {routeMapOpen && (
+        <NaverRouteMapModal
+          places={localItems
+            .filter(({ item }) => item.place?.trim())
+            .map(({ item }) => ({ name: item.place!, title: item.title }))}
+          planName={`${plan.location} · ${plan.route_name}`}
+          onClose={() => setRouteMapOpen(false)}
+        />
       )}
 
       {/* AI 수정 프롬프트 */}
@@ -542,6 +562,7 @@ function PlanCard({
   const [modifyResult, setModifyResult] = useState<{ notPossible: boolean; reason: string } | null>(null);
   const [highlightedTitles, setHighlightedTitles] = useState<Set<string>>(new Set());
   const [mapPlace, setMapPlace] = useState<string | null>(null);
+  const [routeMapOpen, setRouteMapOpen] = useState(false);
   // 리롤 중인 항목 인덱스 (전체 schedule 배열 기준)
   const [rerollingIdx, setRerollingIdx] = useState<number | null>(null);
   const [rerolledIdx, setRerolledIdx] = useState<number | null>(null);
@@ -636,6 +657,16 @@ function PlanCard({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1.5 ml-2">
+          {expanded && (
+            <button
+              type="button"
+              onClick={() => setRouteMapOpen(true)}
+              className="rounded-lg border border-indigo-200 bg-white px-2.5 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 transition-colors"
+              title="전체 경유지 지도 보기"
+            >
+              🗺️ 전체 경로
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
@@ -823,6 +854,16 @@ function PlanCard({
 
       {mapPlace && (
         <NaverMapModal placeName={mapPlace} onClose={() => setMapPlace(null)} />
+      )}
+
+      {routeMapOpen && (
+        <NaverRouteMapModal
+          places={schedule
+            .filter((item) => item.place?.trim())
+            .map((item) => ({ name: item.place!, title: item.title }))}
+          planName={`${plan.location} · ${plan.route_name}`}
+          onClose={() => setRouteMapOpen(false)}
+        />
       )}
     </div>
   );
