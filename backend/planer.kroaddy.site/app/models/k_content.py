@@ -11,7 +11,7 @@ from app.core.database.base import Base
 class KContentPackage(Base):
     __tablename__ = "k_content_packages"
 
-    package_id: Mapped[str] = mapped_column(String(50), primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     # KPOP, DRAMA, MOVIE ...
     category: Mapped[str] = mapped_column(String(20), nullable=False)
 
@@ -31,10 +31,10 @@ class KContentPackage(Base):
 class KContentPlace(Base):
     __tablename__ = "k_content_places"
 
-    place_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    package_id: Mapped[str | None] = mapped_column(
-        String(50),
-        ForeignKey("k_content_packages.package_id"),
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    package_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("k_content_packages.id"),
         nullable=True,
     )
 

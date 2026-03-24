@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
-import { getPackageFolder } from "@/constants/k-content-images";
+import { getKDramaFolder, getPackageFolder } from "@/constants/k-content-images";
 
 export const runtime = "nodejs";
 
@@ -12,13 +12,20 @@ export async function GET(
   { params }: { params: Promise<{ packageId: string }> }
 ) {
   const { packageId } = await params;
-  const folder = getPackageFolder(packageId);
-  if (!folder) {
+  const kpopFolder = getPackageFolder(packageId);
+  const kdramaFolder = getKDramaFolder(packageId);
+
+  let targetDir = "";
+  let webBasePath = "";
+  if (kpopFolder) {
+    targetDir = path.join(process.cwd(), "public", "k_content", "k-pop", kpopFolder);
+    webBasePath = `/k_content/k-pop/${kpopFolder}`;
+  } else if (kdramaFolder) {
+    targetDir = path.join(process.cwd(), "public", "k_content", "k-drama", kdramaFolder);
+    webBasePath = `/k_content/k-drama/${kdramaFolder}`;
+  } else {
     return NextResponse.json({ images: [] });
   }
-
-  const baseDir = path.join(process.cwd(), "public", "k_content", "k-pop");
-  const targetDir = path.join(baseDir, folder);
 
   try {
     const dirents = await fs.readdir(targetDir, { withFileTypes: true });
@@ -27,7 +34,7 @@ export async function GET(
       .map((d) => d.name)
       .filter((name) => IMAGE_EXTENSIONS.has(path.extname(name).toLowerCase()));
 
-    const images = files.map((file) => `/k_content/k-pop/${folder}/${file}`);
+    const images = files.map((file) => `${webBasePath}/${file}`);
     return NextResponse.json({ images });
   } catch {
     return NextResponse.json({ images: [] });

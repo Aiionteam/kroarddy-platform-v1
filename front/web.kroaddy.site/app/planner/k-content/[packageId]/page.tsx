@@ -6,6 +6,7 @@ import { useLoginStore } from "@/store";
 import { useNewsStore } from "@/store/slices/newsSlice";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import {
+  fetchKContentPackage,
   generateKContent,
   saveKContent,
   type KContentResponse,
@@ -43,16 +44,32 @@ type KPackageMeta = {
   tags?: string;
 };
 
-const CATALOG: Record<string, { title_ko: string; title_en: string; tags: string }> = {
-  KPOP_01: { title_ko: "BTS: 영원한 화양연화", title_en: "BTS: The Eternal Youth", tags: "BTS, ARMY, Gangnam, HYBE" },
-  KPOP_02: { title_ko: "블랙핑크: 힙&럭셔리", title_en: "BLACKPINK: Born Pink Luxury", tags: "BLACKPINK, YG, Luxury, Trend" },
-  KPOP_03: { title_ko: "세븐틴&스키즈: 퍼포먼스 에너지", title_en: "SEVENTEEN & Stray Kids: Performance Energy", tags: "SEVENTEEN, Stray Kids, JYP, Performance" },
-  KPOP_04: { title_ko: "뉴진스&아이브: 하이틴 서울", title_en: "NewJeans & IVE: Gen Z Trend", tags: "NewJeans, IVE, Y2K, Seongsu, Hannam" },
-  KPOP_05: { title_ko: "SM: 광야 익스프레스", title_en: "SM: Kwangya Express", tags: "SM, aespa, NCT, Kwangya, Seongsu" },
-  KPOP_06: { title_ko: "아이돌 직접 체험하기", title_en: "Experience: Become a Star", tags: "Experience, Dance, Recording, Idol-life" },
-  KPOP_07: { title_ko: "홍대: 팬덤 문화의 중심", title_en: "Hongdae: Heart of Fandom", tags: "Hongdae, Busking, Album, Fans" },
-  KPOP_08: { title_ko: "K-OST & 감성 힐링 서울", title_en: "K-OST & Healing: The Voice of Korea", tags: "IU, OST, Healing, Retro, Seoul" },
-};
+function inferCategoryFromPackageId(packageId: string | undefined): string {
+  if (!packageId) return "KCONTENT";
+  const ref = packageId.toUpperCase();
+  if (ref.startsWith("KPOP_")) return "KPOP";
+  // KD 네임스페이스에는 DRAMA/MOVIE가 함께 존재하므로 fallback 매핑을 분리한다.
+  if (ref === "KD_05" || ref === "KD_12") return "KMOVIE";
+  if (ref.startsWith("KD_")) return "KDRAMA";
+  return "KCONTENT";
+}
+
+function toCategoryBadgeText(category?: string): string {
+  const c = (category ?? "").toUpperCase();
+  if (c === "KPOP") return "K-POP";
+  if (c === "KDRAMA") return "K-DRAMA";
+  if (c === "KMOVIE") return "K-MOVIE";
+  return "K-CONTENT";
+}
+
+function parseTags(tags?: string): string[] {
+  const raw = (tags ?? "").trim();
+  if (!raw) return [];
+  if (raw.includes(",")) {
+    return raw.split(",").map((t) => t.trim()).filter(Boolean);
+  }
+  return raw.split(/\s+/).map((t) => t.trim()).filter(Boolean);
+}
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
@@ -248,8 +265,20 @@ export default function KContentPackagePage() {
     const run = async () => {
       const images = await fetchPackageImages(packageId);
       setHeroImage(pickRandomImage(images) ?? K_CONTENT_PLACEHOLDER_IMAGE);
+      const detail = await fetchKContentPackage(packageId);
+      if (detail) {
+        setPackageMeta({
+          package_id: detail.package_id,
+          category: detail.category,
+          title_ko: detail.title_ko ?? undefined,
+          title_en: detail.title_en,
+          tags: detail.tags ?? undefined,
+        });
+      }
     };
-    run();
+    run().catch(() => {
+      // 상세 메타 조회 실패 시 fallback UI 유지
+    });
   }, [packageId]);
 
   const generateSchedule = useCallback(async () => {
@@ -280,10 +309,10 @@ export default function KContentPackagePage() {
 
   const selectedMeta = packageMeta ?? (packageId ? {
     package_id: packageId,
-    category: "K-CONTENT",
-    title_ko: CATALOG[packageId]?.title_ko,
-    title_en: CATALOG[packageId]?.title_en,
-    tags: CATALOG[packageId]?.tags,
+    category: inferCategoryFromPackageId(packageId),
+    title_ko: packageId,
+    title_en: "K-Content package",
+    tags: "",
   } : null);
 
   const handleSavePlan = useCallback(async () => {
@@ -292,7 +321,7 @@ export default function KContentPackagePage() {
     try {
       const fallbackMeta: Record<string, unknown> = {
         package_id: packageId,
-        category: "K-POP",
+        category: selectedMeta?.category ?? inferCategoryFromPackageId(packageId),
         title_ko: selectedMeta?.title_ko ?? packageId,
         title_en: selectedMeta?.title_en ?? "K-Content package",
         tags: selectedMeta?.tags ?? "",
@@ -421,15 +450,12 @@ export default function KContentPackagePage() {
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-gray-900">{selectedMeta?.title_ko ?? packageId}</span>
                     <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700">
-                      K-POP
+                      {toCategoryBadgeText(selectedMeta?.category)}
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-gray-500 sm:text-sm">{selectedMeta?.title_en ?? "K-Content package"}</p>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {(selectedMeta?.tags ?? "")
-                      .split(",")
-                      .map((t) => t.trim())
-                      .filter(Boolean)
+                    {parseTags(selectedMeta?.tags)
                       .map((tag) => (
                         <span key={tag} className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
                           {tag}
@@ -563,20 +589,22 @@ export default function KContentPackagePage() {
                             <span className="absolute -left-[1.35rem] top-1 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-200 text-[10px] font-bold text-indigo-700">
                               {idx + 1}
                             </span>
-                            {item.source === "db" && (
-                              <span className="absolute -top-2 left-3 z-10 rounded-md bg-white px-2 py-0.5 text-[10px] font-bold text-purple-700 shadow-sm">
-                                K-roaddy PICK
-                              </span>
-                            )}
                             <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
                               <div className="flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-2 min-w-0">
+                                <div className="flex items-center gap-0 min-w-0">
                                   {item.time && (
                                     <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-400">
                                       {item.time}
                                     </span>
                                   )}
                                   <span className="font-semibold text-gray-900 truncate">{item.title}</span>
+                                  {item.source === "db" && (
+                                    <span className="relative inline-flex items-center group shrink-0">
+                                      <span className="ml-2 animate-kroaddy-float text-[10px] font-semibold text-indigo-700">
+                                        Kroaddy PICK
+                                      </span>
+                                    </span>
+                                  )}
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                   {item.estimated_cost && (
