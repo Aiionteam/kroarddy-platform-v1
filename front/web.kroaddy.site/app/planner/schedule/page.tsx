@@ -567,7 +567,8 @@ function PlanCard({
   const [modifyResult, setModifyResult] = useState<{ notPossible: boolean; reason: string } | null>(null);
   const [highlightedTitles, setHighlightedTitles] = useState<Set<string>>(new Set());
   const [mapPlace, setMapPlace] = useState<{ name: string; lat?: number; lng?: number } | null>(null);
-  const [routeMapOpen, setRouteMapOpen] = useState(false);
+  // 날짜별 경로 지도: 열려있는 day 번호 (null이면 닫힘)
+  const [routeMapDay, setRouteMapDay] = useState<number | null>(null);
   // 리롤 중인 항목 인덱스 (전체 schedule 배열 기준)
   const [rerollingIdx, setRerollingIdx] = useState<number | null>(null);
   const [rerolledIdx, setRerolledIdx] = useState<number | null>(null);
@@ -662,16 +663,6 @@ function PlanCard({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1.5 ml-2">
-          {expanded && (
-            <button
-              type="button"
-              onClick={() => setRouteMapOpen(true)}
-              className="rounded-lg border border-indigo-200 bg-white px-2.5 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 transition-colors"
-              title="전체 경유지 지도 보기"
-            >
-              🗺️ 전체 경로
-            </button>
-          )}
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
@@ -700,7 +691,15 @@ function PlanCard({
                   <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] text-white ${c.dot}`}>
                     {day}
                   </span>
-                  {entries[0]?.item.date}
+                  <span className="flex-1">{entries[0]?.item.date}</span>
+                  <button
+                    type="button"
+                    onClick={() => setRouteMapDay(Number(day))}
+                    className={`ml-auto rounded-lg border ${c.border} bg-white px-2 py-0.5 text-[11px] font-medium ${c.text} hover:opacity-80 transition-opacity`}
+                    title={`Day ${day} 경로 보기`}
+                  >
+                    🗺️ 경로
+                  </button>
                 </h3>
                 <ol className="relative border-l-2 border-gray-100 pl-4 space-y-2">
                   {entries.map(({ item, flatIdx }, localIdx) => {
@@ -866,13 +865,13 @@ function PlanCard({
         />
       )}
 
-      {routeMapOpen && (
+      {routeMapDay !== null && (
         <NaverRouteMapModal
-          places={schedule
-            .filter((item) => item.place?.trim())
-            .map((item) => ({ name: item.place!, title: item.title, lat: item.lat, lng: item.lng }))}
-          planName={`${plan.location} · ${plan.route_name}`}
-          onClose={() => setRouteMapOpen(false)}
+          places={(dayGroups[routeMapDay] ?? [])
+            .filter(({ item }) => item.place?.trim())
+            .map(({ item }) => ({ name: item.place!, title: item.title, lat: item.lat, lng: item.lng }))}
+          planName={`${plan.location} · ${plan.route_name} · Day ${routeMapDay}`}
+          onClose={() => setRouteMapDay(null)}
         />
       )}
     </div>

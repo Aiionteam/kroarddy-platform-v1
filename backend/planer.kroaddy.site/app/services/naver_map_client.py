@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 _GEOCODE_URL    = "https://maps.apigw.ntruss.com/map-geocode/v2/geocode"
 _STATIC_MAP_URL = "https://maps.apigw.ntruss.com/map-static/v2/raster"
-_DIRECTIONS_URL = "https://maps.apigw.ntruss.com/map-direction-15/v1/driving"
+_DIRECTIONS_URL = "https://maps.apigw.ntruss.com/map-direction/v1/driving"
 # 네이버 지역 검색 API (장소명 → 좌표, developers.naver.com)
 _SEARCH_LOCAL_URL = "https://openapi.naver.com/v1/search/local.json"
 
@@ -154,10 +154,10 @@ async def get_directions(
     goal_lat: float,
     waypoints: list[tuple[float, float]] | None = None,
 ) -> dict | None:
-    """Directions 15 API로 실제 도로 경로 반환.
+    """Directions 5 API로 실제 도로 경로 반환.
 
     Args:
-        waypoints: [(lng, lat), ...] 최대 15개
+        waypoints: [(lng, lat), ...] 최대 5개 (Directions 5 제한)
 
     Returns:
         {"path": [[lng, lat], ...], "summary": {"distance": m, "duration": ms}} or None
@@ -172,7 +172,8 @@ async def get_directions(
         "option": "traoptimal",
     }
     if waypoints:
-        params["waypoints"] = "|".join(f"{lng},{lat}" for lng, lat in waypoints)
+        # Directions 5 최대 5개 경유지 제한
+        params["waypoints"] = "|".join(f"{lng},{lat}" for lng, lat in waypoints[:5])
 
     async with httpx.AsyncClient(timeout=15.0) as client:
         try:

@@ -106,7 +106,8 @@ async function fetchCarRoute(
   coords: RouteCoord[]
 ): Promise<{ path: [number, number][]; summary: RouteSummary } | null> {
   if (coords.length < 2) return null;
-  const limited = coords.slice(0, 17);
+  // Directions 5: start(1) + waypoints(최대 5) + goal(1) = 최대 7개
+  const limited = coords.slice(0, 7);
   const start = limited[0];
   const goal = limited[limited.length - 1];
   const waypoints = limited.slice(1, -1);
