@@ -19,6 +19,26 @@ export interface KContentSaveResponse {
     route_name: string;
 }
 
+export interface KContentPackageListItem {
+    id: number;
+    package_id: string;
+    category: "KPOP" | "KDRAMA" | "KMOVIE" | string;
+    title_en: string;
+    title_ko?: string | null;
+    description_en?: string | null;
+    image_url?: string | null;
+    tags?: string | null;
+}
+
+interface KContentPackagesResponse {
+    items: KContentPackageListItem[];
+    total: number;
+}
+
+interface KContentPackageDetailResponse extends KContentPackageListItem {
+    places?: Record<string, unknown>[];
+}
+
 interface KContentGenerateRequest {
     package_id: string;
   start_date?: string | null;
@@ -41,6 +61,53 @@ async function throwApiError(res: Response, fallback: string): Promise<never> {
         throw new Error(`${fallback}: ${res.status} (${detail})`);
     }
     throw new Error(`${fallback}: ${res.status}`);
+}
+
+export async function fetchKContentPackages(category?: "KPOP" | "KDRAMA" | "KMOVIE"): Promise<KContentPackageListItem[]> {
+    const url = category
+        ? `${API_BASE}/api/v1/k-content/packages?category=${encodeURIComponent(category)}`
+        : `${API_BASE}/api/v1/k-content/packages`;
+
+    let res: Response;
+    try {
+        res = await fetch(url, { cache: "no-store" });
+    } catch {
+        throw new Error("K-Content 목록 API 호출 실패: 네트워크 오류");
+    }
+
+    if (!res.ok) {
+        await throwApiError(res, "K-Content 목록 API 오류");
+    }
+
+    try {
+        const data = (await res.json()) as KContentPackagesResponse;
+        return Array.isArray(data.items) ? data.items : [];
+    } catch {
+        throw new Error("K-Content 목록 API 오류: 응답 파싱 실패");
+    }
+}
+
+export async function fetchKContentPackage(packageRef: string): Promise<KContentPackageListItem | null> {
+    let res: Response;
+    try {
+        res = await fetch(`${API_BASE}/api/v1/k-content/packages/${encodeURIComponent(packageRef)}`, {
+            cache: "no-store",
+        });
+    } catch {
+        throw new Error("K-Content 상세 API 호출 실패: 네트워크 오류");
+    }
+
+    if (res.status === 404) return null;
+    if (!res.ok) {
+        await throwApiError(res, "K-Content 상세 API 오류");
+    }
+
+    try {
+        const data = (await res.json()) as KContentPackageDetailResponse;
+        return data ?? null;
+    } catch {
+        throw new Error("K-Content 상세 API 오류: 응답 파싱 실패");
+    }
 }
 
 /**

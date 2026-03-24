@@ -10,70 +10,10 @@ import type { ContentRowItem } from "@/components/k-content/ContentRow";
 import { ItineraryPreview } from "@/components/k-content/ItineraryPreview";
 import type { ItineraryDay } from "@/components/k-content/ItineraryPreview";
 import {
-  fetchPackageImages,
-  K_CONTENT_PLACEHOLDER_IMAGE,
   pickRandomImage,
+  resolveCardImage,
 } from "@/constants/k-content-images";
-
-// ─── Mock data: DB seeded 8 packages (placeholder images) ──────────────────
-const K_CONTENT_PACKAGE_ITEMS: ContentRowItem[] = [
-  {
-    id: "KPOP_01",
-    title: "BTS: 영원한 화양연화",
-    description: "BTS, ARMY, Gangnam, HYBE",
-    imageUrl: undefined,
-    placeholderGradient: "from-rose-500 to-pink-600",
-  },
-  {
-    id: "KPOP_02",
-    title: "블랙핑크: 힙&럭셔리",
-    description: "BLACKPINK, YG, Luxury, Trend",
-    imageUrl: undefined,
-    placeholderGradient: "from-violet-500 to-purple-600",
-  },
-  {
-    id: "KPOP_03",
-    title: "세븐틴&스키즈: 퍼포먼스 에너지",
-    description: "SEVENTEEN, Stray Kids, JYP, Performance",
-    imageUrl: undefined,
-    placeholderGradient: "from-fuchsia-500 to-rose-600",
-  },
-  {
-    id: "KPOP_04",
-    title: "뉴진스&아이브: 하이틴 서울",
-    description: "NewJeans, IVE, Y2K, Seongsu, Hannam",
-    imageUrl: undefined,
-    placeholderGradient: "from-indigo-500 to-violet-600",
-  },
-  {
-    id: "KPOP_05",
-    title: "SM: 광야 익스프레스",
-    description: "SM, aespa, NCT, Kwangya, Seongsu",
-    imageUrl: undefined,
-    placeholderGradient: "from-amber-500 to-orange-600",
-  },
-  {
-    id: "KPOP_06",
-    title: "아이돌 직접 체험하기",
-    description: "Experience, Dance, Recording, Idol-life",
-    imageUrl: undefined,
-    placeholderGradient: "from-emerald-500 to-teal-600",
-  },
-  {
-    id: "KPOP_07",
-    title: "홍대: 팬덤 문화의 중심",
-    description: "Hongdae, Busking, Album, Fans",
-    imageUrl: undefined,
-    placeholderGradient: "from-sky-500 to-blue-600",
-  },
-  {
-    id: "KPOP_08",
-    title: "K-OST & 감성 힐링 서울",
-    description: "IU, OST, Healing, Retro, Seoul",
-    imageUrl: undefined,
-    placeholderGradient: "from-amber-600 to-rose-600",
-  },
-];
+import { fetchKContentPackages, type KContentPackageListItem } from "@/service/k_content/k_content";
 
 // ─── Mock data: Sample itinerary ─────────────────────────────────────────────
 
@@ -107,30 +47,6 @@ const SAMPLE_ITINERARY_DAYS: ItineraryDay[] = [
         description: "Theme cafe with idol merch and photo zones.",
       },
     ],
-  },
-];
-
-const K_DRAMA_EXAMPLE_ITEMS: ContentRowItem[] = [
-  {
-    id: "KDRAMA_01",
-    title: "도깨비 촬영지 투어",
-    description: "인천·서울 주요 촬영 포인트를 따라가는 감성 코스",
-    imageUrl: undefined,
-    placeholderGradient: "from-violet-500 to-indigo-600",
-  },
-  {
-    id: "KDRAMA_02",
-    title: "이태원 클래스 거리",
-    description: "이태원 주요 거리와 분위기 좋은 루프탑 카페 코스",
-    imageUrl: undefined,
-    placeholderGradient: "from-fuchsia-500 to-pink-600",
-  },
-  {
-    id: "KDRAMA_03",
-    title: "남산·북촌 드라마 코스",
-    description: "남산타워, 북촌 한옥길 중심의 클래식 촬영지 투어",
-    imageUrl: undefined,
-    placeholderGradient: "from-sky-500 to-blue-600",
   },
 ];
 
@@ -188,7 +104,75 @@ export default function KContentPage() {
   const router = useRouter();
   const { isAuthenticated, logout } = useLoginStore();
   const [heroImage, setHeroImage] = React.useState<string>("/k_content/banner/panorama-downtown-cityscape-seoul-tower-seoul-south-korea.jpg");
-  const [cardItems, setCardItems] = React.useState<ContentRowItem[]>(K_CONTENT_PACKAGE_ITEMS);
+  const [cardItems, setCardItems] = React.useState<ContentRowItem[]>([]);
+  const [kDramaItems, setKDramaItems] = React.useState<ContentRowItem[]>([]);
+
+  const dramaGradients = React.useMemo(
+    () => [
+      "from-violet-500 to-indigo-600",
+      "from-fuchsia-500 to-pink-600",
+      "from-sky-500 to-blue-600",
+      "from-emerald-500 to-teal-600",
+      "from-amber-500 to-orange-600",
+    ],
+    []
+  );
+  const kpopGradients = React.useMemo(
+    () => [
+      "from-rose-500 to-pink-600",
+      "from-violet-500 to-purple-600",
+      "from-fuchsia-500 to-rose-600",
+      "from-indigo-500 to-violet-600",
+      "from-amber-500 to-orange-600",
+      "from-emerald-500 to-teal-600",
+      "from-sky-500 to-blue-600",
+      "from-amber-600 to-rose-600",
+    ],
+    []
+  );
+
+  const shuffleItems = React.useCallback((items: ContentRowItem[]) => {
+    const next = [...items];
+    for (let i = next.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [next[i], next[j]] = [next[j]!, next[i]!];
+    }
+    return next;
+  }, []);
+
+  const mapDramaMoviePackages = React.useCallback(
+    async (packages: KContentPackageListItem[]) => {
+      const mapped = await Promise.all(
+        packages.map(async (pkg, idx) => ({
+          id: pkg.package_id,
+          title: pkg.title_ko || pkg.title_en,
+          description: pkg.description_en || pkg.tags || "",
+          imageUrl: await resolveCardImage(pkg.package_id),
+          placeholderGradient: dramaGradients[idx % dramaGradients.length]!,
+        }))
+      );
+      return mapped;
+    },
+    [dramaGradients]
+  );
+
+  const mapKpopPackages = React.useCallback(
+    async (packages: KContentPackageListItem[]) => {
+      const mapped = await Promise.all(
+        packages.map(async (pkg, idx) => {
+          return {
+            id: pkg.package_id,
+            title: pkg.title_ko || pkg.title_en,
+            description: pkg.description_en || pkg.tags || "",
+            imageUrl: await resolveCardImage(pkg.package_id),
+            placeholderGradient: kpopGradients[idx % kpopGradients.length]!,
+          };
+        })
+      );
+      return mapped;
+    },
+    [kpopGradients]
+  );
 
   React.useEffect(() => {
     if (!isAuthenticated) router.replace("/");
@@ -207,18 +191,22 @@ export default function KContentPage() {
       }
 
       const nextItems = await Promise.all(
-        K_CONTENT_PACKAGE_ITEMS.map(async (item) => {
-          const images = await fetchPackageImages(item.id);
-          return {
-            ...item,
-            imageUrl: pickRandomImage(images) ?? K_CONTENT_PLACEHOLDER_IMAGE,
-          };
-        })
+        [fetchKContentPackages("KPOP"), fetchKContentPackages("KDRAMA"), fetchKContentPackages("KMOVIE")]
       );
-      setCardItems(nextItems);
+      const [kpopPkgs, dramaPkgs, moviePkgs] = nextItems;
+      const mappedKpop = await mapKpopPackages(kpopPkgs);
+      setCardItems(shuffleItems(mappedKpop));
+
+      // K-Drama + K-Movie를 실제 API에서 가져와 단일 K-DRAMA row로 렌더링
+      const merged = [...dramaPkgs, ...moviePkgs];
+      const mappedDrama = await mapDramaMoviePackages(merged);
+      setKDramaItems(shuffleItems(mappedDrama));
     };
-    run();
-  }, []);
+    run().catch(() => {
+      setCardItems([]);
+      setKDramaItems([]);
+    });
+  }, [mapDramaMoviePackages, mapKpopPackages, shuffleItems]);
 
   const handleCtaClick = () => {
     // Prototype: navigate to planner root or show toast
@@ -226,12 +214,7 @@ export default function KContentPage() {
   };
 
   const handleCardClick = (item: ContentRowItem) => {
-    if (item.id.startsWith("KPOP_")) {
-      router.push(`/planner/k-content/${item.id}`);
-      return;
-    }
-    // 나머지 카테고리는 현재 예시 단계
-    alert("해당 카테고리는 준비 중입니다.");
+    router.push(`/planner/k-content/${item.id}`);
   };
 
   if (!isAuthenticated) return null;
@@ -280,7 +263,7 @@ export default function KContentPage() {
             />
             <ContentRow
               title="K-DRAMA"
-              items={K_DRAMA_EXAMPLE_ITEMS}
+              items={kDramaItems}
               onCardClick={handleCardClick}
             />
             <ContentRow
