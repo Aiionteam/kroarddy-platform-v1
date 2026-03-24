@@ -13,6 +13,10 @@ import {
   pickRandomImage,
   resolveCardImage,
 } from "@/constants/k-content-images";
+import {
+  K_CONTENT_KDRAMA_FALLBACK_ITEMS,
+  K_CONTENT_KPOP_FALLBACK_ITEMS,
+} from "@/constants/k-content-fallback-items";
 import { fetchKContentPackages, type KContentPackageListItem } from "@/service/k_content/k_content";
 
 // ─── Mock data: Sample itinerary ─────────────────────────────────────────────
@@ -195,16 +199,20 @@ export default function KContentPage() {
       );
       const [kpopPkgs, dramaPkgs, moviePkgs] = nextItems;
       const mappedKpop = await mapKpopPackages(kpopPkgs);
-      setCardItems(shuffleItems(mappedKpop));
+      setCardItems(
+        shuffleItems(mappedKpop.length > 0 ? mappedKpop : [...K_CONTENT_KPOP_FALLBACK_ITEMS])
+      );
 
       // K-Drama + K-Movie를 실제 API에서 가져와 단일 K-DRAMA row로 렌더링
       const merged = [...dramaPkgs, ...moviePkgs];
       const mappedDrama = await mapDramaMoviePackages(merged);
-      setKDramaItems(shuffleItems(mappedDrama));
+      setKDramaItems(
+        shuffleItems(mappedDrama.length > 0 ? mappedDrama : [...K_CONTENT_KDRAMA_FALLBACK_ITEMS])
+      );
     };
     run().catch(() => {
-      setCardItems([]);
-      setKDramaItems([]);
+      setCardItems(shuffleItems([...K_CONTENT_KPOP_FALLBACK_ITEMS]));
+      setKDramaItems(shuffleItems([...K_CONTENT_KDRAMA_FALLBACK_ITEMS]));
     });
   }, [mapDramaMoviePackages, mapKpopPackages, shuffleItems]);
 
