@@ -31,6 +31,18 @@ export const getUserIdFromToken = (token?: string): string | null => {
   return (p?.sub as string) ?? (p?.userId as string) ?? (p?.id as string) ?? null;
 };
 
+/** JWT 의 nickname / name / preferred_username 클레임 → 문자열 반환. */
+export const getNicknameFromToken = (token?: string): string | null => {
+  if (!token) return null;
+  const p = _decodeJwtPayload(token);
+  return (
+    (p?.nickname as string) ??
+    (p?.name as string) ??
+    (p?.preferred_username as string) ??
+    null
+  );
+};
+
 /** JWT 의 app_user_id 클레임 → 숫자 반환 (DB 저장용). */
 export const getAppUserIdFromToken = (token?: string): number | null => {
   if (!token) return null;
