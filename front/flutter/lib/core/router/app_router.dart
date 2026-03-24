@@ -12,6 +12,7 @@ import "../../features/guide/presentation/guide_landing_page.dart";
 import "../../features/guide/presentation/restaurant_page.dart";
 import "../../features/home/home_page.dart";
 import "../../features/planner/presentation/planner_page.dart";
+import "../../features/planner/presentation/k_content_package_page.dart";
 import "../../features/planner/presentation/schedule_page.dart";
 import "../../features/profile/presentation/onboarding_page.dart";
 import "../../features/profile/presentation/profile_page.dart";
@@ -43,11 +44,34 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: "/tourstar",
-            builder: (context, state) => const TourstarPage(),
+            builder: (context, state) {
+              final postId = state.uri.queryParameters["postId"];
+              return TourstarPage(initialPostId: postId);
+            },
+            routes: [
+              GoRoute(
+                path: "post/:postId",
+                builder: (context, state) {
+                  final postId = state.pathParameters["postId"];
+                  return TourstarPage(initialPostId: postId);
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: "/planner",
             builder: (context, state) => const PlannerPage(),
+          ),
+          GoRoute(
+            path: "/planner/k-content",
+            builder: (context, state) => const PlannerPage(initialTabIndex: 2),
+          ),
+          GoRoute(
+            path: "/planner/k-content/:packageId",
+            builder: (context, state) {
+              final packageId = state.pathParameters["packageId"] ?? "";
+              return KContentPackagePage(packageId: packageId);
+            },
           ),
           GoRoute(
             path: "/planner/schedule",

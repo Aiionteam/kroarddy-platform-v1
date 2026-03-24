@@ -1,7 +1,11 @@
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:go_router/go_router.dart";
 
 import "../../../core/router/main_shell.dart";
+import "../../../core/utils/tourstar_share_parser.dart";
+import "../../tourstar/data/tourstar_models.dart";
+import "../../tourstar/data/tourstar_repository.dart";
 import "../data/chat_models.dart";
 import "state/chat_controller.dart";
 import "state/chat_state.dart";
@@ -447,6 +451,17 @@ class _ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final postId = TourstarShareParser.extractPostId(message.message);
+    if (postId != null) {
+      return _TourstarShareCard(
+        postId: postId,
+        username: message.username,
+        isMe: isMe,
+        time: _formatTime(message.createdAt),
+        onLongPress: onLongPress,
+      );
+    }
+
     return GestureDetector(
       onLongPress: onLongPress,
       child: Container(
@@ -529,6 +544,167 @@ class _ChatBubble extends StatelessWidget {
                   "나",
                   style: TextStyle(fontSize: 10, color: _primary, fontWeight: FontWeight.bold),
                 ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── 투어스타 공유 카드 ─────────────────────────────────────────
+class _TourstarShareCard extends ConsumerStatefulWidget {
+  const _TourstarShareCard({
+    required this.postId,
+    required this.isMe,
+    required this.time,
+    this.username,
+    this.onLongPress,
+  });
+  final String postId;
+  final String? username;
+  final bool isMe;
+  final String time;
+  final VoidCallback? onLongPress;
+
+  @override
+  ConsumerState<_TourstarShareCard> createState() => _TourstarShareCardState();
+}
+
+class _TourstarShareCardState extends ConsumerState<_TourstarShareCard> {
+  TourstarSharePreview? _preview;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final repo = ref.read(tourstarRepositoryProvider);
+      final preview = await repo.getSharePreview(widget.postId);
+      if (mounted) setState(() { _preview = preview; _loading = false; });
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onLongPress: widget.onLongPress,
+      onTap: _preview == null
+          ? null
+          : () => context.push("/tourstar?postId=${Uri.encodeComponent(widget.postId)}"),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          mainAxisAlignment: widget.isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (!widget.isMe) ...[
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: _primaryLight,
+                child: Text(
+                  (widget.username ?? "?").substring(0, 1).toUpperCase(),
+                  style: const TextStyle(fontSize: 12, color: _primary, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+              child: Column(
+                crossAxisAlignment: widget.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                children: [
+                  if (!widget.isMe && widget.username != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(widget.username!, style: const TextStyle(fontSize: 11, color: _textSecondary)),
+                    ),
+                  // 카드 본문
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFEDE9FE)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: _loading
+                        ? const SizedBox(
+                            width: 160,
+                            child: Row(children: [
+                              SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: _primary)),
+                              SizedBox(width: 8),
+                              Text("게시글 불러오는 중...", style: TextStyle(fontSize: 12, color: _textSecondary)),
+                            ]),
+                          )
+                        : _preview == null
+                            ? const Text("게시글을 불러올 수 없습니다.", style: TextStyle(fontSize: 12, color: _textSecondary))
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(children: [
+                                    const Icon(Icons.photo_camera_outlined, size: 14, color: _primary),
+                                    const SizedBox(width: 4),
+                                    const Text("투어스타 게시글", style: TextStyle(fontSize: 10, color: _primary, fontWeight: FontWeight.w600)),
+                                  ]),
+                                  const SizedBox(height: 6),
+                                  if (_preview!.thumbnailUrl.isNotEmpty)
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.network(
+                                        _preview!.thumbnailUrl,
+                                        height: 120,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                                      ),
+                                    ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    _preview!.title,
+                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _textPrimary),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  if (_preview!.location.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Row(children: [
+                                      const Icon(Icons.location_on_outlined, size: 12, color: _textSecondary),
+                                      const SizedBox(width: 2),
+                                      Expanded(
+                                        child: Text(_preview!.location, style: const TextStyle(fontSize: 11, color: _textSecondary), overflow: TextOverflow.ellipsis),
+                                      ),
+                                    ]),
+                                  ],
+                                  const SizedBox(height: 6),
+                                  const Text("탭하여 게시글 보기", style: TextStyle(fontSize: 10, color: _primary)),
+                                ],
+                              ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(widget.time, style: const TextStyle(fontSize: 10, color: _textSecondary)),
+                ],
+              ),
+            ),
+            if (widget.isMe) ...[
+              const SizedBox(width: 8),
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: _primaryLight,
+                child: const Text("나", style: TextStyle(fontSize: 10, color: _primary, fontWeight: FontWeight.bold)),
               ),
             ],
           ],
