@@ -25,7 +25,7 @@ function loadNaverMapsScript(): Promise<void> {
     }
     const s = document.createElement("script");
     s.id    = "naver-maps-sdk";
-    s.src   = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${NAVER_CLIENT_ID}&submodules=geocoder`;
+    s.src   = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${NAVER_CLIENT_ID}&submodules=geocoder`;
     s.async = true;
     s.onload  = () => resolve();
     s.onerror = () => reject(new Error("SDK load failed"));
