@@ -118,6 +118,7 @@ class AutoCommentResponse(BaseModel):
 
 class CreatePostRequest(BaseModel):
     user_id: int | None = None
+    author_nickname: str | None = None
     title: str
     location: str = ""
     comment: str = ""
@@ -138,6 +139,7 @@ class CommentResponse(BaseModel):
 class PostResponse(BaseModel):
     id: str
     user_id: int | None = None
+    author_nickname: str | None = None
     title: str
     location: str
     comment: str

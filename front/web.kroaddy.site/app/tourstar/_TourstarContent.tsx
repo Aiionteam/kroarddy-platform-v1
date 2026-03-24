@@ -725,7 +725,8 @@ function GridCard({ post, onClick }: { post: TourPost; onClick: () => void }) {
 }
 
 /* ═══════════════════════ 메인 페이지 ═══════════════════════ */
-function mapRecordToPost(record: TourstarPostRecord, author = "내 여행기록"): TourPost {
+function mapRecordToPost(record: TourstarPostRecord, fallbackAuthor = "내 여행기록"): TourPost {
+  const author = record.author_nickname?.trim() || fallbackAuthor;
   const photos: TourPhoto[] = (record.photo_urls || []).map((url, idx) => ({
     id: `photo-${record.id}-${idx}`,
     gradient: randomGradient(),
@@ -803,7 +804,7 @@ export default function TourstarContent() {
   };
   const createPost = async (newPost: Omit<TourPost, "id" | "author" | "likes" | "liked" | "comments">) => {
     const sourceImagePaths = newPost.photos.map((photo) => photo.sourceImagePath).filter((path): path is string => Boolean(path && path.trim()));
-    const saved = await createTourstarPost({ title: newPost.title, location: newPost.location, comment: newPost.comment, visibility: newPost.visibility, tags: newPost.tags, image_paths: sourceImagePaths });
+    const saved = await createTourstarPost({ title: newPost.title, location: newPost.location, comment: newPost.comment, visibility: newPost.visibility, tags: newPost.tags, image_paths: sourceImagePaths, author_nickname: authorName });
     setPosts((prev) => [mapRecordToPost(saved, authorName), ...prev]);
   };
   const addComment = async (postId: string, content: string) => {
