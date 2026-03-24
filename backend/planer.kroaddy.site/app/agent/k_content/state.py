@@ -8,8 +8,8 @@ from app.agent.standard.state import PlannerState
 class KContentPlaceInfo(TypedDict, total=False):
     """DB 또는 Gemini 검색 결과에서 들어오는 장소 정보(정규화된 형태)."""
 
-    # DB place_id는 nullable 가능(외부 추천은 없을 수 있음)
-    place_id: Optional[int]
+    # DB id는 nullable 가능(외부 추천은 없을 수 있음)
+    id: Optional[int]
     name_en: str
     name_ko: Optional[str]
     lat: float
@@ -26,7 +26,7 @@ class KContentState(PlannerState, total=False):
     PlannerState(공통 필드)를 그대로 쓰되, K-content 전용 필드를 추가합니다.
     """
 
-    package_id: str
+    package_id: int
 
     # DB에서 읽어온 필수 앵커(반드시 일정에 포함해야 하는 장소들)
     db_places: list[KContentPlaceInfo]

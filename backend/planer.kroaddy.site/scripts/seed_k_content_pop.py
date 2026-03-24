@@ -421,17 +421,19 @@ K_DATA = [
 async def seed_data() -> None:
     factory = AsyncSessionLocal()
     async with factory() as session:
-        for item in K_DATA:
-            pkg_data = item["package"]
-            package_id = pkg_data["package_id"]
+        for idx, item in enumerate(K_DATA, start=1):
+            pkg_data = dict(item["package"])
+            package_id = idx
 
             existing_pkg = await session.execute(
-                select(KContentPackage).where(KContentPackage.package_id == package_id)
+                select(KContentPackage).where(KContentPackage.id == package_id)
             )
             if existing_pkg.scalar_one_or_none():
                 print(f"Skip: {package_id} already exists.")
                 continue
 
+            pkg_data.pop("package_id", None)
+            pkg_data["id"] = package_id
             new_pkg = KContentPackage(**pkg_data)
             session.add(new_pkg)
 

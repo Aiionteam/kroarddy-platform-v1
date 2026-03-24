@@ -9,6 +9,8 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import math
+import random
 import re
 from datetime import datetime, timedelta
 from typing import Any, Optional
@@ -18,6 +20,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from sqlalchemy import select
 
 from app.agent.k_content.state import KContentPlaceInfo, KContentState
+from app.api.v1.k_content.schemas import build_legacy_package_id
 from app.core.config import settings
 from app.core.database.session import AsyncSessionLocal
 from app.models.k_content import KContentPackage, KContentPlace
@@ -149,23 +152,48 @@ _DAILY_QUOTA_MARKERS = (
     "check your plan and billing details",
 )
 
+# 워커당 동시 Gemini 호출 최대 수 – 429 예방
+_GEMINI_SEMAPHORE = asyncio.Semaphore(20)
+_SEMAPHORE_WAIT_TIMEOUT = 30  # 초
+
 
 def _is_daily_quota(err: Exception) -> bool:
     msg = str(err)
     return any(marker in msg for marker in _DAILY_QUOTA_MARKERS)
 
 
-async def _invoke(llm: Any, messages: list, *, max_retries: int = 2) -> Any:
-    """Gemini 호출 래퍼. (Standard 구현과 동일)"""
+async def _invoke(llm: Any, messages: list, *, max_retries: int = 2, plain_fallback: bool = False) -> Any:
+    """Gemini 호출 래퍼.
+
+    - Semaphore로 워커당 동시 Gemini 호출 수 제한 (429 예방)
+    - 일시적 429 (분당 제한): 지수 백오프 + jitter 재시도
+    - 일일 쿼터 초과: OpenAI gpt-5-mini 자동 폴백 (OPENAI_API_KEY 설정 시)
+    - grounding 호출 중 429/미지원 에러 시: 일반 LLM 즉시 폴백
+    """
+    try:
+        await asyncio.wait_for(_GEMINI_SEMAPHORE.acquire(), timeout=_SEMAPHORE_WAIT_TIMEOUT)
+    except asyncio.TimeoutError:
+        raise Exception(
+            f"AI 서버가 바쁩니다 (대기 {_SEMAPHORE_WAIT_TIMEOUT}초 초과). "
+            "잠시 후 다시 시도해 주세요."
+        )
+    try:
+        return await _invoke_inner(llm, messages, max_retries=max_retries, plain_fallback=plain_fallback)
+    finally:
+        _GEMINI_SEMAPHORE.release()
+
+
+async def _invoke_inner(llm: Any, messages: list, *, max_retries: int, plain_fallback: bool) -> Any:
+    """실제 Gemini/GPT 호출 로직 (Semaphore 제어는 _invoke에서 담당)."""
     for attempt in range(max_retries + 1):
         try:
             return await llm.ainvoke(messages)
         except Exception as e:
             msg = str(e)
 
-            # grounding 미지원 모델 에러 → 일반 LLM으로 한 번 재시도
+            # grounding 미지원 모델 에러 → 일반 LLM 즉시 폴백
             if "grounding" in msg.lower() or "google_search" in msg.lower():
-                logger.warning("Google Search grounding 미지원 – 일반 LLM으로 재시도")
+                logger.warning("Google Search grounding 미지원 – 일반 LLM으로 즉시 폴백")
                 return await _get_llm().ainvoke(messages)
 
             # 일일 한도 초과 → OpenAI 폴백
@@ -199,12 +227,20 @@ async def _invoke(llm: Any, messages: list, *, max_retries: int = 2) -> Any:
                 # API 키 없으면 원래 에러 그대로 올림
                 raise
 
-            # 일시적 429 (분당 제한) → 백오프 후 재시도
-            if ("429" in msg or "RESOURCE_EXHAUSTED" in msg) and attempt < max_retries:
-                wait = 4 * (2 ** attempt)  # 4초 → 8초
-                logger.warning("Gemini 429 일시 제한 – %d초 대기 후 재시도 (%d/%d)", wait, attempt + 1, max_retries)
-                await asyncio.sleep(wait)
-                continue
+            # 일시적 429 (분당 제한)
+            if "429" in msg or "RESOURCE_EXHAUSTED" in msg:
+                # grounding 호출 중 429 → 백오프 없이 즉시 일반 LLM으로 폴백
+                if plain_fallback:
+                    logger.warning("Gemini grounding 429 → 일반 LLM 즉시 폴백 (재시도 없음)")
+                    return await _get_llm().ainvoke(messages)
+
+                if attempt < max_retries:
+                    # 지수 백오프 + jitter: 동시 재시도 폭주(thundering herd) 완화
+                    base = 2 * (2 ** attempt)  # 2초 → 4초
+                    wait = base + random.uniform(0, base * 0.5)  # +0~50% jitter
+                    logger.warning("Gemini 429 일시 제한 – %.1f초 대기 후 재시도 (%d/%d)", wait, attempt + 1, max_retries)
+                    await asyncio.sleep(wait)
+                    continue
             raise
 
 
@@ -256,14 +292,14 @@ def _parse_json(raw: Any) -> dict:
 
 
 async def fetch_k_content_node(state: KContentState) -> KContentState:
-    """노드 1: package_id로 DB에서 KContentPackage와 KContentPlace 정보를 가져온다."""
+    """노드 1: package_id(int)로 DB에서 KContentPackage와 KContentPlace 정보를 가져온다."""
     package_id = state.get("package_id")
     if not package_id:
         return {**state, "db_places": [], "external_places": [], "places": [], "error": "package_id missing"}
 
     factory = AsyncSessionLocal()
     async with factory() as db:
-        pkg_result = await db.execute(select(KContentPackage).where(KContentPackage.package_id == package_id))
+        pkg_result = await db.execute(select(KContentPackage).where(KContentPackage.id == package_id))
         pkg = pkg_result.scalar_one_or_none()
         if not pkg:
             return {
@@ -283,7 +319,7 @@ async def fetch_k_content_node(state: KContentState) -> KContentState:
     for r in rows:
         db_places.append(
             {
-                "place_id": r.place_id,
+                "id": r.id,
                 "name_en": r.name_en,
                 "name_ko": r.name_ko,
                 "lat": float(r.lat),
@@ -295,7 +331,8 @@ async def fetch_k_content_node(state: KContentState) -> KContentState:
         )
 
     package_meta = {
-        "package_id": pkg.package_id,
+        "id": pkg.id,
+        "package_id": build_legacy_package_id(db_id=pkg.id, category=pkg.category),
         "category": pkg.category,
         "title_en": pkg.title_en,
         "title_ko": pkg.title_ko,
@@ -326,6 +363,46 @@ def _build_date_list(start_date: str | None, end_date: str | None) -> list[str]:
         return []
 
 
+def _extract_anchor_center(db_places: list[dict[str, Any]]) -> tuple[float, float] | None:
+    coords: list[tuple[float, float]] = []
+    for p in db_places:
+        try:
+            lat = p.get("lat")
+            lng = p.get("lng")
+            if lat is None or lng is None:
+                continue
+            coords.append((float(lat), float(lng)))
+        except Exception:
+            continue
+    if not coords:
+        return None
+    lat_avg = sum(lat for lat, _ in coords) / len(coords)
+    lng_avg = sum(lng for _, lng in coords) / len(coords)
+    return lat_avg, lng_avg
+
+
+def _haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    r = 6371.0
+    p1 = math.radians(lat1)
+    p2 = math.radians(lat2)
+    dlat = math.radians(lat2 - lat1)
+    dlng = math.radians(lng2 - lng1)
+    a = (math.sin(dlat / 2) ** 2) + math.cos(p1) * math.cos(p2) * (math.sin(dlng / 2) ** 2)
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return r * c
+
+
+def _extract_theme_keywords(package_meta: dict[str, Any]) -> str:
+    parts = [
+        str(package_meta.get("title_ko") or "").strip(),
+        str(package_meta.get("title_en") or "").strip(),
+        str(package_meta.get("tags") or "").strip(),
+        str(package_meta.get("description_en") or "").strip(),
+    ]
+    merged = " | ".join([p for p in parts if p])
+    return merged or "the package mood and narrative tone"
+
+
 async def generate_k_schedule_node(state: KContentState) -> KContentState:
     """노드 2: DB 핵심 앵커 + Gemini Search로 하이브리드 일정 생성."""
     location_name = state.get("location_name") or state.get("location") or ""
@@ -336,6 +413,14 @@ async def generate_k_schedule_node(state: KContentState) -> KContentState:
 
     db_places: list[dict[str, Any]] = state.get("db_places") or []
     package_meta: dict = state.get("package_meta") or {}
+    anchor_center = _extract_anchor_center(db_places)
+    anchor_center_line = ""
+    if anchor_center:
+        anchor_center_line = (
+            f"ActivityCenter(lat,lng): ({anchor_center[0]:.5f}, {anchor_center[1]:.5f}) | "
+            "External places must be within 100km radius from this center.\n"
+        )
+    theme_keywords = _extract_theme_keywords(package_meta)
 
     # Language / time slots
     lang = _get_lang(user_profile)
@@ -387,12 +472,18 @@ async def generate_k_schedule_node(state: KContentState) -> KContentState:
         "4) Make the route feel naturally curated by an expert: add good cafes/rest spots before/after key visits.\n"
         "5) For non-DB places, keep strong thematic consistency with the package title/category (e.g., artist fandom, trend/luxury, healing/retro).\n"
         "6) 응답 JSON의 time_label은 지정된 언어 규칙을 엄격히 따라라.\n"
+        "7) You have an activity center coordinate and a strict 100km radius boundary for external places.\n"
+        "   You may cross administrative borders ONLY within this 100km macro-area.\n"
+        "8) If a near-100km candidate is selected, self-check: is this destination truly worth the extra transfer time?\n"
+        "   If not, reject it and choose a closer thematically-equivalent alternative for smoother routing.\n"
         f"{korean_only_rule}"
     )
 
     prompt = (
         f"Destination:{location_name}\n"
         f"K-Content Package:{package_title} ({package_meta.get('category','')})\n"
+        f"ThemeKeywords:{theme_keywords}\n"
+        f"{anchor_center_line}"
         f"{date_clause}\n"
         f"\n【db_places (core recommendation list, optional-by-route-efficiency)】\n"
         f"{anchors_lines and ''.join(anchors_lines) or '[]'}\n"
@@ -405,6 +496,11 @@ async def generate_k_schedule_node(state: KContentState) -> KContentState:
         "- Keep roughly 50-60% of schedule items from db_places (when feasible), and use external search results for the rest.\n"
         "- If a db_place is geographically inefficient, skip it and choose a better nearby alternative.\n"
         "- External places must align with the package title/category mood and fandom context, not generic tourist picks.\n"
+        "- External places must stay within 100km radius from ActivityCenter.\n"
+        "- Prefer context-aware exploration across neighboring cities/towns when they fit the same theme.\n"
+        "- Crossing city/county boundaries is allowed only if still within 100km and route flow remains efficient.\n"
+        "- For any far candidate near 100km boundary, keep it only when its thematic value clearly justifies transfer time.\n"
+        "- In description/tips, naturally include why the place is geographically plausible and theme-consistent.\n"
         "- Explain in description/tips why each external place matches the package theme.\n"
         "- When lang is Korean and name_ko is available, use name_ko as the display value for schedule item place.\n"
         "- description_en/must_do_en from db_places must be reflected in the relevant schedule item's description/tips.\n"
@@ -431,7 +527,11 @@ async def generate_k_schedule_node(state: KContentState) -> KContentState:
 
     llm = _get_llm_with_search()
     try:
-        response = await _invoke(llm, [SystemMessage(content=system_prompt), HumanMessage(content=prompt)])
+        response = await _invoke(
+            llm,
+            [SystemMessage(content=system_prompt), HumanMessage(content=prompt)],
+            plain_fallback=True,
+        )
         data = _parse_json(response)
 
         schedule = data.get("schedule", [])
@@ -441,7 +541,7 @@ async def generate_k_schedule_node(state: KContentState) -> KContentState:
         external_places: list[KContentPlaceInfo] = []
         for p in external_places_raw:
             item: KContentPlaceInfo = {
-                "place_id": p.get("place_id"),  # optional
+                "id": p.get("id"),  # optional
                 "name_en": p.get("name_en") or "",
                 "description_en": p.get("description_en"),
                 "must_do_en": p.get("must_do_en"),
@@ -452,6 +552,14 @@ async def generate_k_schedule_node(state: KContentState) -> KContentState:
                 item["lat"] = float(p.get("lat"))
             if p.get("lng") is not None:
                 item["lng"] = float(p.get("lng"))
+            if (
+                anchor_center
+                and item.get("lat") is not None
+                and item.get("lng") is not None
+                and _haversine_km(anchor_center[0], anchor_center[1], float(item["lat"]), float(item["lng"])) > 100.0
+            ):
+                # 모델이 좌표를 반환한 경우에는 서버에서도 100km 바운더리를 강제한다.
+                continue
             external_places.append(item)
 
         places = (state.get("db_places") or []) + external_places
