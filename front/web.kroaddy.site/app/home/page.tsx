@@ -40,14 +40,14 @@ const SHORTCUTS = [
   { label: "단체 채팅",   emoji: "💬",  path: "/group-chat" },
 ];
 
-// ── 인기 여행지 ────────────────────────────────────────────
+// ── 인기 여행지 (slug은 planner-data.ts의 SLUG_TO_NAME 키와 일치해야 함) ──
 const POPULAR_DESTINATIONS = [
-  { name: "서울",   emoji: "🏙️",  gradient: "from-indigo-400 to-purple-500" },
-  { name: "부산",   emoji: "🌊",  gradient: "from-cyan-400 to-blue-500" },
-  { name: "제주",   emoji: "🌿",  gradient: "from-emerald-400 to-teal-500" },
-  { name: "경주",   emoji: "🏯",  gradient: "from-amber-400 to-orange-500" },
-  { name: "강릉",   emoji: "🌅",  gradient: "from-rose-400 to-pink-500" },
-  { name: "전주",   emoji: "🎎",  gradient: "from-yellow-400 to-amber-500" },
+  { name: "서울",   slug: "seoul",   emoji: "🏙️",  gradient: "from-indigo-400 to-purple-500" },
+  { name: "부산",   slug: "busan",   emoji: "🌊",  gradient: "from-cyan-400 to-blue-500" },
+  { name: "제주",   slug: "jeju",    emoji: "🌿",  gradient: "from-emerald-400 to-teal-500" },
+  { name: "경주",   slug: "gyeongju",emoji: "🏯",  gradient: "from-amber-400 to-orange-500" },
+  { name: "강릉",   slug: "gangneung",emoji: "🌅", gradient: "from-rose-400 to-pink-500" },
+  { name: "전주",   slug: "jeonju",  emoji: "🎎",  gradient: "from-yellow-400 to-amber-500" },
 ];
 
 // ── K-콘텐츠 테마 ─────────────────────────────────────────
@@ -191,7 +191,7 @@ export default function HomePage() {
                 <button
                   key={dest.name}
                   type="button"
-                  onClick={() => router.push(`/planner/standard/${encodeURIComponent(dest.name)}`)}
+                  onClick={() => router.push(`/planner/standard/${dest.slug}`)}
                   className={`relative rounded-2xl bg-gradient-to-br ${dest.gradient} h-24 flex flex-col items-center justify-center gap-1 shadow-sm hover:scale-[1.03] hover:shadow-md transition-all overflow-hidden`}
                 >
                   <span className="text-3xl drop-shadow">{dest.emoji}</span>
