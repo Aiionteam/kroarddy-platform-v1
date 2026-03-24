@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLoginStore } from "@/store";
+import { getNicknameFromToken } from "@/lib/api/auth";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import {
   buildTourstarImageUrl,
@@ -44,6 +45,7 @@ interface TourPostComment {
 
 interface TourPost {
   id: string;
+  author: string;
   title: string;
   location: string;
   date: string;
@@ -54,6 +56,10 @@ interface TourPost {
   liked: boolean;
   tags: string[];
   comments: TourPostComment[];
+}
+
+function stripHashtags(text: string): string {
+  return text.replace(/#[\w\uAC00-\uD7A3\uAC00-\uD7A3]+/g, "").replace(/\s{2,}/g, " ").trim();
 }
 
 const STYLE_FILTER_AUTO: { value: TourstarStyleFilter; label: string } = {
@@ -138,7 +144,7 @@ function HeartIcon({ filled }: { filled: boolean }) {
 interface CreateModalProps {
   open: boolean;
   onClose: () => void;
-  onCreate: (post: Omit<TourPost, "id" | "likes" | "liked" | "comments">) => Promise<void> | void;
+  onCreate: (post: Omit<TourPost, "id" | "author" | "likes" | "liked" | "comments">) => Promise<void> | void;
   onJobStatusChange?: (status: string) => void;
 }
 
@@ -549,9 +555,11 @@ function PostDetailModal({ post, onClose, onToggleLike, onToggleVisibility, onAd
         <div className="flex w-1/2 flex-col">
           <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-sm font-bold text-white">T</div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-sm font-bold text-white">
+                {post.author.slice(0, 1).toUpperCase()}
+              </div>
               <div>
-                <p className="text-sm font-semibold text-gray-800">내 여행기록</p>
+                <p className="text-sm font-semibold text-gray-800">{post.author}</p>
                 <p className="text-[11px] text-gray-600">{post.location}</p>
               </div>
             </div>
@@ -562,7 +570,7 @@ function PostDetailModal({ post, onClose, onToggleLike, onToggleVisibility, onAd
           </div>
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
             <h2 className="text-base font-bold text-gray-800">{post.title}</h2>
-            <p className="text-sm leading-relaxed text-gray-700">{post.comment}</p>
+            <p className="text-sm leading-relaxed text-gray-700">{stripHashtags(post.comment)}</p>
             {post.tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {post.tags.map((tag) => (<span key={tag} className="rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-600">#{tag}</span>))}
@@ -609,11 +617,36 @@ function PostDetailModal({ post, onClose, onToggleLike, onToggleVisibility, onAd
 }
 
 /* ───────────────────── 게시물 카드 (피드 뷰) ───────────────────── */
-function FeedCard({ post, onClick, onToggleLike }: { post: TourPost; onClick: () => void; onToggleLike: (id: string) => void }) {
+function FeedCard({ post, onClick, onToggleLike, onShare }: {
+  post: TourPost;
+  onClick: () => void;
+  onToggleLike: (id: string) => void;
+  onShare: (id: string) => void;
+}) {
   return (
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all hover:shadow-md">
+      {/* 작성자 헤더 */}
+      <div className="flex items-center gap-2.5 px-3 py-2.5">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-xs font-bold text-white">
+          {post.author.slice(0, 1).toUpperCase()}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-gray-800">{post.author}</p>
+          {post.location && (
+            <div className="flex items-center gap-1 text-[11px] text-gray-400">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+              <span className="truncate">{post.location}</span>
+            </div>
+          )}
+        </div>
+        <span className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${post.visibility === "public" ? "border-emerald-200 bg-emerald-50 text-emerald-600" : "border-gray-200 bg-gray-50 text-gray-500"}`}>
+          {post.visibility === "public" ? "공개" : "비공개"}
+        </span>
+      </div>
+
+      {/* 사진 */}
       <button type="button" onClick={onClick} className="relative w-full">
-        <div className={`aspect-[16/10] w-full ${post.photos[0]?.imageUrl ? "bg-cover bg-center" : `bg-gradient-to-br ${post.photos[0]?.gradient ?? "from-gray-300 to-gray-500"}`}`}
+        <div className={`aspect-[4/3] w-full ${post.photos[0]?.imageUrl ? "bg-cover bg-center" : `bg-gradient-to-br ${post.photos[0]?.gradient ?? "from-gray-300 to-gray-500"}`}`}
           style={post.photos[0]?.imageUrl ? { backgroundImage: `url(${post.photos[0].imageUrl})` } : undefined}>
           <div className="flex h-full items-center justify-center">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1" className="opacity-30"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
@@ -625,31 +658,38 @@ function FeedCard({ post, onClick, onToggleLike }: { post: TourPost; onClick: ()
             {post.photos.length}
           </div>
         )}
-        <div className={`absolute top-3 left-3 flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium backdrop-blur-sm ${post.visibility === "public" ? "bg-emerald-500/80 text-white" : "bg-gray-800/60 text-gray-200"}`}>
-          {post.visibility === "public" ? "공개" : "비공개"}
-        </div>
       </button>
-      <div className="p-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <h3 className="truncate text-xs font-semibold text-gray-800">{post.title}</h3>
-            <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-gray-600">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
-              {post.location}<span>·</span><span>{post.date}</span>
-            </div>
-          </div>
-          <button type="button" onClick={(e) => { e.stopPropagation(); onToggleLike(post.id); }}
-            className={`flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] transition-colors ${post.liked ? "text-pink-500" : "text-gray-400 hover:text-pink-500"}`}>
-            <HeartIcon filled={post.liked} /><span>{post.likes}</span>
-          </button>
-        </div>
-        <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-gray-700">{post.comment}</p>
+
+      {/* 액션 바 */}
+      <div className="flex items-center gap-1 px-3 pt-2.5">
+        <button type="button" onClick={(e) => { e.stopPropagation(); onToggleLike(post.id); }}
+          className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-sm transition-colors ${post.liked ? "text-pink-500" : "text-gray-500 hover:text-pink-500"}`}>
+          <HeartIcon filled={post.liked} /><span className="text-[12px]">{post.likes}</span>
+        </button>
+        <button type="button" onClick={onClick}
+          className="flex items-center gap-1.5 rounded-full px-2 py-1 text-sm text-gray-500 hover:text-gray-700 transition-colors">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+          <span className="text-[12px]">{post.comments.length}</span>
+        </button>
+        <button type="button" onClick={(e) => { e.stopPropagation(); onShare(post.id); }}
+          className="ml-auto flex items-center gap-1 rounded-full px-2 py-1 text-sm text-gray-400 hover:text-gray-600 transition-colors">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" /></svg>
+          <span className="text-[11px]">공유</span>
+        </button>
+      </div>
+
+      {/* 본문 + 태그 */}
+      <div className="px-3 pb-3 pt-1.5 space-y-1.5">
+        <h3 className="truncate text-xs font-semibold text-gray-800">{post.title}</h3>
+        <p className="line-clamp-2 text-[11px] leading-relaxed text-gray-700">{stripHashtags(post.comment)}</p>
         {post.tags.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1">
-            {post.tags.slice(0, 3).map((tag) => (<span key={tag} className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-700">#{tag}</span>))}
-            {post.tags.length > 3 && <span className="text-[11px] text-gray-600">+{post.tags.length - 3}</span>}
+          <div className="flex flex-wrap gap-1 pt-0.5">
+            {post.tags.map((tag) => (
+              <span key={tag} className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-600">#{tag}</span>
+            ))}
           </div>
         )}
+        <p className="text-[10px] text-gray-400">{post.date}</p>
       </div>
     </div>
   );
@@ -685,7 +725,7 @@ function GridCard({ post, onClick }: { post: TourPost; onClick: () => void }) {
 }
 
 /* ═══════════════════════ 메인 페이지 ═══════════════════════ */
-function mapRecordToPost(record: TourstarPostRecord): TourPost {
+function mapRecordToPost(record: TourstarPostRecord, author = "내 여행기록"): TourPost {
   const photos: TourPhoto[] = (record.photo_urls || []).map((url, idx) => ({
     id: `photo-${record.id}-${idx}`,
     gradient: randomGradient(),
@@ -695,6 +735,7 @@ function mapRecordToPost(record: TourstarPostRecord): TourPost {
   }));
   return {
     id: record.id,
+    author,
     title: record.title,
     location: record.location || "위치 미확인",
     date: (record.created_at || "").slice(0, 10) || new Date().toISOString().slice(0, 10),
@@ -711,7 +752,8 @@ function mapRecordToPost(record: TourstarPostRecord): TourPost {
 export default function TourstarContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated, logout } = useLoginStore();
+  const { isAuthenticated, logout, accessToken } = useLoginStore();
+  const authorName = getNicknameFromToken(accessToken ?? undefined) ?? "내 여행기록";
 
   const [posts, setPosts] = useState<TourPost[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("feed");
@@ -728,7 +770,7 @@ export default function TourstarContent() {
     (async () => {
       try {
         const rows = await listTourstarPosts();
-        if (!cancelled) { setPosts(rows.map(mapRecordToPost)); }
+        if (!cancelled) { setPosts(rows.map((r) => mapRecordToPost(r, authorName))); }
       } catch (error) { console.error("[tourstar] 게시글 목록 조회 실패:", error); }
     })();
     return () => { cancelled = true; };
@@ -759,10 +801,10 @@ export default function TourstarContent() {
     setPosts((prev) => prev.map((p) => p.id === id ? { ...p, visibility: p.visibility === "public" ? "private" : "public" } : p));
     setDetailPost((prev) => prev && prev.id === id ? { ...prev, visibility: prev.visibility === "public" ? "private" : "public" } : prev);
   };
-  const createPost = async (newPost: Omit<TourPost, "id" | "likes" | "liked" | "comments">) => {
+  const createPost = async (newPost: Omit<TourPost, "id" | "author" | "likes" | "liked" | "comments">) => {
     const sourceImagePaths = newPost.photos.map((photo) => photo.sourceImagePath).filter((path): path is string => Boolean(path && path.trim()));
     const saved = await createTourstarPost({ title: newPost.title, location: newPost.location, comment: newPost.comment, visibility: newPost.visibility, tags: newPost.tags, image_paths: sourceImagePaths });
-    setPosts((prev) => [mapRecordToPost(saved), ...prev]);
+    setPosts((prev) => [mapRecordToPost(saved, authorName), ...prev]);
   };
   const addComment = async (postId: string, content: string) => {
     const saved = await createTourstarComment(postId, { author: "me", content });
@@ -830,7 +872,7 @@ export default function TourstarContent() {
           {filteredPosts.length > 0 ? (
             viewMode === "feed" ? (
               <div className="grid grid-cols-1 gap-4 max-w-xl mx-auto">
-                {filteredPosts.map((post) => (<FeedCard key={post.id} post={post} onClick={() => setDetailPost(post)} onToggleLike={toggleLike} />))}
+                {filteredPosts.map((post) => (<FeedCard key={post.id} post={post} onClick={() => setDetailPost(post)} onToggleLike={toggleLike} onShare={sharePost} />))}
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-3">
