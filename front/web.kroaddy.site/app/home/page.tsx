@@ -99,8 +99,8 @@ export default function HomePage() {
           {loading && (
             <>
               <Section title="🏆 오늘의 Top 10" sub="AI가 선정한 여행자 필수 뉴스">
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
-                  {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+                <div className="grid grid-cols-2 gap-2.5">
+                  {Array.from({ length: 10 }).map((_, i) => <SkeletonCard key={i} />)}
                 </div>
               </Section>
               <Section title="📰 전체 뉴스">
@@ -128,7 +128,7 @@ export default function HomePage() {
                 {data.top10.length === 0 ? (
                   <EmptyState text="아직 AI 분석이 진행 중입니다. 잠시 후 새로고침 해주세요." />
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
+                  <div className="grid grid-cols-2 gap-2.5">
                     {data.top10.map((item, idx) => (
                       <Top10Card key={item.id} item={item} rank={idx + 1} />
                     ))}
