@@ -854,9 +854,11 @@ export default function TourstarContent() {
         </header>
         <div className="mx-auto max-w-5xl px-6 py-6 space-y-6">
           <div className="flex items-center gap-6 rounded-2xl bg-white border border-gray-100 p-6 shadow-sm">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-2xl font-bold text-white shadow-lg shadow-purple-200">T</div>
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-2xl font-bold text-white shadow-lg shadow-purple-200">
+              {authorName.slice(0, 1).toUpperCase()}
+            </div>
             <div className="flex-1">
-              <h2 className="text-lg font-bold text-gray-800">내 여행기록</h2>
+              <h2 className="text-lg font-bold text-gray-800">{authorName}</h2>
               <p className="mt-0.5 text-xs text-gray-400">소중한 여행의 순간들을 기록하고 공유하세요</p>
               <div className="mt-3 flex gap-6">
                 {[{ label: "게시물", value: stats.total, color: "text-gray-800" }, { label: "사진", value: stats.totalPhotos, color: "text-gray-800" }, { label: "좋아요", value: stats.totalLikes, color: "text-pink-500" }, { label: "공개", value: stats.public, color: "text-emerald-600" }, { label: "비공개", value: stats.private, color: "text-gray-500" }].map((s) => (
