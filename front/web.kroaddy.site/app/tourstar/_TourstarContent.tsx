@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLoginStore } from "@/store";
-import { getUserIdFromToken } from "@/lib/api/auth";
+import { getAppUserIdFromToken, getUserIdFromToken } from "@/lib/api/auth";
 import { findUserById } from "@/lib/api/user";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import {
@@ -68,6 +68,35 @@ interface TourPost {
 
 function stripHashtags(text: string): string {
   return text.replace(/#[\w\uAC00-\uD7A3\uAC00-\uD7A3]+/g, "").replace(/\s{2,}/g, " ").trim();
+}
+
+/** DB user_id 와 JWT 를 같은 숫자 기준으로 맞춤. user_id 없는 예전 글은 닉네임 일치 시 본인으로 간주(UX). */
+function computeIsOwner(
+  postUserId: number | null | undefined,
+  currentUserId: number | null | undefined,
+  postAuthor: string,
+  sessionAuthorLabel: string,
+): boolean {
+  const cur = currentUserId != null && Number.isFinite(Number(currentUserId)) ? Number(currentUserId) : null;
+  const pid = postUserId != null && Number.isFinite(Number(postUserId)) ? Number(postUserId) : null;
+  if (cur != null && pid != null && pid === cur) return true;
+  if (
+    pid == null &&
+    sessionAuthorLabel &&
+    sessionAuthorLabel !== "내 여행기록" &&
+    postAuthor.trim() === sessionAuthorLabel.trim()
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function sameSortedStringSet(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  const sa = [...a].sort();
+  const sb = [...b].sort();
+  for (let i = 0; i < sa.length; i++) if (sa[i] !== sb[i]) return false;
+  return true;
 }
 
 const STYLE_FILTER_AUTO: { value: TourstarStyleFilter; label: string } = {
@@ -540,6 +569,7 @@ interface EditModalProps {
     tags: string[];
     keepPhotoUrls: string[];
     newImagePaths: string[];
+    photosChanged: boolean;
   }) => Promise<void>;
   onDelete: (postId: string) => Promise<boolean>;
 }
@@ -549,12 +579,13 @@ function EditPostModal({ post, onClose, onSave, onDelete }: EditModalProps) {
   const [location, setLocation] = useState(post?.location === "위치 미확인" ? "" : (post?.location ?? ""));
   const [comment, setComment] = useState(stripHashtags(post?.comment ?? ""));
   const [tagsInput, setTagsInput] = useState((post?.tags ?? []).join(", "));
-  const [existingPhotos, setExistingPhotos] = useState<Array<{ id: string; imageUrl: string; keep: boolean }>>([]);
+  const [existingPhotos, setExistingPhotos] = useState<Array<{ id: string; imageUrl: string; storedUrl: string; keep: boolean }>>([]);
   const [newPhotos, setNewPhotos] = useState<TourPhoto[]>([]);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const initialPhotoUrlsRef = React.useRef<string[]>([]);
 
   React.useEffect(() => {
     if (post) {
@@ -562,10 +593,15 @@ function EditPostModal({ post, onClose, onSave, onDelete }: EditModalProps) {
       setLocation(post.location === "위치 미확인" ? "" : post.location);
       setComment(stripHashtags(post.comment));
       setTagsInput(post.tags.join(", "));
+      initialPhotoUrlsRef.current = post.photos.map((p) => (p.sourceImagePath || p.imageUrl || "").trim()).filter(Boolean);
       setExistingPhotos(
         post.photos
-          .map((p, idx) => ({ id: `existing-${idx}`, imageUrl: p.imageUrl || "", keep: true }))
-          .filter((p) => !!p.imageUrl),
+          .map((p, idx) => {
+            const storedUrl = (p.sourceImagePath || p.imageUrl || "").trim();
+            const imageUrl = (p.imageUrl || (storedUrl ? buildTourstarImageUrl(storedUrl) : "")).trim();
+            return { id: `existing-${idx}`, imageUrl, storedUrl, keep: true };
+          })
+          .filter((p) => !!p.storedUrl),
       );
       setNewPhotos([]);
     }
@@ -619,15 +655,19 @@ function EditPostModal({ post, onClose, onSave, onDelete }: EditModalProps) {
         .split(/[,\s]+/)
         .map((t) => t.replace(/^#/, "").trim())
         .filter(Boolean);
+      const keepUrls = existingPhotos.filter((p) => p.keep).map((p) => p.storedUrl).filter(Boolean);
+      const newPaths = newPhotos
+        .map((p) => p.sourceImagePath)
+        .filter((v): v is string => Boolean(v && v.trim()));
+      const photosChanged = newPaths.length > 0 || !sameSortedStringSet(keepUrls, initialPhotoUrlsRef.current);
       await onSave(post.id, {
         title: title.trim(),
         location: location.trim() || "위치 미확인",
         comment: stripHashtags(comment),
         tags,
-        keepPhotoUrls: existingPhotos.filter((p) => p.keep).map((p) => p.imageUrl),
-        newImagePaths: newPhotos
-          .map((p) => p.sourceImagePath)
-          .filter((v): v is string => Boolean(v && v.trim())),
+        keepPhotoUrls: keepUrls,
+        newImagePaths: newPaths,
+        photosChanged,
       });
       onClose();
     } catch (error) {
@@ -1025,7 +1065,8 @@ function mapRecordToPost(
   bookmarkedIds: Set<string> = new Set(),
 ): TourPost {
   const author = record.author_nickname?.trim() || fallbackAuthor;
-  const isOwner = !!(currentUserId && record.user_id && record.user_id === currentUserId);
+  const uid = record.user_id != null ? Number(record.user_id) : null;
+  const isOwner = computeIsOwner(uid, currentUserId, author, fallbackAuthor);
   const bookmarked = bookmarkedIds.has(record.id);
   const photos: TourPhoto[] = (record.photo_urls || []).map((url, idx) => ({
     id: `photo-${record.id}-${idx}`,
@@ -1037,7 +1078,7 @@ function mapRecordToPost(
   }));
   return {
     id: record.id,
-    userId: record.user_id ?? null,
+    userId: uid,
     author,
     title: record.title,
     location: record.location || "위치 미확인",
@@ -1074,11 +1115,24 @@ export default function TourstarContent() {
   const [editTargetPost, setEditTargetPost] = useState<TourPost | null>(null);
   const [analysisStatus, setAnalysisStatus] = useState<string>("");
 
-  /* userId 추출 */
+  /* userId 추출 — DB user_id 는 app_user_id 등 숫자 클레임과 일치해야 함 (sub 는 UUID 인 경우가 많음) */
   React.useEffect(() => {
-    if (!accessToken) return;
-    const id = getUserIdFromToken(accessToken);
-    if (id) setCurrentUserId(Number(id));
+    if (!accessToken) {
+      setCurrentUserId(null);
+      return;
+    }
+    const appId = getAppUserIdFromToken(accessToken);
+    if (appId != null) {
+      setCurrentUserId(appId);
+      return;
+    }
+    const raw = getUserIdFromToken(accessToken);
+    if (!raw) {
+      setCurrentUserId(null);
+      return;
+    }
+    const n = Number(raw);
+    setCurrentUserId(Number.isFinite(n) && n > 0 ? n : null);
   }, [accessToken]);
 
   /* 북마크 로드 */
@@ -1097,12 +1151,17 @@ export default function TourstarContent() {
     const cached = sessionStorage.getItem("_tourstar_author");
     if (cached) setAuthorName(cached);
 
-    const userId = getUserIdFromToken(accessToken);
+    const userId = getAppUserIdFromToken(accessToken) ?? (() => {
+      const raw = getUserIdFromToken(accessToken);
+      if (!raw) return null;
+      const n = Number(raw);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    })();
     if (!userId) return;
     let cancelled = false;
     (async () => {
       try {
-        const res = await findUserById(Number(userId));
+        const res = await findUserById(userId);
         if (!cancelled && res.data) {
           const name = (res.data.nickname || res.data.name || "").trim();
           if (name) {
@@ -1142,19 +1201,19 @@ export default function TourstarContent() {
     setDetailPost((prev) => (prev && prev.author === "내 여행기록" ? { ...prev, author: authorName } : prev));
   }, [authorName]);
 
-  /* currentUserId / bookmarkedIds 변경 시 isOwner, bookmarked 재계산 */
+  /* currentUserId / bookmarkedIds / 닉네임 변경 시 isOwner, bookmarked 재계산 */
   React.useEffect(() => {
     setPosts((prev) => prev.map((p) => ({
       ...p,
-      isOwner: !!(currentUserId && p.userId && p.userId === currentUserId),
+      isOwner: computeIsOwner(p.userId, currentUserId, p.author, authorName),
       bookmarked: bookmarkedIds.has(p.id),
     })));
     setDetailPost((prev) => prev ? ({
       ...prev,
-      isOwner: !!(currentUserId && prev.userId && prev.userId === currentUserId),
+      isOwner: computeIsOwner(prev.userId, currentUserId, prev.author, authorName),
       bookmarked: bookmarkedIds.has(prev.id),
     }) : null);
-  }, [currentUserId, bookmarkedIds]);
+  }, [currentUserId, bookmarkedIds, authorName]);
 
   /* URL postId 파라미터 처리 */
   React.useEffect(() => {
@@ -1277,14 +1336,16 @@ export default function TourstarContent() {
     tags: string[];
     keepPhotoUrls: string[];
     newImagePaths: string[];
+    photosChanged: boolean;
   }) => {
     const saved = await updateTourstarPost(postId, {
       title: updates.title,
       location: updates.location,
       comment: updates.comment,
       tags: updates.tags,
-      keep_photo_urls: updates.keepPhotoUrls,
-      image_paths: updates.newImagePaths,
+      ...(updates.photosChanged
+        ? { keep_photo_urls: updates.keepPhotoUrls, image_paths: updates.newImagePaths }
+        : {}),
     });
     const updated = mapRecordToPost(saved, authorName, currentUserId, bookmarkedIds);
     setPosts((prev) => prev.map((p) => p.id === postId ? updated : p));
