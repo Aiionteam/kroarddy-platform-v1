@@ -3,7 +3,8 @@
 import React, { useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLoginStore } from "@/store";
-import { getNicknameFromToken } from "@/lib/api/auth";
+import { getUserIdFromToken } from "@/lib/api/auth";
+import { findUserById } from "@/lib/api/user";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import {
   buildTourstarImageUrl,
@@ -754,7 +755,20 @@ export default function TourstarContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, logout, accessToken } = useLoginStore();
-  const authorName = getNicknameFromToken(accessToken ?? undefined) ?? "내 여행기록";
+  const [authorName, setAuthorName] = useState("내 여행기록");
+
+  React.useEffect(() => {
+    if (!accessToken) return;
+    const userId = getUserIdFromToken(accessToken);
+    if (!userId) return;
+    findUserById(Number(userId))
+      .then((res) => {
+        if (res.code === 200 && res.data) {
+          setAuthorName(res.data.nickname || res.data.name || "내 여행기록");
+        }
+      })
+      .catch(() => {});
+  }, [accessToken]);
 
   const [posts, setPosts] = useState<TourPost[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("feed");
