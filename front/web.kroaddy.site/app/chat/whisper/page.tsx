@@ -55,21 +55,16 @@ export default function WhisperPage() {
   const [msgLoading, setMsgLoading] = useState(false);
   const [convLoading, setConvLoading] = useState(true);
 
-  // 새 대화 시작 (친구 선택)
   const [showNewChat, setShowNewChat] = useState(false);
   const [friends, setFriends] = useState<UserModel[]>([]);
 
-  // 메시지 입력
   const [inputText, setInputText] = useState("");
   const [sending, setSending] = useState(false);
 
-  // 차단
   const [partnerBlocked, setPartnerBlocked] = useState(false);
   const [blockLoading, setBlockLoading] = useState(false);
 
   const [deletingConv, setDeletingConv] = useState(false);
-
-  // 더보기 메뉴
   const [showMenu, setShowMenu] = useState(false);
   const [sharePreviewMap, setSharePreviewMap] = useState<Record<string, TourstarSharePreview | null>>({});
 
@@ -86,6 +81,15 @@ export default function WhisperPage() {
     if (!isAuthenticated) { router.replace("/"); return; }
   }, [isHydrated, isAuthenticated, router]);
 
+  // textarea 자동 높이 조정
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 120) + "px";
+  }, [inputText]);
+
+  // 초기 로딩에만 로딩 표시 (convLoading = true)
   const loadConversations = useCallback(async () => {
     setConvLoading(true);
     try {
@@ -93,6 +97,14 @@ export default function WhisperPage() {
       if (res.code === 200) setConversations(toConvList(res.data));
     } catch (_) {}
     finally { setConvLoading(false); }
+  }, []);
+
+  // 메시지 전송 후 등 백그라운드 갱신 (로딩 표시 없음)
+  const silentLoadConversations = useCallback(async () => {
+    try {
+      const res = await getConversationList();
+      if (res.code === 200) setConversations(toConvList(res.data));
+    } catch (_) {}
   }, []);
 
   useEffect(() => {
@@ -129,9 +141,7 @@ export default function WhisperPage() {
       );
     })();
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [messages, sharePreviewMap]);
 
   const openConversation = useCallback(async (partnerId: number, partnerName: string) => {
@@ -139,13 +149,18 @@ export default function WhisperPage() {
     setActivePartnerName(partnerName);
     setShowMenu(false);
     setMsgLoading(true);
+
+    // 낙관적으로 unread badge 즉시 제거
+    setConversations((prev) =>
+      prev.map((c) => c.partnerId === partnerId ? { ...c, unreadCount: 0 } : c)
+    );
+
     try {
       const [msgRes] = await Promise.all([
         getConversation(partnerId),
         markConversationRead(partnerId),
       ]);
       if (msgRes.code === 200) setMessages(toMsgList(msgRes.data));
-      // 차단 여부 확인
       const blocked = await isBlocked(partnerId);
       setPartnerBlocked(blocked);
     } catch (_) {}
@@ -154,9 +169,9 @@ export default function WhisperPage() {
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
       setTimeout(() => inputRef.current?.focus(), 80);
     }
-    // 읽음 처리 후 대화 목록 갱신
-    loadConversations();
-  }, [loadConversations]);
+    // 읽음 처리 후 대화 목록 백그라운드 갱신
+    silentLoadConversations();
+  }, [silentLoadConversations]);
 
   const handleSend = async () => {
     if (!activePartnerId || !inputText.trim() || sending) return;
@@ -165,7 +180,6 @@ export default function WhisperPage() {
     setInputText("");
     try {
       await sendWhisper(activePartnerId, text);
-      // 낙관적 업데이트
       const optimistic: WhisperModel = {
         fromUserId: myId ?? undefined,
         toUserId: activePartnerId,
@@ -174,10 +188,10 @@ export default function WhisperPage() {
       };
       setMessages((prev) => [...prev, optimistic]);
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 30);
-      // 대화 목록 갱신
-      loadConversations();
+      // 사이드바 로딩 표시 없이 조용히 갱신
+      silentLoadConversations();
     } catch (_) {
-      setInputText(text); // 실패 시 복원
+      setInputText(text);
     } finally {
       setSending(false);
       inputRef.current?.focus();
@@ -209,7 +223,7 @@ export default function WhisperPage() {
       setMessages([]);
       setActivePartnerId(null);
       setActivePartnerName("");
-      loadConversations();
+      silentLoadConversations();
     } catch (_) {}
     finally { setDeletingConv(false); }
   };
@@ -244,7 +258,17 @@ export default function WhisperPage() {
 
         <div className="flex-1 overflow-y-auto">
           {convLoading ? (
-            <p className="p-4 text-sm text-gray-400">불러오는 중...</p>
+            <div className="flex flex-col gap-3 p-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center gap-3 animate-pulse">
+                  <div className="h-10 w-10 shrink-0 rounded-full bg-gray-200" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 w-24 rounded bg-gray-200" />
+                    <div className="h-2.5 w-36 rounded bg-gray-100" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : conversations.length === 0 ? (
             <div className="flex flex-col items-center gap-3 p-8 text-center">
               <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5">
@@ -268,23 +292,26 @@ export default function WhisperPage() {
                     onClick={() => openConversation(c.partnerId, c.partnerName)}
                     className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 ${activePartnerId === c.partnerId ? "bg-purple-50" : ""}`}
                   >
-                    {/* 아바타 */}
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-pink-400 text-sm font-bold text-white">
-                      {c.partnerName.charAt(0)}
+                    <div className="relative shrink-0">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-pink-400 text-sm font-bold text-white">
+                        {c.partnerName.charAt(0)}
+                      </div>
+                      {c.unreadCount > 0 && (
+                        <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-purple-600 px-1 text-[9px] font-bold text-white">
+                          {c.unreadCount > 99 ? "99+" : c.unreadCount}
+                        </span>
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between">
-                        <span className="truncate text-sm font-medium text-gray-800">{c.partnerName}</span>
+                        <span className={`truncate text-sm ${c.unreadCount > 0 ? "font-semibold text-gray-900" : "font-medium text-gray-700"}`}>
+                          {c.partnerName}
+                        </span>
                         <span className="shrink-0 text-[10px] text-gray-400">{fmtTime(c.lastMessageAt)}</span>
                       </div>
-                      <div className="flex items-center justify-between mt-0.5">
-                        <p className="truncate text-xs text-gray-500">{c.lastMessage}</p>
-                        {c.unreadCount > 0 && (
-                          <span className="ml-1 shrink-0 rounded-full bg-purple-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                            {c.unreadCount > 99 ? "99+" : c.unreadCount}
-                          </span>
-                        )}
-                      </div>
+                      <p className={`mt-0.5 truncate text-xs ${c.unreadCount > 0 ? "font-medium text-gray-700" : "text-gray-400"}`}>
+                        {c.lastMessage}
+                      </p>
                     </div>
                   </button>
                 </li>
@@ -361,10 +388,15 @@ export default function WhisperPage() {
           </div>
 
           {/* 메시지 영역 */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2" onClick={() => setShowMenu(false)}>
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1" onClick={() => setShowMenu(false)}>
             {msgLoading ? (
-              <div className="flex justify-center pt-8">
-                <span className="h-5 w-5 animate-spin rounded-full border-2 border-purple-400 border-t-transparent" />
+              <div className="flex flex-col gap-3 pt-4">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className={`flex ${i % 2 === 0 ? "justify-start" : "justify-end"} animate-pulse`}>
+                    {i % 2 === 0 && <div className="mr-2 h-8 w-8 shrink-0 rounded-full bg-gray-200 self-end" />}
+                    <div className={`h-9 w-40 rounded-2xl ${i % 2 === 0 ? "bg-gray-200" : "bg-purple-200"}`} />
+                  </div>
+                ))}
               </div>
             ) : messages.length === 0 ? (
               <p className="text-center text-sm text-gray-400 pt-12">
@@ -375,6 +407,7 @@ export default function WhisperPage() {
                 const isMe = msg.fromUserId === myId;
                 const sharedPostId = extractTourstarPostIdFromMessage(msg.message ?? "");
                 const sharedPreview = sharedPostId ? sharePreviewMap[sharedPostId] : null;
+                const isRead = Boolean(msg.readAt);
                 return (
                   <div key={msg.id ?? i} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                     {!isMe && (
@@ -425,7 +458,14 @@ export default function WhisperPage() {
                           msg.message
                         )}
                       </div>
-                      <span className="text-[10px] text-gray-400">{fmtTime(msg.createdAt)}</span>
+                      <div className={`flex items-center gap-1 ${isMe ? "flex-row-reverse" : ""}`}>
+                        <span className="text-[10px] text-gray-400">{fmtTime(msg.createdAt)}</span>
+                        {isMe && (
+                          <span className={`text-[10px] ${isRead ? "text-purple-400" : "text-gray-300"}`}>
+                            {isRead ? "읽음" : ""}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -458,8 +498,8 @@ export default function WhisperPage() {
                   placeholder="메시지 입력... (Enter 전송, Shift+Enter 줄바꿈)"
                   rows={1}
                   maxLength={500}
-                  className="flex-1 resize-none rounded-2xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100"
-                  style={{ maxHeight: "120px", overflowY: "auto" }}
+                  className="flex-1 resize-none rounded-2xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-colors"
+                  style={{ overflowY: "auto" }}
                 />
                 <button
                   type="button"
@@ -467,9 +507,13 @@ export default function WhisperPage() {
                   disabled={sending || !inputText.trim()}
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-40 transition-colors"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
-                  </svg>
+                  {sending ? (
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+                    </svg>
+                  )}
                 </button>
               </div>
             )}
