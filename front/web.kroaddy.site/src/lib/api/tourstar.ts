@@ -312,6 +312,9 @@ export async function updateTourstarPost(
   if (res.ok) {
     return res.json();
   }
+  // 응답 body 를 읽어 에러 메시지 포함
+  let patchErrBody = "";
+  try { patchErrBody = await res.text(); } catch { /* ignore */ }
   // 게이트웨이/프록시에서 PATCH·메서드 제한 시 POST 로 재시도 (422 는 본문 검증 실패이므로 동일)
   const tryPostFallback =
     res.status !== 422 &&
@@ -331,9 +334,15 @@ export async function updateTourstarPost(
     if (fallbackRes.ok) {
       return fallbackRes.json();
     }
-    throw new Error(`투어스타 게시물 수정 API 오류: PATCH ${res.status} / POST ${fallbackRes.status}`);
+    let postErrBody = "";
+    try { postErrBody = await fallbackRes.text(); } catch { /* ignore */ }
+    throw new Error(
+      `투어스타 게시물 수정 API 오류: PATCH ${res.status}${patchErrBody ? ` (${patchErrBody.slice(0, 200)})` : ""} / POST ${fallbackRes.status}${postErrBody ? ` (${postErrBody.slice(0, 200)})` : ""}`,
+    );
   }
-  throw new Error(`투어스타 게시물 수정 API 오류: ${res.status}`);
+  throw new Error(
+    `투어스타 게시물 수정 API 오류: ${res.status}${patchErrBody ? ` — ${patchErrBody.slice(0, 200)}` : ""}`,
+  );
 }
 
 export async function deleteTourstarPost(postId: string, userId: number): Promise<void> {
