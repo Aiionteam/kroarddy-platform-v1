@@ -1,3 +1,117 @@
+// ── 게시글 / 댓글 / 공유 미리보기 ──────────────────────────────
+
+class TourstarComment {
+  TourstarComment({
+    required this.id,
+    required this.postId,
+    required this.author,
+    required this.content,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String postId;
+  final String author;
+  final String content;
+  final DateTime? createdAt;
+
+  factory TourstarComment.fromJson(Map<String, dynamic> json) {
+    return TourstarComment(
+      id: json["id"]?.toString() ?? "",
+      postId: json["post_id"]?.toString() ?? "",
+      author: json["author"]?.toString() ?? "",
+      content: json["content"]?.toString() ?? "",
+      createdAt: DateTime.tryParse(json["created_at"]?.toString() ?? ""),
+    );
+  }
+}
+
+class TourstarPostRecord {
+  TourstarPostRecord({
+    required this.id,
+    required this.title,
+    required this.location,
+    required this.comment,
+    required this.visibility,
+    required this.tags,
+    required this.photoUrls,
+    required this.comments,
+    required this.createdAt,
+    required this.updatedAt,
+    this.userId,
+    this.selectedScores,
+  });
+
+  final String id;
+  final int? userId;
+  final String title;
+  final String location;
+  final String comment;
+  final String visibility;
+  final List<String> tags;
+  final List<String> photoUrls;
+  final Map<String, dynamic>? selectedScores;
+  final List<TourstarComment> comments;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
+  factory TourstarPostRecord.fromJson(Map<String, dynamic> json) {
+    final tagsRaw = (json["tags"] as List?) ?? [];
+    final urlsRaw = (json["photo_urls"] as List?) ?? [];
+    final commentsRaw = (json["comments"] as List?) ?? [];
+    return TourstarPostRecord(
+      id: json["id"]?.toString() ?? "",
+      userId: (json["user_id"] as num?)?.toInt(),
+      title: json["title"]?.toString() ?? "",
+      location: json["location"]?.toString() ?? "",
+      comment: json["comment"]?.toString() ?? "",
+      visibility: json["visibility"]?.toString() ?? "public",
+      tags: tagsRaw.map((e) => e.toString()).toList(),
+      photoUrls: urlsRaw.map((e) => e.toString()).toList(),
+      selectedScores: json["selected_scores"] is Map
+          ? Map<String, dynamic>.from(json["selected_scores"] as Map)
+          : null,
+      comments: commentsRaw
+          .whereType<Map>()
+          .map((e) => TourstarComment.fromJson(Map<String, dynamic>.from(e)))
+          .toList(),
+      createdAt: DateTime.tryParse(json["created_at"]?.toString() ?? ""),
+      updatedAt: DateTime.tryParse(json["updated_at"]?.toString() ?? ""),
+    );
+  }
+}
+
+class TourstarSharePreview {
+  TourstarSharePreview({
+    required this.id,
+    required this.title,
+    required this.location,
+    required this.thumbnailUrl,
+    required this.visibility,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String title;
+  final String location;
+  final String thumbnailUrl;
+  final String visibility;
+  final DateTime? createdAt;
+
+  factory TourstarSharePreview.fromJson(Map<String, dynamic> json) {
+    return TourstarSharePreview(
+      id: json["id"]?.toString() ?? "",
+      title: json["title"]?.toString() ?? "",
+      location: json["location"]?.toString() ?? "",
+      thumbnailUrl: json["thumbnail_url"]?.toString() ?? "",
+      visibility: json["visibility"]?.toString() ?? "public",
+      createdAt: DateTime.tryParse(json["created_at"]?.toString() ?? ""),
+    );
+  }
+}
+
+// ── 기존 모델 ────────────────────────────────────────────────
+
 class UploadedPhoto {
   UploadedPhoto({
     required this.name,

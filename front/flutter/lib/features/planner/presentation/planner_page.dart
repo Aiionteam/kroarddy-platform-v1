@@ -2,9 +2,10 @@ import "dart:io";
 
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
-import "package:image_picker/image_picker.dart";
+import "package:go_router/go_router.dart";
 
 import "../../../core/router/main_shell.dart";
+import "../data/k_content_repository.dart";
 import "../data/planner_models.dart";
 import "../data/user_content_models.dart";
 import "state/planner_controller.dart";
@@ -341,12 +342,15 @@ final _provinceGroups = [
 
 // ── 진입점 ─────────────────────────────────────────────────────
 class PlannerPage extends ConsumerWidget {
-  const PlannerPage({super.key});
+  const PlannerPage({super.key, this.initialTabIndex = 0});
+
+  final int initialTabIndex;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return DefaultTabController(
       length: 3,
+      initialIndex: initialTabIndex.clamp(0, 2),
       child: Scaffold(
         backgroundColor: _bgPage,
         appBar: AppBar(
@@ -371,7 +375,7 @@ class PlannerPage extends ConsumerWidget {
             indicatorWeight: 3,
             tabs: [
               Tab(text: "스탠다드"),
-              Tab(text: "유저 루트"),
+              Tab(text: "유저 컨텐츠"),
               Tab(text: "K-콘텐츠"),
             ],
           ),
@@ -419,7 +423,6 @@ class _StandardTabState extends ConsumerState<_StandardTab> {
     });
     final ctrl = ref.read(plannerControllerProvider.notifier);
     ctrl.setLocation(dest.slug);
-    ctrl.fetchRoutes();
   }
 
   void _backToSelect() {
@@ -1054,6 +1057,66 @@ class _PlannerWorkspace extends ConsumerWidget {
   final _Destination dest;
   final VoidCallback onBack;
 
+  Future<void> _pickDate(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool isStart,
+  }) async {
+    final state = ref.read(plannerControllerProvider);
+    final source = isStart ? state.startDate : state.endDate;
+    final parsed = DateTime.tryParse(source) ?? DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: parsed,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: _primary,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: _textPrimary,
+            ),
+            datePickerTheme: DatePickerThemeData(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              headerBackgroundColor: const Color(0xFFF7F3FF),
+              headerForegroundColor: _textPrimary,
+              dayStyle: const TextStyle(fontWeight: FontWeight.w600),
+              todayBorder: const BorderSide(color: _primary),
+              dayShape: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return const CircleBorder();
+                }
+                return RoundedRectangleBorder(borderRadius: BorderRadius.circular(999));
+              }),
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: _primary,
+                textStyle: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
+    );
+    if (picked == null) return;
+    final s = picked.toIso8601String().split("T").first;
+    if (isStart) {
+      final end = state.endDate.compareTo(s) < 0 ? s : state.endDate;
+      ref.read(plannerControllerProvider.notifier).setDateRange(startDate: s, endDate: end);
+    } else {
+      final end = s.compareTo(state.startDate) < 0 ? state.startDate : s;
+      ref.read(plannerControllerProvider.notifier).setDateRange(
+            startDate: state.startDate,
+            endDate: end,
+          );
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(plannerControllerProvider);
@@ -1063,7 +1126,16 @@ class _PlannerWorkspace extends ConsumerWidget {
       children: [
         // 헤더
         Container(
-          color: Colors.white,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           child: Row(
             children: [
@@ -1084,7 +1156,7 @@ class _PlannerWorkspace extends ConsumerWidget {
                 ),
               ),
               const Spacer(),
-              if (state.loading)
+              if (state.routesLoading || state.scheduleLoading)
                 const SizedBox(
                   width: 20,
                   height: 20,
@@ -1093,12 +1165,299 @@ class _PlannerWorkspace extends ConsumerWidget {
             ],
           ),
         ),
-        if (state.loading) const LinearProgressIndicator(color: _primary, minHeight: 2),
+        if (state.routesLoading || state.scheduleLoading)
+          const LinearProgressIndicator(color: _primary, minHeight: 2),
 
         Expanded(
-          child: ListView(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth >= 980) {
+                return Row(
+                  children: [
+                    SizedBox(
+                      width: 360,
+                      child: ListView(
+                        padding: const EdgeInsets.all(16),
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.grey.shade200),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: () => _pickDate(context, ref, isStart: true),
+                                        icon: const Icon(Icons.event, size: 16),
+                                        label: Text(
+                                          "시작일 ${state.startDate}",
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        style: OutlinedButton.styleFrom(
+                                          side: BorderSide(color: _primary.withValues(alpha: 0.35)),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(999),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 8),
+                                      child: Text("~", style: TextStyle(color: _textSecondary)),
+                                    ),
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: () => _pickDate(context, ref, isStart: false),
+                                        icon: const Icon(Icons.event, size: 16),
+                                        label: Text(
+                                          "종료일 ${state.endDate}",
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        style: OutlinedButton.styleFrom(
+                                          side: BorderSide(color: _primary.withValues(alpha: 0.35)),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(999),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                FilledButton.icon(
+                                  onPressed: state.routesLoading ? null : ctrl.fetchRoutes,
+                                  icon: const Icon(Icons.auto_awesome),
+                                  label: Text(state.routesLoading ? "생성 중..." : "✨ 루트 생성"),
+                                  style: FilledButton.styleFrom(backgroundColor: _primary),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.travel_explore, size: 16, color: _primary),
+                                    const SizedBox(width: 8),
+                                    const Expanded(
+                                      child: Text(
+                                        "웹 검색(use_search)",
+                                        style: TextStyle(fontSize: 12, color: _textPrimary),
+                                      ),
+                                    ),
+                                    Switch(
+                                      value: state.useSearch,
+                                      onChanged:
+                                          state.routesLoading || state.scheduleLoading ? null : ctrl.setUseSearch,
+                                      activeThumbColor: _primary,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (state.routesError != null)
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              margin: const EdgeInsets.only(bottom: 10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFEF2F2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                state.routesError!,
+                                style: const TextStyle(color: Color(0xFFB91C1C), fontSize: 12),
+                              ),
+                            ),
+                          if (state.routes.isNotEmpty && !state.routesLoading) ...[
+                            const Text(
+                              "AI 추천 루트",
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: _textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            ...state.routes.map((r) {
+                              final selected = state.selectedRouteName == r.name;
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: _RouteCard(
+                                  route: r,
+                                  selected: selected,
+                                  expand: true,
+                                  onTap: () {
+                                    ctrl.selectRoute(r.name);
+                                    ctrl.fetchSchedule();
+                                  },
+                                ),
+                              );
+                            }),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const VerticalDivider(width: 1),
+                    Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.all(16),
+                        children: [
+                          if (state.scheduleLoading)
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.grey.shade200),
+                              ),
+                              child: Column(
+                                children: [
+                                  const SizedBox(
+                                    width: 26,
+                                    height: 26,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: _primary),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    "AI가 ${state.selectedRouteName ?? "선택한 루트"} 일정을 만드는 중...",
+                                    style: const TextStyle(fontSize: 12, color: _textSecondary),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          if (state.schedule.isNotEmpty) ...[
+                            Row(
+                              children: [
+                                const Text(
+                                  "여행 일정",
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: _textPrimary,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  "${state.schedule.length}개 항목",
+                                  style: const TextStyle(fontSize: 12, color: _textSecondary),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            ...state.schedule.map((s) => _ScheduleCard(item: s)),
+                            const SizedBox(height: 8),
+                            FilledButton.icon(
+                              onPressed: state.saving ? null : ctrl.savePlan,
+                              icon: const Icon(Icons.save),
+                              label: Text(state.saving ? "저장 중..." : "💾 저장하기"),
+                              style: FilledButton.styleFrom(backgroundColor: _primary),
+                            ),
+                            if (state.savedPlanId != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: OutlinedButton(
+                                  onPressed: () => context.push("/planner/schedule"),
+                                  child: const Text("✅ 저장됨 · 일정관리 보기"),
+                                ),
+                              ),
+                          ] else
+                            Container(
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey.shade200),
+                              ),
+                              child: const Text(
+                                "루트를 선택하면 우측에 일정이 표시됩니다.",
+                                style: TextStyle(color: _textSecondary),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }
+              return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => _pickDate(context, ref, isStart: true),
+                            icon: const Icon(Icons.event, size: 16),
+                            label: Text(
+                              "시작일 ${state.startDate}",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: _primary.withValues(alpha: 0.35)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8),
+                          child: Text("~", style: TextStyle(color: _textSecondary)),
+                        ),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => _pickDate(context, ref, isStart: false),
+                            icon: const Icon(Icons.event, size: 16),
+                            label: Text(
+                              "종료일 ${state.endDate}",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: _primary.withValues(alpha: 0.35)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: FilledButton.icon(
+                            onPressed: state.routesLoading ? null : ctrl.fetchRoutes,
+                            icon: const Icon(Icons.auto_awesome),
+                            label: Text(state.routesLoading ? "생성 중..." : "✨ 루트 생성"),
+                            style: FilledButton.styleFrom(backgroundColor: _primary),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
               // 상태 메시지
               if (state.statusMessage.isNotEmpty)
                 Container(
@@ -1114,8 +1473,91 @@ class _PlannerWorkspace extends ConsumerWidget {
                   ),
                 ),
 
+              // 웹과 동일: 검색 기반 보강 옵션
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.travel_explore, size: 16, color: _primary),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        "웹 검색 기반 추천 강화 (use_search)",
+                        style: TextStyle(fontSize: 12, color: _textPrimary),
+                      ),
+                    ),
+                    Switch(
+                      value: state.useSearch,
+                      onChanged: state.routesLoading || state.scheduleLoading ? null : ctrl.setUseSearch,
+                      activeThumbColor: _primary,
+                    ),
+                  ],
+                ),
+              ),
+
+              if (state.routesError != null)
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    state.routesError!,
+                    style: const TextStyle(color: Color(0xFFB91C1C), fontSize: 12),
+                  ),
+                ),
+
+              if (!state.routesTriggered && !state.routesLoading)
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        "날짜를 설정하고 루트를 생성해주세요",
+                        style: TextStyle(fontSize: 13, color: _textSecondary),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        "${state.startDate} ~ ${state.endDate}",
+                        style: const TextStyle(fontSize: 12, color: _textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+
+              if (state.routesLoading)
+                SizedBox(
+                  height: 118,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: 5,
+                    separatorBuilder: (_, __) => const SizedBox(width: 10),
+                    itemBuilder: (_, __) => Container(
+                      width: 160,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+
               // 루트 목록
-              if (state.routes.isNotEmpty) ...[
+              if (state.routes.isNotEmpty && !state.routesLoading) ...[
                 const Text(
                   "AI 추천 루트",
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
@@ -1144,6 +1586,55 @@ class _PlannerWorkspace extends ConsumerWidget {
                 const SizedBox(height: 16),
               ],
 
+              if (state.routesTriggered &&
+                  state.routes.isNotEmpty &&
+                  state.selectedRouteName == null &&
+                  !state.scheduleLoading)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: const Text(
+                    "루트를 선택하면 일정이 생성됩니다.",
+                    style: TextStyle(fontSize: 12, color: _textSecondary),
+                  ),
+                ),
+
+              if (state.scheduleLoading)
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Column(
+                    children: [
+                      const SizedBox(
+                        width: 26,
+                        height: 26,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: _primary),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        "AI가 ${state.selectedRouteName ?? "선택한 루트"} 일정을 만드는 중...",
+                        style: const TextStyle(fontSize: 12, color: _textSecondary),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "${state.startDate} ~ ${state.endDate}",
+                        style: const TextStyle(fontSize: 11, color: _textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+
               // 일정 타임라인
               if (state.schedule.isNotEmpty) ...[
                 Row(
@@ -1159,11 +1650,77 @@ class _PlannerWorkspace extends ConsumerWidget {
                     ),
                   ],
                 ),
+                if (state.costSummary != null) ...[
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFECFDF5),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          "총 경비 ${state.costSummary!.tripTotal}",
+                          style: const TextStyle(
+                            color: Color(0xFF047857),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                      ...state.costSummary!.perDay.map(
+                        (d) => Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            "Day${d.day} ${d.total}",
+                            style: const TextStyle(fontSize: 11, color: _textSecondary),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 8),
                 ...state.schedule.map((s) => _ScheduleCard(item: s)),
+                const SizedBox(height: 8),
+                FilledButton.icon(
+                  onPressed: state.saving ? null : ctrl.savePlan,
+                  icon: const Icon(Icons.save),
+                  label: Text(state.saving ? "저장 중..." : "💾 저장하기"),
+                  style: FilledButton.styleFrom(backgroundColor: _primary),
+                ),
+                if (state.savedPlanId != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: OutlinedButton(
+                      onPressed: () => context.push("/planner/schedule"),
+                      child: const Text("✅ 저장됨 · 일정관리 보기"),
+                    ),
+                  ),
               ],
 
-              if (state.routes.isEmpty && !state.loading)
+              if (state.scheduleError != null)
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  margin: const EdgeInsets.only(top: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    state.scheduleError!,
+                    style: const TextStyle(color: Color(0xFFB91C1C), fontSize: 12),
+                  ),
+                ),
+
+              if (state.routesTriggered && state.routes.isEmpty && !state.routesLoading)
                 Center(
                   child: Column(
                     children: [
@@ -1185,6 +1742,8 @@ class _PlannerWorkspace extends ConsumerWidget {
                   ),
                 ),
             ],
+              );
+            },
           ),
         ),
       ],
@@ -1193,10 +1752,16 @@ class _PlannerWorkspace extends ConsumerWidget {
 }
 
 class _RouteCard extends StatelessWidget {
-  const _RouteCard({required this.route, required this.selected, required this.onTap});
+  const _RouteCard({
+    required this.route,
+    required this.selected,
+    required this.onTap,
+    this.expand = false,
+  });
   final PlanRoute route;
   final bool selected;
   final VoidCallback onTap;
+  final bool expand;
 
   @override
   Widget build(BuildContext context) {
@@ -1204,10 +1769,17 @@ class _RouteCard extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 160,
+        width: expand ? double.infinity : 160,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: selected ? _primary : Colors.white,
+          gradient: selected
+              ? const LinearGradient(
+                  colors: [Color(0xFF6366F1), Color(0xFF7C3AED)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: selected ? null : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: selected ? _primary : Colors.grey.shade200, width: 1.5),
           boxShadow: [
@@ -1274,10 +1846,10 @@ class _ScheduleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -1286,78 +1858,113 @@ class _ScheduleCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: _primaryLight,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  "DAY ${item.day}",
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: _primary,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  item.time,
-                  style: const TextStyle(fontSize: 11, color: _textSecondary),
-                ),
-              ),
-            ],
+          Container(
+            width: 4,
+            margin: const EdgeInsets.only(top: 10, bottom: 10, left: 8),
+            decoration: BoxDecoration(
+              color: _primary,
+              borderRadius: BorderRadius.circular(999),
+            ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            item.title,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _textPrimary),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            item.place,
-            style: const TextStyle(fontSize: 12, color: _primary),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            item.description,
-            style: const TextStyle(fontSize: 12, color: _textSecondary),
-          ),
-          if (item.tips != null && item.tips!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFFBEB),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFFDE68A)),
-              ),
-              child: Row(
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("💡 ", style: TextStyle(fontSize: 12)),
-                  Expanded(
-                    child: Text(
-                      item.tips!,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF92400E)),
-                    ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: _primaryLight,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          "DAY ${item.day}",
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: _primary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          item.time,
+                          style: const TextStyle(fontSize: 11, color: _textSecondary),
+                        ),
+                      ),
+                      const Spacer(),
+                      if ((item.estimatedCost ?? "").isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFECFDF5),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            item.estimatedCost!,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF047857),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
+                  const SizedBox(height: 8),
+                  Text(
+                    item.title,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _textPrimary),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    item.place,
+                    style: const TextStyle(fontSize: 12, color: _primary),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.description,
+                    style: const TextStyle(fontSize: 12, color: _textSecondary),
+                  ),
+                  if (item.tips != null && item.tips!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFFBEB),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFFDE68A)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("💡 ", style: TextStyle(fontSize: 12)),
+                          Expanded(
+                            child: Text(
+                              item.tips!,
+                              style: const TextStyle(fontSize: 12, color: Color(0xFF92400E)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -1395,7 +2002,6 @@ class _UserContentTabState extends ConsumerState<_UserContentTab> {
       userContentControllerProvider.select((s) => s.saveSuccessCount),
       (prev, next) {
         if (prev != null && next > prev) {
-          setState(() => _showUpload = false);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("루트가 공유됐습니다! 🎉")),
           );
@@ -1414,19 +2020,29 @@ class _UserContentTabState extends ConsumerState<_UserContentTab> {
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                   child: Row(
                     children: [
-                      const Text(
-                        "유저 루트 피드",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: _textPrimary,
-                        ),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "유저 컨텐츠",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: _textPrimary,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            "여행자들이 공유한 추천 루트",
+                            style: TextStyle(fontSize: 11, color: _textSecondary),
+                          ),
+                        ],
                       ),
                       const Spacer(),
                       FilledButton.icon(
                         onPressed: () => setState(() => _showUpload = true),
                         icon: const Icon(Icons.add, size: 16),
-                        label: const Text("내 루트 공유"),
+                        label: const Text("내 루트 업로드"),
                         style: FilledButton.styleFrom(
                           backgroundColor: _primary,
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -1436,16 +2052,69 @@ class _UserContentTabState extends ConsumerState<_UserContentTab> {
                   ),
                 ),
               ),
+              if (state.message.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _primaryLight,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        state.message,
+                        style: const TextStyle(fontSize: 12, color: _primary),
+                      ),
+                    ),
+                  ),
+                ),
               if (state.loading)
-                const SliverFillRemaining(
-                  child: Center(
-                    child: CircularProgressIndicator(color: _primary),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverGrid(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.7,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (_, __) => Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                      ),
+                      childCount: 6,
+                    ),
                   ),
                 )
               else if (state.feed.isEmpty)
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   child: Center(
-                    child: Text("아직 공유된 루트가 없습니다.", style: TextStyle(color: _textSecondary)),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text("👥", style: TextStyle(fontSize: 46)),
+                        const SizedBox(height: 8),
+                        const Text(
+                          "아직 공유된 루트가 없습니다",
+                          style: TextStyle(color: _textPrimary, fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          "첫 번째로 루트를 업로드해보세요",
+                          style: TextStyle(color: _textSecondary, fontSize: 12),
+                        ),
+                        const SizedBox(height: 10),
+                        OutlinedButton(
+                          onPressed: () => setState(() => _showUpload = true),
+                          child: const Text("＋ 첫 루트 업로드"),
+                        ),
+                      ],
+                    ),
                   ),
                 )
               else ...[
@@ -1475,7 +2144,13 @@ class _UserContentTabState extends ConsumerState<_UserContentTab> {
                       child: Center(
                         child: OutlinedButton(
                           onPressed: state.loadingMore ? null : ctrl.loadMoreFeed,
-                          child: Text(state.loadingMore ? "불러오는 중..." : "더 보기"),
+                          child: state.loadingMore
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Text("더 보기"),
                         ),
                       ),
                     ),
@@ -1511,11 +2186,12 @@ class _UserRouteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tags = route.tags.take(3).toList();
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.grey.shade200,
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
@@ -1525,97 +2201,103 @@ class _UserRouteCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 썸네일
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(14),
-                topRight: Radius.circular(14),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              route.imageUrl != null
+                  ? Image.network(
+                      route.imageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _gradientFallback(),
+                    )
+                  : _gradientFallback(),
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: [0.35, 1],
+                    colors: [Colors.transparent, Color(0xCC000000)],
+                  ),
+                ),
               ),
-              child: AspectRatio(
-                aspectRatio: 3 / 2,
-                child: route.imageUrl != null
-                    ? Image.network(
-                        route.imageUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _gradientFallback(),
-                      )
-                    : _gradientFallback(),
+              Positioned(
+                top: 10,
+                right: 10,
+                child: GestureDetector(
+                  onTap: onLike,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      "🤍 ${route.likes}",
+                      style: const TextStyle(fontSize: 11, color: Colors.white),
+                    ),
+                  ),
+                ),
               ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(10),
+              Positioned(
+                left: 10,
+                right: 10,
+                bottom: 10,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 태그
-                    if (route.tags.isNotEmpty)
+                    if (tags.isNotEmpty)
                       Wrap(
                         spacing: 4,
-                        runSpacing: 2,
-                        children: route.tags
-                            .take(2)
+                        runSpacing: 4,
+                        children: tags
                             .map(
                               (t) => Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: _primaryLight,
-                                  borderRadius: BorderRadius.circular(4),
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: Text(
-                                  "#$t",
-                                  style: const TextStyle(fontSize: 10, color: _primary),
+                                  t,
+                                  style: const TextStyle(fontSize: 10, color: Colors.white),
                                 ),
                               ),
                             )
                             .toList(),
                       ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       route.title,
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
-                        color: _textPrimary,
+                        color: Colors.white,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const Spacer(),
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on, size: 12, color: _textSecondary),
-                        const SizedBox(width: 2),
-                        Expanded(
-                          child: Text(
-                            route.location,
-                            style: const TextStyle(fontSize: 11, color: _textSecondary),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: onLike,
-                          child: Row(
-                            children: [
-                              const Icon(Icons.favorite_border, size: 14, color: Color(0xFFEC4899)),
-                              const SizedBox(width: 2),
-                              Text(
-                                "${route.likes}",
-                                style: const TextStyle(fontSize: 11, color: _textSecondary),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 2),
+                    Text(
+                      "📍 ${route.location}",
+                      style: const TextStyle(fontSize: 11, color: Colors.white70),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      route.description,
+                      style: const TextStyle(fontSize: 11, color: Colors.white60),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1647,156 +2329,258 @@ class _RouteDetailSheet extends StatelessWidget {
         color: Colors.black54,
         child: GestureDetector(
           onTap: () {},
-          child: DraggableScrollableSheet(
-            initialChildSize: 0.8,
-            minChildSize: 0.5,
-            maxChildSize: 0.95,
-            builder: (_, ctrl) => Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-              ),
-              child: Column(
-                children: [
-                  // 핸들
-                  Center(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 10),
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560, maxHeight: 760),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.25),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
                     ),
-                  ),
-                  Expanded(
-                    child: ListView(
-                      controller: ctrl,
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      children: [
-                        // 헤더
-                        if (route.imageUrl != null)
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.network(
-                              route.imageUrl!,
-                              height: 180,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                            ),
-                          ),
-                        const SizedBox(height: 12),
-                        Row(
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: 210,
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        ),
+                        child: Stack(
+                          fit: StackFit.expand,
                           children: [
-                            const Icon(Icons.location_on, size: 14, color: _primary),
-                            const SizedBox(width: 4),
-                            Text(route.location, style: const TextStyle(fontSize: 13, color: _primary)),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          route.title,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: _textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          route.description,
-                          style: const TextStyle(fontSize: 13, color: _textSecondary),
-                        ),
-                        if (route.tags.isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 6,
-                            children: route.tags
-                                .map(
-                                  (t) => Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: _primaryLight,
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text("#$t", style: const TextStyle(fontSize: 12, color: _primary)),
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                        ],
-                        const SizedBox(height: 16),
-                        const Text(
-                          "루트",
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _textPrimary),
-                        ),
-                        const SizedBox(height: 8),
-                        ...route.routeItems.asMap().entries.map((e) {
-                          final idx = e.key;
-                          final item = e.value;
-                          return Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Column(
-                                children: [
-                                  Container(
-                                    width: 24,
-                                    height: 24,
-                                    decoration: BoxDecoration(
-                                      color: _primary,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      "${idx + 1}",
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                            if (route.imageUrl != null)
+                              Image.network(
+                                route.imageUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  decoration: const BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
                                     ),
                                   ),
-                                  if (idx < route.routeItems.length - 1)
-                                    Container(width: 2, height: 32, color: Colors.grey.shade200),
-                                ],
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(bottom: 16),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item.place,
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          color: _textPrimary,
-                                        ),
-                                      ),
-                                      if (item.description.isNotEmpty)
-                                        Text(
-                                          item.description,
-                                          style: const TextStyle(fontSize: 12, color: _textSecondary),
-                                        ),
-                                    ],
+                                ),
+                              )
+                            else
+                              Container(
+                                decoration: const BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
                                   ),
                                 ),
                               ),
-                            ],
-                          );
-                        }),
-                        const SizedBox(height: 32),
-                      ],
+                            const DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [Colors.transparent, Color(0xAA000000)],
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              top: 12,
+                              right: 12,
+                              child: IconButton(
+                                onPressed: onClose,
+                                style: IconButton.styleFrom(
+                                  backgroundColor: Colors.black.withValues(alpha: 0.3),
+                                  foregroundColor: Colors.white,
+                                ),
+                                icon: const Icon(Icons.close),
+                              ),
+                            ),
+                            Positioned(
+                              top: 12,
+                              left: 12,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.3),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  "❤️ ${route.likes}",
+                                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              left: 16,
+                              right: 16,
+                              bottom: 14,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (route.tags.isNotEmpty)
+                                    Wrap(
+                                      spacing: 6,
+                                      runSpacing: 6,
+                                      children: route.tags
+                                          .map(
+                                            (t) => Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white.withValues(alpha: 0.22),
+                                                borderRadius: BorderRadius.circular(999),
+                                              ),
+                                              child: Text(
+                                                "#$t",
+                                                style: const TextStyle(
+                                                  fontSize: 10,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
+                                    ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    route.title,
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    "📍 ${route.location}",
+                                    style: const TextStyle(fontSize: 12, color: Colors.white70),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                    Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(18, 16, 18, 22),
+                        children: [
+                          Text(
+                            route.description,
+                            style: const TextStyle(fontSize: 13, color: _textSecondary, height: 1.4),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            "루트",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: _textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          ...route.routeItems.asMap().entries.map((e) {
+                            final idx = e.key;
+                            final item = e.value;
+                            return Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Column(
+                                  children: [
+                                    Container(
+                                      width: 18,
+                                      height: 18,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFFD8B4FE),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        "${idx + 1}",
+                                        style: const TextStyle(
+                                          fontSize: 10,
+                                          color: Color(0xFF6D28D9),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    if (idx < route.routeItems.length - 1)
+                                      Container(
+                                        width: 2,
+                                        height: 34,
+                                        color: const Color(0xFFE9D5FF),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Container(
+                                    margin: const EdgeInsets.only(bottom: 10),
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF9FAFB),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "📍 ${item.place}",
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w700,
+                                            color: _textPrimary,
+                                          ),
+                                        ),
+                                        if (item.description.isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 4),
+                                            child: Text(
+                                              item.description,
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: _textSecondary,
+                                              ),
+                                            ),
+                                          ),
+                                        if (item.tip.isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 6),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFFEF3C7),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                "💡 ${item.tip}",
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  color: Color(0xFF92400E),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1818,11 +2602,25 @@ class _UploadSheet extends ConsumerStatefulWidget {
 class _UploadSheetState extends ConsumerState<_UploadSheet> {
   // step: 0=사진, 1=폼, 2=폴리시, 3=완료
   int _step = 0;
+  int? _lastSaveCount;
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(userContentControllerProvider);
     final ctrl = ref.read(userContentControllerProvider.notifier);
+
+    ref.listen<int>(
+      userContentControllerProvider.select((s) => s.saveSuccessCount),
+      (prev, next) {
+        _lastSaveCount ??= prev ?? 0;
+        if (next > (_lastSaveCount ?? 0)) {
+          _lastSaveCount = next;
+          if (mounted) {
+            setState(() => _step = 3);
+          }
+        }
+      },
+    );
 
     return GestureDetector(
       onTap: widget.onClose,
@@ -2088,6 +2886,39 @@ class _UploadSheetState extends ConsumerState<_UploadSheet> {
                               child: const Text("돌아가기"),
                             ),
                           ],
+                        ] else ...[
+                          const SizedBox(height: 32),
+                          const Center(
+                            child: Icon(
+                              Icons.check_circle,
+                              size: 56,
+                              color: Color(0xFF10B981),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          const Center(
+                            child: Text(
+                              "공유 완료!",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: _textPrimary,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Center(
+                            child: Text(
+                              "유저 루트 피드에 새 글이 추가되었습니다.",
+                              style: TextStyle(fontSize: 13, color: _textSecondary),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          FilledButton(
+                            onPressed: widget.onClose,
+                            style: FilledButton.styleFrom(backgroundColor: _primary),
+                            child: const Text("닫기"),
+                          ),
                         ],
                       ],
                     ),
@@ -2138,45 +2969,85 @@ class _InputField extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════
 // ── K-Content 데이터 ─────────────────────────────────────────
 class _KItem {
-  const _KItem(this.title, this.description, this.gradient);
+  const _KItem(this.id, this.title, this.description, this.gradient);
+  final String id;
   final String title;
   final String description;
   final List<Color> gradient;
 }
 
 const _kpopItems = [
-  _KItem("HYBE Building", "HYBE Insight museum and label headquarters.", [Color(0xFFFF4D6D), Color(0xFFD63384)]),
-  _KItem("SM Entertainment", "SM Town and SM Entertainment building.", [Color(0xFF7C3AED), Color(0xFF9333EA)]),
-  _KItem("Hongdae K-Pop Street", "Street performances, K-Pop stores.", [Color(0xFFD63384), Color(0xFFE11D74)]),
-  _KItem("K-Pop Store", "Official albums, merch, and photo cards.", [Color(0xFF4F46E5), Color(0xFF7C3AED)]),
+  _KItem("KPOP_01", "HYBE Building", "HYBE Insight museum and label headquarters.", [Color(0xFFFF4D6D), Color(0xFFD63384)]),
+  _KItem("KPOP_02", "SM Entertainment", "SM Town and SM Entertainment building.", [Color(0xFF7C3AED), Color(0xFF9333EA)]),
+  _KItem("KPOP_03", "Hongdae K-Pop Street", "Street performances, K-Pop stores.", [Color(0xFFD63384), Color(0xFFE11D74)]),
+  _KItem("KPOP_04", "K-Pop Store", "Official albums, merch, and photo cards.", [Color(0xFF4F46E5), Color(0xFF7C3AED)]),
 ];
 
 const _kdramaItems = [
-  _KItem("Goblin Filming Location", "Famous drama shooting spots.", [Color(0xFFF59E0B), Color(0xFFEA580C)]),
-  _KItem("Itaewon Class Street", "DanBam and the streets of the drama.", [Color(0xFF10B981), Color(0xFF0D9488)]),
-  _KItem("Namsan Tower", "Locks of love and panoramic Seoul.", [Color(0xFF0EA5E9), Color(0xFF3B82F6)]),
-  _KItem("Bukchon Hanok Village", "Traditional hanok alleys.", [Color(0xFFD97706), Color(0xFFE11D48)]),
+  _KItem("KDRAMA_01", "Goblin Filming Location", "Famous drama shooting spots.", [Color(0xFFF59E0B), Color(0xFFEA580C)]),
+  _KItem("KDRAMA_02", "Itaewon Class Street", "DanBam and the streets of the drama.", [Color(0xFF10B981), Color(0xFF0D9488)]),
+  _KItem("KDRAMA_03", "Namsan Tower", "Locks of love and panoramic Seoul.", [Color(0xFF0EA5E9), Color(0xFF3B82F6)]),
+  _KItem("KDRAMA_04", "Bukchon Hanok Village", "Traditional hanok alleys.", [Color(0xFFD97706), Color(0xFFE11D48)]),
 ];
 
 const _kfoodItems = [
-  _KItem("Gwangjang Market", "Bindaetteok, mayak gimbap, street food.", [Color(0xFFF97316), Color(0xFFD97706)]),
-  _KItem("Myeongdong Street Food", "Tteokbokki, odeng, and sweet treats.", [Color(0xFFEF4444), Color(0xFFF97316)]),
-  _KItem("Korean BBQ", "Samgyeopsal and galbi grill experience.", [Color(0xFFDC2626), Color(0xFFBE185D)]),
-  _KItem("Convenience Store Combo", "Triangle kimbap, ramyeon, soju.", [Color(0xFF84CC16), Color(0xFF22C55E)]),
+  _KItem("KFOOD_01", "Gwangjang Market", "Bindaetteok, mayak gimbap, street food.", [Color(0xFFF97316), Color(0xFFD97706)]),
+  _KItem("KFOOD_02", "Myeongdong Street Food", "Tteokbokki, odeng, and sweet treats.", [Color(0xFFEF4444), Color(0xFFF97316)]),
+  _KItem("KFOOD_03", "Korean BBQ", "Samgyeopsal and galbi grill experience.", [Color(0xFFDC2626), Color(0xFFBE185D)]),
+  _KItem("KFOOD_04", "Convenience Store Combo", "Triangle kimbap, ramyeon, soju.", [Color(0xFF84CC16), Color(0xFF22C55E)]),
 ];
 
 const _kbeautyItems = [
-  _KItem("Olive Young", "K-Beauty flagship. Skincare and makeup.", [Color(0xFFEC4899), Color(0xFFE11D48)]),
-  _KItem("Myeongdong Beauty Street", "Density of beauty stores and brands.", [Color(0xFFD946EF), Color(0xFFEC4899)]),
-  _KItem("K-Beauty Store", "Sheet masks, serums, cushion compacts.", [Color(0xFF7C3AED), Color(0xFF9333EA)]),
-  _KItem("Skincare Experience Shop", "Facials and personalized skincare.", [Color(0xFFFB7185), Color(0xFFEC4899)]),
+  _KItem("KBEAUTY_01", "Olive Young", "K-Beauty flagship. Skincare and makeup.", [Color(0xFFEC4899), Color(0xFFE11D48)]),
+  _KItem("KBEAUTY_02", "Myeongdong Beauty Street", "Density of beauty stores and brands.", [Color(0xFFD946EF), Color(0xFFEC4899)]),
+  _KItem("KBEAUTY_03", "K-Beauty Store", "Sheet masks, serums, cushion compacts.", [Color(0xFF7C3AED), Color(0xFF9333EA)]),
+  _KItem("KBEAUTY_04", "Skincare Experience Shop", "Facials and personalized skincare.", [Color(0xFFFB7185), Color(0xFFEC4899)]),
 ];
 
-class _KContentTab extends ConsumerWidget {
+class _KContentTab extends ConsumerStatefulWidget {
   const _KContentTab();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_KContentTab> createState() => _KContentTabState();
+}
+
+class _KContentTabState extends ConsumerState<_KContentTab> {
+  String? _heroImageUrl;
+  final Map<String, String> _cardImageMap = <String, String>{};
+  bool _loadingImages = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadImages());
+  }
+
+  Future<void> _loadImages() async {
+    if (_loadingImages) return;
+    setState(() => _loadingImages = true);
+    final repo = ref.read(kContentRepositoryProvider);
+    try {
+      final banner = await repo.fetchBannerImages();
+      final nextCardMap = <String, String>{};
+      for (final item in _kpopItems) {
+        final imgs = await repo.fetchPackageImages(item.id);
+        final picked = repo.pickRandomImage(imgs);
+        if (picked.isNotEmpty) nextCardMap[item.id] = picked;
+      }
+      if (!mounted) return;
+      setState(() {
+        _heroImageUrl = banner.isNotEmpty ? repo.pickRandomImage(banner) : null;
+        _cardImageMap
+          ..clear()
+          ..addAll(nextCardMap);
+      });
+    } finally {
+      if (mounted) setState(() => _loadingImages = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return ListView(
       children: [
         // ── 히어로 배너 ────────────────────────────────────────
@@ -2189,51 +3060,65 @@ class _KContentTab extends ConsumerWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
+            image: _heroImageUrl != null
+                ? DecorationImage(
+                    image: NetworkImage(_heroImageUrl!),
+                    fit: BoxFit.cover,
+                    onError: (_, __) {},
+                  )
+                : null,
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "K-Content Travel",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+          child: Container(
+            decoration: BoxDecoration(
+              color: _heroImageUrl != null ? Colors.black.withValues(alpha: 0.25) : Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "K-Content Travel",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                "Explore Korea through K-Pop, Drama, Food and Beauty",
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.85),
-                  fontSize: 13,
-                  height: 1.4,
+                const SizedBox(height: 6),
+                Text(
+                  "Explore Korea through K-Pop, Drama, Food and Beauty",
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: const Color(0xFF7C3AED),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  elevation: 0,
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => context.push("/planner/k-content/KPOP_01"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF7C3AED),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    _loadingImages ? "Loading..." : "Generate AI Route",
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
                 ),
-                child: const Text(
-                  "Generate AI Route",
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         // ── 콘텐츠 행 ──────────────────────────────────────────
-        _KContentRow(title: "KPOP TOUR", items: _kpopItems),
-        _KContentRow(title: "KDRAMA TOUR", items: _kdramaItems),
-        _KContentRow(title: "KFOOD TOUR", items: _kfoodItems),
-        _KContentRow(title: "KBEAUTY TOUR", items: _kbeautyItems),
+        _KContentRow(title: "KPOP TOUR", items: _kpopItems, cardImageMap: _cardImageMap),
+        _KContentRow(title: "KDRAMA TOUR", items: _kdramaItems, cardImageMap: _cardImageMap),
+        _KContentRow(title: "KFOOD TOUR", items: _kfoodItems, cardImageMap: _cardImageMap),
+        _KContentRow(title: "KBEAUTY TOUR", items: _kbeautyItems, cardImageMap: _cardImageMap),
         const SizedBox(height: 24),
       ],
     );
@@ -2241,9 +3126,14 @@ class _KContentTab extends ConsumerWidget {
 }
 
 class _KContentRow extends StatelessWidget {
-  const _KContentRow({required this.title, required this.items});
+  const _KContentRow({
+    required this.title,
+    required this.items,
+    required this.cardImageMap,
+  });
   final String title;
   final List<_KItem> items;
+  final Map<String, String> cardImageMap;
 
   @override
   Widget build(BuildContext context) {
@@ -2271,43 +3161,61 @@ class _KContentRow extends StatelessWidget {
             separatorBuilder: (_, __) => const SizedBox(width: 12),
             itemBuilder: (context, i) {
               final item = items[i];
-              return Container(
-                width: 160,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: item.gradient,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+              return GestureDetector(
+                onTap: () {
+                  if (item.id.startsWith("KPOP_")) {
+                    context.push("/planner/k-content/${item.id}");
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("해당 카테고리는 준비 중입니다.")),
+                    );
+                  }
+                },
+                child: Container(
+                  width: 160,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: item.gradient,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    image: cardImageMap[item.id] != null
+                        ? DecorationImage(
+                            image: NetworkImage(cardImageMap[item.id]!),
+                            fit: BoxFit.cover,
+                            onError: (_, __) {},
+                          )
+                        : null,
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Spacer(),
-                    Text(
-                      item.title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Spacer(),
+                      Text(
+                        item.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item.description,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
-                        fontSize: 11,
-                        height: 1.3,
+                      const SizedBox(height: 4),
+                      Text(
+                        item.description,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fontSize: 11,
+                          height: 1.3,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },

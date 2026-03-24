@@ -1,7 +1,11 @@
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:go_router/go_router.dart";
 
 import "../../../core/router/main_shell.dart";
+import "../../../core/utils/tourstar_share_parser.dart";
+import "../../tourstar/data/tourstar_models.dart";
+import "../../tourstar/data/tourstar_repository.dart";
 import "state/chat_controller.dart";
 import "state/chat_state.dart";
 
@@ -156,6 +160,7 @@ class _WhisperPageState extends ConsumerState<WhisperPage> {
       itemBuilder: (_, i) {
         final msg = items[i];
         final isInbox = state.whisperTab == WhisperTab.inbox;
+        final postId = TourstarShareParser.extractPostId(msg.message);
         return Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
@@ -184,7 +189,10 @@ class _WhisperPageState extends ConsumerState<WhisperPage> {
                 ],
               ),
               const SizedBox(height: 8),
-              Text(msg.message, style: const TextStyle(fontSize: 13, color: _textPrimary, height: 1.5)),
+              if (postId != null)
+                _WhisperTourstarCard(postId: postId)
+              else
+                Text(msg.message, style: const TextStyle(fontSize: 13, color: _textPrimary, height: 1.5)),
             ],
           ),
         );
@@ -297,6 +305,89 @@ class _ComposeOverlay extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── 귓속말 내 투어스타 공유 카드 ──────────────────────────────
+class _WhisperTourstarCard extends ConsumerStatefulWidget {
+  const _WhisperTourstarCard({required this.postId});
+  final String postId;
+
+  @override
+  ConsumerState<_WhisperTourstarCard> createState() => _WhisperTourstarCardState();
+}
+
+class _WhisperTourstarCardState extends ConsumerState<_WhisperTourstarCard> {
+  TourstarSharePreview? _preview;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final repo = ref.read(tourstarRepositoryProvider);
+      final preview = await repo.getSharePreview(widget.postId);
+      if (mounted) setState(() { _preview = preview; _loading = false; });
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Row(children: [
+        SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: _primary)),
+        SizedBox(width: 8),
+        Text("게시글 불러오는 중...", style: TextStyle(fontSize: 12, color: _textSecondary)),
+      ]);
+    }
+    if (_preview == null) {
+      return const Text("게시글을 불러올 수 없습니다.", style: TextStyle(fontSize: 12, color: _textSecondary));
+    }
+    return GestureDetector(
+      onTap: () => context.push("/tourstar?postId=${Uri.encodeComponent(widget.postId)}"),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F3FF),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFEDE9FE)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              const Icon(Icons.photo_camera_outlined, size: 13, color: _primary),
+              const SizedBox(width: 4),
+              const Text("투어스타 게시글", style: TextStyle(fontSize: 10, color: _primary, fontWeight: FontWeight.w600)),
+            ]),
+            const SizedBox(height: 6),
+            if (_preview!.thumbnailUrl.isNotEmpty)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Image.network(
+                  _preview!.thumbnailUrl,
+                  height: 100,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
+              ),
+            const SizedBox(height: 6),
+            Text(_preview!.title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _textPrimary), maxLines: 2, overflow: TextOverflow.ellipsis),
+            if (_preview!.location.isNotEmpty)
+              Text(_preview!.location, style: const TextStyle(fontSize: 11, color: _textSecondary), overflow: TextOverflow.ellipsis),
+            const SizedBox(height: 4),
+            const Text("탭하여 보기", style: TextStyle(fontSize: 10, color: _primary)),
+          ],
         ),
       ),
     );
