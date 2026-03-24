@@ -10,6 +10,7 @@ interface NaverMapModalProps {
   onClose: () => void;
 }
 
+interface NaverMap { setCenter(latlng: unknown): void; }
 
 function loadNaverMapsScript(): Promise<void> {
   return new Promise((resolve, reject) => {
