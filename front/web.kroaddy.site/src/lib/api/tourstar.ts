@@ -312,18 +312,26 @@ export async function updateTourstarPost(
   if (res.ok) {
     return res.json();
   }
-  // 일부 게이트웨이 환경에서 PATCH가 차단될 수 있어 POST fallback 제공
-  if (res.status === 404 || res.status === 405) {
+  // 게이트웨이/프록시에서 PATCH·메서드 제한 시 POST 로 재시도 (422 는 본문 검증 실패이므로 동일)
+  const tryPostFallback =
+    res.status !== 422 &&
+    (res.status === 403 ||
+      res.status === 404 ||
+      res.status === 405 ||
+      res.status === 501 ||
+      res.status === 500 ||
+      (res.status >= 502 && res.status <= 504));
+  if (tryPostFallback) {
     const fallbackRes = await fetch(toApiUrl(`/v1/photo-selection/posts/${postId}/update`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
       cache: "no-store",
     });
-    if (!fallbackRes.ok) {
-      throw new Error(`투어스타 게시물 수정 API 오류: ${fallbackRes.status}`);
+    if (fallbackRes.ok) {
+      return fallbackRes.json();
     }
-    return fallbackRes.json();
+    throw new Error(`투어스타 게시물 수정 API 오류: PATCH ${res.status} / POST ${fallbackRes.status}`);
   }
   throw new Error(`투어스타 게시물 수정 API 오류: ${res.status}`);
 }
