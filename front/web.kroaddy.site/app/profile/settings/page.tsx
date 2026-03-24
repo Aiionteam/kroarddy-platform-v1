@@ -127,6 +127,9 @@ export default function SettingsPage() {
       const res = await updateUser({ ...user, nickname: nickname.trim() || undefined });
       if (res.code === 200) {
         setUser((prev) => (prev ? { ...prev, nickname: nickname.trim() } : null));
+        /* 투어스타 등 다른 페이지에서 쓰는 닉네임 캐시도 갱신 */
+        const saved = nickname.trim();
+        if (saved) sessionStorage.setItem("_tourstar_author", saved);
         setMessage({ type: "ok", text: "저장되었습니다." });
       } else {
         setMessage({ type: "err", text: res.message || "저장에 실패했습니다." });
