@@ -144,10 +144,24 @@ function Section({ title, sub, children }: { title: string; sub?: string; childr
 function Top10Carousel({ items }: { items: ProcessedNewsItem[] }) {
   const [cur, setCur] = useState(0);
   const touchStartX = useRef<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const total = items.length;
 
-  const prev = useCallback(() => setCur((c) => (c - 1 + total) % total), [total]);
-  const next = useCallback(() => setCur((c) => (c + 1) % total), [total]);
+  const resetTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setCur((c) => (c + 1) % total);
+    }, 10000);
+  }, [total]);
+
+  useEffect(() => {
+    resetTimer();
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [resetTimer]);
+
+  const prev = useCallback(() => { setCur((c) => (c - 1 + total) % total); resetTimer(); }, [total, resetTimer]);
+  const next = useCallback(() => { setCur((c) => (c + 1) % total); resetTimer(); }, [total, resetTimer]);
+  const goTo = useCallback((i: number) => { setCur(i); resetTimer(); }, [resetTimer]);
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0]?.clientX ?? null;
@@ -165,14 +179,14 @@ function Top10Carousel({ items }: { items: ProcessedNewsItem[] }) {
 
   return (
     <div className="select-none">
-      {/* 카드 */}
+      {/* 카드 — 수평 2단 (왼쪽 이미지 + 오른쪽 텍스트) */}
       <div
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
-        className="rounded-2xl bg-white border border-gray-100 shadow-md overflow-hidden"
+        className="rounded-2xl bg-white border border-gray-100 shadow-md overflow-hidden flex h-44"
       >
-        {/* 이미지 영역 */}
-        <div className="relative w-full aspect-video bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center overflow-hidden">
+        {/* 이미지 (고정 너비) */}
+        <div className="relative shrink-0 w-44 bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center overflow-hidden">
           {item.thumbnail ? (
             <img
               src={item.thumbnail}
@@ -181,65 +195,48 @@ function Top10Carousel({ items }: { items: ProcessedNewsItem[] }) {
               onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
             />
           ) : (
-            <span className="text-6xl">{cat.emoji}</span>
+            <span className="text-5xl">{cat.emoji}</span>
           )}
           {/* 순위 배지 */}
-          <div className={`absolute top-3 left-3 w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-lg
+          <div className={`absolute top-2 left-2 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shadow-md
             ${rank <= 3 ? "bg-yellow-400 text-white" : "bg-gray-800/80 text-white backdrop-blur-sm"}`}>
             {rank}
           </div>
-          {/* 좌우 화살표 */}
-          <button
-            type="button"
-            onClick={prev}
-            className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/50 transition-colors text-lg"
-            aria-label="이전"
-          >
-            ‹
-          </button>
-          <button
-            type="button"
-            onClick={next}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/50 transition-colors text-lg"
-            aria-label="다음"
-          >
-            ›
-          </button>
         </div>
 
-        {/* 본문 */}
-        <div className="p-4 space-y-2.5">
+        {/* 텍스트 본문 */}
+        <div className="flex-1 min-w-0 flex flex-col justify-between p-4">
           {/* 카테고리 + 지역 + 날짜 */}
           <div className="flex flex-wrap gap-1.5 items-center">
-            <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${cat.bg} ${cat.text}`}>
+            <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${cat.bg} ${cat.text}`}>
               {cat.emoji} {item.category}
             </span>
             {item.location && item.location !== "전국" && (
-              <span className="rounded-full px-2 py-0.5 text-xs bg-gray-100 text-gray-500">
+              <span className="rounded-full px-2 py-0.5 text-[11px] bg-gray-100 text-gray-500">
                 📍 {item.location}
               </span>
             )}
             {item.date_mentioned && (
-              <span className="rounded-full px-2 py-0.5 text-xs bg-indigo-50 text-indigo-500 font-semibold">
+              <span className="rounded-full px-2 py-0.5 text-[11px] bg-indigo-50 text-indigo-500 font-semibold">
                 📅 {item.date_mentioned}
               </span>
             )}
           </div>
 
           {/* 제목 */}
-          <h3 className="text-sm font-bold text-gray-800 leading-snug">{item.title}</h3>
+          <h3 className="text-sm font-bold text-gray-800 leading-snug line-clamp-2 mt-1.5">{item.title}</h3>
 
           {/* 요약 */}
           {(item.gpt_summary || item.summary) && (
-            <p className="text-xs leading-relaxed text-gray-500 line-clamp-3">
+            <p className="text-xs leading-relaxed text-gray-500 line-clamp-2 mt-1">
               {item.gpt_summary || item.summary}
             </p>
           )}
 
           {/* 출처 + 기사 링크 */}
-          <div className="flex items-center justify-between pt-1">
-            <div className="flex items-center gap-1.5 text-xs text-gray-300">
-              <span className="font-medium text-purple-400">{item.source}</span>
+          <div className="flex items-center justify-between mt-auto pt-2">
+            <div className="flex items-center gap-1 text-[11px] text-gray-400">
+              <span className="font-medium text-purple-400 truncate max-w-[80px]">{item.source}</span>
               <span>·</span>
               <span>{timeAgo(item.published)}</span>
             </div>
@@ -247,7 +244,7 @@ function Top10Carousel({ items }: { items: ProcessedNewsItem[] }) {
               href={item.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs font-semibold text-purple-500 hover:text-purple-700 hover:underline transition-colors"
+              className="text-[11px] font-semibold text-purple-500 hover:text-purple-700 transition-colors shrink-0"
             >
               기사 보기 →
             </a>
@@ -255,22 +252,42 @@ function Top10Carousel({ items }: { items: ProcessedNewsItem[] }) {
         </div>
       </div>
 
-      {/* 도트 인디케이터 */}
-      <div className="flex justify-center gap-1.5 mt-3">
-        {items.map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => setCur(i)}
-            className={`rounded-full transition-all duration-200
-              ${i === cur ? "w-5 h-2 bg-purple-500" : "w-2 h-2 bg-gray-300 hover:bg-purple-300"}`}
-            aria-label={`${i + 1}번째 뉴스`}
-          />
-        ))}
+      {/* 화살표 + 도트 인디케이터 한 줄 */}
+      <div className="flex items-center justify-center gap-3 mt-3">
+        <button
+          type="button"
+          onClick={prev}
+          className="w-7 h-7 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center hover:bg-purple-100 hover:text-purple-600 transition-colors text-base font-bold"
+          aria-label="이전"
+        >
+          ‹
+        </button>
+
+        <div className="flex gap-1.5 items-center">
+          {items.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => goTo(i)}
+              className={`rounded-full transition-all duration-200
+                ${i === cur ? "w-5 h-2 bg-purple-500" : "w-2 h-2 bg-gray-300 hover:bg-purple-300"}`}
+              aria-label={`${i + 1}번째 뉴스`}
+            />
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={next}
+          className="w-7 h-7 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center hover:bg-purple-100 hover:text-purple-600 transition-colors text-base font-bold"
+          aria-label="다음"
+        >
+          ›
+        </button>
       </div>
 
       {/* 카운터 */}
-      <p className="text-center text-xs text-gray-400 mt-1.5">
+      <p className="text-center text-[11px] text-gray-400 mt-1">
         <span className="font-bold text-gray-600">{cur + 1}</span> / {total}
       </p>
     </div>
@@ -280,9 +297,9 @@ function Top10Carousel({ items }: { items: ProcessedNewsItem[] }) {
 /* ── 캐러셀 스켈레톤 ── */
 function CarouselSkeleton() {
   return (
-    <div className="animate-pulse rounded-2xl bg-white border border-gray-100 shadow-md overflow-hidden">
-      <div className="w-full aspect-video bg-gray-200" />
-      <div className="p-4 space-y-3">
+    <div className="animate-pulse rounded-2xl bg-white border border-gray-100 shadow-md overflow-hidden flex h-44">
+      <div className="shrink-0 w-44 bg-gray-200" />
+      <div className="flex-1 p-4 space-y-3">
         <div className="flex gap-2">
           <div className="h-5 w-20 bg-gray-200 rounded-full" />
           <div className="h-5 w-16 bg-gray-100 rounded-full" />
@@ -291,8 +308,8 @@ function CarouselSkeleton() {
         <div className="space-y-1.5">
           <div className="h-3 bg-gray-100 rounded" />
           <div className="h-3 bg-gray-100 rounded w-4/5" />
-          <div className="h-3 bg-gray-100 rounded w-3/5" />
         </div>
+        <div className="h-3 bg-gray-200 rounded w-1/3 mt-auto" />
       </div>
     </div>
   );
