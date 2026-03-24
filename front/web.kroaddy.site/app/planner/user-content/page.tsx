@@ -26,6 +26,8 @@ import {
 } from "@/lib/api/userContent";
 import {
   fetchMyPlans,
+  savePlan,
+  type ScheduleItem,
   type TravelPlanRecord,
 } from "@/lib/api/planner";
 
@@ -133,16 +135,69 @@ function RouteCard({
 }
 
 // ────────────────────────────────────────────────────────────
+// 유저 공유 루트 → 플래너 일정(ScheduleItem) 변환
+// ────────────────────────────────────────────────────────────
+
+const DEFAULT_DAY_TIMES = ["10:00", "12:30", "15:00", "17:30", "19:00", "20:30"];
+
+function userRouteToScheduleItems(route: UserRoute): ScheduleItem[] {
+  return route.route_items.map((item, idx) => ({
+    day: 1,
+    date: "Day 1",
+    time: DEFAULT_DAY_TIMES[idx % DEFAULT_DAY_TIMES.length] ?? "10:00",
+    place: item.place,
+    title: item.place,
+    description: item.description ?? "",
+    tips: item.tip?.trim() ? item.tip : undefined,
+  }));
+}
+
+// ────────────────────────────────────────────────────────────
 // 루트 상세 모달
 // ────────────────────────────────────────────────────────────
 
 function RouteDetailModal({
   route,
+  userId,
   onClose,
 }: {
   route: UserRoute;
+  userId: number | null;
   onClose: () => void;
 }) {
+  const router = useRouter();
+  const [adding, setAdding] = useState(false);
+  const [addDone, setAddDone] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setAddDone(false);
+    setAddError(null);
+    setAdding(false);
+  }, [route.id]);
+
+  const canAdd = !!userId && route.route_items.length > 0;
+
+  const handleAddToMySchedule = useCallback(async () => {
+    if (!userId || route.route_items.length === 0) return;
+    setAdding(true);
+    setAddError(null);
+    try {
+      const schedule = userRouteToScheduleItems(route);
+      await savePlan({
+        location: route.location.trim() || "custom",
+        routeName: route.title.trim() || "공유 루트",
+        schedule,
+        userId,
+      });
+      setAddDone(true);
+    } catch (e) {
+      setAddError(e instanceof Error ? e.message : "일정 저장에 실패했습니다.");
+    } finally {
+      setAdding(false);
+    }
+  }, [userId, route]);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
@@ -179,7 +234,7 @@ function RouteDetailModal({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5">
+        <div className="flex-1 overflow-y-auto p-5 pb-2">
           <p className="text-sm text-gray-600 mb-5">{route.description}</p>
 
           <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-400">루트</h3>
@@ -199,6 +254,50 @@ function RouteDetailModal({
               </li>
             ))}
           </ol>
+        </div>
+
+        {/* 내 일정에 추가 */}
+        <div className="shrink-0 border-t border-gray-100 bg-gray-50/90 px-5 py-4 space-y-2">
+          {addError && (
+            <p className="text-xs text-red-600 text-center">{addError}</p>
+          )}
+          {addDone ? (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-center sm:gap-3">
+              <p className="text-center text-sm font-medium text-emerald-700">✅ 내 일정에 추가되었습니다</p>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  router.push("/planner/schedule");
+                }}
+                className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
+              >
+                일정 관리로 이동
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleAddToMySchedule}
+              disabled={!canAdd || adding}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-purple-600 py-3 text-sm font-semibold text-white shadow-sm hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+            >
+              {adding ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  저장 중…
+                </>
+              ) : (
+                <>📅 내 일정에 추가</>
+              )}
+            </button>
+          )}
+          {!userId && (
+            <p className="text-center text-[11px] text-gray-400">로그인 후 이용할 수 있습니다.</p>
+          )}
+          {userId && route.route_items.length === 0 && (
+            <p className="text-center text-[11px] text-gray-400">저장할 장소가 없습니다.</p>
+          )}
         </div>
       </div>
     </div>
@@ -929,6 +1028,7 @@ export default function UserContentPage() {
       {detailRoute && (
         <RouteDetailModal
           route={detailRoute}
+          userId={userId}
           onClose={() => setDetailRoute(null)}
         />
       )}
