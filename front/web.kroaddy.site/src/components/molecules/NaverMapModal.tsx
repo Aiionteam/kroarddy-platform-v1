@@ -4,37 +4,17 @@ import React, { useEffect, useRef, useState } from "react";
 
 const NAVER_CLIENT_ID =
   process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID || "8cy39wy7um";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL || "https://api.kroaddy.site";
 
 interface NaverMapModalProps {
   placeName: string;
   onClose: () => void;
 }
 
-// window.naver는 src/types/naver-maps.d.ts 에서 any로 선언됨
-
-function loadNaverMapsScript(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((window as any).naver?.maps) { resolve(); return; }
-    const existing = document.getElementById("naver-maps-sdk");
-    if (existing) {
-      existing.addEventListener("load", () => resolve());
-      existing.addEventListener("error", reject);
-      return;
-    }
-    const script = document.createElement("script");
-    script.id = "naver-maps-sdk";
-    script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${NAVER_CLIENT_ID}&submodules=geocoder`;
-    script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Naver Maps SDK 로드 실패"));
-    document.head.appendChild(script);
-  });
-}
-
-/** raster-cors 정적 지도 URL 생성 (HTTP Referer 인증) */
+/** raster-cors 정적 지도 URL (HTTP Referer 인증 – 서비스 URL 등록 필요) */
 function buildStaticMapUrl(lng: number, lat: number): string {
-  const pos = `${lng}%20${lat}`;
+  const pos    = `${lng}%20${lat}`;
   const marker = `type:d|size:mid|pos:${pos}`;
   return (
     `https://maps.apigw.ntruss.com/map-static/v2/raster-cors` +
@@ -46,45 +26,31 @@ function buildStaticMapUrl(lng: number, lat: number): string {
 
 export function NaverMapModal({ placeName, onClose }: NaverMapModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
-  const [status, setStatus]         = useState<"loading" | "ok" | "error">("loading");
+  const [status, setStatus]             = useState<"loading" | "ok" | "error">("loading");
   const [staticMapUrl, setStaticMapUrl] = useState("");
-  const [address, setAddress]       = useState("");
+  const [address, setAddress]           = useState("");
 
   useEffect(() => {
     let cancelled = false;
 
     async function init() {
       try {
-        await loadNaverMapsScript();
+        // 백엔드 place-search (Naver 지역 검색 API – 장소명 지원)
+        const res = await fetch(
+          `${API_BASE}/api/v1/maps/place-search?query=${encodeURIComponent(placeName)}`
+        );
+
         if (cancelled) return;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const naver = (window as any).naver;
+        if (!res.ok) { setStatus("error"); return; }
 
-        naver.maps.Service.geocode(
-          { query: placeName },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (geocodeStatus: string, response: any) => {
-            if (cancelled) return;
+        const data = await res.json();
+        const lng  = parseFloat(data.x);
+        const lat  = parseFloat(data.y);
 
-            // SDK v2 응답: response.v2.addresses
-            if (
-              geocodeStatus !== naver.maps.Service.Status.OK ||
-              !response.v2?.addresses?.length
-            ) {
-              setStatus("error");
-              return;
-            }
-
-            const addr = response.v2.addresses[0];
-            const lng  = parseFloat(addr.x);
-            const lat  = parseFloat(addr.y);
-
-            setStaticMapUrl(buildStaticMapUrl(lng, lat));
-            setAddress(addr.roadAddress || addr.jibunAddress || "");
-            setStatus("ok");
-          }
-        );
+        setStaticMapUrl(buildStaticMapUrl(lng, lat));
+        setAddress(data.address || "");
+        setStatus("ok");
       } catch {
         if (!cancelled) setStatus("error");
       }
@@ -129,7 +95,7 @@ export function NaverMapModal({ placeName, onClose }: NaverMapModalProps) {
           </button>
         </div>
 
-        {/* 지도 영역 (320px) */}
+        {/* 지도 영역 */}
         <div className="relative bg-gray-100" style={{ height: 320 }}>
           {status === "loading" && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-50">
@@ -139,7 +105,6 @@ export function NaverMapModal({ placeName, onClose }: NaverMapModalProps) {
           )}
 
           {status === "ok" && staticMapUrl && (
-            /* raster-cors 정적 지도 이미지 */
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={staticMapUrl}
@@ -150,28 +115,38 @@ export function NaverMapModal({ placeName, onClose }: NaverMapModalProps) {
           )}
 
           {status === "error" && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-50 p-6 text-center">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gray-50 p-6 text-center">
               <span className="text-3xl">🗺️</span>
-              <p className="text-sm font-medium text-gray-600">위치를 찾을 수 없습니다</p>
-              <p className="text-xs text-gray-400">정확한 장소명으로 다시 시도해 보세요</p>
+              <p className="text-sm font-medium text-gray-600">정적 지도를 불러올 수 없습니다</p>
+              <a
+                href={`https://map.naver.com/v5/search/${encodeURIComponent(placeName)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-600 transition-colors"
+              >
+                <span>🗺️</span> 네이버지도에서 보기
+              </a>
+              <p className="text-xs text-gray-400">새로 생성한 일정은 지도가 자동 표시됩니다</p>
             </div>
           )}
         </div>
 
-        {/* 하단 */}
-        <div className="flex items-center justify-between gap-3 border-t border-gray-100 px-4 py-3">
-          <p className="flex-1 truncate text-xs text-gray-500">
-            {status === "ok" ? (address || "주소 정보 없음") : placeName}
-          </p>
-          <a
-            href={`https://map.naver.com/v5/search/${encodeURIComponent(placeName)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-100 transition-colors"
-          >
-            네이버지도로 열기 ↗
-          </a>
-        </div>
+        {/* 하단 – 에러 상태에선 숨김 (에러 overlay에 버튼이 있음) */}
+        {status !== "error" && (
+          <div className="flex items-center justify-between gap-3 border-t border-gray-100 px-4 py-3">
+            <p className="flex-1 truncate text-xs text-gray-500">
+              {address || placeName}
+            </p>
+            <a
+              href={`https://map.naver.com/v5/search/${encodeURIComponent(placeName)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-100 transition-colors"
+            >
+              네이버지도로 열기 ↗
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );
