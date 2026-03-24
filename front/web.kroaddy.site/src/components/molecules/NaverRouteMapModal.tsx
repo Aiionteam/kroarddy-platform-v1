@@ -12,11 +12,6 @@ interface NaverRouteMapModalProps {
   onClose: () => void;
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-declare global {
-  interface Window { naver: any; }
-}
-
 function loadNaverMapsScript(): Promise<void> {
   return new Promise((resolve, reject) => {
     if (window.naver?.maps) { resolve(); return; }
