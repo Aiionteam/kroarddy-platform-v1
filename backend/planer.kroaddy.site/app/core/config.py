@@ -64,6 +64,10 @@ class Settings(BaseSettings):
     # 예: https://cdn.kroaddy.site  또는  https://{bucket}.s3.{region}.amazonaws.com
     s3_public_base_url: str = ""
 
+    # 네이버 Maps API (Geocoding, Static Map)
+    naver_map_client_id: str = ""
+    naver_map_client_secret: str = ""
+
     model_config = {"env_file": str(_env_path), "extra": "ignore"}
 
     def get_async_url(self) -> str:
