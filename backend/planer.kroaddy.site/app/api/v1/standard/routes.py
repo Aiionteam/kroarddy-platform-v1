@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
 from app.agent.standard.graph import routes_graph, schedule_graph
-from app.agent.standard.nodes import _is_daily_quota, modify_schedule, reroll_single_item
+from app.agent.standard.nodes import _is_daily_quota, _geocode_item, modify_schedule, reroll_single_item
 from app.core.database.session import get_db
 from app.models.travel_plan import TravelPlan
 from app.models.plan_cache import RouteCache, ScheduleCache
@@ -503,9 +503,17 @@ async def modify_plan(
 
     # 불가능한 경우 일정 변경 없이 이유만 반환
     if not not_possible:
-        plan.schedule = new_schedule
+        # 수정된 항목만 지오코딩 보강 (나머지는 기존 좌표 유지)
+        modified_titles = set(modified.get("modified_titles", []))
+
+        async def _maybe_geocode(item: dict) -> dict:
+            return await _geocode_item(item) if item.get("title") in modified_titles else item
+
+        geocoded_schedule = list(await asyncio.gather(*[_maybe_geocode(item) for item in new_schedule]))
+        plan.schedule = geocoded_schedule
         flag_modified(plan, "schedule")
         await db.flush()
+        new_schedule = geocoded_schedule
 
     return {
         "plan_id": plan_id,
@@ -543,6 +551,9 @@ async def reroll_item(
     except Exception as e:
         _check_quota_error(e)
         raise HTTPException(status_code=500, detail=f"리롤 실패: {e}")
+
+    # 새 항목 지오코딩 보강
+    new_item = await _geocode_item(new_item)
 
     new_schedule = list(schedule)
     new_schedule[req.item_index] = new_item

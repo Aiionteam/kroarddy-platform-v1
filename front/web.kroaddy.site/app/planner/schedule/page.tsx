@@ -246,7 +246,7 @@ function DayPlanGroup({
   const [modifyError,  setModifyError]  = useState<string | null>(null);
   const [modifyResult, setModifyResult] = useState<{ notPossible: boolean; reason: string } | null>(null);
   const [localSchedule, setLocalSchedule] = useState<ScheduleItem[]>(plan.schedule);
-  const [mapPlace, setMapPlace] = useState<string | null>(null);
+  const [mapPlace, setMapPlace] = useState<{ name: string; lat?: number; lng?: number } | null>(null);
   const [routeMapOpen, setRouteMapOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -388,7 +388,7 @@ function DayPlanGroup({
                       <div className="mt-1 flex items-center justify-between gap-2">
                         <button
                           type="button"
-                          onClick={() => item.place && setMapPlace(item.place)}
+                          onClick={() => item.place && setMapPlace({ name: item.place, lat: item.lat, lng: item.lng })}
                           className="flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600 hover:underline transition-colors text-left"
                           title="지도에서 보기"
                         >
@@ -414,14 +414,19 @@ function DayPlanGroup({
       </div>
 
       {mapPlace && (
-        <NaverMapModal placeName={mapPlace} onClose={() => setMapPlace(null)} />
+        <NaverMapModal
+          placeName={mapPlace.name}
+          lat={mapPlace.lat}
+          lng={mapPlace.lng}
+          onClose={() => setMapPlace(null)}
+        />
       )}
 
       {routeMapOpen && (
         <NaverRouteMapModal
           places={localItems
             .filter(({ item }) => item.place?.trim())
-            .map(({ item }) => ({ name: item.place!, title: item.title }))}
+            .map(({ item }) => ({ name: item.place!, title: item.title, lat: item.lat, lng: item.lng }))}
           planName={`${plan.location} · ${plan.route_name}`}
           onClose={() => setRouteMapOpen(false)}
         />
@@ -561,7 +566,7 @@ function PlanCard({
   const [modifyError, setModifyError] = useState<string | null>(null);
   const [modifyResult, setModifyResult] = useState<{ notPossible: boolean; reason: string } | null>(null);
   const [highlightedTitles, setHighlightedTitles] = useState<Set<string>>(new Set());
-  const [mapPlace, setMapPlace] = useState<string | null>(null);
+  const [mapPlace, setMapPlace] = useState<{ name: string; lat?: number; lng?: number } | null>(null);
   const [routeMapOpen, setRouteMapOpen] = useState(false);
   // 리롤 중인 항목 인덱스 (전체 schedule 배열 기준)
   const [rerollingIdx, setRerollingIdx] = useState<number | null>(null);
@@ -772,7 +777,7 @@ function PlanCard({
                               <div className="mt-0.5 flex items-center justify-between gap-2">
                                 <button
                                   type="button"
-                                  onClick={() => item.place && setMapPlace(item.place)}
+                                  onClick={() => item.place && setMapPlace({ name: item.place, lat: item.lat, lng: item.lng })}
                                   className="flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600 hover:underline transition-colors text-left"
                                   title="지도에서 보기"
                                 >
@@ -853,14 +858,19 @@ function PlanCard({
       )}
 
       {mapPlace && (
-        <NaverMapModal placeName={mapPlace} onClose={() => setMapPlace(null)} />
+        <NaverMapModal
+          placeName={mapPlace.name}
+          lat={mapPlace.lat}
+          lng={mapPlace.lng}
+          onClose={() => setMapPlace(null)}
+        />
       )}
 
       {routeMapOpen && (
         <NaverRouteMapModal
           places={schedule
             .filter((item) => item.place?.trim())
-            .map((item) => ({ name: item.place!, title: item.title }))}
+            .map((item) => ({ name: item.place!, title: item.title, lat: item.lat, lng: item.lng }))}
           planName={`${plan.location} · ${plan.route_name}`}
           onClose={() => setRouteMapOpen(false)}
         />

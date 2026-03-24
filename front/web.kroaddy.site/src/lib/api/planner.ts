@@ -32,6 +32,9 @@ export interface ScheduleItem {
   date: string;
   time: string;
   place: string;
+  address?: string;
+  lat?: number;
+  lng?: number;
   title: string;
   description: string;
   tips?: string;

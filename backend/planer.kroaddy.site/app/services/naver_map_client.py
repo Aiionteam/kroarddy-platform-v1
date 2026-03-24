@@ -10,6 +10,8 @@ logger = logging.getLogger(__name__)
 _GEOCODE_URL    = "https://maps.apigw.ntruss.com/map-geocode/v2/geocode"
 _STATIC_MAP_URL = "https://maps.apigw.ntruss.com/map-static/v2/raster"
 _DIRECTIONS_URL = "https://maps.apigw.ntruss.com/map-direction-15/v1/driving"
+# 네이버 지역 검색 API (장소명 → 좌표, developers.naver.com)
+_SEARCH_LOCAL_URL = "https://openapi.naver.com/v1/search/local.json"
 
 _NAVER_HEADERS = {
     "x-ncp-apigw-api-key-id": settings.naver_map_client_id,
@@ -90,6 +92,58 @@ async def fetch_static_map(
             return resp.content
         except Exception as e:
             logger.error("Static Map 오류 (lat=%s, lng=%s): %s", lat, lng, e)
+            return None
+
+
+async def keyword_search(query: str) -> dict | None:
+    """네이버 지역 검색 API로 장소명 → 좌표 변환 (developers.naver.com).
+
+    주소 기반 Geocoding API와 달리 장소명·상호명으로 검색 가능.
+
+    Returns:
+        {"x": lng, "y": lat, "name": "...", "address": "..."} or None
+    """
+    if not settings.naver_search_client_id or not settings.naver_search_client_secret:
+        logger.warning("네이버 Search API 키가 설정되지 않았습니다.")
+        return None
+
+    headers = {
+        "X-Naver-Client-Id": settings.naver_search_client_id,
+        "X-Naver-Client-Secret": settings.naver_search_client_secret,
+    }
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            resp = await client.get(
+                _SEARCH_LOCAL_URL,
+                params={"query": query, "display": 1},
+                headers=headers,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+            items = data.get("items", [])
+            if not items:
+                logger.info("지역 검색 결과 없음: %s", query)
+                return None
+
+            item = items[0]
+            # mapx/mapy 는 WGS84 × 1e7 (도 단위 * 10,000,000)
+            lng = int(item["mapx"]) / 1e7
+            lat = int(item["mapy"]) / 1e7
+
+            # HTML 태그 제거 (e.g. <b>군산</b>근대역사박물관)
+            import re
+            name = re.sub(r"<[^>]+>", "", item.get("title", query))
+
+            return {
+                "x": str(lng),
+                "y": str(lat),
+                "name": name,
+                "address": item.get("roadAddress") or item.get("address", ""),
+            }
+        except Exception as e:
+            logger.error("지역 검색 오류 (query=%s): %s", query, e)
             return None
 
 
