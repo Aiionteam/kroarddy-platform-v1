@@ -14,9 +14,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import site.aiion.api.services.oauth.util.CookieUtil;
 
 @RestController
 @RequestMapping("/api/kakao")
@@ -239,15 +239,10 @@ public class KakaoController {
                 userService.updateRefreshToken(appUserId, jwtRefreshToken);
                 System.out.println("Refresh Token을 User 테이블에 저장 완료: userId=" + appUserId);
                 
-                // 6. Refresh Token을 HttpOnly 쿠키로 설정
+                // 6. Refresh Token을 HttpOnly 쿠키로 설정 (ResponseCookie 사용 — HttpOnly 직렬화 보장)
                 if (jwtRefreshToken != null) {
-                    Cookie refreshTokenCookie = new Cookie("refresh_token", jwtRefreshToken);
-                    refreshTokenCookie.setHttpOnly(true); // XSS 방어
-                    refreshTokenCookie.setSecure(frontendUrl != null && frontendUrl.startsWith("https")); // HTTPS일 때만 Secure
-                    refreshTokenCookie.setPath("/"); // 모든 경로에서 접근 가능
-                    refreshTokenCookie.setMaxAge(30 * 24 * 60 * 60); // 30일
-                    refreshTokenCookie.setAttribute("SameSite", "Lax"); // CSRF 방어
-                    response.addCookie(refreshTokenCookie);
+                    boolean isHttps = frontendUrl != null && frontendUrl.startsWith("https");
+                    CookieUtil.setRefreshTokenCookie(response, jwtRefreshToken, isHttps);
                     System.out.println("Refresh Token을 HttpOnly 쿠키로 설정 완료");
                 }
                 
