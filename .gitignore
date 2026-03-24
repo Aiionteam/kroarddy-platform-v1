@@ -97,3 +97,4 @@ coverage/
 htmlcov/
 .pytest_cache/
 backend/tourstar.kroaddy.site/artifacts/
+.env*
