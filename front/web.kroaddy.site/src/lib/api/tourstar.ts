@@ -93,6 +93,7 @@ export interface TourstarComment {
 export interface TourstarPostRecord {
   id: string;
   user_id?: number | null;
+  author_nickname?: string | null;
   title: string;
   location: string;
   comment: string;
@@ -244,6 +245,7 @@ export async function listTourstarPosts(): Promise<TourstarPostRecord[]> {
 
 export async function createTourstarPost(payload: {
   user_id?: number;
+  author_nickname?: string;
   title: string;
   location: string;
   comment: string;

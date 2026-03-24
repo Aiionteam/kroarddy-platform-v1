@@ -788,6 +788,7 @@ def _to_post_response(row: TourstarPost, comments: list[TourstarPostComment]) ->
     return PostResponse(
         id=str(row.id),
         user_id=row.user_id,
+        author_nickname=row.author_nickname or None,
         title=row.title or "",
         location=row.location or "",
         comment=row.comment or "",
@@ -1727,6 +1728,7 @@ async def create_post(req: CreatePostRequest, db: AsyncSession = Depends(get_db)
 
     post = TourstarPost(
         user_id=req.user_id,
+        author_nickname=req.author_nickname or None,
         title=req.title,
         location=req.location,
         comment=req.comment,
