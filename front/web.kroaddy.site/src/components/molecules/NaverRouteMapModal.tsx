@@ -27,7 +27,7 @@ function loadNaverMapsScript(): Promise<void> {
     }
     const s = document.createElement("script");
     s.id    = "naver-maps-sdk";
-    s.src   = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${NAVER_CLIENT_ID}&submodules=geocoder`;
+    s.src   = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${NAVER_CLIENT_ID}`;
     s.async = true;
     s.onload  = () => resolve();
     s.onerror = () => reject(new Error("SDK load failed"));
@@ -40,18 +40,31 @@ const MARKER_COLORS = [
   "#f97316","#eab308","#22c55e","#14b8a6",
 ];
 
+/** 백엔드 place-search 로 장소명 → 좌표 변환 */
+async function searchPlace(name: string): Promise<{ lng: number; lat: number } | null> {
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/v1/maps/place-search?query=${encodeURIComponent(name)}`
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const lng = parseFloat(data.x);
+    const lat = parseFloat(data.y);
+    return isFinite(lng) && isFinite(lat) ? { lng, lat } : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Directions 15 API로 실제 도로 경로 좌표 배열 반환 */
 async function fetchDirectionsPath(
   coords: { lng: number; lat: number }[]
 ): Promise<[number, number][] | null> {
   if (coords.length < 2) return null;
-
-  // Directions 15: 최대 15 경유지 (총 17개 지점)
-  const limited = coords.slice(0, 17);
+  const limited   = coords.slice(0, 17);
   const start     = limited[0];
   const goal      = limited[limited.length - 1];
   const waypoints = limited.slice(1, -1);
-
   try {
     const res = await fetch(`${API_BASE}/api/v1/maps/directions`, {
       method: "POST",
@@ -97,39 +110,20 @@ export function NaverRouteMapModal({ places, planName, onClose }: NaverRouteMapM
           mapTypeId: naver.maps.MapTypeId.NORMAL,
         });
 
-        // ── 1단계: 순차 geocoding ──────────────────────────────────
+        // ── 1단계: place-search (장소명 → 좌표) ───────────────────
         const coords: { lng: number; lat: number; idx: number; name: string }[] = [];
         const failed = new Set<string>();
 
         for (let i = 0; i < validPlaces.length; i++) {
           if (cancelled) return;
           const placeName = validPlaces[i].name;
-
-          await new Promise<void>((res) => {
-            naver.maps.Service.geocode(
-              { query: placeName },
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (stat: string, resp: any) => {
-                // SDK v2 응답: resp.v2.addresses
-                if (
-                  stat === naver.maps.Service.Status.OK &&
-                  resp.v2?.addresses?.length
-                ) {
-                  const a = resp.v2.addresses[0];
-                  coords.push({
-                    lng: parseFloat(a.x),
-                    lat: parseFloat(a.y),
-                    idx: i,
-                    name: placeName,
-                  });
-                } else {
-                  failed.add(placeName);
-                }
-                if (!cancelled) setResolved(i + 1);
-                res();
-              }
-            );
-          });
+          const coord = await searchPlace(placeName);
+          if (coord) {
+            coords.push({ ...coord, idx: i, name: placeName });
+          } else {
+            failed.add(placeName);
+          }
+          if (!cancelled) setResolved(i + 1);
         }
 
         if (cancelled) return;
@@ -139,13 +133,13 @@ export function NaverRouteMapModal({ places, planName, onClose }: NaverRouteMapM
 
         // ── 2단계: Directions 15 경로 조회 ────────────────────────
         setPhase("routing");
-        const sortedCoords = coords.sort((a, b) => a.idx - b.idx);
+        const sortedCoords = [...coords].sort((a, b) => a.idx - b.idx);
         const routePath = await fetchDirectionsPath(sortedCoords);
 
         if (cancelled) return;
 
         // ── 3단계: 마커 표시 ───────────────────────────────────────
-        const latLngs = coords.map(({ lng, lat, idx, name }) => {
+        const latLngs = sortedCoords.map(({ lng, lat, idx, name }) => {
           const latlng = new naver.maps.LatLng(lat, lng);
           const color  = MARKER_COLORS[idx % MARKER_COLORS.length];
           new naver.maps.Marker({
@@ -163,10 +157,9 @@ export function NaverRouteMapModal({ places, planName, onClose }: NaverRouteMapM
         // ── 4단계: 경로 폴리라인 ──────────────────────────────────
         if (routePath && routePath.length > 1) {
           // Directions 15 실제 도로 경로 [[lng, lat], ...]
-          const roadPath = routePath.map(([lng, lat]) => new naver.maps.LatLng(lat, lng));
           new naver.maps.Polyline({
             map,
-            path: roadPath,
+            path: routePath.map(([lng, lat]) => new naver.maps.LatLng(lat, lng)),
             strokeColor: "#6366f1",
             strokeWeight: 4,
             strokeOpacity: 0.85,

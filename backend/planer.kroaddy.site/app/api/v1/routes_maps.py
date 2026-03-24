@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
 from pydantic import BaseModel
 
-from app.services.naver_map_client import fetch_static_map, geocode, get_directions
+from app.services.naver_map_client import fetch_static_map, geocode, get_directions, keyword_search
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +20,18 @@ async def geocode_place(query: str = Query(..., description="검색할 장소명
     result = await geocode(query)
     if not result:
         raise HTTPException(status_code=404, detail=f"'{query}'에 대한 위치 정보를 찾을 수 없습니다.")
+    return result
+
+
+# ──────────────────────────────────────────────────────────────
+# Place Search (장소명 → 좌표, Naver 지역 검색 API)
+# ──────────────────────────────────────────────────────────────
+@router.get("/place-search", summary="장소명 → 좌표 변환 (Naver 지역 검색 API)")
+async def place_search(query: str = Query(..., description="검색할 장소명")):
+    """주소 기반 Geocoding과 달리 장소명·상호명으로 좌표를 검색합니다."""
+    result = await keyword_search(query)
+    if not result:
+        raise HTTPException(status_code=404, detail=f"'{query}'의 위치 정보를 찾을 수 없습니다.")
     return result
 
 

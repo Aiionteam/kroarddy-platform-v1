@@ -12,6 +12,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.agent.standard.state import PlannerState
 from app.core.config import settings
+from app.services.naver_map_client import geocode
 from app.services.news_client import build_news_block_for_prompt
 from app.services.search_client import (
     fetch_boxoffice,
@@ -471,9 +472,12 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         f"{cost_note}"
         "- cost_summary.per_day: sum of estimated_cost for each day (formatted KRW string)\n"
         "- cost_summary.trip_total: grand total for the entire trip\n"
+        "- address: 해당 장소의 정확한 도로명 주소 (예: 전북 군산시 동령길 5)\n"
+        "- lat/lng: WGS84 decimal degree coordinates (approximate OK, geocoding will verify)\n"
         f"{lang_dir}"
         "\nRespond ONLY with valid JSON (no explanation):\n"
         f'{{"schedule":[{{"day":1,"date":"{date_example}","time":"morning","place":"place name",'
+        '"address":"도로명 주소","lat":37.5665,"lng":126.9780,'
         '"title":"activity title(≤20chars)","description":"description(≤60chars)",'
         '"tips":"tip(≤30chars)","estimated_cost":"₩0"}}],'
         '"cost_summary":{{"per_day":[{{"day":1,"total":"₩0"}}],"trip_total":"₩0"}}}}'
@@ -531,13 +535,14 @@ async def modify_schedule(
         "- Replace only the instructed items' place/title/description/tips\n"
         "- Never change day/date/time or other items\n"
         "- Use only real existing places\n"
+        "- For every item include: address (도로명 주소), lat, lng\n"
         "- If the requested place/event/movie does NOT exist or is NOT available (e.g. not currently screening, closed, fictional), "
         "  keep the schedule UNCHANGED and set 'not_possible' to true with a brief reason in 'reason' (1-2 sentences).\n"
         "- If the request IS fulfilled, set 'not_possible' to false and explain briefly WHY this change is good in 'reason' (1-2 sentences).\n"
         f"{lang_dir}"
         "\nRespond ONLY with valid JSON (no explanation):\n"
         '{"not_possible":false,"reason":"brief explanation here",'
-        '"schedule":[{"day":1,"date":"YYYY-MM-DD","time":"morning","place":"place name","title":"activity title","description":"description","tips":"tip"}],'
+        '"schedule":[{"day":1,"date":"YYYY-MM-DD","time":"morning","place":"place name","address":"도로명 주소","lat":37.5665,"lng":126.9780,"title":"activity title","description":"description","tips":"tip"}],'
         '"modified_titles":["title of modified item"]}'
     )
 
@@ -604,10 +609,12 @@ async def reroll_single_item(
         "Replace with a completely different place/activity. Keep day/date/time identical.\n"
         "Use only real existing places.\n"
         "Include estimated_cost in KRW (e.g. '무료', '₩3,000', '₩15,000~₩20,000').\n"
+        "Include address (도로명 주소), lat, lng for the new place.\n"
         f"{lang_dir}"
         "\nRespond ONLY with valid JSON (no explanation):\n"
         f'{{"day":{day},"date":"{date_str}","time":"{time_str}",'
-        '"place":"place name","title":"activity title","description":"description","tips":"tip",'
+        '"place":"place name","address":"도로명 주소","lat":37.5665,"lng":126.9780,'
+        '"title":"activity title","description":"description","tips":"tip",'
         '"estimated_cost":"₩0"}'
         "}"
     )
@@ -621,3 +628,52 @@ async def reroll_single_item(
     except Exception as e:
         logger.exception("항목 리롤 실패: %s", e)
         raise
+
+
+async def _geocode_item(item: dict[str, Any]) -> dict[str, Any]:
+    """단일 일정 항목에 대해 Naver Geocoding API로 좌표를 보강한다.
+
+    우선순위:
+    1. address 필드로 지오코딩 → 성공 시 검증된 좌표로 덮어쓰기
+    2. 실패 시 place 이름으로 재시도
+    3. 모두 실패 시 Gemini가 생성한 lat/lng 유지
+    """
+    # 주소 우선, 없으면 장소명으로 시도
+    queries = []
+    if item.get("address"):
+        queries.append(item["address"])
+    if item.get("place"):
+        queries.append(item["place"])
+
+    for q in queries:
+        result = await geocode(q)
+        if result:
+            return {
+                **item,
+                "lat": float(result["y"]),
+                "lng": float(result["x"]),
+                # 검증된 도로명 주소로 갱신 (있을 경우)
+                "address": result.get("road_address") or result.get("address") or item.get("address", ""),
+            }
+
+    # 지오코딩 실패 → Gemini 좌표 그대로 유지
+    return item
+
+
+async def geocode_schedule(state: PlannerState) -> PlannerState:
+    """노드: Naver Geocoding API로 일정 장소의 좌표를 검증·보강한다.
+
+    - generate_schedule 이후 실행
+    - 모든 항목을 병렬 처리하여 지연 최소화
+    - 지오코딩 실패 항목은 Gemini 생성 좌표를 그대로 사용 (graceful degradation)
+    """
+    schedule: list[dict[str, Any]] = state.get("schedule", [])
+    if not schedule:
+        return state
+
+    geocoded = list(await asyncio.gather(*[_geocode_item(item) for item in schedule]))
+
+    ok_count = sum(1 for g in geocoded if g.get("lat") and g.get("lng"))
+    logger.info("지오코딩 완료: %d/%d 항목에 좌표 확보", ok_count, len(geocoded))
+
+    return {**state, "schedule": geocoded}
