@@ -66,16 +66,16 @@ class DirectionsRequest(BaseModel):
     waypoints: list[CoordItem] = []
 
 
-@router.post("/directions", summary="Directions 15 – 실제 도로 경로 조회")
+@router.post("/directions", summary="Directions 5 – 실제 도로 경로 조회")
 async def get_route_directions(body: DirectionsRequest):
     """start → waypoints → goal 순서로 실제 도로 경로 좌표 배열 반환.
 
-    waypoints는 최대 15개 (Directions 15 제한).
-    Returns: {"path": [[lng, lat], ...]}
+    waypoints는 최대 5개 (Directions 5 제한). 하루 일정 단위로 호출할 것.
+    Returns: {"path": [[lng, lat], ...], "summary": {"distance": m, "duration": ms}}
     """
     wp = [(w.lng, w.lat) for w in body.waypoints] if body.waypoints else None
 
-    path = await get_directions(
+    result = await get_directions(
         start_lng=body.start.lng,
         start_lat=body.start.lat,
         goal_lng=body.goal.lng,
@@ -83,7 +83,7 @@ async def get_route_directions(body: DirectionsRequest):
         waypoints=wp,
     )
 
-    if path is None:
+    if result is None:
         raise HTTPException(status_code=502, detail="경로를 계산할 수 없습니다.")
 
-    return {"path": path}
+    return result
