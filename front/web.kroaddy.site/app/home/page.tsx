@@ -314,7 +314,7 @@ function NewsBanner({ items }: { items: ProcessedNewsItem[] }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="shrink-0 relative rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:scale-[1.01] transition-all"
-                style={{ width: CARD_W, height: 200 }}
+                style={{ width: CARD_W, height: 240 }}
               >
                 {/* 배경: 썸네일 or 그라데이션 */}
                 <div className={`absolute inset-0 bg-gradient-to-br ${grad}`}>
@@ -322,7 +322,7 @@ function NewsBanner({ items }: { items: ProcessedNewsItem[] }) {
                     <img
                       src={item.thumbnail}
                       alt=""
-                      className="w-full h-full object-cover"
+                      className="absolute inset-0 w-full h-full object-cover object-center"
                       onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                     />
                   )}
@@ -409,7 +409,7 @@ function BannerSkeleton() {
       <div className="flex gap-3">
         {[0, 1].map((i) => (
           <div key={i} className="shrink-0 animate-pulse rounded-2xl bg-gray-200 overflow-hidden"
-            style={{ width: "calc(50% - 6px)", height: 200 }}>
+            style={{ width: "calc(50% - 6px)", height: 240 }}>
             <div className="h-full bg-gradient-to-b from-gray-200 to-gray-300" />
           </div>
         ))}
