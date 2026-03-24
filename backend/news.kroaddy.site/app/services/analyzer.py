@@ -20,6 +20,26 @@ _NEGATIVE_KEYWORDS = (
     "실종", "자살", "부상", "화재", "폭발", "침수", "파산", "해고",
 )
 
+# 해외 지명 키워드 → 한국 외 장소에서 열리는 행사 사전 차단
+_OVERSEAS_KEYWORDS = (
+    # 중국
+    "중국", "베이징", "상하이", "난징", "청두", "광저우", "선전", "홍콩",
+    # 일본
+    "일본", "도쿄", "오사카", "나고야", "후쿠오카", "삿포로",
+    # 미국
+    "미국", "뉴욕", "로스앤젤레스", "라스베이거스", "시카고",
+    # 영어 표기
+    "China", "Beijing", "Shanghai", "Japan", "Tokyo", "USA", "New York",
+    # 기타
+    "유럽", "영국", "프랑스", "독일", "태국", "싱가포르", "대만",
+)
+
+
+def _is_overseas(title: str, summary: str) -> bool:
+    """제목/요약에 해외 지명이 포함된 행사면 True."""
+    text = title + " " + summary
+    return any(kw in text for kw in _OVERSEAS_KEYWORDS)
+
 
 def _client() -> AsyncOpenAI:
     return AsyncOpenAI(api_key=settings.openai_api_key)
@@ -34,12 +54,15 @@ def _is_negative(title: str, summary: str) -> bool:
 # ─── 배치 분류 + 요약 재작성 ───────────────────────────────────────
 
 _CLASSIFY_SYSTEM = """당신은 대한민국 K-콘텐츠 여행 앱의 뉴스 큐레이터입니다.
-외국인과 국내 여행자에게 한국의 문화/연예/공연 정보를 소개하는 역할입니다.
+외국인과 국내 여행자에게 **한국 내** 문화/연예/공연 정보를 소개하는 역할입니다.
 
 반드시 아래 규칙을 따르세요:
 1. 범죄, 사고, 논란, 정치, 사회 문제 등 부정적 뉴스는 relevance_score를 1로 설정
-2. 공연, 콘서트, 팬미팅, 드라마, K-pop, 축제, 전시, 핫플레이스 정보는 높은 점수
-3. gpt_summary는 여행자 시각으로 짧고 긍정적으로 재작성 (2~3문장, 한국어)
+2. 한국(대한민국) 내에서 열리는 공연, 콘서트, 팬미팅, 드라마, K-pop, 축제, 전시, 핫플레이스 정보는 높은 점수
+3. **해외(중국, 일본, 미국, 유럽 등 한국 외 국가)에서 열리는 행사·공연·투어는 relevance_score를 2 이하로 설정**
+   - 예: "중국 상하이 공연", "일본 도쿄 팬미팅", "미국 투어" → 점수 1~2
+   - 한국 아티스트 해외 활동 소식이더라도 장소가 해외이면 낮은 점수
+4. gpt_summary는 여행자 시각으로 짧고 긍정적으로 재작성 (2~3문장, 한국어)
    - "~에서 열립니다", "~를 만나볼 수 있습니다" 같은 친절한 안내 문체
    - 부정적 내용, 논란, 사건은 절대 포함하지 않음
 
@@ -65,10 +88,13 @@ _CLASSIFY_USER = """다음 {n}개 기사를 분석하세요:
 
 규칙:
 - category: 공연/콘서트 | 드라마/영화 | K-pop/아이돌 | 축제/전시 | 장소/핫플 | 기타
-- location: 구체적 지역명 (없으면 "전국")
+- location: 구체적 지역명 (없으면 "전국"). 한국 내 지역만 명시 (예: "서울 홍대", "부산 해운대")
 - date_mentioned: 기사에 명시된 날짜 ISO 형식 (없으면 null)
-- relevance_score: 여행자 유용성 1~10 (부정적 뉴스=1, 날짜+장소 명확한 이벤트=9~10)
-- gpt_summary: GPT가 여행자용으로 재작성한 2~3문장 요약 (부정적 뉴스는 "해당 없음")"""
+- relevance_score: 여행자 유용성 1~10
+  · 부정적 뉴스 = 1
+  · 해외(한국 외 국가)에서 열리는 행사·공연 = 1~2 (반드시 낮게!)
+  · 날짜+장소 명확한 한국 내 이벤트 = 9~10
+- gpt_summary: GPT가 여행자용으로 재작성한 2~3문장 요약 (부정적 뉴스 또는 해외 행사는 "해당 없음")"""
 
 
 async def classify_batch(articles: list[dict]) -> list[dict]:
@@ -76,11 +102,13 @@ async def classify_batch(articles: list[dict]) -> list[dict]:
     if not articles or not settings.openai_api_key:
         return []
 
-    # 부정적 뉴스 사전 필터링
+    # 부정적 뉴스 + 해외 행사 사전 필터링
     filtered = []
     skipped_ids = []
     for i, a in enumerate(articles):
-        if _is_negative(a.get("title", ""), a.get("summary", "")):
+        title = a.get("title", "")
+        summary = a.get("summary", "")
+        if _is_negative(title, summary) or _is_overseas(title, summary):
             skipped_ids.append(i)
         else:
             filtered.append((i, a))

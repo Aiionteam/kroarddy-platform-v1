@@ -99,8 +99,8 @@ export default function HomePage() {
           {loading && (
             <>
               <Section title="🏆 오늘의 Top 10" sub="AI가 선정한 여행자 필수 뉴스">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} large />)}
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
+                  {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
                 </div>
               </Section>
               <Section title="📰 전체 뉴스">
@@ -128,7 +128,7 @@ export default function HomePage() {
                 {data.top10.length === 0 ? (
                   <EmptyState text="아직 AI 분석이 진행 중입니다. 잠시 후 새로고침 해주세요." />
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
                     {data.top10.map((item, idx) => (
                       <Top10Card key={item.id} item={item} rank={idx + 1} />
                     ))}
@@ -157,73 +157,67 @@ function Section({ title, sub, children }: { title: string; sub?: string; childr
   );
 }
 
-/* ── Top10 카드 (크고 화려하게) ── */
+/* ── Top10 카드 (컴팩트 수평 레이아웃) ── */
 function Top10Card({ item, rank }: { item: ProcessedNewsItem; rank: number }) {
-  const [expanded, setExpanded] = useState(false);
   const cat = getCatStyle(item.category);
 
   return (
-    <div className="relative rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-      {/* 순위 배지 */}
-      <div className="absolute top-3 left-3 z-10 flex items-center gap-1">
-        <span className={`rounded-full w-7 h-7 flex items-center justify-center text-xs font-black shadow ${rank <= 3 ? "bg-yellow-400 text-white" : "bg-gray-800 text-white"}`}>
-          {rank}
-        </span>
+    <a
+      href={item.link}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex gap-3 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-purple-200 transition-all overflow-hidden p-3"
+    >
+      {/* 썸네일 */}
+      <div className="shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+        {item.thumbnail ? (
+          <img
+            src={item.thumbnail}
+            alt=""
+            className="w-full h-full object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+          />
+        ) : (
+          <span className="text-2xl">{cat.emoji}</span>
+        )}
       </div>
 
-      {/* 썸네일 */}
-      {item.thumbnail ? (
-        <img src={item.thumbnail} alt="" className="w-full aspect-video object-cover object-center"
-          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-      ) : (
-        <div className="w-full h-40 bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center text-4xl">
-          {cat.emoji}
-        </div>
-      )}
-
-      <div className="p-4 space-y-2">
-        {/* 카테고리 + 지역 + 날짜 */}
-        <div className="flex flex-wrap gap-1.5 items-center">
-          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cat.bg} ${cat.text}`}>
+      {/* 본문 */}
+      <div className="flex-1 min-w-0 flex flex-col gap-1">
+        {/* 순위 + 카테고리 */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className={`rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-black ${rank <= 3 ? "bg-yellow-400 text-white" : "bg-gray-700 text-white"}`}>
+            {rank}
+          </span>
+          <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${cat.bg} ${cat.text}`}>
             {cat.emoji} {item.category}
           </span>
           {item.location && item.location !== "전국" && (
-            <span className="rounded-full px-2 py-0.5 text-xs bg-gray-100 text-gray-500">
-              📍 {item.location}
-            </span>
+            <span className="text-[10px] text-gray-400">📍 {item.location}</span>
           )}
           {item.date_mentioned && (
-            <span className="rounded-full px-2 py-0.5 text-xs bg-indigo-50 text-indigo-500 font-semibold">
-              📅 {item.date_mentioned}
-            </span>
+            <span className="text-[10px] text-indigo-400 font-semibold">📅 {item.date_mentioned}</span>
           )}
         </div>
 
         {/* 제목 */}
-        <h3 className="text-sm font-bold text-gray-800 leading-snug">{item.title}</h3>
+        <p className="text-xs font-bold text-gray-800 leading-snug line-clamp-2">{item.title}</p>
 
-        {/* 요약 - GPT 재작성 우선, 없으면 원본 */}
+        {/* 요약 */}
         {(item.gpt_summary || item.summary) && (
-          <div>
-            <p className={`text-xs leading-relaxed ${item.gpt_summary ? "text-gray-700" : "text-gray-500"} ${expanded ? "" : "line-clamp-3"}`}>
-              {item.gpt_summary || item.summary}
-            </p>
-            {(item.gpt_summary || item.summary).length > 80 && (
-              <button type="button" onClick={() => setExpanded(!expanded)} className="text-xs text-purple-500 hover:underline mt-0.5">
-                {expanded ? "접기" : "더 보기"}
-              </button>
-            )}
-          </div>
+          <p className="text-[11px] leading-relaxed text-gray-500 line-clamp-2">
+            {item.gpt_summary || item.summary}
+          </p>
         )}
 
         {/* 출처 + 시간 */}
-        <div className="flex items-center gap-1.5 text-xs text-gray-300 pt-1">
+        <div className="flex items-center gap-1 text-[10px] text-gray-300 mt-auto">
           <span className="font-medium text-purple-400">{item.source}</span>
           <span>·</span>
           <span>{timeAgo(item.published)}</span>
         </div>
       </div>
-    </div>
+    </a>
   );
 }
 

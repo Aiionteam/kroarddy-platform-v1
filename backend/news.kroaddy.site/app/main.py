@@ -21,7 +21,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-REFRESH_INTERVAL = 30 * 60  # 30분마다 크롤링 + GPT 분석
+REFRESH_INTERVAL = 6 * 60 * 60  # 6시간마다 크롤링 + GPT 분석
 
 
 async def _collect_and_analyze() -> None:
