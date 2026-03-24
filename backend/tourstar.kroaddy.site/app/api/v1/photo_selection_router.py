@@ -1772,14 +1772,20 @@ async def update_post(post_id: int, req: UpdatePostRequest, db: AsyncSession = D
                 next_photo_urls.append(raw)
 
         for raw_path in list(req.image_paths or []):
+            # 이미 S3/HTTP URL이면 바로 사용 (재업로드 불필요)
+            raw_stripped = str(raw_path or "").strip()
+            if raw_stripped.startswith("http://") or raw_stripped.startswith("https://"):
+                next_photo_urls.append(raw_stripped)
+                continue
             local_path = _resolve_local_image_path(raw_path)
             if local_path is None:
+                logger.warning("update_post: image_paths entry could not be resolved, skipping: %s", raw_path)
                 continue
             try:
                 next_photo_urls.append(_upload_local_image_to_s3(local_path))
             except Exception:
-                logger.exception("S3 upload failed during post update: %s", local_path)
-                raise HTTPException(status_code=500, detail=f"Failed to upload image to S3: {local_path.name}")
+                # S3 업로드 실패 시 해당 사진만 스킵 — 전체 수정을 막지 않는다
+                logger.exception("S3 upload failed during post update (skipped): %s", local_path)
 
         post.photo_urls = next_photo_urls
     await db.flush()

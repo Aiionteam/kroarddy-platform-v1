@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLoginStore } from "@/store";
-import { getAppUserIdFromToken, getUserIdFromToken } from "@/lib/api/auth";
+import { getAppUserIdFromToken, getNicknameFromToken, getUserIdFromToken } from "@/lib/api/auth";
 import { findUserById } from "@/lib/api/user";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import {
@@ -70,7 +70,8 @@ function stripHashtags(text: string): string {
   return text.replace(/#[\w\uAC00-\uD7A3\uAC00-\uD7A3]+/g, "").replace(/\s{2,}/g, " ").trim();
 }
 
-/** DB user_id 와 JWT 를 같은 숫자 기준으로 맞춤. user_id 없는 예전 글은 닉네임 일치 시 본인으로 간주(UX). */
+/** DB user_id 와 JWT 를 같은 숫자 기준으로 맞춤.
+ *  user_id가 있으면 숫자 비교 우선. 없거나 불일치 시 닉네임 폴백 허용. */
 function computeIsOwner(
   postUserId: number | null | undefined,
   currentUserId: number | null | undefined,
@@ -79,12 +80,18 @@ function computeIsOwner(
 ): boolean {
   const cur = currentUserId != null && Number.isFinite(Number(currentUserId)) ? Number(currentUserId) : null;
   const pid = postUserId != null && Number.isFinite(Number(postUserId)) ? Number(postUserId) : null;
-  if (cur != null && pid != null && pid === cur) return true;
+  // 숫자 ID가 둘 다 있으면 숫자로만 판별
+  if (cur != null && pid != null) return pid === cur;
+  // 게시글 또는 세션에 숫자 ID가 없으면 닉네임으로 폴백
+  // (플레이스홀더 "내 여행기록"은 실제 닉네임이 아니므로 제외)
+  const safePost = postAuthor.trim();
+  const safeSession = sessionAuthorLabel.trim();
   if (
-    pid == null &&
-    sessionAuthorLabel &&
-    sessionAuthorLabel !== "내 여행기록" &&
-    postAuthor.trim() === sessionAuthorLabel.trim()
+    safeSession &&
+    safeSession !== "내 여행기록" &&
+    safePost &&
+    safePost !== "내 여행기록" &&
+    safePost === safeSession
   ) {
     return true;
   }
@@ -672,7 +679,8 @@ function EditPostModal({ post, onClose, onSave, onDelete }: EditModalProps) {
       onClose();
     } catch (error) {
       console.error(error);
-      window.alert("게시글 수정에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      const detail = error instanceof Error ? error.message : String(error);
+      window.alert(`게시글 수정에 실패했습니다.\n${detail}`);
     } finally {
       setSaving(false);
     }
@@ -1100,7 +1108,12 @@ export default function TourstarContent() {
   const searchParams = useSearchParams();
   const { isAuthenticated, logout, accessToken } = useLoginStore();
 
-  const [authorName, setAuthorName] = useState("내 여행기록");
+  const [authorName, setAuthorName] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("tourstar_author_name") || "내 여행기록";
+    }
+    return "내 여행기록";
+  });
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
 
@@ -1148,9 +1161,23 @@ export default function TourstarContent() {
   /* 닉네임 조회 */
   React.useEffect(() => {
     if (!isAuthenticated || !accessToken) return;
-    const cached = sessionStorage.getItem("_tourstar_author");
-    if (cached) setAuthorName(cached);
 
+    // 1순위: JWT 클레임에서 즉시 추출
+    const jwtNickname = getNicknameFromToken(accessToken);
+    if (jwtNickname) {
+      setAuthorName(jwtNickname);
+      localStorage.setItem("tourstar_author_name", jwtNickname);
+      sessionStorage.setItem("_tourstar_author", jwtNickname);
+    }
+
+    // 2순위: sessionStorage 캐시
+    const cached = sessionStorage.getItem("_tourstar_author");
+    if (cached && !jwtNickname) {
+      setAuthorName(cached);
+      localStorage.setItem("tourstar_author_name", cached);
+    }
+
+    // 3순위: profile API 호출 (가장 정확)
     const userId = getAppUserIdFromToken(accessToken) ?? (() => {
       const raw = getUserIdFromToken(accessToken);
       if (!raw) return null;
@@ -1167,6 +1194,7 @@ export default function TourstarContent() {
           if (name) {
             setAuthorName(name);
             sessionStorage.setItem("_tourstar_author", name);
+            localStorage.setItem("tourstar_author_name", name);
           }
         }
       } catch (err) {
