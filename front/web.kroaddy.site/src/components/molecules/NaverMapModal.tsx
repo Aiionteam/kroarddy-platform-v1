@@ -9,6 +9,9 @@ const API_BASE =
 
 interface NaverMapModalProps {
   placeName: string;
+  /** Gemini/Geocoding으로 확보한 좌표 – 있으면 API 호출 없이 즉시 정적 지도 표시 */
+  lat?: number;
+  lng?: number;
   onClose: () => void;
 }
 
@@ -24,7 +27,7 @@ function buildStaticMapUrl(lng: number, lat: number): string {
   );
 }
 
-export function NaverMapModal({ placeName, onClose }: NaverMapModalProps) {
+export function NaverMapModal({ placeName, lat, lng, onClose }: NaverMapModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const [status, setStatus]             = useState<"loading" | "ok" | "error">("loading");
   const [staticMapUrl, setStaticMapUrl] = useState("");
@@ -34,21 +37,24 @@ export function NaverMapModal({ placeName, onClose }: NaverMapModalProps) {
     let cancelled = false;
 
     async function init() {
+      // ── 좌표 이미 있으면 API 호출 없이 즉시 표시 ──────────────
+      if (lat !== undefined && lng !== undefined && isFinite(lat) && isFinite(lng)) {
+        setStaticMapUrl(buildStaticMapUrl(lng, lat));
+        setStatus("ok");
+        return;
+      }
+
+      // ── 좌표 없으면 백엔드 place-search 호출 ─────────────────
       try {
-        // 백엔드 place-search (Naver 지역 검색 API – 장소명 지원)
         const res = await fetch(
           `${API_BASE}/api/v1/maps/place-search?query=${encodeURIComponent(placeName)}`
         );
-
         if (cancelled) return;
-
         if (!res.ok) { setStatus("error"); return; }
-
         const data = await res.json();
-        const lng  = parseFloat(data.x);
-        const lat  = parseFloat(data.y);
-
-        setStaticMapUrl(buildStaticMapUrl(lng, lat));
+        const resLng = parseFloat(data.x);
+        const resLat = parseFloat(data.y);
+        setStaticMapUrl(buildStaticMapUrl(resLng, resLat));
         setAddress(data.address || "");
         setStatus("ok");
       } catch {
@@ -58,7 +64,7 @@ export function NaverMapModal({ placeName, onClose }: NaverMapModalProps) {
 
     init();
     return () => { cancelled = true; };
-  }, [placeName]);
+  }, [placeName, lat, lng]);
 
   useEffect(() => {
     const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
