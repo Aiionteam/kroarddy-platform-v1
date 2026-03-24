@@ -152,6 +152,13 @@ class PostResponse(BaseModel):
     comments: list[CommentResponse] = Field(default_factory=list)
 
 
+class UpdatePostRequest(BaseModel):
+    title: str | None = None
+    location: str | None = None
+    comment: str | None = None
+    tags: list[str] | None = None
+
+
 class AddCommentRequest(BaseModel):
     author: str = "me"
     content: str = Field(min_length=1, max_length=1000)

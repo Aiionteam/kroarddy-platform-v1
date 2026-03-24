@@ -16,6 +16,7 @@ import {
   getTourstarJobStatus,
   listTourstarPosts,
   localArtifactPathToUrl,
+  updateTourstarPost,
   type TourstarPostRecord,
   type TourstarStyleFilter,
   uploadTourstarPhotos,
@@ -24,7 +25,9 @@ import {
 /* ────────────────────────── 타입 정의 ────────────────────────── */
 type Visibility = "public" | "private";
 type ViewMode = "grid" | "feed";
-type FilterType = "all" | "public" | "private";
+type FilterType = "all" | "mine" | "bookmarked";
+type SortType = "latest" | "likes" | "comments";
+type SearchField = "all" | "author" | "title" | "content" | "tags" | "location";
 
 interface TourPhoto {
   id: string;
@@ -46,6 +49,7 @@ interface TourPostComment {
 
 interface TourPost {
   id: string;
+  userId?: number | null;
   author: string;
   title: string;
   location: string;
@@ -57,6 +61,8 @@ interface TourPost {
   liked: boolean;
   tags: string[];
   comments: TourPostComment[];
+  isOwner: boolean;
+  bookmarked: boolean;
 }
 
 function stripHashtags(text: string): string {
@@ -141,17 +147,30 @@ function HeartIcon({ filled }: { filled: boolean }) {
   );
 }
 
+function BookmarkIcon({ filled }: { filled: boolean }) {
+  return filled ? (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+    </svg>
+  ) : (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
 /* ───────────────────── 새 게시물 작성 모달 ───────────────────── */
 interface CreateModalProps {
   open: boolean;
   onClose: () => void;
-  onCreate: (post: Omit<TourPost, "id" | "author" | "likes" | "liked" | "comments">) => Promise<void> | void;
+  onCreate: (post: Omit<TourPost, "id" | "author" | "likes" | "liked" | "comments" | "isOwner" | "bookmarked" | "userId">) => Promise<void> | void;
   onJobStatusChange?: (status: string) => void;
 }
 
 function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateModalProps) {
   const [form, setForm] = useState({
     comment: "",
+    location: "",
     styleFilter: "AUTO" as TourstarStyleFilter,
     styleTemplate: "",
     visibility: "public" as Visibility,
@@ -362,7 +381,12 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <h2 className="mb-1 text-lg font-bold text-gray-800">새 여행 기록 만들기</h2>
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-lg font-bold text-gray-800">새 여행 기록 만들기</h2>
+          <button type="button" onClick={onClose} className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
+        </div>
         <p className="mb-5 text-xs text-gray-400">사진을 올리면 AI가 잘 나온 사진을 자동으로 추려드려요 ✨</p>
         <div className="space-y-4">
           <div>
@@ -413,6 +437,12 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
             </div>
           </div>
           <div>
+            <label className="mb-1 block text-xs font-medium text-gray-500">장소 (선택)</label>
+            <input type="text" className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none"
+              placeholder="예: 서울 강남, 부산 해운대 (비워두면 AI가 자동 추정)" value={form.location}
+              onChange={(e) => setForm({ ...form, location: e.target.value })} />
+          </div>
+          <div>
             <label className="mb-1 block text-xs font-medium text-gray-500">한줄 코멘트</label>
             <textarea className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none resize-none"
               rows={2} placeholder="간단한 코멘트만 남기면 자동으로 예쁘게 게시됩니다" value={form.comment}
@@ -459,22 +489,6 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
                 onChange={(e) => setForm({ ...form, styleTemplate: e.target.value })} />
             </div>
           </div>
-          <div>
-            <label className="mb-2 block text-xs font-medium text-gray-500">공개 설정</label>
-            <div className="flex gap-2">
-              {(["public", "private"] as const).map((v) => (
-                <button key={v} type="button" onClick={() => setForm({ ...form, visibility: v })}
-                  className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm transition-all ${form.visibility === v ? "border-purple-300 bg-purple-50 text-purple-700" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}>
-                  {v === "public" ? (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
-                  ) : (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                  )}
-                  {v === "public" ? "공개" : "비공개"}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
         <div className="mt-6 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors">취소</button>
@@ -490,8 +504,16 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
                 generated = await generateTourstarPost(form.comment, form.styleFilter, form.styleTemplate, selectedImagePaths);
               } catch (error) { console.error(error); } finally { setIsGeneratingPost(false); }
               try {
-                await onCreate({ title: generated.title, location: generated.location, date: new Date().toISOString().split("T")[0], comment: generated.comment, visibility: form.visibility, photos: selectedPhotos, tags: generated.tags });
-                setForm({ comment: "", styleFilter: "AUTO", styleTemplate: "", visibility: "public" });
+                await onCreate({
+                  title: generated.title,
+                  location: form.location.trim() || generated.location,
+                  date: new Date().toISOString().split("T")[0],
+                  comment: generated.comment,
+                  visibility: form.visibility,
+                  photos: selectedPhotos,
+                  tags: generated.tags,
+                });
+                setForm({ comment: "", location: "", styleFilter: "AUTO", styleTemplate: "", visibility: "public" });
                 setPhotos([]);
                 onJobStatusChange?.("AI 게시글 생성 완료");
                 onClose();
@@ -506,17 +528,110 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
   );
 }
 
+/* ───────────────────── 게시물 수정 모달 ───────────────────── */
+interface EditModalProps {
+  post: TourPost | null;
+  onClose: () => void;
+  onSave: (postId: string, updates: { title: string; location: string; comment: string; tags: string[] }) => Promise<void>;
+}
+
+function EditPostModal({ post, onClose, onSave }: EditModalProps) {
+  const [title, setTitle] = useState(post?.title ?? "");
+  const [location, setLocation] = useState(post?.location === "위치 미확인" ? "" : (post?.location ?? ""));
+  const [comment, setComment] = useState(post?.comment ?? "");
+  const [tagsInput, setTagsInput] = useState((post?.tags ?? []).join(", "));
+  const [saving, setSaving] = useState(false);
+
+  React.useEffect(() => {
+    if (post) {
+      setTitle(post.title);
+      setLocation(post.location === "위치 미확인" ? "" : post.location);
+      setComment(post.comment);
+      setTagsInput(post.tags.join(", "));
+    }
+  }, [post]);
+
+  if (!post) return null;
+
+  const handleSave = async () => {
+    if (!title.trim()) return;
+    setSaving(true);
+    try {
+      const tags = tagsInput
+        .split(/[,\s]+/)
+        .map((t) => t.replace(/^#/, "").trim())
+        .filter(Boolean);
+      await onSave(post.id, {
+        title: title.trim(),
+        location: location.trim() || "위치 미확인",
+        comment,
+        tags,
+      });
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-bold text-gray-800">게시글 수정</h2>
+          <button type="button" onClick={onClose} className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-500">제목</label>
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
+              placeholder="제목을 입력하세요"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-500">장소</label>
+            <input type="text" value={location} onChange={(e) => setLocation(e.target.value)}
+              placeholder="예: 서울 강남, 부산 해운대"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-500">본문</label>
+            <textarea rows={6} value={comment} onChange={(e) => setComment(e.target.value)}
+              placeholder="본문을 입력하세요"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none resize-none" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-500">태그 (쉼표 또는 공백으로 구분)</label>
+            <input type="text" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)}
+              placeholder="예: 겨울산책, 힐링, 여행기록"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none" />
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors">취소</button>
+          <button type="button" onClick={handleSave} disabled={saving || !title.trim()}
+            className="rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:opacity-90 transition-opacity disabled:opacity-50">
+            {saving ? "저장중..." : "저장"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ───────────────────── 게시물 상세 모달 ───────────────────── */
 interface DetailModalProps {
   post: TourPost | null;
   onClose: () => void;
   onToggleLike: (id: string) => void;
-  onToggleVisibility: (id: string) => void;
   onAddComment: (postId: string, content: string) => Promise<void> | void;
   onShare: (postId: string) => Promise<void> | void;
+  onEdit: (post: TourPost) => void;
+  onBookmark: (id: string) => void;
 }
 
-function PostDetailModal({ post, onClose, onToggleLike, onToggleVisibility, onAddComment, onShare }: DetailModalProps) {
+function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, onEdit, onBookmark }: DetailModalProps) {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [commentInput, setCommentInput] = useState("");
 
@@ -561,13 +676,28 @@ function PostDetailModal({ post, onClose, onToggleLike, onToggleVisibility, onAd
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-800">{post.author}</p>
-                <p className="text-[11px] text-gray-600">{post.location}</p>
+                <p className="text-[11px] text-gray-500">{post.location}</p>
               </div>
             </div>
-            <button type="button" onClick={() => onToggleVisibility(post.id)}
-              className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium border transition-all ${post.visibility === "public" ? "border-emerald-200 bg-emerald-50 text-emerald-600" : "border-gray-200 bg-gray-50 text-gray-500"}`}>
-              {post.visibility === "public" ? "공개" : "비공개"}
-            </button>
+            <div className="flex items-center gap-1.5">
+              {post.isOwner ? (
+                <button type="button" onClick={() => onEdit(post)}
+                  className="flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-600 hover:bg-blue-100 transition-colors">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                  수정
+                </button>
+              ) : (
+                <button type="button" onClick={() => onBookmark(post.id)}
+                  className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${post.bookmarked ? "border-amber-300 bg-amber-50 text-amber-600 hover:bg-amber-100" : "border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100"}`}>
+                  <BookmarkIcon filled={post.bookmarked} />
+                  {post.bookmarked ? "스크랩됨" : "스크랩"}
+                </button>
+              )}
+              <button type="button" onClick={onClose}
+                className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+              </button>
+            </div>
           </div>
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
             <h2 className="text-base font-bold text-gray-800">{post.title}</h2>
@@ -577,7 +707,7 @@ function PostDetailModal({ post, onClose, onToggleLike, onToggleVisibility, onAd
                 {post.tags.map((tag) => (<span key={tag} className="rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-600">#{tag}</span>))}
               </div>
             )}
-            <p className="text-xs text-gray-600">{post.date}</p>
+            <p className="text-xs text-gray-400">{post.date}</p>
             <div className="border-t border-gray-100 pt-3">
               <p className="mb-2 text-xs font-semibold text-gray-700">댓글 {post.comments.length}개</p>
               <div className="max-h-32 space-y-2 overflow-y-auto pr-1">
@@ -618,11 +748,13 @@ function PostDetailModal({ post, onClose, onToggleLike, onToggleVisibility, onAd
 }
 
 /* ───────────────────── 게시물 카드 (피드 뷰) ───────────────────── */
-function FeedCard({ post, onClick, onToggleLike, onShare }: {
+function FeedCard({ post, onClick, onToggleLike, onShare, onBookmark, onEdit }: {
   post: TourPost;
   onClick: () => void;
   onToggleLike: (id: string) => void;
   onShare: (id: string) => void;
+  onBookmark: (id: string) => void;
+  onEdit: (post: TourPost) => void;
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all hover:shadow-md">
@@ -640,9 +772,19 @@ function FeedCard({ post, onClick, onToggleLike, onShare }: {
             </div>
           )}
         </div>
-        <span className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${post.visibility === "public" ? "border-emerald-200 bg-emerald-50 text-emerald-600" : "border-gray-200 bg-gray-50 text-gray-500"}`}>
-          {post.visibility === "public" ? "공개" : "비공개"}
-        </span>
+        {post.isOwner ? (
+          <button type="button" onClick={(e) => { e.stopPropagation(); onEdit(post); }}
+            className="rounded-full p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-500 transition-colors"
+            title="수정">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+          </button>
+        ) : (
+          <button type="button" onClick={(e) => { e.stopPropagation(); onBookmark(post.id); }}
+            className={`rounded-full p-1.5 transition-colors ${post.bookmarked ? "text-amber-500 hover:text-amber-600" : "text-gray-300 hover:text-amber-400"}`}
+            title={post.bookmarked ? "스크랩 취소" : "스크랩"}>
+            <BookmarkIcon filled={post.bookmarked} />
+          </button>
+        )}
       </div>
 
       {/* 사진 */}
@@ -715,9 +857,12 @@ function GridCard({ post, onClick }: { post: TourPost; onClick: () => void }) {
           </span>
         </div>
       </div>
-      <div className={`absolute top-2 left-2 flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium backdrop-blur-sm ${post.visibility === "public" ? "bg-emerald-500/80 text-white" : "bg-gray-800/60 text-gray-200"}`}>
-        {post.visibility === "public" ? "공개" : "비공개"}
-      </div>
+      {post.isOwner && (
+        <div className="absolute top-2 left-2 rounded-full bg-purple-500/80 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">내 글</div>
+      )}
+      {post.bookmarked && !post.isOwner && (
+        <div className="absolute top-2 left-2 rounded-full bg-amber-500/80 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">스크랩</div>
+      )}
       {post.photos.length > 1 && (
         <div className="absolute top-2 right-2 rounded-md bg-black/50 px-1.5 py-0.5 text-[10px] text-white backdrop-blur-sm">+{post.photos.length}</div>
       )}
@@ -726,8 +871,15 @@ function GridCard({ post, onClick }: { post: TourPost; onClick: () => void }) {
 }
 
 /* ═══════════════════════ 메인 페이지 ═══════════════════════ */
-function mapRecordToPost(record: TourstarPostRecord, fallbackAuthor = "내 여행기록"): TourPost {
+function mapRecordToPost(
+  record: TourstarPostRecord,
+  fallbackAuthor = "내 여행기록",
+  currentUserId?: number | null,
+  bookmarkedIds: Set<string> = new Set(),
+): TourPost {
   const author = record.author_nickname?.trim() || fallbackAuthor;
+  const isOwner = !!(currentUserId && record.user_id && record.user_id === currentUserId);
+  const bookmarked = bookmarkedIds.has(record.id);
   const photos: TourPhoto[] = (record.photo_urls || []).map((url, idx) => ({
     id: `photo-${record.id}-${idx}`,
     gradient: randomGradient(),
@@ -737,6 +889,7 @@ function mapRecordToPost(record: TourstarPostRecord, fallbackAuthor = "내 여�
   }));
   return {
     id: record.id,
+    userId: record.user_id ?? null,
     author,
     title: record.title,
     location: record.location || "위치 미확인",
@@ -748,6 +901,8 @@ function mapRecordToPost(record: TourstarPostRecord, fallbackAuthor = "내 여�
     liked: false,
     tags: record.tags || [],
     comments: (record.comments || []).map((item) => ({ id: item.id, author: item.author, content: item.content, createdAt: "방금 전" })),
+    isOwner,
+    bookmarked,
   };
 }
 
@@ -755,13 +910,42 @@ export default function TourstarContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, logout, accessToken } = useLoginStore();
+
   const [authorName, setAuthorName] = useState("내 여행기록");
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
+
+  const [posts, setPosts] = useState<TourPost[]>([]);
+  const [viewMode, setViewMode] = useState<ViewMode>("feed");
+  const [filter, setFilter] = useState<FilterType>("all");
+  const [sortType, setSortType] = useState<SortType>("latest");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchField, setSearchField] = useState<SearchField>("all");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [detailPost, setDetailPost] = useState<TourPost | null>(null);
+  const [editTargetPost, setEditTargetPost] = useState<TourPost | null>(null);
+  const [analysisStatus, setAnalysisStatus] = useState<string>("");
+
+  /* userId 추출 */
+  React.useEffect(() => {
+    if (!accessToken) return;
+    const id = getUserIdFromToken(accessToken);
+    if (id) setCurrentUserId(Number(id));
+  }, [accessToken]);
+
+  /* 북마크 로드 */
+  React.useEffect(() => {
+    if (!currentUserId) return;
+    const key = `tourstar_bookmarks_${currentUserId}`;
+    try {
+      const stored = localStorage.getItem(key);
+      if (stored) setBookmarkedIds(new Set(JSON.parse(stored) as string[]));
+    } catch { /* ignore */ }
+  }, [currentUserId]);
 
   /* 닉네임 조회 */
   React.useEffect(() => {
     if (!isAuthenticated || !accessToken) return;
-
-    /* 세션 캐시 — 같은 세션 내 재방문 시 즉시 반영 */
     const cached = sessionStorage.getItem("_tourstar_author");
     if (cached) setAuthorName(cached);
 
@@ -771,7 +955,6 @@ export default function TourstarContent() {
     (async () => {
       try {
         const res = await findUserById(Number(userId));
-        /* code 필드 값에 무관하게 data가 있으면 사용, || 로 빈 문자열도 처리 */
         if (!cancelled && res.data) {
           const name = (res.data.nickname || res.data.name || "").trim();
           if (name) {
@@ -786,36 +969,46 @@ export default function TourstarContent() {
     return () => { cancelled = true; };
   }, [isAuthenticated, accessToken]);
 
-  const [posts, setPosts] = useState<TourPost[]>([]);
-  const [viewMode, setViewMode] = useState<ViewMode>("feed");
-  const [filter, setFilter] = useState<FilterType>("all");
-  const [createOpen, setCreateOpen] = useState(false);
-  const [detailPost, setDetailPost] = useState<TourPost | null>(null);
-  const [analysisStatus, setAnalysisStatus] = useState<string>("");
-
   React.useEffect(() => { if (!isAuthenticated) { router.replace("/"); } }, [isAuthenticated, router]);
 
+  /* 게시글 목록 로드 */
   React.useEffect(() => {
     if (!isAuthenticated) return;
     let cancelled = false;
     (async () => {
       try {
         const rows = await listTourstarPosts();
-        if (!cancelled) { setPosts(rows.map((r) => mapRecordToPost(r, authorName))); }
+        if (!cancelled) {
+          setPosts(rows.map((r) => mapRecordToPost(r, authorName, currentUserId, bookmarkedIds)));
+        }
       } catch (error) { console.error("[tourstar] 게시글 목록 조회 실패:", error); }
     })();
     return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
-  /* authorName이 실제 닉네임으로 바뀌면, author_nickname이 없는 기존 포스트도 갱신 */
+  /* authorName 갱신 시 기존 포스트 반영 */
   React.useEffect(() => {
     if (authorName === "내 여행기록") return;
-    setPosts((prev) =>
-      prev.map((p) => (p.author === "내 여행기록" ? { ...p, author: authorName } : p))
-    );
+    setPosts((prev) => prev.map((p) => (p.author === "내 여행기록" ? { ...p, author: authorName } : p)));
     setDetailPost((prev) => (prev && prev.author === "내 여행기록" ? { ...prev, author: authorName } : prev));
   }, [authorName]);
 
+  /* currentUserId / bookmarkedIds 변경 시 isOwner, bookmarked 재계산 */
+  React.useEffect(() => {
+    setPosts((prev) => prev.map((p) => ({
+      ...p,
+      isOwner: !!(currentUserId && p.userId && p.userId === currentUserId),
+      bookmarked: bookmarkedIds.has(p.id),
+    })));
+    setDetailPost((prev) => prev ? ({
+      ...prev,
+      isOwner: !!(currentUserId && prev.userId && prev.userId === currentUserId),
+      bookmarked: bookmarkedIds.has(prev.id),
+    }) : null);
+  }, [currentUserId, bookmarkedIds]);
+
+  /* URL postId 파라미터 처리 */
   React.useEffect(() => {
     const requestedPostId = searchParams.get("postId");
     if (!requestedPostId || posts.length === 0) return;
@@ -824,34 +1017,98 @@ export default function TourstarContent() {
     setDetailPost(target);
   }, [posts, searchParams]);
 
-  const filteredPosts = useMemo(() => { if (filter === "all") return posts; return posts.filter((p) => p.visibility === filter); }, [posts, filter]);
+  /* ── 필터 + 검색 + 정렬 ── */
+  const filteredPosts = useMemo(() => {
+    let result = posts;
+
+    if (filter === "mine") result = result.filter((p) => p.isOwner);
+    else if (filter === "bookmarked") result = result.filter((p) => p.bookmarked);
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter((p) => {
+        const body = stripHashtags(p.comment).toLowerCase();
+        switch (searchField) {
+          case "author": return p.author.toLowerCase().includes(q);
+          case "title": return p.title.toLowerCase().includes(q);
+          case "content": return body.includes(q);
+          case "tags": return p.tags.some((t) => t.toLowerCase().includes(q));
+          case "location": return p.location.toLowerCase().includes(q);
+          default:
+            return p.author.toLowerCase().includes(q) ||
+              p.title.toLowerCase().includes(q) ||
+              body.includes(q) ||
+              p.tags.some((t) => t.toLowerCase().includes(q)) ||
+              p.location.toLowerCase().includes(q);
+        }
+      });
+    }
+
+    switch (sortType) {
+      case "likes": return [...result].sort((a, b) => b.likes - a.likes);
+      case "comments": return [...result].sort((a, b) => b.comments.length - a.comments.length);
+      default: return result;
+    }
+  }, [posts, filter, searchQuery, searchField, sortType]);
+
   const stats = useMemo(() => ({
     total: posts.length,
-    public: posts.filter((p) => p.visibility === "public").length,
-    private: posts.filter((p) => p.visibility === "private").length,
+    mine: posts.filter((p) => p.isOwner).length,
+    bookmarked: posts.filter((p) => p.bookmarked).length,
     totalPhotos: posts.reduce((acc, p) => acc + p.photos.length, 0),
     totalLikes: posts.reduce((acc, p) => acc + p.likes, 0),
   }), [posts]);
 
+  /* ── 핸들러 ── */
   const toggleLike = (id: string) => {
     setPosts((prev) => prev.map((p) => p.id === id ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 } : p));
     setDetailPost((prev) => prev && prev.id === id ? { ...prev, liked: !prev.liked, likes: prev.liked ? prev.likes - 1 : prev.likes + 1 } : prev);
   };
-  const toggleVisibility = (id: string) => {
-    setPosts((prev) => prev.map((p) => p.id === id ? { ...p, visibility: p.visibility === "public" ? "private" : "public" } : p));
-    setDetailPost((prev) => prev && prev.id === id ? { ...prev, visibility: prev.visibility === "public" ? "private" : "public" } : prev);
+
+  const toggleBookmark = (id: string) => {
+    setBookmarkedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      if (currentUserId) {
+        const key = `tourstar_bookmarks_${currentUserId}`;
+        localStorage.setItem(key, JSON.stringify([...next]));
+      }
+      return next;
+    });
+    setPosts((prev) => prev.map((p) => p.id === id ? { ...p, bookmarked: !p.bookmarked } : p));
+    setDetailPost((prev) => prev && prev.id === id ? { ...prev, bookmarked: !prev.bookmarked } : prev);
   };
-  const createPost = async (newPost: Omit<TourPost, "id" | "author" | "likes" | "liked" | "comments">) => {
+
+  const createPost = async (newPost: Omit<TourPost, "id" | "author" | "likes" | "liked" | "comments" | "isOwner" | "bookmarked" | "userId">) => {
     const sourceImagePaths = newPost.photos.map((photo) => photo.sourceImagePath).filter((path): path is string => Boolean(path && path.trim()));
-    const saved = await createTourstarPost({ title: newPost.title, location: newPost.location, comment: newPost.comment, visibility: newPost.visibility, tags: newPost.tags, image_paths: sourceImagePaths, author_nickname: authorName });
-    setPosts((prev) => [mapRecordToPost(saved, authorName), ...prev]);
+    const saved = await createTourstarPost({
+      user_id: currentUserId ?? undefined,
+      title: newPost.title,
+      location: newPost.location,
+      comment: newPost.comment,
+      visibility: newPost.visibility,
+      tags: newPost.tags,
+      image_paths: sourceImagePaths,
+      author_nickname: authorName,
+    });
+    setPosts((prev) => [mapRecordToPost(saved, authorName, currentUserId, bookmarkedIds), ...prev]);
   };
+
+  const updatePostData = async (postId: string, updates: { title: string; location: string; comment: string; tags: string[] }) => {
+    const saved = await updateTourstarPost(postId, updates);
+    const updated = mapRecordToPost(saved, authorName, currentUserId, bookmarkedIds);
+    setPosts((prev) => prev.map((p) => p.id === postId ? updated : p));
+    setDetailPost((prev) => prev && prev.id === postId ? updated : prev);
+  };
+
   const addComment = async (postId: string, content: string) => {
     const saved = await createTourstarComment(postId, { author: "me", content });
     const newComment: TourPostComment = { id: saved.id, author: saved.author, content: saved.content, createdAt: "방금 전" };
     setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p));
     setDetailPost((prev) => prev && prev.id === postId ? { ...prev, comments: [...prev.comments, newComment] } : prev);
   };
+
   const sharePost = async (postId: string) => {
     const shareUrl = buildTourstarShareUrl(postId);
     try { await navigator.clipboard.writeText(shareUrl); window.alert("공유 링크를 복사했어요. 채팅창에 붙여넣어 주세요."); }
@@ -877,7 +1134,9 @@ export default function TourstarContent() {
             </button>
           </div>
         </header>
+
         <div className="mx-auto max-w-5xl px-6 py-6 space-y-6">
+          {/* 프로필 카드 */}
           <div className="flex items-center gap-6 rounded-2xl bg-white border border-gray-100 p-6 shadow-sm">
             <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-2xl font-bold text-white shadow-lg shadow-purple-200">
               {authorName.slice(0, 1).toUpperCase()}
@@ -886,35 +1145,100 @@ export default function TourstarContent() {
               <h2 className="text-lg font-bold text-gray-800">{authorName}</h2>
               <p className="mt-0.5 text-xs text-gray-400">소중한 여행의 순간들을 기록하고 공유하세요</p>
               <div className="mt-3 flex gap-6">
-                {[{ label: "게시물", value: stats.total, color: "text-gray-800" }, { label: "사진", value: stats.totalPhotos, color: "text-gray-800" }, { label: "좋아요", value: stats.totalLikes, color: "text-pink-500" }, { label: "공개", value: stats.public, color: "text-emerald-600" }, { label: "비공개", value: stats.private, color: "text-gray-500" }].map((s) => (
-                  <div key={s.label} className="text-center"><p className={`text-lg font-bold ${s.color}`}>{s.value}</p><p className="text-[11px] text-gray-400">{s.label}</p></div>
+                {[
+                  { label: "전체", value: stats.total, color: "text-gray-800" },
+                  { label: "내 게시물", value: stats.mine, color: "text-purple-600" },
+                  { label: "스크랩", value: stats.bookmarked, color: "text-amber-500" },
+                  { label: "사진", value: stats.totalPhotos, color: "text-gray-800" },
+                  { label: "좋아요", value: stats.totalLikes, color: "text-pink-500" },
+                ].map((s) => (
+                  <div key={s.label} className="text-center">
+                    <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
+                    <p className="text-[11px] text-gray-400">{s.label}</p>
+                  </div>
                 ))}
               </div>
             </div>
           </div>
-          <div className="flex items-center justify-between">
+
+          {/* 검색 바 */}
+          <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2.5 shadow-sm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-gray-400 shrink-0">
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <select value={searchField} onChange={(e) => setSearchField(e.target.value as SearchField)}
+              className="border-none bg-transparent text-xs text-gray-600 focus:outline-none cursor-pointer pr-1">
+              <option value="all">전체</option>
+              <option value="author">유저명</option>
+              <option value="title">제목</option>
+              <option value="content">본문</option>
+              <option value="tags">태그</option>
+              <option value="location">장소</option>
+            </select>
+            <div className="h-3.5 w-px bg-gray-200 shrink-0" />
+            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="검색어를 입력하세요..."
+              className="flex-1 bg-transparent text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none" />
+            {searchQuery && (
+              <button type="button" onClick={() => setSearchQuery("")} className="text-gray-400 hover:text-gray-600 transition-colors shrink-0">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+              </button>
+            )}
+          </div>
+
+          {/* 탭 + 정렬 + 뷰 모드 */}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2">
-              {([{ id: "all", label: "전체" }, { id: "public", label: "공개" }, { id: "private", label: "비공개" }] as const).map((tab) => (
+              {([
+                { id: "all", label: "전체" },
+                { id: "mine", label: "내 게시물" },
+                { id: "bookmarked", label: "스크랩" },
+              ] as const).map((tab) => (
                 <button key={tab.id} type="button" onClick={() => setFilter(tab.id)}
                   className={`rounded-full px-3.5 py-1.5 text-xs font-medium border transition-all ${filter === tab.id ? "border-purple-300 bg-purple-50 text-purple-700" : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"}`}>
                   {tab.label}
                 </button>
               ))}
-              <span className="ml-2 text-xs text-gray-400">{filteredPosts.length}개의 기록</span>
+              <span className="ml-1 text-xs text-gray-400">{filteredPosts.length}개의 기록</span>
             </div>
-            <div className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-0.5">
-              {([{ mode: "feed", icon: <><rect x="3" y="3" width="18" height="7" rx="1" /><rect x="3" y="14" width="18" height="7" rx="1" /></> }, { mode: "grid", icon: <><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></> }] as const).map((v) => (
-                <button key={v.mode} type="button" onClick={() => setViewMode(v.mode)}
-                  className={`rounded-md p-1.5 transition-colors ${viewMode === v.mode ? "bg-purple-100 text-purple-600" : "text-gray-400 hover:text-gray-600"}`}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">{v.icon}</svg>
-                </button>
-              ))}
+            <div className="flex items-center gap-2">
+              {/* 정렬 버튼 */}
+              <div className="flex items-center gap-0.5 rounded-lg border border-gray-200 bg-white p-0.5">
+                {([
+                  { id: "latest", label: "최신순" },
+                  { id: "likes", label: "좋아요순" },
+                  { id: "comments", label: "댓글순" },
+                ] as const).map((s) => (
+                  <button key={s.id} type="button" onClick={() => setSortType(s.id)}
+                    className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${sortType === s.id ? "bg-purple-100 text-purple-700" : "text-gray-400 hover:text-gray-600"}`}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+              {/* 뷰 모드 */}
+              <div className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-0.5">
+                {([
+                  { mode: "feed", icon: <><rect x="3" y="3" width="18" height="7" rx="1" /><rect x="3" y="14" width="18" height="7" rx="1" /></> },
+                  { mode: "grid", icon: <><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></> },
+                ] as const).map((v) => (
+                  <button key={v.mode} type="button" onClick={() => setViewMode(v.mode)}
+                    className={`rounded-md p-1.5 transition-colors ${viewMode === v.mode ? "bg-purple-100 text-purple-600" : "text-gray-400 hover:text-gray-600"}`}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">{v.icon}</svg>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
+
+          {/* 게시물 목록 */}
           {filteredPosts.length > 0 ? (
             viewMode === "feed" ? (
               <div className="grid grid-cols-1 gap-4 max-w-xl mx-auto">
-                {filteredPosts.map((post) => (<FeedCard key={post.id} post={post} onClick={() => setDetailPost(post)} onToggleLike={toggleLike} onShare={sharePost} />))}
+                {filteredPosts.map((post) => (
+                  <FeedCard key={post.id} post={post} onClick={() => setDetailPost(post)}
+                    onToggleLike={toggleLike} onShare={sharePost}
+                    onBookmark={toggleBookmark} onEdit={(p) => setEditTargetPost(p)} />
+                ))}
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-3">
@@ -924,11 +1248,19 @@ export default function TourstarContent() {
           ) : (
             <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-white py-20 text-center">
               <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mb-4 text-gray-300"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
-              <p className="text-sm font-medium text-gray-400">아직 기록된 여행이 없습니다</p>
-              <p className="mt-1 text-xs text-gray-300">상단의 &quot;새 기록&quot; 버튼으로 첫 번째 여행을 기록해보세요</p>
-              <button type="button" onClick={() => setCreateOpen(true)} className="mt-4 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity">여행 기록하기</button>
+              <p className="text-sm font-medium text-gray-400">
+                {filter === "mine" ? "내가 올린 게시물이 없습니다" : filter === "bookmarked" ? "스크랩한 게시물이 없습니다" : searchQuery ? "검색 결과가 없습니다" : "아직 기록된 여행이 없습니다"}
+              </p>
+              <p className="mt-1 text-xs text-gray-300">
+                {filter === "bookmarked" ? "다른 사람의 게시물에서 북마크 버튼을 눌러보세요" : "상단의 \"새 기록\" 버튼으로 첫 번째 여행을 기록해보세요"}
+              </p>
+              {filter === "all" && !searchQuery && (
+                <button type="button" onClick={() => setCreateOpen(true)} className="mt-4 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity">여행 기록하기</button>
+              )}
             </div>
           )}
+
+          {/* AI 안내 배너 */}
           <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100 p-5">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="url(#tourgrad)" strokeWidth="2">
@@ -943,8 +1275,18 @@ export default function TourstarContent() {
           </div>
         </div>
       </main>
+
       <CreatePostModal open={createOpen} onClose={() => setCreateOpen(false)} onCreate={createPost} onJobStatusChange={setAnalysisStatus} />
-      <PostDetailModal post={detailPost} onClose={() => setDetailPost(null)} onToggleLike={toggleLike} onToggleVisibility={toggleVisibility} onAddComment={addComment} onShare={sharePost} />
+      <EditPostModal post={editTargetPost} onClose={() => setEditTargetPost(null)} onSave={updatePostData} />
+      <PostDetailModal
+        post={detailPost}
+        onClose={() => setDetailPost(null)}
+        onToggleLike={toggleLike}
+        onAddComment={addComment}
+        onShare={sharePost}
+        onEdit={(p) => { setDetailPost(null); setEditTargetPost(p); }}
+        onBookmark={toggleBookmark}
+      />
     </AppLayout>
   );
 }
