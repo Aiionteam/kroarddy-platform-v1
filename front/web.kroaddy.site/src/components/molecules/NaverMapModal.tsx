@@ -10,43 +10,6 @@ interface NaverMapModalProps {
   onClose: () => void;
 }
 
-declare global {
-  interface Window {
-    naver: {
-      maps: {
-        Map: new (el: HTMLElement, opts: object) => NaverMap;
-        LatLng: new (lat: number, lng: number) => NaverLatLng;
-        Marker: new (opts: object) => unknown;
-        Service: {
-          geocode: (
-            opts: { query: string },
-            cb: (status: string, resp: NaverGeocodeResponse) => void
-          ) => void;
-          Status: { OK: string };
-        };
-        Event: {
-          addListener: (
-            target: unknown,
-            event: string,
-            handler: () => void
-          ) => void;
-        };
-        MapTypeId: { NORMAL: string };
-      };
-    };
-  }
-}
-
-interface NaverMap {
-  setCenter(latlng: NaverLatLng): void;
-}
-interface NaverLatLng {
-  lat(): number;
-  lng(): number;
-}
-interface NaverGeocodeResponse {
-  addresses?: { x: string; y: string; roadAddress?: string; jibunAddress?: string }[];
-}
 
 function loadNaverMapsScript(): Promise<void> {
   return new Promise((resolve, reject) => {
