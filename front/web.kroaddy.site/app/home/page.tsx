@@ -178,30 +178,33 @@ function Top10Carousel({ items }: { items: ProcessedNewsItem[] }) {
   const cat = getCatStyle(item.category);
 
   return (
-    <div className="select-none">
-      {/* 바깥 래퍼: 화살표 + 카드를 나란히 */}
-      <div className="flex items-stretch gap-2">
+    <div className="select-none w-full flex justify-center px-2 sm:px-4">
+      {/*
+        가로만 넓고 세로는 낮으면 썸네일이 띠처럼 보임 → 카드 폭을 max-w-md~lg로 제한해
+        세로 대비 균형(약 4:3~5:4 느낌)을 맞춤. 화살표는 양옆, 전체는 중앙 정렬.
+      */}
+      <div className="flex items-stretch gap-1.5 sm:gap-2 w-full max-w-[min(100%,32rem)] sm:max-w-[min(100%,36rem)]">
 
-        {/* ← 화살표 */}
+        {/* ← 옆으로 넘기기 */}
         <button
           type="button"
           onClick={prev}
           aria-label="이전"
-          className="shrink-0 w-8 flex items-center justify-center rounded-xl bg-gray-100 text-gray-500 hover:bg-purple-100 hover:text-purple-600 transition-colors text-xl font-bold"
+          className="shrink-0 w-9 sm:w-11 flex items-center justify-center rounded-2xl bg-gray-100 text-gray-500 hover:bg-purple-100 hover:text-purple-600 transition-colors text-xl sm:text-2xl font-bold shadow-sm"
         >
           ‹
         </button>
 
-        {/* 카드: 전체 높이 고정 → 썸네일 65% / 내용 35% */}
+        {/* 카드: 폭 제한 + 세로 비율 유지 → 썸네일 ~73% / 내용 ~27% */}
         <div
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
-          className="flex-1 min-w-0 rounded-2xl bg-white border border-gray-100 shadow-md overflow-hidden flex flex-col"
-          style={{ height: 320 }}
+          className="flex-1 min-w-0 rounded-2xl bg-white border border-gray-100 shadow-lg overflow-hidden flex flex-col
+            h-[min(500px,56vh)] min-h-[380px] sm:min-h-[420px]"
         >
-          {/* 12시 — 썸네일 (65%) */}
+          {/* 12시 — 썸네일 (가로 과확장 방지: 부모 폭이 이미 좁음) */}
           <div className="relative w-full bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center overflow-hidden"
-            style={{ flex: "0 0 65%" }}>
+            style={{ flex: "0 0 73%" }}>
             {item.thumbnail ? (
               <img
                 src={item.thumbnail}
@@ -219,48 +222,48 @@ function Top10Carousel({ items }: { items: ProcessedNewsItem[] }) {
             </div>
           </div>
 
-          {/* 6시 — 내용 (35%) */}
-          <div className="flex flex-col justify-between p-3 overflow-hidden"
-            style={{ flex: "0 0 35%" }}>
+          {/* 6시 — 요약·날짜 등 */}
+          <div className="flex flex-col justify-between gap-1 px-3 py-2.5 sm:px-4 sm:py-3 overflow-hidden"
+            style={{ flex: "0 0 27%" }}>
             {/* 카테고리 + 지역 + 날짜 */}
             <div className="flex flex-wrap gap-1 items-center">
-              <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${cat.bg} ${cat.text}`}>
+              <span className={`rounded-full px-2 py-0.5 text-[11px] sm:text-xs font-semibold ${cat.bg} ${cat.text}`}>
                 {cat.emoji} {item.category}
               </span>
               {item.location && item.location !== "전국" && (
-                <span className="rounded-full px-2 py-0.5 text-[11px] bg-gray-100 text-gray-500">
+                <span className="rounded-full px-2 py-0.5 text-[11px] sm:text-xs bg-gray-100 text-gray-500">
                   📍 {item.location}
                 </span>
               )}
               {item.date_mentioned && (
-                <span className="rounded-full px-2 py-0.5 text-[11px] bg-indigo-50 text-indigo-500 font-semibold">
+                <span className="rounded-full px-2 py-0.5 text-[11px] sm:text-xs bg-indigo-50 text-indigo-500 font-semibold">
                   📅 {item.date_mentioned}
                 </span>
               )}
             </div>
 
             {/* 제목 */}
-            <h3 className="text-sm font-bold text-gray-800 leading-snug line-clamp-2">{item.title}</h3>
+            <h3 className="text-sm sm:text-base font-bold text-gray-800 leading-snug line-clamp-2">{item.title}</h3>
 
             {/* 요약 */}
             {(item.gpt_summary || item.summary) && (
-              <p className="text-[11px] leading-relaxed text-gray-500 line-clamp-1">
+              <p className="text-[11px] sm:text-xs leading-relaxed text-gray-500 line-clamp-2">
                 {item.gpt_summary || item.summary}
               </p>
             )}
 
             {/* 출처 + 기사 링크 */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1 text-[11px] text-gray-400">
-                <span className="font-medium text-purple-400 truncate max-w-[90px]">{item.source}</span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1 text-[11px] text-gray-400 min-w-0">
+                <span className="font-medium text-purple-400 truncate">{item.source}</span>
                 <span>·</span>
-                <span>{timeAgo(item.published)}</span>
+                <span className="shrink-0">{timeAgo(item.published)}</span>
               </div>
               <a
                 href={item.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[11px] font-semibold text-purple-500 hover:text-purple-700 transition-colors shrink-0"
+                className="text-[11px] sm:text-xs font-semibold text-purple-500 hover:text-purple-700 transition-colors shrink-0"
               >
                 기사 보기 →
               </a>
@@ -268,12 +271,12 @@ function Top10Carousel({ items }: { items: ProcessedNewsItem[] }) {
           </div>
         </div>
 
-        {/* → 화살표 */}
+        {/* → 옆으로 넘기기 */}
         <button
           type="button"
           onClick={next}
           aria-label="다음"
-          className="shrink-0 w-8 flex items-center justify-center rounded-xl bg-gray-100 text-gray-500 hover:bg-purple-100 hover:text-purple-600 transition-colors text-xl font-bold"
+          className="shrink-0 w-9 sm:w-11 flex items-center justify-center rounded-2xl bg-gray-100 text-gray-500 hover:bg-purple-100 hover:text-purple-600 transition-colors text-xl sm:text-2xl font-bold shadow-sm"
         >
           ›
         </button>
@@ -304,21 +307,23 @@ function Top10Carousel({ items }: { items: ProcessedNewsItem[] }) {
 /* ── 캐러셀 스켈레톤 ── */
 function CarouselSkeleton() {
   return (
-    <div className="flex items-stretch gap-2">
-      <div className="shrink-0 w-8 rounded-xl bg-gray-100" style={{ height: 320 }} />
-      <div className="flex-1 animate-pulse rounded-2xl bg-white border border-gray-100 shadow-md overflow-hidden flex flex-col" style={{ height: 320 }}>
-        <div className="bg-gray-200" style={{ flex: "0 0 65%" }} />
-        <div className="p-3 flex flex-col gap-2 justify-between" style={{ flex: "0 0 35%" }}>
-          <div className="flex gap-2">
-            <div className="h-5 w-20 bg-gray-200 rounded-full" />
-            <div className="h-5 w-16 bg-gray-100 rounded-full" />
+    <div className="w-full flex justify-center px-2 sm:px-4">
+      <div className="flex items-stretch gap-1.5 sm:gap-2 w-full max-w-[min(100%,32rem)] sm:max-w-[min(100%,36rem)]">
+        <div className="shrink-0 w-9 sm:w-11 rounded-2xl bg-gray-100 h-[min(500px,56vh)] min-h-[380px] sm:min-h-[420px]" />
+        <div className="flex-1 animate-pulse rounded-2xl bg-white border border-gray-100 shadow-lg overflow-hidden flex flex-col h-[min(500px,56vh)] min-h-[380px] sm:min-h-[420px]">
+          <div className="bg-gray-200" style={{ flex: "0 0 73%" }} />
+          <div className="px-3 py-2.5 sm:px-4 sm:py-3 flex flex-col gap-2 justify-between" style={{ flex: "0 0 27%" }}>
+            <div className="flex gap-2">
+              <div className="h-5 w-20 bg-gray-200 rounded-full" />
+              <div className="h-5 w-16 bg-gray-100 rounded-full" />
+            </div>
+            <div className="h-4 bg-gray-200 rounded w-5/6" />
+            <div className="h-3 bg-gray-100 rounded w-full" />
+            <div className="h-3 bg-gray-200 rounded w-1/3" />
           </div>
-          <div className="h-4 bg-gray-200 rounded w-5/6" />
-          <div className="h-3 bg-gray-100 rounded w-full" />
-          <div className="h-3 bg-gray-200 rounded w-1/3" />
         </div>
+        <div className="shrink-0 w-9 sm:w-11 rounded-2xl bg-gray-100 h-[min(500px,56vh)] min-h-[380px] sm:min-h-[420px]" />
       </div>
-      <div className="shrink-0 w-8 rounded-xl bg-gray-100" style={{ height: 320 }} />
     </div>
   );
 }
