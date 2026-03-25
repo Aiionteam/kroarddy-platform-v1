@@ -1309,23 +1309,35 @@ export default function TourstarContent() {
     } catch { /* ignore */ }
   }, [currentUserId]);
 
-  /* 친구 목록 로드 */
-  React.useEffect(() => {
+  /* 친구 목록 로드 함수 */
+  const loadFriendList = React.useCallback(async () => {
     if (!isAuthenticated) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await listFriends();
-        if (cancelled) return;
-        const users: UserModel[] = Array.isArray(res.data) ? res.data : (res.data ? [res.data] : []);
-        setFriendList(users);
-        setFriendUserIds(new Set(users.map((u) => u.id).filter((id): id is number => id != null)));
-      } catch (err) {
-        console.error("[tourstar] 친구 목록 조회 실패:", err);
+    try {
+      const res = await listFriends();
+      if (res.code !== 200) {
+        console.warn("[tourstar] 친구 목록 응답 오류:", res.code, res.message);
+        return;
       }
-    })();
-    return () => { cancelled = true; };
+      const users: UserModel[] = Array.isArray(res.data) ? res.data : (res.data ? [res.data] : []);
+      setFriendList(users);
+      setFriendUserIds(new Set(users.map((u) => u.id).filter((id): id is number => id != null)));
+    } catch (err) {
+      console.error("[tourstar] 친구 목록 조회 실패:", err);
+    }
   }, [isAuthenticated]);
+
+  /* 친구 목록 로드 — 초기 로드 + 탭 포커스 시 갱신 */
+  React.useEffect(() => {
+    loadFriendList();
+  }, [loadFriendList]);
+
+  React.useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") loadFriendList();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [loadFriendList]);
 
   /* 친구 닉네임 Set (userId 없는 레거시 게시물 isFriend 판단용) */
   const friendNicknames = useMemo(
