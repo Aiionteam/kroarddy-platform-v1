@@ -21,6 +21,7 @@ import {
   localArtifactPathToUrl,
   deleteTourstarPost,
   updateTourstarPost,
+  uploadProfileImage,
   type TourstarPostRecord,
   type TourstarStyleFilter,
   uploadTourstarPhotos,
@@ -1059,7 +1060,7 @@ function AuthorPopover({
 }
 
 /* ───────────────────── 게시물 카드 (피드 뷰) ───────────────────── */
-function FeedCard({ post, onClick, onToggleLike, onShare, onBookmark, onEdit, onDeletePost, currentUserId, onViewAuthorPosts }: {
+function FeedCard({ post, onClick, onToggleLike, onShare, onBookmark, onEdit, onDeletePost, currentUserId, onViewAuthorPosts, ownerProfileImage }: {
   post: TourPost;
   onClick: () => void;
   onToggleLike: (id: string) => void;
@@ -1069,13 +1070,17 @@ function FeedCard({ post, onClick, onToggleLike, onShare, onBookmark, onEdit, on
   onDeletePost: (postId: string) => Promise<boolean>;
   currentUserId: number | null;
   onViewAuthorPosts: (userId: number | null, authorName: string) => void;
+  ownerProfileImage: string | null;
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all hover:shadow-md">
       {/* 작성자 헤더 */}
       <div className="flex items-center gap-2.5 px-3 py-2.5">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-xs font-bold text-white">
-          {post.author.slice(0, 1).toUpperCase()}
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-xs font-bold text-white overflow-hidden">
+          {post.isOwner && ownerProfileImage
+            ? <img src={ownerProfileImage} alt="프로필" className="h-full w-full object-cover" />
+            : <span>{post.author.slice(0, 1).toUpperCase()}</span>
+          }
         </div>
         <div className="min-w-0 flex-1">
           <AuthorPopover post={post} currentUserId={currentUserId} onViewPosts={onViewAuthorPosts} />
@@ -1640,17 +1645,21 @@ export default function TourstarContent() {
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                  const url = ev.target?.result as string;
-                  setProfileImageUrl(url);
-                  localStorage.setItem("tourstar_profile_image", url);
-                };
-                reader.readAsDataURL(file);
                 e.target.value = "";
+                // 즉시 로컬 미리보기 적용
+                const localUrl = URL.createObjectURL(file);
+                setProfileImageUrl(localUrl);
+                try {
+                  const s3Url = await uploadProfileImage(file);
+                  setProfileImageUrl(s3Url);
+                  localStorage.setItem("tourstar_profile_image", s3Url);
+                } catch (err) {
+                  console.error("[profile] S3 업로드 실패:", err);
+                  // 업로드 실패 시 로컬 미리보기 유지 (localStorage에는 저장하지 않음)
+                }
               }}
             />
             <button
@@ -1777,7 +1786,8 @@ export default function TourstarContent() {
                   <FeedCard key={post.id} post={post} onClick={() => setDetailPost(post)}
                     onToggleLike={toggleLike} onShare={sharePost}
                     onBookmark={toggleBookmark} onEdit={(p) => setEditTargetPost(p)} onDeletePost={deletePost}
-                    currentUserId={currentUserId} onViewAuthorPosts={handleViewAuthorPosts} />
+                    currentUserId={currentUserId} onViewAuthorPosts={handleViewAuthorPosts}
+                    ownerProfileImage={profileImageUrl} />
                 ))}
               </div>
             ) : (

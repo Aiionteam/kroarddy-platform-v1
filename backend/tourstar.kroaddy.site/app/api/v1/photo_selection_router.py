@@ -37,6 +37,7 @@ from ...domain.v1.contracts import (
     GeneratePostResponse,
     FinalizeUploadsRequest,
     FinalizeUploadsResponse,
+    UploadProfileImageResponse,
     GpsLocationCandidate,
     JobStatusResponse,
     PostResponse,
@@ -1684,6 +1685,38 @@ def finalize_uploads(req: FinalizeUploadsRequest) -> FinalizeUploadsResponse:
             logger.exception("finalize_uploads: S3 upload failed for %s", local_path)
             failed += 1
     return FinalizeUploadsResponse(s3_urls=s3_urls, failed_count=failed)
+
+
+@router.post("/upload-profile-image", response_model=UploadProfileImageResponse)
+async def upload_profile_image(file: UploadFile = File(...)) -> UploadProfileImageResponse:
+    """프로필 사진을 S3 posts_profile/ 폴더에 업로드하고 공개 URL을 반환한다."""
+    bucket = settings.s3_bucket_name.strip()
+    if not bucket:
+        raise HTTPException(status_code=500, detail="S3 bucket name is not configured.")
+
+    content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="Empty file.")
+
+    content_type = (file.content_type or "").lower()
+    allowed_types = {"image/jpeg": "jpg", "image/png": "png", "image/gif": "gif", "image/webp": "webp"}
+    if content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail=f"Unsupported image type: {content_type}")
+
+    ext = allowed_types[content_type]
+    s3_key = f"posts_profile/{uuid4().hex}.{ext}"
+
+    import boto3  # type: ignore[import-not-found]
+    import io
+    client = _get_s3_client()
+    client.upload_fileobj(
+        io.BytesIO(content),
+        bucket,
+        s3_key,
+        ExtraArgs={"ContentType": content_type},
+    )
+
+    return UploadProfileImageResponse(profile_image_url=_build_s3_public_url(s3_key))
 
 
 @router.post("/generate-post", response_model=GeneratePostResponse)

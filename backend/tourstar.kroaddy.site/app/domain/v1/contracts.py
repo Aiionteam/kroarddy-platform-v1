@@ -170,6 +170,10 @@ class FinalizeUploadsResponse(BaseModel):
     failed_count: int = 0
 
 
+class UploadProfileImageResponse(BaseModel):
+    profile_image_url: str
+
+
 class DeletePostRequest(BaseModel):
     user_id: int = Field(..., ge=1, description="삭제를 요청하는 로그인 사용자 ID")
 
