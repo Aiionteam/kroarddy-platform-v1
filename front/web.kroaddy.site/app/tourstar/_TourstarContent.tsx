@@ -22,6 +22,7 @@ import {
   deleteTourstarPost,
   updateTourstarPost,
   uploadProfileImage,
+  fetchProfileImage,
   type TourstarPostRecord,
   type TourstarStyleFilter,
   uploadTourstarPhotos,
@@ -1473,14 +1474,25 @@ export default function TourstarContent() {
     });
   }, [currentUserId, bookmarkedIds, authorName, friendUserIds, friendNicknames]);
 
-  /* 내 게시물의 authorProfileImageUrl에서 presigned URL 동기화 (S3 서명 URL은 매번 갱신) */
+  /* currentUserId 확보 시 → DB에서 최신 presigned 프로필 이미지 URL 조회 */
   React.useEffect(() => {
-    if (posts.length === 0) return;
+    if (!currentUserId) return;
+    fetchProfileImage(currentUserId).then((url) => {
+      if (url) {
+        setProfileImageUrl(url);
+        localStorage.setItem("tourstar_profile_image", url);
+      }
+    });
+  }, [currentUserId]);
+
+  /* posts 로드 후 authorProfileImageUrl로 보완 (fetchProfileImage 실패 시 fallback) */
+  React.useEffect(() => {
+    if (posts.length === 0 || profileImageUrl) return;
     const myPost = posts.find((p) => p.isOwner && p.authorProfileImageUrl);
     if (myPost?.authorProfileImageUrl) {
       setProfileImageUrl(myPost.authorProfileImageUrl);
     }
-  }, [posts]);
+  }, [posts, profileImageUrl]);
 
   /* URL postId 파라미터 처리 */
   React.useEffect(() => {
@@ -1720,7 +1732,18 @@ export default function TourstarContent() {
                   src={profileImageUrl}
                   alt=""
                   className="h-full w-full object-cover"
-                  onError={() => setProfileImageUrl(null)}
+                  onError={() => {
+                    // 만료된 presigned URL → DB에서 즉시 재조회
+                    setProfileImageUrl(null);
+                    if (currentUserId) {
+                      fetchProfileImage(currentUserId).then((url) => {
+                        if (url) {
+                          setProfileImageUrl(url);
+                          localStorage.setItem("tourstar_profile_image", url);
+                        }
+                      });
+                    }
+                  }}
                 />
               ) : (
                 <span>{(authorName || "?").slice(0, 1).toUpperCase()}</span>

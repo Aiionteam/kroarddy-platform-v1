@@ -293,6 +293,20 @@ export async function getTourstarSharePreview(postId: string): Promise<TourstarS
   return res.json();
 }
 
+/** user_id에 해당하는 최신 프로필 이미지 URL(presigned)을 가져온다. */
+export async function fetchProfileImage(userId: number): Promise<string | null> {
+  try {
+    const res = await fetch(toApiUrl(`/v1/photo-selection/profile-image?user_id=${userId}`), {
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const data: { profile_image_url: string } = await res.json();
+    return data.profile_image_url || null;
+  } catch {
+    return null;
+  }
+}
+
 /** 프로필 사진을 S3 posts_profile/ 폴더에 업로드하고 공개 URL을 반환한다. */
 export async function uploadProfileImage(file: File, userId?: number | null): Promise<string> {
   const formData = new FormData();
