@@ -24,6 +24,7 @@ elif _parent_env.exists():
 from app.core.database.base import Base
 from app.models.tourstar_post import TourstarPost  # noqa: F401 – 모델 등록
 from app.models.tourstar_comment import TourstarPostComment  # noqa: F401 – 모델 등록
+from app.models.user_profile import UserProfile  # noqa: F401 – 모델 등록
 
 from app.core.config import settings
 

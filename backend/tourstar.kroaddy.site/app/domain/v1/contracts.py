@@ -140,6 +140,7 @@ class PostResponse(BaseModel):
     id: str
     user_id: int | None = None
     author_nickname: str | None = None
+    author_profile_image_url: str | None = None
     title: str
     location: str
     comment: str
