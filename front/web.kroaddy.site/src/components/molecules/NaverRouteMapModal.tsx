@@ -106,8 +106,24 @@ async function fetchCarRoute(
   coords: RouteCoord[]
 ): Promise<{ path: [number, number][]; summary: RouteSummary } | null> {
   if (coords.length < 2) return null;
+
+  // 0,0 좌표(geocoding 실패) 및 한국 범위 외 좌표 사전 제거
+  const KOREA_LAT = [33.0, 38.7] as const;
+  const KOREA_LNG = [124.5, 132.0] as const;
+  const validCoords = coords.filter(
+    (c) =>
+      c.lat !== 0 && c.lng !== 0 &&
+      isFinite(c.lat) && isFinite(c.lng) &&
+      c.lat >= KOREA_LAT[0] && c.lat <= KOREA_LAT[1] &&
+      c.lng >= KOREA_LNG[0] && c.lng <= KOREA_LNG[1]
+  );
+
+  // 동일/근접 좌표 제거 — Naver Directions API는 출발·도착 동일 좌표를 허용하지 않음
+  const deduped = deduplicateCoords(validCoords);
+  if (deduped.length < 2) return null; // 유효 장소 부족: 경로 없음
+
   // Directions 5: start(1) + waypoints(최대 5) + goal(1) = 최대 7개
-  const limited = coords.slice(0, 7);
+  const limited = deduped.slice(0, 7);
   const start = limited[0];
   const goal = limited[limited.length - 1];
   const waypoints = limited.slice(1, -1);
@@ -121,8 +137,10 @@ async function fetchCarRoute(
         waypoints: waypoints.map((w) => ({ lng: w.lng, lat: w.lat })),
       }),
     });
+    // 백엔드가 Naver API 실패 시 200 + {fallback: true} 반환 → null로 처리 (직선 fallback)
     if (!res.ok) return null;
     const data = await res.json();
+    if (data.fallback || !data.path?.length) return null;
     return {
       path: data.path as [number, number][],
       summary: data.summary ?? { distance: 0, duration: 0 },
@@ -148,6 +166,35 @@ function haversine(
       Math.cos((lat2 * Math.PI) / 180) *
       Math.sin(dLng / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/** 50m 이내 동일 좌표를 제거한 배열 반환 (Naver Directions API 제한 대응) */
+const DUPLICATE_THRESHOLD_M = 50;
+
+function deduplicateCoords(coords: RouteCoord[]): RouteCoord[] {
+  if (coords.length <= 1) return coords;
+  const result: RouteCoord[] = [coords[0]];
+  for (let i = 1; i < coords.length; i++) {
+    const prev = result[result.length - 1];
+    if (haversine(prev.lat, prev.lng, coords[i].lat, coords[i].lng) > DUPLICATE_THRESHOLD_M) {
+      result.push(coords[i]);
+    }
+  }
+  return result;
+}
+
+/** 각 좌표의 idx → 이전 좌표 중 동일 위치(50m 이내) 여부 판별 */
+function buildDuplicateSet(coords: RouteCoord[]): Set<number> {
+  const dup = new Set<number>();
+  for (let i = 1; i < coords.length; i++) {
+    for (let j = 0; j < i; j++) {
+      if (haversine(coords[i].lat, coords[i].lng, coords[j].lat, coords[j].lng) <= DUPLICATE_THRESHOLD_M) {
+        dup.add(coords[i].idx);
+        break;
+      }
+    }
+  }
+  return dup;
 }
 
 function totalStraightDistance(coords: RouteCoord[]): number {
@@ -203,6 +250,7 @@ export function NaverRouteMapModal({
   const [resolved, setResolved] = useState(0);
   const [coordsCache, setCoordsCache] = useState<RouteCoord[] | null>(null);
   const [failedNames, setFailedNames] = useState<Set<string>>(new Set());
+  const [duplicateSet, setDuplicateSet] = useState<Set<number>>(new Set());
   const [summary, setSummary] = useState<RouteSummary | null>(null);
 
   const validPlaces = places.filter((p) => p.name?.trim());
@@ -368,6 +416,8 @@ export function NaverRouteMapModal({
           return;
         }
 
+        // 동일 위치 탐지 (50m 이내)
+        setDuplicateSet(buildDuplicateSet(coords));
         setCoordsCache(coords);
         await renderRoute(coords);
       } catch {
@@ -520,6 +570,7 @@ export function NaverRouteMapModal({
             {validPlaces.map((p, idx) => {
               const color = MARKER_COLORS[idx % MARKER_COLORS.length];
               const isFailed = failedNames.has(p.name);
+              const isDuplicate = duplicateSet.has(idx);
 
               // 네이버 지도 링크 생성
               const prevCoord = coordsCache?.find((c) => c.idx === idx - 1);
@@ -535,24 +586,36 @@ export function NaverRouteMapModal({
               const naverIcon = mode === "transit" ? "🚌" : "📍";
 
               return (
-                <div key={idx} className="flex items-center gap-3 py-2.5">
+                <div
+                  key={idx}
+                  className={`flex items-center gap-3 py-2.5 ${
+                    isDuplicate ? "rounded-lg bg-amber-50 px-2 -mx-2" : ""
+                  }`}
+                >
                   <span
                     className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
-                    style={{ background: color }}
+                    style={{ background: isDuplicate ? "#f59e0b" : color }}
                   >
                     {idx + 1}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p
-                      className={`text-xs font-semibold leading-tight ${
-                        isFailed ? "text-gray-300 line-through" : "text-gray-800"
-                      }`}
-                    >
-                      {p.title}
-                    </p>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p
+                        className={`text-xs font-semibold leading-tight ${
+                          isFailed ? "text-gray-300 line-through" : "text-gray-800"
+                        }`}
+                      >
+                        {p.title}
+                      </p>
+                      {isDuplicate && (
+                        <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+                          📌 동일 위치
+                        </span>
+                      )}
+                    </div>
                     <p
                       className={`text-[11px] ${
-                        isFailed ? "text-gray-300" : "text-gray-400"
+                        isFailed ? "text-gray-300" : isDuplicate ? "text-amber-500" : "text-gray-400"
                       }`}
                     >
                       📍 {p.name}
