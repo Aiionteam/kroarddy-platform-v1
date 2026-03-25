@@ -212,7 +212,21 @@ export default function FriendsPage() {
             </p>
           )}
           {loading ? (
-            <p className="text-gray-500">불러오는 중...</p>
+            <div className="space-y-3 animate-pulse">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3">
+                  <div className="space-y-1.5">
+                    <div className="h-4 w-28 rounded bg-gray-200" />
+                    <div className="h-3 w-16 rounded bg-gray-100" />
+                  </div>
+                  <div className="flex gap-1.5">
+                    <div className="h-7 w-16 rounded-lg bg-gray-200" />
+                    <div className="h-7 w-7 rounded-lg bg-gray-200" />
+                    <div className="h-7 w-7 rounded-lg bg-gray-200" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <>
               <section className="mb-8">
