@@ -140,10 +140,19 @@ function RouteCard({
 
 const DEFAULT_DAY_TIMES = ["10:00", "12:30", "15:00", "17:30", "19:00", "20:30"];
 
-function userRouteToScheduleItems(route: UserRoute): ScheduleItem[] {
+function todayLocalISO(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/** tripDate: YYYY-MM-DD (플랜 시작·종료일 및 각 일정 행의 날짜) */
+function userRouteToScheduleItems(route: UserRoute, tripDate: string): ScheduleItem[] {
   return route.route_items.map((item, idx) => ({
     day: 1,
-    date: "Day 1",
+    date: tripDate,
     time: DEFAULT_DAY_TIMES[idx % DEFAULT_DAY_TIMES.length] ?? "10:00",
     place: item.place,
     title: item.place,
@@ -169,28 +178,35 @@ function RouteDetailModal({
   const [adding, setAdding] = useState(false);
   const [addDone, setAddDone] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [tripDate, setTripDate] = useState(todayLocalISO);
 
   useEffect(() => {
     setAddDone(false);
     setAddError(null);
     setAdding(false);
+    setDatePickerOpen(false);
+    setTripDate(todayLocalISO());
   }, [route.id]);
 
   const canAdd = !!userId && route.route_items.length > 0;
 
-  const handleAddToMySchedule = useCallback(async () => {
-    if (!userId || route.route_items.length === 0) return;
+  const handleAddToMySchedule = useCallback(async (dateIso: string) => {
+    if (!userId || route.route_items.length === 0 || !/^\d{4}-\d{2}-\d{2}$/.test(dateIso)) return;
     setAdding(true);
     setAddError(null);
     try {
-      const schedule = userRouteToScheduleItems(route);
+      const schedule = userRouteToScheduleItems(route, dateIso);
       await savePlan({
         location: route.location.trim() || "custom",
         routeName: route.title.trim() || "공유 루트",
+        startDate: dateIso,
+        endDate: dateIso,
         schedule,
         userId,
       });
       setAddDone(true);
+      setDatePickerOpen(false);
     } catch (e) {
       setAddError(e instanceof Error ? e.message : "일정 저장에 실패했습니다.");
     } finally {
@@ -201,9 +217,16 @@ function RouteDetailModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (datePickerOpen) setDatePickerOpen(false);
+        else onClose();
+      }}
     >
-      <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div
+        className="w-full max-w-lg rounded-2xl bg-white shadow-2xl overflow-hidden max-h-[90vh] flex flex-col relative"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* 사진 헤더 */}
         <div className="relative h-52 shrink-0">
           {route.image_url ? (
@@ -278,18 +301,14 @@ function RouteDetailModal({
           ) : (
             <button
               type="button"
-              onClick={handleAddToMySchedule}
+              onClick={() => {
+                setTripDate(todayLocalISO());
+                setDatePickerOpen(true);
+              }}
               disabled={!canAdd || adding}
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-purple-600 py-3 text-sm font-semibold text-white shadow-sm hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
             >
-              {adding ? (
-                <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  저장 중…
-                </>
-              ) : (
-                <>📅 내 일정에 추가</>
-              )}
+              📅 내 일정에 추가
             </button>
           )}
           {!userId && (
@@ -299,6 +318,55 @@ function RouteDetailModal({
             <p className="text-center text-[11px] text-gray-400">저장할 장소가 없습니다.</p>
           )}
         </div>
+
+        {/* 방문 날짜 선택 (저장 직전) */}
+        {datePickerOpen && !addDone && (
+          <div
+            className="absolute inset-0 z-10 flex items-end sm:items-center justify-center bg-black/40 px-4 py-6 sm:p-4 rounded-2xl"
+            onClick={() => !adding && setDatePickerOpen(false)}
+          >
+            <div
+              className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl border border-gray-100"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h4 className="text-sm font-bold text-gray-800">언제 다녀오실 예정인가요?</h4>
+              <p className="mt-1 text-xs text-gray-500">선택한 날짜가 일정에 반영됩니다.</p>
+              <label className="mt-4 block text-xs font-semibold text-gray-600">방문 날짜</label>
+              <input
+                type="date"
+                value={tripDate}
+                min={todayLocalISO()}
+                onChange={(e) => setTripDate(e.target.value)}
+                className="mt-1.5 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-800 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
+              />
+              <div className="mt-4 flex gap-2">
+                <button
+                  type="button"
+                  disabled={adding}
+                  onClick={() => setDatePickerOpen(false)}
+                  className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  disabled={adding || !tripDate}
+                  onClick={() => handleAddToMySchedule(tripDate)}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-purple-600 py-2.5 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+                >
+                  {adding ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      저장 중…
+                    </>
+                  ) : (
+                    "이 날짜로 추가"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
