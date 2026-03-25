@@ -50,6 +50,7 @@ from ...domain.v1.contracts import (
 from ...domain.v1.graph import build_metadata_graph
 from ...models.tourstar_comment import TourstarPostComment
 from ...models.tourstar_post import TourstarPost
+from ...models.user_profile import UserProfile
 from ...domain.v1.state import store, worker
 
 
@@ -787,7 +788,11 @@ def _to_comment_response(row: TourstarPostComment) -> CommentResponse:
     )
 
 
-def _to_post_response(row: TourstarPost, comments: list[TourstarPostComment]) -> PostResponse:
+def _to_post_response(
+    row: TourstarPost,
+    comments: list[TourstarPostComment],
+    author_profile_image_url: str | None = None,
+) -> PostResponse:
     visibility: Literal["public", "private"] = (
         "private" if (row.visibility or "public") == "private" else "public"
     )
@@ -795,6 +800,7 @@ def _to_post_response(row: TourstarPost, comments: list[TourstarPostComment]) ->
         id=str(row.id),
         user_id=row.user_id,
         author_nickname=row.author_nickname or None,
+        author_profile_image_url=author_profile_image_url,
         title=row.title or "",
         location=row.location or "",
         comment=row.comment or "",
@@ -1688,8 +1694,15 @@ def finalize_uploads(req: FinalizeUploadsRequest) -> FinalizeUploadsResponse:
 
 
 @router.post("/upload-profile-image", response_model=UploadProfileImageResponse)
-async def upload_profile_image(file: UploadFile = File(...)) -> UploadProfileImageResponse:
-    """프로필 사진을 S3 posts_profile/ 폴더에 업로드하고 공개 URL을 반환한다."""
+async def upload_profile_image(
+    file: UploadFile = File(...),
+    user_id: int | None = None,
+    db: AsyncSession = Depends(get_db),
+) -> UploadProfileImageResponse:
+    """프로필 사진을 S3 posts_profile/ 폴더에 업로드하고 공개 URL을 반환한다.
+    user_id가 제공되면 DB user_profiles 테이블에 URL을 저장/갱신한다."""
+    import io
+
     bucket = settings.s3_bucket_name.strip()
     if not bucket:
         raise HTTPException(status_code=500, detail="S3 bucket name is not configured.")
@@ -1706,8 +1719,6 @@ async def upload_profile_image(file: UploadFile = File(...)) -> UploadProfileIma
     ext = allowed_types[content_type]
     s3_key = f"posts_profile/{uuid4().hex}.{ext}"
 
-    import boto3  # type: ignore[import-not-found]
-    import io
     client = _get_s3_client()
     client.upload_fileobj(
         io.BytesIO(content),
@@ -1716,7 +1727,20 @@ async def upload_profile_image(file: UploadFile = File(...)) -> UploadProfileIma
         ExtraArgs={"ContentType": content_type},
     )
 
-    return UploadProfileImageResponse(profile_image_url=_build_s3_public_url(s3_key))
+    profile_url = _build_s3_public_url(s3_key)
+
+    # user_id가 있으면 DB에 프로필 이미지 URL 저장/갱신
+    if user_id is not None:
+        existing = (
+            await db.execute(select(UserProfile).where(UserProfile.user_id == user_id))
+        ).scalar_one_or_none()
+        if existing:
+            existing.profile_image_url = profile_url
+        else:
+            db.add(UserProfile(user_id=user_id, profile_image_url=profile_url))
+        await db.flush()
+
+    return UploadProfileImageResponse(profile_image_url=profile_url)
 
 
 @router.post("/generate-post", response_model=GeneratePostResponse)
@@ -1768,7 +1792,29 @@ async def list_posts(db: AsyncSession = Depends(get_db)) -> list[PostResponse]:
     for item in comments:
         comment_map.setdefault(int(item.post_id), []).append(item)
 
-    return [_to_post_response(post, comment_map.get(int(post.id), [])) for post in posts]
+    # 작성자별 프로필 이미지 조회
+    author_user_ids = list({int(p.user_id) for p in posts if p.user_id is not None})
+    profile_map: dict[int, str] = {}
+    if author_user_ids:
+        profiles = (
+            (
+                await db.execute(
+                    select(UserProfile).where(UserProfile.user_id.in_(author_user_ids))
+                )
+            )
+            .scalars()
+            .all()
+        )
+        profile_map = {p.user_id: p.profile_image_url for p in profiles if p.profile_image_url}
+
+    return [
+        _to_post_response(
+            post,
+            comment_map.get(int(post.id), []),
+            profile_map.get(int(post.user_id)) if post.user_id is not None else None,
+        )
+        for post in posts
+    ]
 
 
 @router.post("/posts", response_model=PostResponse)
