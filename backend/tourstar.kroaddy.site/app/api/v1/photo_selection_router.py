@@ -1760,34 +1760,42 @@ async def update_post(post_id: int, req: UpdatePostRequest, db: AsyncSession = D
     if req.tags is not None:
         post.tags = req.tags
     if req.keep_photo_urls is not None or req.image_paths is not None:
-        next_photo_urls: list[str] = []
-        for raw_url in list(req.keep_photo_urls or []):
-            raw = str(raw_url or "").strip()
-            if not raw:
-                continue
-            key = _extract_s3_key_from_url(raw)
-            if key:
-                next_photo_urls.append(_build_s3_public_url(key))
-            else:
-                next_photo_urls.append(raw)
+        try:
+            next_photo_urls: list[str] = []
+            for raw_url in list(req.keep_photo_urls or []):
+                raw = str(raw_url or "").strip()
+                if not raw:
+                    continue
+                key = _extract_s3_key_from_url(raw)
+                if key:
+                    try:
+                        next_photo_urls.append(_build_s3_public_url(key))
+                    except Exception:
+                        logger.warning("update_post: could not rebuild S3 URL for key=%s, using raw", key)
+                        next_photo_urls.append(raw)
+                else:
+                    next_photo_urls.append(raw)
 
-        for raw_path in list(req.image_paths or []):
-            # 이미 S3/HTTP URL이면 바로 사용 (재업로드 불필요)
-            raw_stripped = str(raw_path or "").strip()
-            if raw_stripped.startswith("http://") or raw_stripped.startswith("https://"):
-                next_photo_urls.append(raw_stripped)
-                continue
-            local_path = _resolve_local_image_path(raw_path)
-            if local_path is None:
-                logger.warning("update_post: image_paths entry could not be resolved, skipping: %s", raw_path)
-                continue
-            try:
-                next_photo_urls.append(_upload_local_image_to_s3(local_path))
-            except Exception:
-                # S3 업로드 실패 시 해당 사진만 스킵 — 전체 수정을 막지 않는다
-                logger.exception("S3 upload failed during post update (skipped): %s", local_path)
+            for raw_path in list(req.image_paths or []):
+                # 이미 S3/HTTP URL이면 바로 사용 (재업로드 불필요)
+                raw_stripped = str(raw_path or "").strip()
+                if raw_stripped.startswith("http://") or raw_stripped.startswith("https://"):
+                    next_photo_urls.append(raw_stripped)
+                    continue
+                local_path = _resolve_local_image_path(raw_path)
+                if local_path is None:
+                    logger.warning("update_post: image_paths entry could not be resolved, skipping: %s", raw_path)
+                    continue
+                try:
+                    next_photo_urls.append(_upload_local_image_to_s3(local_path))
+                except Exception:
+                    # S3 업로드 실패 시 해당 사진만 스킵 — 전체 수정을 막지 않는다
+                    logger.exception("S3 upload failed during post update (skipped): %s", local_path)
 
-        post.photo_urls = next_photo_urls
+            post.photo_urls = next_photo_urls
+        except Exception:
+            # 사진 처리 중 예상치 못한 예외 → 기존 photo_urls 유지하고 텍스트 수정은 계속 진행
+            logger.exception("update_post: photo processing failed, keeping existing photo_urls for post_id=%s", post_id)
     await db.flush()
     comments = (
         (await db.execute(
