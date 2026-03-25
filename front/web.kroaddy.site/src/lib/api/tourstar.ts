@@ -292,6 +292,23 @@ export async function getTourstarSharePreview(postId: string): Promise<TourstarS
   return res.json();
 }
 
+/** 로컬 서버에 저장된 임시 파일들을 S3에 올리고 퍼블릭 URL 목록을 반환한다. */
+export async function finalizeTourstarUploads(
+  imagePaths: string[],
+): Promise<{ s3_urls: string[]; failed_count: number }> {
+  if (imagePaths.length === 0) return { s3_urls: [], failed_count: 0 };
+  const res = await fetch(toApiUrl("/v1/photo-selection/finalize-uploads"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ image_paths: imagePaths }),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`사진 S3 업로드 사전 처리 실패: ${res.status}`);
+  }
+  return res.json();
+}
+
 export async function updateTourstarPost(
   postId: string,
   payload: {

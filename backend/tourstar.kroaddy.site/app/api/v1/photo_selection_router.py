@@ -35,6 +35,8 @@ from ...domain.v1.contracts import (
     EvaluationRequest,
     GeneratePostRequest,
     GeneratePostResponse,
+    FinalizeUploadsRequest,
+    FinalizeUploadsResponse,
     GpsLocationCandidate,
     JobStatusResponse,
     PostResponse,
@@ -1662,6 +1664,26 @@ async def upload_photos(request: Request, files: list[UploadFile] = File(...)) -
         batch_dir=str(batch_dir),
         pipeline_job=UploadPipelineJob(job_id=job_id, status="queued"),
     )
+
+
+@router.post("/finalize-uploads", response_model=FinalizeUploadsResponse)
+def finalize_uploads(req: FinalizeUploadsRequest) -> FinalizeUploadsResponse:
+    """업로드된 로컬 임시 파일을 S3로 올리고 URL 목록을 반환한다.
+    게시글 수정 시 새 사진을 PATCH 본문이 아니라 미리 S3에 올린 뒤 keep_photo_urls로 전달하기 위해 사용."""
+    s3_urls: list[str] = []
+    failed = 0
+    for raw_path in req.image_paths:
+        local_path = _resolve_local_image_path(raw_path)
+        if local_path is None:
+            logger.warning("finalize_uploads: cannot resolve local path, skipping: %s", raw_path)
+            failed += 1
+            continue
+        try:
+            s3_urls.append(_upload_local_image_to_s3(local_path))
+        except Exception:
+            logger.exception("finalize_uploads: S3 upload failed for %s", local_path)
+            failed += 1
+    return FinalizeUploadsResponse(s3_urls=s3_urls, failed_count=failed)
 
 
 @router.post("/generate-post", response_model=GeneratePostResponse)
