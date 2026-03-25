@@ -910,24 +910,19 @@ function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, o
               <p className="mb-2 text-xs font-semibold text-gray-700">댓글 {post.comments.length}개</p>
               <div className="max-h-40 space-y-2 overflow-y-auto pr-1">
                 {post.comments.length > 0 ? post.comments.map((item) => {
-                  // "me"는 레거시 데이터 (내 게시물의 모든 댓글 or "me" 저장된 것)
-                  const isMyComment = Boolean(
-                    item.author === "me" ||
-                    (ownerNickname && item.author === ownerNickname)
-                  );
-                  // 표시할 이름: "me"이면 ownerNickname으로 대체
-                  const displayAuthor = item.author === "me" ? (ownerNickname || "me") : item.author;
+                  // 내 댓글 여부: 현재 로그인 사용자의 닉네임과 정확히 일치할 때만
+                  const isMyComment = Boolean(ownerNickname && item.author === ownerNickname);
                   return (
                     <div key={item.id} className="flex items-start gap-2 rounded-lg bg-gray-50 px-2.5 py-2">
                       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-pink-400 text-[10px] font-bold text-white overflow-hidden">
                         {isMyComment && ownerProfileImage
                           ? <img src={ownerProfileImage} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                          : <span>{(displayAuthor || "?").slice(0, 1).toUpperCase()}</span>
+                          : <span>{(item.author || "?").slice(0, 1).toUpperCase()}</span>
                         }
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="mb-0.5 flex items-center gap-1.5 text-[11px] text-gray-500">
-                          <span className="font-semibold text-gray-700">{displayAuthor}</span><span>·</span><span>{item.createdAt}</span>
+                          <span className="font-semibold text-gray-700">{item.author}</span><span>·</span><span>{item.createdAt}</span>
                         </div>
                         <p className="text-xs text-gray-700">{item.content}</p>
                       </div>
