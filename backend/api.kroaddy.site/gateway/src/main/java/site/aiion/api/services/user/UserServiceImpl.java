@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
+import site.aiion.api.services.oauth.util.TokenHashUtil;
 import site.aiion.api.services.user.common.domain.Messenger;
 
 @Service
@@ -313,6 +314,9 @@ public class UserServiceImpl implements UserService {
                     .build();
         }
         
+        // DB에는 SHA-256 해시값만 저장 (null이면 그대로 null 저장 = 로그아웃)
+        String tokenToStore = TokenHashUtil.hash(refreshToken);
+
         Optional<User> optionalEntity = userRepository.findById(userId);
         if (optionalEntity.isPresent()) {
             User existing = optionalEntity.get();
@@ -323,7 +327,7 @@ public class UserServiceImpl implements UserService {
                     .nickname(existing.getNickname())
                     .provider(existing.getProvider())
                     .providerId(existing.getProviderId())
-                    .refreshToken(refreshToken)
+                    .refreshToken(tokenToStore)
                     .honor(existing.getHonor() != null ? existing.getHonor() : 0)
                     .build();
             

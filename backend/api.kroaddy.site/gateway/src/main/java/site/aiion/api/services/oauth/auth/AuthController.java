@@ -14,6 +14,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import site.aiion.api.services.oauth.util.CookieUtil;
+import site.aiion.api.services.oauth.util.TokenHashUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -117,17 +118,18 @@ public class AuthController {
             }
             
             UserModel user = (UserModel) userMessenger.getData();
-            String storedRefreshToken = user.getRefreshToken();
-            
-            if (storedRefreshToken == null || !storedRefreshToken.equals(refreshToken)) {
-                System.err.println("User 테이블에 저장된 Refresh Token과 일치하지 않습니다.");
+            String storedHash = user.getRefreshToken();
+
+            // DB에는 SHA-256 해시가 저장되어 있으므로 수신 토큰도 해시 후 비교
+            if (storedHash == null || !storedHash.equals(TokenHashUtil.hash(refreshToken))) {
+                System.err.println("User 테이블에 저장된 Refresh Token 해시와 일치하지 않습니다.");
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("success", false);
                 errorResponse.put("message", "유효하지 않은 Refresh Token입니다.");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
             }
             
-            System.out.println("User 테이블의 Refresh Token 검증 완료");
+            System.out.println("User 테이블의 Refresh Token 해시 검증 완료");
             
             // 5. 새로운 Access Token 생성
             Map<String, Object> userInfo = new HashMap<>();
