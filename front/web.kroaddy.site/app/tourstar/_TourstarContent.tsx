@@ -1235,6 +1235,8 @@ export default function TourstarContent() {
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
   const [friendUserIds, setFriendUserIds] = useState<Set<number>>(new Set());
   const [friendList, setFriendList] = useState<UserModel[]>([]);
+  const [viewAuthorId, setViewAuthorId] = useState<number | null>(null);
+  const [viewAuthorName, setViewAuthorName] = useState<string>("");
 
   const [posts, setPosts] = useState<TourPost[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("feed");
@@ -1544,9 +1546,6 @@ export default function TourstarContent() {
     try { await navigator.clipboard.writeText(shareUrl); window.alert("공유 링크를 복사했어요. 채팅창에 붙여넣어 주세요."); }
     catch (_) { window.prompt("아래 링크를 복사해 채팅에 공유하세요.", shareUrl); }
   };
-
-  const [viewAuthorId, setViewAuthorId] = React.useState<number | null>(null);
-  const [viewAuthorName, setViewAuthorName] = React.useState<string>("");
 
   const handleViewAuthorPosts = (userId: number, authorName: string) => {
     setViewAuthorId(userId);
