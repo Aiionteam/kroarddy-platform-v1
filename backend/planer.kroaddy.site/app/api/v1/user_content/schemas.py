@@ -48,6 +48,7 @@ class ValidateImageResponse(BaseModel):
 
 class SaveRouteRequest(BaseModel):
     user_id: Optional[int] = None
+    nickname: Optional[str] = None    # 업로드 시점의 닉네임 (표시용)
     title: str
     location: str
     description: str
@@ -59,6 +60,7 @@ class SaveRouteRequest(BaseModel):
 class RouteCardResponse(BaseModel):
     id: int
     user_id: Optional[int]
+    nickname: Optional[str]
     title: str
     location: str
     description: str

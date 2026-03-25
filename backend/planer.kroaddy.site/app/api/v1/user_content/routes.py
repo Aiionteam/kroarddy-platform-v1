@@ -3,7 +3,7 @@ import json
 import logging
 import re
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
@@ -92,6 +92,7 @@ def _row_to_card(row: UserContentRoute, *, liked_by_me: bool = False) -> dict:
     return {
         "id": row.id,
         "user_id": row.user_id,
+        "nickname": row.nickname,
         "title": row.title,
         "location": row.location,
         "description": row.description,
@@ -197,6 +198,7 @@ async def polish_route(req: PolishRequest):
 async def save_route(req: SaveRouteRequest, db: AsyncSession = Depends(get_db)):
     row = UserContentRoute(
         user_id=req.user_id,
+        nickname=req.nickname,
         title=req.title,
         location=req.location,
         description=req.description,
@@ -215,14 +217,18 @@ async def list_routes(
     limit: int = 20,
     offset: int = 0,
     user_id: int | None = None,
+    owner_id: int | None = Query(default=None, description="이 user_id가 올린 루트만 조회"),
+    nickname: str | None = Query(default=None, description="닉네임 검색 (부분 일치)"),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(UserContentRoute)
-        .order_by(UserContentRoute.likes.desc(), UserContentRoute.created_at.desc())
-        .offset(offset)
-        .limit(limit)
+    stmt = select(UserContentRoute).order_by(
+        UserContentRoute.likes.desc(), UserContentRoute.created_at.desc()
     )
+    if owner_id is not None:
+        stmt = stmt.where(UserContentRoute.user_id == owner_id)
+    if nickname:
+        stmt = stmt.where(UserContentRoute.nickname.ilike(f"%{nickname}%"))
+    result = await db.execute(stmt.offset(offset).limit(limit))
     rows = result.scalars().all()
 
     # 현재 사용자가 좋아요한 route_id Set 조회

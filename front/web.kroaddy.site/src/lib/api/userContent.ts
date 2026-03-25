@@ -26,6 +26,7 @@ export interface PolishResponse {
 export interface UserRoute {
   id: number;
   user_id: number | null;
+  nickname: string | null;
   title: string;
   location: string;
   description: string;
@@ -127,6 +128,7 @@ export async function polishRoute(params: {
 
 export async function saveUserRoute(params: {
   user_id?: number | null;
+  nickname?: string | null;
   title: string;
   location: string;
   description: string;
@@ -150,13 +152,17 @@ export async function saveUserRoute(params: {
 export async function fetchUserRoutes(
   limit = 20,
   offset = 0,
-  userId?: number | null
+  userId?: number | null,
+  nickname?: string,
+  ownerId?: number | null
 ): Promise<UserRoute[]> {
   const params = new URLSearchParams({
     limit: String(limit),
     offset: String(offset),
   });
   if (userId != null) params.set("user_id", String(userId));
+  if (nickname) params.set("nickname", nickname);
+  if (ownerId != null) params.set("owner_id", String(ownerId));
   const res = await fetch(
     `${API_BASE}/api/v1/user-content/routes?${params}`,
     { cache: "no-store" }

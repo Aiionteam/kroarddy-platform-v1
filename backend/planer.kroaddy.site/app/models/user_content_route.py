@@ -12,6 +12,7 @@ class UserContentRoute(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     user_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    nickname: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     location: Mapped[str] = mapped_column(String(100), nullable=False)
