@@ -1819,6 +1819,10 @@ async def update_post(post_id: int, req: UpdatePostRequest, db: AsyncSession = D
             # 사진 처리 중 예상치 못한 예외 → 기존 photo_urls 유지하고 텍스트 수정은 계속 진행
             logger.exception("update_post: photo processing failed, keeping existing photo_urls for post_id=%s", post_id)
     await db.flush()
+    # flush 후 객체가 expired 상태가 되면 _to_post_response 내 속성 접근 시
+    # 비동기 컨텍스트 밖에서 lazy-load를 시도해 MissingGreenlet 오류가 발생.
+    # await refresh 로 명시적으로 재로딩해 동기 lazy-load를 방지한다.
+    await db.refresh(post)
     comments = (
         (await db.execute(
             select(TourstarPostComment).where(TourstarPostComment.post_id == post_id)
