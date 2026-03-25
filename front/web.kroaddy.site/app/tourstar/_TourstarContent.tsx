@@ -858,7 +858,7 @@ function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, o
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-sm font-bold text-white overflow-hidden">
                 {(post.isOwner ? (ownerProfileImage || post.authorProfileImageUrl) : post.authorProfileImageUrl)
-                  ? <img src={(post.isOwner ? (ownerProfileImage || post.authorProfileImageUrl) : post.authorProfileImageUrl)!} alt="프로필" className="h-full w-full object-cover" />
+                  ? <img src={(post.isOwner ? (ownerProfileImage || post.authorProfileImageUrl) : post.authorProfileImageUrl)!} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                   : post.author.slice(0, 1).toUpperCase()
                 }
               </div>
@@ -910,18 +910,24 @@ function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, o
               <p className="mb-2 text-xs font-semibold text-gray-700">댓글 {post.comments.length}개</p>
               <div className="max-h-40 space-y-2 overflow-y-auto pr-1">
                 {post.comments.length > 0 ? post.comments.map((item) => {
-                  const isMyComment = ownerNickname && item.author === ownerNickname;
+                  // "me"는 레거시 데이터 (내 게시물의 모든 댓글 or "me" 저장된 것)
+                  const isMyComment = Boolean(
+                    item.author === "me" ||
+                    (ownerNickname && item.author === ownerNickname)
+                  );
+                  // 표시할 이름: "me"이면 ownerNickname으로 대체
+                  const displayAuthor = item.author === "me" ? (ownerNickname || "me") : item.author;
                   return (
                     <div key={item.id} className="flex items-start gap-2 rounded-lg bg-gray-50 px-2.5 py-2">
                       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-pink-400 text-[10px] font-bold text-white overflow-hidden">
                         {isMyComment && ownerProfileImage
-                          ? <img src={ownerProfileImage} alt="프로필" className="h-full w-full object-cover" />
-                          : <span>{(item.author || "?").slice(0, 1).toUpperCase()}</span>
+                          ? <img src={ownerProfileImage} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                          : <span>{(displayAuthor || "?").slice(0, 1).toUpperCase()}</span>
                         }
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="mb-0.5 flex items-center gap-1.5 text-[11px] text-gray-500">
-                          <span className="font-semibold text-gray-700">{item.author}</span><span>·</span><span>{item.createdAt}</span>
+                          <span className="font-semibold text-gray-700">{displayAuthor}</span><span>·</span><span>{item.createdAt}</span>
                         </div>
                         <p className="text-xs text-gray-700">{item.content}</p>
                       </div>
@@ -1100,7 +1106,7 @@ function FeedCard({ post, onClick, onToggleLike, onShare, onBookmark, onEdit, on
       <div className="flex items-center gap-2.5 px-3 py-2.5">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-xs font-bold text-white overflow-hidden">
           {avatarUrl
-            ? <img src={avatarUrl} alt="프로필" className="h-full w-full object-cover" />
+            ? <img src={avatarUrl} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
             : <span>{post.author.slice(0, 1).toUpperCase()}</span>
           }
         </div>
@@ -1472,6 +1478,15 @@ export default function TourstarContent() {
     });
   }, [currentUserId, bookmarkedIds, authorName, friendUserIds, friendNicknames]);
 
+  /* 내 게시물의 authorProfileImageUrl에서 presigned URL 동기화 (S3 서명 URL은 매번 갱신) */
+  React.useEffect(() => {
+    if (posts.length === 0) return;
+    const myPost = posts.find((p) => p.isOwner && p.authorProfileImageUrl);
+    if (myPost?.authorProfileImageUrl) {
+      setProfileImageUrl(myPost.authorProfileImageUrl);
+    }
+  }, [posts]);
+
   /* URL postId 파라미터 처리 */
   React.useEffect(() => {
     const requestedPostId = searchParams.get("postId");
@@ -1621,7 +1636,17 @@ export default function TourstarContent() {
   };
 
   const addComment = async (postId: string, content: string) => {
-    const saved = await createTourstarComment(postId, { author: authorName || "me", content });
+    // authorName 우선, 플레이스홀더·빈 값이면 JWT·세션에서 재추출
+    const placeholder = "내 여행기록";
+    let resolvedAuthor = authorName && authorName !== placeholder ? authorName : "";
+    if (!resolvedAuthor && accessToken) {
+      resolvedAuthor = getNicknameFromToken(accessToken) || "";
+    }
+    if (!resolvedAuthor) {
+      resolvedAuthor = sessionStorage.getItem("_tourstar_author") || localStorage.getItem("tourstar_author_name") || "익명";
+      if (resolvedAuthor === placeholder) resolvedAuthor = "익명";
+    }
+    const saved = await createTourstarComment(postId, { author: resolvedAuthor, content });
     const newComment: TourPostComment = { id: saved.id, author: saved.author, content: saved.content, createdAt: "방금 전" };
     setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p));
     setDetailPost((prev) => prev && prev.id === postId ? { ...prev, comments: [...prev.comments, newComment] } : prev);
@@ -1696,9 +1721,14 @@ export default function TourstarContent() {
               className="group relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-2xl font-bold text-white shadow-lg shadow-purple-200 overflow-hidden focus:outline-none"
             >
               {profileImageUrl ? (
-                <img src={profileImageUrl} alt="프로필" className="h-full w-full object-cover" />
+                <img
+                  src={profileImageUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  onError={() => setProfileImageUrl(null)}
+                />
               ) : (
-                <span>{authorName.slice(0, 1).toUpperCase()}</span>
+                <span>{(authorName || "?").slice(0, 1).toUpperCase()}</span>
               )}
               <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
