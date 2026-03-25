@@ -1727,7 +1727,9 @@ async def upload_profile_image(
         ExtraArgs={"ContentType": content_type},
     )
 
+    # DB에는 영구 URL 저장, 응답은 게시물 사진과 동일하게 presigned URL 반환
     profile_url = _build_s3_public_url(s3_key)
+    response_url = _build_s3_view_url(profile_url)
 
     # user_id가 있으면 DB에 프로필 이미지 URL 저장/갱신
     if user_id is not None:
@@ -1740,7 +1742,7 @@ async def upload_profile_image(
             db.add(UserProfile(user_id=user_id, profile_image_url=profile_url))
         await db.flush()
 
-    return UploadProfileImageResponse(profile_image_url=profile_url)
+    return UploadProfileImageResponse(profile_image_url=response_url)
 
 
 @router.post("/generate-post", response_model=GeneratePostResponse)
@@ -1805,7 +1807,12 @@ async def list_posts(db: AsyncSession = Depends(get_db)) -> list[PostResponse]:
             .scalars()
             .all()
         )
-        profile_map = {p.user_id: p.profile_image_url for p in profiles if p.profile_image_url}
+        # 게시물 사진과 동일하게 presigned URL 적용
+        profile_map = {
+            p.user_id: _build_s3_view_url(p.profile_image_url)
+            for p in profiles
+            if p.profile_image_url
+        }
 
     return [
         _to_post_response(
