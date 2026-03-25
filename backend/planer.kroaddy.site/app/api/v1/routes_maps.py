@@ -1,5 +1,6 @@
 """네이버 Maps API 프록시 라우터 – Geocoding / Static Map / Directions 15."""
 import logging
+from math import atan2, cos, radians, sin, sqrt
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
@@ -66,6 +67,15 @@ class DirectionsRequest(BaseModel):
     waypoints: list[CoordItem] = []
 
 
+def _haversine_m(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    """두 좌표 사이 직선거리(m) – Haversine 공식."""
+    R = 6_371_000
+    dlat = radians(lat2 - lat1)
+    dlng = radians(lng2 - lng1)
+    a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlng / 2) ** 2
+    return R * 2 * atan2(sqrt(a), sqrt(1 - a))
+
+
 @router.post("/directions", summary="Directions 5 – 실제 도로 경로 조회")
 async def get_route_directions(body: DirectionsRequest):
     """start → waypoints → goal 순서로 실제 도로 경로 좌표 배열 반환.
@@ -73,6 +83,14 @@ async def get_route_directions(body: DirectionsRequest):
     waypoints는 최대 5개 (Directions 5 제한). 하루 일정 단위로 호출할 것.
     Returns: {"path": [[lng, lat], ...], "summary": {"distance": m, "duration": ms}}
     """
+    # 출발지 == 도착지 검증: Naver Directions API는 동일 좌표를 거부하므로
+    # 프론트에서 걸러지지 않은 경우 502 대신 명확한 400 반환
+    if _haversine_m(body.start.lat, body.start.lng, body.goal.lat, body.goal.lng) < 50:
+        raise HTTPException(
+            status_code=400,
+            detail="출발지와 도착지가 50m 이내로 동일한 위치입니다. 경로를 계산할 수 없습니다.",
+        )
+
     wp = [(w.lng, w.lat) for w in body.waypoints] if body.waypoints else None
 
     result = await get_directions(
