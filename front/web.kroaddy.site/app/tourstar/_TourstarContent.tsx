@@ -1267,6 +1267,11 @@ export default function TourstarContent() {
   const [friendList, setFriendList] = useState<UserModel[]>([]);
   const [viewAuthorId, setViewAuthorId] = useState<number | null>(null);
   const [viewAuthorName, setViewAuthorName] = useState<string>("");
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(() => {
+    if (typeof window !== "undefined") return localStorage.getItem("tourstar_profile_image");
+    return null;
+  });
+  const profileInputRef = React.useRef<HTMLInputElement>(null);
 
   const [posts, setPosts] = useState<TourPost[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("feed");
@@ -1499,7 +1504,8 @@ export default function TourstarContent() {
     bookmarked: posts.filter((p) => p.bookmarked).length,
     friends: posts.filter((p) => p.isFriend).length,
     totalPhotos: posts.reduce((acc, p) => acc + p.photos.length, 0),
-    totalLikes: posts.reduce((acc, p) => acc + p.likes, 0),
+    // 내 게시물이 받은 좋아요 합계
+    myLikes: posts.filter((p) => p.isOwner).reduce((acc, p) => acc + p.likes, 0),
   }), [posts]);
 
   /* ── 핸들러 ── */
@@ -1628,9 +1634,42 @@ export default function TourstarContent() {
         <div className="mx-auto max-w-5xl px-6 py-6 space-y-6">
           {/* 프로필 카드 */}
           <div className="flex items-center gap-6 rounded-2xl bg-white border border-gray-100 p-6 shadow-sm">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-2xl font-bold text-white shadow-lg shadow-purple-200">
-              {authorName.slice(0, 1).toUpperCase()}
-            </div>
+            {/* 아바타 — 클릭 시 이미지 업로드 */}
+            <input
+              ref={profileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                  const url = ev.target?.result as string;
+                  setProfileImageUrl(url);
+                  localStorage.setItem("tourstar_profile_image", url);
+                };
+                reader.readAsDataURL(file);
+                e.target.value = "";
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => profileInputRef.current?.click()}
+              title="프로필 사진 변경"
+              className="group relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-2xl font-bold text-white shadow-lg shadow-purple-200 overflow-hidden focus:outline-none"
+            >
+              {profileImageUrl ? (
+                <img src={profileImageUrl} alt="프로필" className="h-full w-full object-cover" />
+              ) : (
+                <span>{authorName.slice(0, 1).toUpperCase()}</span>
+              )}
+              <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+                </svg>
+              </span>
+            </button>
             <div className="flex-1">
               <h2 className="text-lg font-bold text-gray-800">{authorName}</h2>
               <p className="mt-0.5 text-xs text-gray-400">소중한 여행의 순간들을 기록하고 공유하세요</p>
@@ -1640,7 +1679,8 @@ export default function TourstarContent() {
                   { label: "내 게시물", value: stats.mine, color: "text-purple-600" },
                   { label: "스크랩", value: stats.bookmarked, color: "text-amber-500" },
                   { label: "사진", value: stats.totalPhotos, color: "text-gray-800" },
-                  { label: "좋아요", value: stats.totalLikes, color: "text-pink-500" },
+                  { label: "받은 좋아요", value: stats.myLikes, color: "text-pink-500" },
+                  { label: "친구", value: friendList.length, color: "text-blue-500" },
                 ].map((s) => (
                   <div key={s.label} className="text-center">
                     <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
@@ -1680,14 +1720,14 @@ export default function TourstarContent() {
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
               {([
-                { id: "all", label: "전체" },
-                { id: "mine", label: "내 게시물" },
-                { id: "friends", label: "친구 게시물" },
-                { id: "bookmarked", label: "스크랩" },
+                { id: "all", label: "전체", count: null },
+                { id: "mine", label: "내 게시물", count: stats.mine },
+                { id: "friends", label: "친구 게시물", count: stats.friends },
+                { id: "bookmarked", label: "스크랩", count: stats.bookmarked },
               ] as const).map((tab) => (
                 <button key={tab.id} type="button" onClick={() => { setFilter(tab.id); setViewAuthorId(null); setViewAuthorName(""); }}
                   className={`rounded-full px-3.5 py-1.5 text-xs font-medium border transition-all ${filter === tab.id ? "border-purple-300 bg-purple-50 text-purple-700" : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"}`}>
-                  {tab.label}{tab.id === "friends" ? ` (${stats.friends})` : ""}
+                  {tab.label}{tab.count !== null ? ` (${tab.count})` : ""}
                 </button>
               ))}
               {filter === "friends" && viewAuthorName && (
@@ -1699,7 +1739,6 @@ export default function TourstarContent() {
                   </button>
                 </span>
               )}
-              <span className="ml-1 text-xs text-gray-400">{filteredPosts.length}개의 기록</span>
             </div>
             <div className="flex items-center gap-2">
               {/* 정렬 버튼 */}
