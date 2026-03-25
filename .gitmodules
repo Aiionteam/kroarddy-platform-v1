@@ -1,0 +1,3 @@
+[submodule "backend/guide.kroaddy.site"]
+	path = backend/guide.kroaddy.site
+	url = https://github.com/Aiionteam/guide.kroaddy.site.git

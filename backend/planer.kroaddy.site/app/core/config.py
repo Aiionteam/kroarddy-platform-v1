@@ -39,7 +39,9 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     openai_api_key: str = ""
     database_url: str = ""
-    # 로컬: localhost / Docker Compose: http://festival:8002
+    # 로컬: localhost / Docker Compose: http://guide:8002
+    guide_service_url: str = "http://localhost:8002"
+    # backward-compat alias
     festival_service_url: str = "http://localhost:8002"
     # 로컬: localhost / Docker Compose: http://user_info:8004
     user_info_service_url: str = "http://localhost:8004"
