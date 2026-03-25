@@ -11,6 +11,7 @@ import {
   buildTourstarShareUrl,
   createTourstarComment,
   createTourstarPost,
+  finalizeTourstarUploads,
   generateTourstarAutoComment,
   generateTourstarPost,
   getTourstarJobStatus,
@@ -567,7 +568,6 @@ interface EditModalProps {
     comment: string;
     tags: string[];
     keepPhotoUrls: string[];
-    newImagePaths: string[];
     photosChanged: boolean;
   }) => Promise<void>;
   onDelete: (postId: string) => Promise<boolean>;
@@ -654,15 +654,28 @@ function EditPostModal({ post, onClose, onSave, onDelete }: EditModalProps) {
         .filter(Boolean);
       const keepUrls = existingPhotos.filter((p) => p.keep).map((p) => p.storedUrl).filter(Boolean);
       const newPaths = newPhotos.map((p) => p.sourceImagePath).filter((v): v is string => Boolean(v?.trim()));
-      // 기존 사진 제거 또는 신규 사진 추가가 있을 때만 photo 필드 전달
-      const photosChanged = existingPhotos.some((p) => !p.keep) || newPaths.length > 0;
+      const existingPhotosRemoved = existingPhotos.some((p) => !p.keep);
+
+      // 신규 사진이 있으면 저장 전에 S3 업로드를 먼저 완료한 뒤 S3 URL을 keep_photo_urls에 포함
+      let finalKeepUrls = keepUrls;
+      if (newPaths.length > 0) {
+        const { s3_urls, failed_count } = await finalizeTourstarUploads(newPaths);
+        finalKeepUrls = [...keepUrls, ...s3_urls];
+        if (failed_count > 0 && s3_urls.length === 0) {
+          throw new Error(`사진 업로드에 실패했습니다. (${failed_count}장 실패)`);
+        }
+        if (failed_count > 0) {
+          window.alert(`${failed_count}장의 사진 업로드에 실패했습니다. 성공한 사진만 저장됩니다.`);
+        }
+      }
+
+      const photosChanged = existingPhotosRemoved || newPaths.length > 0;
       await onSave(post.id, {
         title: title.trim(),
         location: location.trim() || "위치 미확인",
         comment: stripHashtags(comment),
         tags,
-        keepPhotoUrls: keepUrls,
-        newImagePaths: newPaths,
+        keepPhotoUrls: finalKeepUrls,
         photosChanged,
       });
       onClose();
@@ -1354,7 +1367,6 @@ export default function TourstarContent() {
     comment: string;
     tags: string[];
     keepPhotoUrls: string[];
-    newImagePaths: string[];
     photosChanged: boolean;
   }) => {
     const saved = await updateTourstarPost(postId, {
@@ -1362,11 +1374,8 @@ export default function TourstarContent() {
       location: updates.location,
       comment: updates.comment,
       tags: updates.tags,
-      // 사진이 변경된 경우에만 photo 필드 전달 (불필요한 S3 처리 방지)
-      ...(updates.photosChanged ? {
-        keep_photo_urls: updates.keepPhotoUrls,
-        image_paths: updates.newImagePaths,
-      } : {}),
+      // 사진이 변경된 경우에만 keep_photo_urls 전달 (image_paths 는 전달 안 함 — 미리 S3에 업로드됨)
+      ...(updates.photosChanged ? { keep_photo_urls: updates.keepPhotoUrls } : {}),
     });
     const updated = mapRecordToPost(saved, authorName, currentUserId, bookmarkedIds);
     setPosts((prev) => prev.map((p) => p.id === postId ? updated : p));
