@@ -409,13 +409,12 @@ function UploadModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Step 2 – 폼
+  const MAX_STOPS_PER_DAY = 5;
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
-  const [stops, setStops] = useState<RouteItemInput[]>([
-    { place: "", note: "" },
-    { place: "", note: "" },
-    { place: "", note: "" },
+  const [days, setDays] = useState<{ stops: RouteItemInput[] }[]>([
+    { stops: [{ place: "", note: "" }, { place: "", note: "" }, { place: "", note: "" }] },
   ]);
 
   // Step 3 – AI 결과
@@ -473,11 +472,34 @@ function UploadModal({
     }
   }, [imageFile, validatedImage]);
 
-  const addStop = () => setStops((s) => [...s, { place: "", note: "" }]);
-  const removeStop = (i: number) => setStops((s) => s.filter((_, idx) => idx !== i));
-  const updateStop = (i: number, field: keyof RouteItemInput, val: string) => {
-    setStops((s) => s.map((st, idx) => (idx === i ? { ...st, [field]: val } : st)));
-  };
+  const addDay = () =>
+    setDays((d) => [...d, { stops: [{ place: "", note: "" }] }]);
+  const removeDay = (dayIdx: number) =>
+    setDays((d) => d.filter((_, i) => i !== dayIdx));
+  const addStopToDay = (dayIdx: number) =>
+    setDays((d) =>
+      d.map((day, i) =>
+        i === dayIdx && day.stops.length < MAX_STOPS_PER_DAY
+          ? { stops: [...day.stops, { place: "", note: "" }] }
+          : day
+      )
+    );
+  const removeStopFromDay = (dayIdx: number, stopIdx: number) =>
+    setDays((d) =>
+      d.map((day, i) =>
+        i === dayIdx
+          ? { stops: day.stops.filter((_, j) => j !== stopIdx) }
+          : day
+      )
+    );
+  const updateStopInDay = (dayIdx: number, stopIdx: number, field: keyof RouteItemInput, val: string) =>
+    setDays((d) =>
+      d.map((day, i) =>
+        i === dayIdx
+          ? { stops: day.stops.map((s, j) => (j === stopIdx ? { ...s, [field]: val } : s)) }
+          : day
+      )
+    );
 
   const openPlanPicker = useCallback(async () => {
     if (!userId) return;
@@ -498,17 +520,29 @@ function UploadModal({
     setTitle(plan.route_name);
     setLocation(plan.location);
     setDescription("");
-    const converted: RouteItemInput[] = plan.schedule.map((item) => ({
-      place: item.place,
-      note: item.title,
-    }));
-    setStops(converted.length > 0 ? converted : [{ place: "", note: "" }]);
+    if (plan.schedule.length === 0) {
+      setDays([{ stops: [{ place: "", note: "" }] }]);
+    } else {
+      // day 필드로 그룹핑, 일차당 최대 5개
+      const byDay = new Map<number, RouteItemInput[]>();
+      plan.schedule.forEach((item) => {
+        const d = item.day ?? 1;
+        if (!byDay.has(d)) byDay.set(d, []);
+        const arr = byDay.get(d)!;
+        if (arr.length < MAX_STOPS_PER_DAY) arr.push({ place: item.place, note: item.title });
+      });
+      const sorted = [...byDay.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([, stops]) => ({ stops }));
+      setDays(sorted);
+    }
     setShowPlanPicker(false);
   }, []);
 
   const handlePolish = useCallback(async () => {
-    const validStops = stops.filter((s) => s.place.trim());
-    if (!title.trim() || !location.trim() || validStops.length === 0) return;
+    // 모든 일차의 장소를 순서대로 합쳐서 AI에 전달
+    const allStops = days.flatMap((d) => d.stops).filter((s) => s.place.trim());
+    if (!title.trim() || !location.trim() || allStops.length === 0) return;
     setPolishing(true);
     setPolishError(null);
     setStep("polish");
@@ -517,7 +551,7 @@ function UploadModal({
         title: title.trim(),
         location: location.trim(),
         description: description.trim() || undefined,
-        route_items: validStops,
+        route_items: allStops,
       });
       setPolished(result);
     } catch (e) {
@@ -525,7 +559,7 @@ function UploadModal({
     } finally {
       setPolishing(false);
     }
-  }, [title, location, description, stops]);
+  }, [title, location, description, days]);
 
   const handleSave = useCallback(async () => {
     if (!polished) return;
@@ -764,45 +798,89 @@ function UploadModal({
               </div>
 
               <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <label className="text-xs font-semibold text-gray-600">장소 목록 *</label>
-                  <button
-                    onClick={addStop}
-                    className="text-xs text-purple-600 hover:underline"
-                  >
-                    + 장소 추가
-                  </button>
-                </div>
-                <div className="space-y-2">
-                  {stops.map((stop, i) => (
-                    <div key={i} className="flex gap-2 items-start">
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-purple-100 text-xs font-bold text-purple-600 mt-2.5">
-                        {i + 1}
+                <label className="mb-2 block text-xs font-semibold text-gray-600">
+                  장소 목록 * <span className="font-normal text-gray-400">(일차당 최대 {MAX_STOPS_PER_DAY}개)</span>
+                </label>
+
+                <div className="space-y-3">
+                  {days.map((day, dayIdx) => (
+                    <div key={dayIdx} className="rounded-xl border border-gray-200 overflow-hidden">
+                      {/* 일차 헤더 */}
+                      <div className="flex items-center justify-between px-3 py-2 bg-purple-50 border-b border-purple-100">
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-600 text-xs font-bold text-white">
+                            {dayIdx + 1}
+                          </span>
+                          <span className="text-sm font-semibold text-purple-800">{dayIdx + 1}일차</span>
+                          <span className="text-[11px] text-gray-400">
+                            {day.stops.length}/{MAX_STOPS_PER_DAY}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => addStopToDay(dayIdx)}
+                            disabled={day.stops.length >= MAX_STOPS_PER_DAY}
+                            className="text-xs text-purple-600 hover:underline disabled:opacity-40 disabled:no-underline"
+                          >
+                            + 장소 추가
+                          </button>
+                          {days.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeDay(dayIdx)}
+                              className="text-xs text-gray-400 hover:text-red-400 transition-colors"
+                            >
+                              삭제
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex-1 space-y-1">
-                        <input
-                          value={stop.place}
-                          onChange={(e) => updateStop(i, "place", e.target.value)}
-                          placeholder="장소명 (예: 안목해변 카페거리)"
-                          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-purple-400"
-                        />
-                        <input
-                          value={stop.note ?? ""}
-                          onChange={(e) => updateStop(i, "note", e.target.value)}
-                          placeholder="간단한 메모 (선택)"
-                          className="w-full rounded-lg border border-gray-100 bg-gray-50 px-3 py-1.5 text-xs text-gray-600 outline-none focus:border-purple-300"
-                        />
+
+                      {/* 장소 목록 */}
+                      <div className="p-3 space-y-2">
+                        {day.stops.map((stop, stopIdx) => (
+                          <div key={stopIdx} className="flex gap-2 items-start">
+                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 text-[10px] font-bold text-purple-600 mt-2.5">
+                              {stopIdx + 1}
+                            </div>
+                            <div className="flex-1 space-y-1">
+                              <input
+                                value={stop.place}
+                                onChange={(e) => updateStopInDay(dayIdx, stopIdx, "place", e.target.value)}
+                                placeholder="장소명 (예: 안목해변 카페거리)"
+                                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-purple-400"
+                              />
+                              <input
+                                value={stop.note ?? ""}
+                                onChange={(e) => updateStopInDay(dayIdx, stopIdx, "note", e.target.value)}
+                                placeholder="간단한 메모 (선택)"
+                                className="w-full rounded-lg border border-gray-100 bg-gray-50 px-3 py-1.5 text-xs text-gray-600 outline-none focus:border-purple-300"
+                              />
+                            </div>
+                            {day.stops.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => removeStopFromDay(dayIdx, stopIdx)}
+                                className="mt-2.5 text-gray-300 hover:text-red-400 transition-colors text-sm"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                      {stops.length > 1 && (
-                        <button
-                          onClick={() => removeStop(i)}
-                          className="mt-2.5 text-gray-300 hover:text-red-400 transition-colors text-sm"
-                        >
-                          ✕
-                        </button>
-                      )}
                     </div>
                   ))}
+
+                  {/* 일차 추가 버튼 */}
+                  <button
+                    type="button"
+                    onClick={addDay}
+                    className="w-full flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-purple-200 py-2.5 text-sm font-semibold text-purple-400 hover:border-purple-400 hover:bg-purple-50 hover:text-purple-600 transition-colors"
+                  >
+                    + {days.length + 1}일차 추가
+                  </button>
                 </div>
               </div>
             </div>
@@ -816,7 +894,7 @@ function UploadModal({
               </button>
               <button
                 onClick={handlePolish}
-                disabled={!title.trim() || !location.trim() || !stops.some((s) => s.place.trim())}
+                disabled={!title.trim() || !location.trim() || !days.some((d) => d.stops.some((s) => s.place.trim()))}
                 className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-purple-600 py-2.5 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-40 transition-colors"
               >
                 ✨ AI로 다듬기
