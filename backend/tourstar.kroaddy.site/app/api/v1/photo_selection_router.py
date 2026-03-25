@@ -1693,6 +1693,17 @@ def finalize_uploads(req: FinalizeUploadsRequest) -> FinalizeUploadsResponse:
     return FinalizeUploadsResponse(s3_urls=s3_urls, failed_count=failed)
 
 
+@router.get("/profile-image", response_model=UploadProfileImageResponse)
+async def get_profile_image(user_id: int, db: AsyncSession = Depends(get_db)) -> UploadProfileImageResponse:
+    """user_id에 해당하는 프로필 이미지 URL을 presigned URL로 반환한다."""
+    profile = (
+        await db.execute(select(UserProfile).where(UserProfile.user_id == user_id))
+    ).scalar_one_or_none()
+    if profile is None or not profile.profile_image_url:
+        raise HTTPException(status_code=404, detail="Profile image not found.")
+    return UploadProfileImageResponse(profile_image_url=_build_s3_view_url(profile.profile_image_url))
+
+
 @router.post("/upload-profile-image", response_model=UploadProfileImageResponse)
 async def upload_profile_image(
     file: UploadFile = File(...),
