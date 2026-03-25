@@ -98,14 +98,6 @@ function computeIsOwner(
   return false;
 }
 
-function sameSortedStringSet(a: string[], b: string[]): boolean {
-  if (a.length !== b.length) return false;
-  const sa = [...a].sort();
-  const sb = [...b].sort();
-  for (let i = 0; i < sa.length; i++) if (sa[i] !== sb[i]) return false;
-  return true;
-}
-
 const STYLE_FILTER_AUTO: { value: TourstarStyleFilter; label: string } = {
   value: "AUTO",
   label: "자동 (기본)",
@@ -592,7 +584,6 @@ function EditPostModal({ post, onClose, onSave, onDelete }: EditModalProps) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
-  const initialPhotoUrlsRef = React.useRef<string[]>([]);
 
   React.useEffect(() => {
     if (post) {
@@ -600,7 +591,6 @@ function EditPostModal({ post, onClose, onSave, onDelete }: EditModalProps) {
       setLocation(post.location === "위치 미확인" ? "" : post.location);
       setComment(stripHashtags(post.comment));
       setTagsInput(post.tags.join(", "));
-      initialPhotoUrlsRef.current = post.photos.map((p) => (p.sourceImagePath || p.imageUrl || "").trim()).filter(Boolean);
       setExistingPhotos(
         post.photos
           .map((p, idx) => {
@@ -663,10 +653,9 @@ function EditPostModal({ post, onClose, onSave, onDelete }: EditModalProps) {
         .map((t) => t.replace(/^#/, "").trim())
         .filter(Boolean);
       const keepUrls = existingPhotos.filter((p) => p.keep).map((p) => p.storedUrl).filter(Boolean);
-      const newPaths = newPhotos
-        .map((p) => p.sourceImagePath)
-        .filter((v): v is string => Boolean(v && v.trim()));
-      const photosChanged = newPaths.length > 0 || !sameSortedStringSet(keepUrls, initialPhotoUrlsRef.current);
+      const newPaths = newPhotos.map((p) => p.sourceImagePath).filter((v): v is string => Boolean(v?.trim()));
+      // 기존 사진 제거 또는 신규 사진 추가가 있을 때만 photo 필드 전달
+      const photosChanged = existingPhotos.some((p) => !p.keep) || newPaths.length > 0;
       await onSave(post.id, {
         title: title.trim(),
         location: location.trim() || "위치 미확인",
@@ -759,14 +748,16 @@ function EditPostModal({ post, onClose, onSave, onDelete }: EditModalProps) {
                   type="button"
                   onClick={() => setNewPhotos((prev) => prev.filter((p) => p.id !== photo.id))}
                   className="relative aspect-square overflow-hidden rounded-lg border border-emerald-300 ring-2 ring-emerald-200"
-                  title="클릭하면 추가한 사진이 제거됩니다."
+                  title="클릭하면 목록에서 제거됩니다."
                 >
                   <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${photo.imageUrl})` }} />
                   <div className="absolute top-1 right-1 rounded-full bg-emerald-500 px-1 text-[10px] text-white">신규</div>
                 </button>
               ))}
             </div>
-            <p className="mt-1 text-[10px] text-gray-400">기존 사진은 클릭해서 유지/제거를 선택할 수 있고, 신규 사진은 클릭하면 목록에서 제거됩니다.</p>
+            {(existingPhotos.length > 0 || newPhotos.length > 0) && (
+              <p className="mt-1 text-[10px] text-gray-400">기존 사진은 클릭해서 유지/제거 선택, 신규 사진은 클릭하면 제거됩니다.</p>
+            )}
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-500">태그 (쉼표 또는 공백으로 구분)</label>
@@ -1371,9 +1362,11 @@ export default function TourstarContent() {
       location: updates.location,
       comment: updates.comment,
       tags: updates.tags,
-      ...(updates.photosChanged
-        ? { keep_photo_urls: updates.keepPhotoUrls, image_paths: updates.newImagePaths }
-        : {}),
+      // 사진이 변경된 경우에만 photo 필드 전달 (불필요한 S3 처리 방지)
+      ...(updates.photosChanged ? {
+        keep_photo_urls: updates.keepPhotoUrls,
+        image_paths: updates.newImagePaths,
+      } : {}),
     });
     const updated = mapRecordToPost(saved, authorName, currentUserId, bookmarkedIds);
     setPosts((prev) => prev.map((p) => p.id === postId ? updated : p));
