@@ -967,11 +967,16 @@ function AuthorPopover({
     if (!post.userId) return;
     setSending(true);
     try {
-      await sendFriendRequest(post.userId);
-      window.alert(`${post.author}님에게 친구 요청을 보냈습니다.`);
-      setOpen(false);
-    } catch {
-      window.alert("친구 요청 전송에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      const res = await sendFriendRequest(post.userId);
+      if (res.code === 200) {
+        window.alert(`${post.author}님에게 친구 요청을 보냈습니다.`);
+        setOpen(false);
+      } else {
+        window.alert(res.message || "친구 요청 전송에 실패했습니다.");
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      window.alert(`친구 요청 전송에 실패했습니다.\n${msg}`);
     } finally {
       setSending(false);
     }
