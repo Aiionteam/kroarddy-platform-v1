@@ -946,7 +946,7 @@ function AuthorPopover({
 }: {
   post: TourPost;
   currentUserId: number | null;
-  onViewPosts: (userId: number, authorName: string) => void;
+  onViewPosts: (userId: number | null, authorName: string) => void;
 }) {
   const [open, setOpen] = React.useState(false);
   const [sending, setSending] = React.useState(false);
@@ -999,10 +999,9 @@ function AuthorPopover({
       setOpen(false);
       return;
     }
-    if (post.userId) {
-      onViewPosts(post.userId, post.author);
-      setOpen(false);
-    }
+    // userId가 없는 레거시 게시물도 작성자 이름으로 필터링 가능하도록 null 전달
+    onViewPosts(post.userId ?? null, post.author);
+    setOpen(false);
   };
 
   return (
@@ -1069,7 +1068,7 @@ function FeedCard({ post, onClick, onToggleLike, onShare, onBookmark, onEdit, on
   onEdit: (post: TourPost) => void;
   onDeletePost: (postId: string) => Promise<boolean>;
   currentUserId: number | null;
-  onViewAuthorPosts: (userId: number, authorName: string) => void;
+  onViewAuthorPosts: (userId: number | null, authorName: string) => void;
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all hover:shadow-md">
@@ -1196,18 +1195,33 @@ function GridCard({ post, onClick }: { post: TourPost; onClick: () => void }) {
 }
 
 /* ═══════════════════════ 메인 페이지 ═══════════════════════ */
+function computeIsFriend(
+  uid: number | null,
+  author: string,
+  isOwner: boolean,
+  friendUserIds: Set<number>,
+  friendNicknames: Set<string>,
+): boolean {
+  if (isOwner) return false;
+  if (uid != null && friendUserIds.has(uid)) return true;
+  // userId가 없는 레거시 게시물은 닉네임으로 판단
+  if (author && author !== "내 여행기록" && friendNicknames.has(author.trim())) return true;
+  return false;
+}
+
 function mapRecordToPost(
   record: TourstarPostRecord,
   fallbackAuthor = "내 여행기록",
   currentUserId?: number | null,
   bookmarkedIds: Set<string> = new Set(),
   friendUserIds: Set<number> = new Set(),
+  friendNicknames: Set<string> = new Set(),
 ): TourPost {
   const author = record.author_nickname?.trim() || fallbackAuthor;
   const uid = record.user_id != null ? Number(record.user_id) : null;
   const isOwner = computeIsOwner(uid, currentUserId, author, fallbackAuthor);
   const bookmarked = bookmarkedIds.has(record.id);
-  const isFriend = uid != null && friendUserIds.has(uid) && !isOwner;
+  const isFriend = computeIsFriend(uid, author, isOwner, friendUserIds, friendNicknames);
   const photos: TourPhoto[] = (record.photo_urls || []).map((url, idx) => ({
     id: `photo-${record.id}-${idx}`,
     gradient: randomGradient(),
@@ -1313,6 +1327,12 @@ export default function TourstarContent() {
     return () => { cancelled = true; };
   }, [isAuthenticated]);
 
+  /* 친구 닉네임 Set (userId 없는 레거시 게시물 isFriend 판단용) */
+  const friendNicknames = useMemo(
+    () => new Set(friendList.map((u) => (u.nickname || u.name || "").trim()).filter(Boolean)),
+    [friendList],
+  );
+
   /* 닉네임 조회 */
   React.useEffect(() => {
     if (!isAuthenticated || !accessToken) return;
@@ -1369,7 +1389,7 @@ export default function TourstarContent() {
       try {
         const rows = await listTourstarPosts();
         if (!cancelled) {
-          setPosts(rows.map((r) => mapRecordToPost(r, authorName, currentUserId, bookmarkedIds, friendUserIds)));
+          setPosts(rows.map((r) => mapRecordToPost(r, authorName, currentUserId, bookmarkedIds, friendUserIds, friendNicknames)));
         }
       } catch (error) { console.error("[tourstar] 게시글 목록 조회 실패:", error); }
     })();
@@ -1384,7 +1404,7 @@ export default function TourstarContent() {
     setDetailPost((prev) => (prev && prev.author === "내 여행기록" ? { ...prev, author: authorName } : prev));
   }, [authorName]);
 
-  /* currentUserId / bookmarkedIds / friendUserIds / 닉네임 변경 시 isOwner, bookmarked, isFriend 재계산 */
+  /* currentUserId / bookmarkedIds / friendUserIds / friendNicknames / 닉네임 변경 시 재계산 */
   React.useEffect(() => {
     setPosts((prev) => prev.map((p) => {
       const isOwner = computeIsOwner(p.userId, currentUserId, p.author, authorName);
@@ -1392,7 +1412,7 @@ export default function TourstarContent() {
         ...p,
         isOwner,
         bookmarked: bookmarkedIds.has(p.id),
-        isFriend: p.userId != null && friendUserIds.has(p.userId) && !isOwner,
+        isFriend: computeIsFriend(p.userId ?? null, p.author, isOwner, friendUserIds, friendNicknames),
       };
     }));
     setDetailPost((prev) => {
@@ -1402,10 +1422,10 @@ export default function TourstarContent() {
         ...prev,
         isOwner,
         bookmarked: bookmarkedIds.has(prev.id),
-        isFriend: prev.userId != null && friendUserIds.has(prev.userId) && !isOwner,
+        isFriend: computeIsFriend(prev.userId ?? null, prev.author, isOwner, friendUserIds, friendNicknames),
       };
     });
-  }, [currentUserId, bookmarkedIds, authorName, friendUserIds]);
+  }, [currentUserId, bookmarkedIds, authorName, friendUserIds, friendNicknames]);
 
   /* URL postId 파라미터 처리 */
   React.useEffect(() => {
@@ -1423,8 +1443,12 @@ export default function TourstarContent() {
     if (filter === "mine") result = result.filter((p) => p.isOwner);
     else if (filter === "bookmarked") result = result.filter((p) => p.bookmarked);
     else if (filter === "friends") {
-      if (viewAuthorId != null) {
-        result = result.filter((p) => p.userId === viewAuthorId);
+      if (viewAuthorName) {
+        // 특정 작성자 보기: userId로 먼저 매칭, 없으면 이름으로 매칭
+        result = result.filter((p) =>
+          (viewAuthorId != null && p.userId === viewAuthorId) ||
+          p.author === viewAuthorName,
+        );
       } else {
         result = result.filter((p) => p.isFriend);
       }
@@ -1563,7 +1587,7 @@ export default function TourstarContent() {
     catch (_) { window.prompt("아래 링크를 복사해 채팅에 공유하세요.", shareUrl); }
   };
 
-  const handleViewAuthorPosts = (userId: number, authorName: string) => {
+  const handleViewAuthorPosts = (userId: number | null, authorName: string) => {
     setViewAuthorId(userId);
     setViewAuthorName(authorName);
     setFilter("friends");
@@ -1654,7 +1678,7 @@ export default function TourstarContent() {
                   {tab.label}{tab.id === "friends" ? ` (${stats.friends})` : ""}
                 </button>
               ))}
-              {filter === "friends" && viewAuthorId != null && (
+              {filter === "friends" && viewAuthorName && (
                 <span className="flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2.5 py-1 text-xs font-medium text-blue-700">
                   {viewAuthorName}
                   <button type="button" onClick={() => { setViewAuthorId(null); setViewAuthorName(""); }}
@@ -1716,7 +1740,7 @@ export default function TourstarContent() {
               <p className="text-sm font-medium text-gray-400">
                 {filter === "mine" ? "내가 올린 게시물이 없습니다"
                   : filter === "bookmarked" ? "스크랩한 게시물이 없습니다"
-                  : filter === "friends" ? (viewAuthorId != null ? `${viewAuthorName}님의 게시물이 없습니다` : "친구들이 올린 게시물이 없습니다")
+                  : filter === "friends" ? (viewAuthorName ? `${viewAuthorName}님의 게시물이 없습니다` : "친구들이 올린 게시물이 없습니다")
                   : searchQuery ? "검색 결과가 없습니다"
                   : "아직 기록된 여행이 없습니다"}
               </p>
