@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useLoginStore } from "@/store";
 import { getAppUserIdFromToken, getNicknameFromToken, getUserIdFromToken } from "@/lib/api/auth";
 import { findUserById } from "@/lib/api/user";
+import { listFriends, sendFriendRequest } from "@/lib/api/friends";
+import type { UserModel } from "@/lib/api/user";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import {
   buildTourstarImageUrl,
@@ -27,7 +29,7 @@ import {
 /* ────────────────────────── 타입 정의 ────────────────────────── */
 type Visibility = "public" | "private";
 type ViewMode = "grid" | "feed";
-type FilterType = "all" | "mine" | "bookmarked";
+type FilterType = "all" | "mine" | "bookmarked" | "friends";
 type SortType = "latest" | "likes" | "comments";
 type SearchField = "all" | "author" | "title" | "content" | "tags" | "location";
 
@@ -65,6 +67,7 @@ interface TourPost {
   comments: TourPostComment[];
   isOwner: boolean;
   bookmarked: boolean;
+  isFriend: boolean;
 }
 
 function stripHashtags(text: string): string {
@@ -193,7 +196,7 @@ function BookmarkIcon({ filled }: { filled: boolean }) {
 interface CreateModalProps {
   open: boolean;
   onClose: () => void;
-  onCreate: (post: Omit<TourPost, "id" | "author" | "likes" | "liked" | "comments" | "isOwner" | "bookmarked" | "userId">) => Promise<void> | void;
+  onCreate: (post: Omit<TourPost, "id" | "author" | "likes" | "liked" | "comments" | "isOwner" | "bookmarked" | "userId" | "isFriend">) => Promise<void> | void;
   onJobStatusChange?: (status: string) => void;
 }
 
@@ -935,8 +938,113 @@ function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, o
   );
 }
 
+/* ───────────────────── 작성자 팝오버 ───────────────────── */
+function AuthorPopover({
+  post,
+  currentUserId,
+  onViewPosts,
+}: {
+  post: TourPost;
+  currentUserId: number | null;
+  onViewPosts: (userId: number, authorName: string) => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [sending, setSending] = React.useState(false);
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const isOwnPost = post.isOwner;
+
+  const handleSendRequest = async () => {
+    if (!post.userId) return;
+    setSending(true);
+    try {
+      await sendFriendRequest(post.userId);
+      window.alert(`${post.author}님에게 친구 요청을 보냈습니다.`);
+      setOpen(false);
+    } catch {
+      window.alert("친구 요청 전송에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleViewPosts = () => {
+    if (!post.isFriend && !isOwnPost) {
+      window.alert("친구인 사용자만 가능합니다.");
+      setOpen(false);
+      return;
+    }
+    if (post.userId) {
+      onViewPosts(post.userId, post.author);
+      setOpen(false);
+    }
+  };
+
+  return (
+    <div ref={ref} className="relative inline-flex items-center gap-1">
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        className="flex items-center gap-1 hover:underline focus:outline-none"
+      >
+        <span className="truncate text-sm font-semibold text-gray-800">{post.author}</span>
+        {post.isFriend && (
+          <span className="shrink-0 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-600">친구</span>
+        )}
+      </button>
+
+      {open && !isOwnPost && (
+        <div
+          className="absolute left-0 top-full z-50 mt-1.5 w-52 rounded-xl border border-gray-100 bg-white py-1.5 shadow-lg"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="px-3 py-2 border-b border-gray-100">
+            <p className="text-xs font-semibold text-gray-700">{post.author}</p>
+            {post.isFriend && (
+              <p className="mt-0.5 text-[11px] text-blue-500 font-medium">이미 친구인 사용자입니다.</p>
+            )}
+          </div>
+          {!post.isFriend && (
+            <button
+              type="button"
+              disabled={sending || !post.userId}
+              onClick={handleSendRequest}
+              className="flex w-full items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+                <line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" />
+              </svg>
+              {sending ? "요청 중..." : "친구 요청 보내기"}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleViewPosts}
+            className="flex w-full items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <rect x="2" y="3" width="20" height="14" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" />
+            </svg>
+            게시물 보기
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ───────────────────── 게시물 카드 (피드 뷰) ───────────────────── */
-function FeedCard({ post, onClick, onToggleLike, onShare, onBookmark, onEdit, onDeletePost }: {
+function FeedCard({ post, onClick, onToggleLike, onShare, onBookmark, onEdit, onDeletePost, currentUserId, onViewAuthorPosts }: {
   post: TourPost;
   onClick: () => void;
   onToggleLike: (id: string) => void;
@@ -944,6 +1052,8 @@ function FeedCard({ post, onClick, onToggleLike, onShare, onBookmark, onEdit, on
   onBookmark: (id: string) => void;
   onEdit: (post: TourPost) => void;
   onDeletePost: (postId: string) => Promise<boolean>;
+  currentUserId: number | null;
+  onViewAuthorPosts: (userId: number, authorName: string) => void;
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all hover:shadow-md">
@@ -953,7 +1063,7 @@ function FeedCard({ post, onClick, onToggleLike, onShare, onBookmark, onEdit, on
           {post.author.slice(0, 1).toUpperCase()}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-gray-800">{post.author}</p>
+          <AuthorPopover post={post} currentUserId={currentUserId} onViewPosts={onViewAuthorPosts} />
           {post.location && (
             <div className="flex items-center gap-1 text-[11px] text-gray-400">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
@@ -1075,11 +1185,13 @@ function mapRecordToPost(
   fallbackAuthor = "내 여행기록",
   currentUserId?: number | null,
   bookmarkedIds: Set<string> = new Set(),
+  friendUserIds: Set<number> = new Set(),
 ): TourPost {
   const author = record.author_nickname?.trim() || fallbackAuthor;
   const uid = record.user_id != null ? Number(record.user_id) : null;
   const isOwner = computeIsOwner(uid, currentUserId, author, fallbackAuthor);
   const bookmarked = bookmarkedIds.has(record.id);
+  const isFriend = uid != null && friendUserIds.has(uid) && !isOwner;
   const photos: TourPhoto[] = (record.photo_urls || []).map((url, idx) => ({
     id: `photo-${record.id}-${idx}`,
     gradient: randomGradient(),
@@ -1104,6 +1216,7 @@ function mapRecordToPost(
     comments: (record.comments || []).map((item) => ({ id: item.id, author: item.author, content: item.content, createdAt: "방금 전" })),
     isOwner,
     bookmarked,
+    isFriend,
   };
 }
 
@@ -1120,6 +1233,8 @@ export default function TourstarContent() {
   });
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
+  const [friendUserIds, setFriendUserIds] = useState<Set<number>>(new Set());
+  const [friendList, setFriendList] = useState<UserModel[]>([]);
 
   const [posts, setPosts] = useState<TourPost[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("feed");
@@ -1161,6 +1276,24 @@ export default function TourstarContent() {
       if (stored) setBookmarkedIds(new Set(JSON.parse(stored) as string[]));
     } catch { /* ignore */ }
   }, [currentUserId]);
+
+  /* 친구 목록 로드 */
+  React.useEffect(() => {
+    if (!isAuthenticated) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await listFriends();
+        if (cancelled) return;
+        const users: UserModel[] = Array.isArray(res.data) ? res.data : (res.data ? [res.data] : []);
+        setFriendList(users);
+        setFriendUserIds(new Set(users.map((u) => u.id).filter((id): id is number => id != null)));
+      } catch (err) {
+        console.error("[tourstar] 친구 목록 조회 실패:", err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isAuthenticated]);
 
   /* 닉네임 조회 */
   React.useEffect(() => {
@@ -1218,7 +1351,7 @@ export default function TourstarContent() {
       try {
         const rows = await listTourstarPosts();
         if (!cancelled) {
-          setPosts(rows.map((r) => mapRecordToPost(r, authorName, currentUserId, bookmarkedIds)));
+          setPosts(rows.map((r) => mapRecordToPost(r, authorName, currentUserId, bookmarkedIds, friendUserIds)));
         }
       } catch (error) { console.error("[tourstar] 게시글 목록 조회 실패:", error); }
     })();
@@ -1233,19 +1366,28 @@ export default function TourstarContent() {
     setDetailPost((prev) => (prev && prev.author === "내 여행기록" ? { ...prev, author: authorName } : prev));
   }, [authorName]);
 
-  /* currentUserId / bookmarkedIds / 닉네임 변경 시 isOwner, bookmarked 재계산 */
+  /* currentUserId / bookmarkedIds / friendUserIds / 닉네임 변경 시 isOwner, bookmarked, isFriend 재계산 */
   React.useEffect(() => {
-    setPosts((prev) => prev.map((p) => ({
-      ...p,
-      isOwner: computeIsOwner(p.userId, currentUserId, p.author, authorName),
-      bookmarked: bookmarkedIds.has(p.id),
-    })));
-    setDetailPost((prev) => prev ? ({
-      ...prev,
-      isOwner: computeIsOwner(prev.userId, currentUserId, prev.author, authorName),
-      bookmarked: bookmarkedIds.has(prev.id),
-    }) : null);
-  }, [currentUserId, bookmarkedIds, authorName]);
+    setPosts((prev) => prev.map((p) => {
+      const isOwner = computeIsOwner(p.userId, currentUserId, p.author, authorName);
+      return {
+        ...p,
+        isOwner,
+        bookmarked: bookmarkedIds.has(p.id),
+        isFriend: p.userId != null && friendUserIds.has(p.userId) && !isOwner,
+      };
+    }));
+    setDetailPost((prev) => {
+      if (!prev) return null;
+      const isOwner = computeIsOwner(prev.userId, currentUserId, prev.author, authorName);
+      return {
+        ...prev,
+        isOwner,
+        bookmarked: bookmarkedIds.has(prev.id),
+        isFriend: prev.userId != null && friendUserIds.has(prev.userId) && !isOwner,
+      };
+    });
+  }, [currentUserId, bookmarkedIds, authorName, friendUserIds]);
 
   /* URL postId 파라미터 처리 */
   React.useEffect(() => {
@@ -1262,6 +1404,13 @@ export default function TourstarContent() {
 
     if (filter === "mine") result = result.filter((p) => p.isOwner);
     else if (filter === "bookmarked") result = result.filter((p) => p.bookmarked);
+    else if (filter === "friends") {
+      if (viewAuthorId != null) {
+        result = result.filter((p) => p.userId === viewAuthorId);
+      } else {
+        result = result.filter((p) => p.isFriend);
+      }
+    }
 
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
@@ -1294,6 +1443,7 @@ export default function TourstarContent() {
     total: posts.length,
     mine: posts.filter((p) => p.isOwner).length,
     bookmarked: posts.filter((p) => p.bookmarked).length,
+    friends: posts.filter((p) => p.isFriend).length,
     totalPhotos: posts.reduce((acc, p) => acc + p.photos.length, 0),
     totalLikes: posts.reduce((acc, p) => acc + p.likes, 0),
   }), [posts]);
@@ -1319,7 +1469,7 @@ export default function TourstarContent() {
     setDetailPost((prev) => prev && prev.id === id ? { ...prev, bookmarked: !prev.bookmarked } : prev);
   };
 
-  const createPost = async (newPost: Omit<TourPost, "id" | "author" | "likes" | "liked" | "comments" | "isOwner" | "bookmarked" | "userId">) => {
+  const createPost = async (newPost: Omit<TourPost, "id" | "author" | "likes" | "liked" | "comments" | "isOwner" | "bookmarked" | "userId" | "isFriend">) => {
     const sourceImagePaths = newPost.photos.map((photo) => photo.sourceImagePath).filter((path): path is string => Boolean(path && path.trim()));
     const saved = await createTourstarPost({
       user_id: currentUserId ?? undefined,
@@ -1395,6 +1545,15 @@ export default function TourstarContent() {
     catch (_) { window.prompt("아래 링크를 복사해 채팅에 공유하세요.", shareUrl); }
   };
 
+  const [viewAuthorId, setViewAuthorId] = React.useState<number | null>(null);
+  const [viewAuthorName, setViewAuthorName] = React.useState<string>("");
+
+  const handleViewAuthorPosts = (userId: number, authorName: string) => {
+    setViewAuthorId(userId);
+    setViewAuthorName(authorName);
+    setFilter("friends");
+  };
+
   if (!isAuthenticated) return null;
 
   return (
@@ -1468,17 +1627,27 @@ export default function TourstarContent() {
 
           {/* 탭 + 정렬 + 뷰 모드 */}
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {([
                 { id: "all", label: "전체" },
                 { id: "mine", label: "내 게시물" },
+                { id: "friends", label: "친구 게시물" },
                 { id: "bookmarked", label: "스크랩" },
               ] as const).map((tab) => (
-                <button key={tab.id} type="button" onClick={() => setFilter(tab.id)}
+                <button key={tab.id} type="button" onClick={() => { setFilter(tab.id); setViewAuthorId(null); setViewAuthorName(""); }}
                   className={`rounded-full px-3.5 py-1.5 text-xs font-medium border transition-all ${filter === tab.id ? "border-purple-300 bg-purple-50 text-purple-700" : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"}`}>
-                  {tab.label}
+                  {tab.label}{tab.id === "friends" ? ` (${stats.friends})` : ""}
                 </button>
               ))}
+              {filter === "friends" && viewAuthorId != null && (
+                <span className="flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2.5 py-1 text-xs font-medium text-blue-700">
+                  {viewAuthorName}
+                  <button type="button" onClick={() => { setViewAuthorId(null); setViewAuthorName(""); }}
+                    className="ml-0.5 rounded-full hover:bg-blue-100 p-0.5 transition-colors">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                  </button>
+                </span>
+              )}
               <span className="ml-1 text-xs text-gray-400">{filteredPosts.length}개의 기록</span>
             </div>
             <div className="flex items-center gap-2">
@@ -1517,7 +1686,8 @@ export default function TourstarContent() {
                 {filteredPosts.map((post) => (
                   <FeedCard key={post.id} post={post} onClick={() => setDetailPost(post)}
                     onToggleLike={toggleLike} onShare={sharePost}
-                    onBookmark={toggleBookmark} onEdit={(p) => setEditTargetPost(p)} onDeletePost={deletePost} />
+                    onBookmark={toggleBookmark} onEdit={(p) => setEditTargetPost(p)} onDeletePost={deletePost}
+                    currentUserId={currentUserId} onViewAuthorPosts={handleViewAuthorPosts} />
                 ))}
               </div>
             ) : (
@@ -1529,10 +1699,16 @@ export default function TourstarContent() {
             <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-white py-20 text-center">
               <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mb-4 text-gray-300"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
               <p className="text-sm font-medium text-gray-400">
-                {filter === "mine" ? "내가 올린 게시물이 없습니다" : filter === "bookmarked" ? "스크랩한 게시물이 없습니다" : searchQuery ? "검색 결과가 없습니다" : "아직 기록된 여행이 없습니다"}
+                {filter === "mine" ? "내가 올린 게시물이 없습니다"
+                  : filter === "bookmarked" ? "스크랩한 게시물이 없습니다"
+                  : filter === "friends" ? (viewAuthorId != null ? `${viewAuthorName}님의 게시물이 없습니다` : "친구들이 올린 게시물이 없습니다")
+                  : searchQuery ? "검색 결과가 없습니다"
+                  : "아직 기록된 여행이 없습니다"}
               </p>
               <p className="mt-1 text-xs text-gray-300">
-                {filter === "bookmarked" ? "다른 사람의 게시물에서 북마크 버튼을 눌러보세요" : "상단의 \"새 기록\" 버튼으로 첫 번째 여행을 기록해보세요"}
+                {filter === "bookmarked" ? "다른 사람의 게시물에서 북마크 버튼을 눌러보세요"
+                  : filter === "friends" ? "친구를 추가하면 친구의 여행 기록을 볼 수 있습니다"
+                  : "상단의 \"새 기록\" 버튼으로 첫 번째 여행을 기록해보세요"}
               </p>
               {filter === "all" && !searchQuery && (
                 <button type="button" onClick={() => setCreateOpen(true)} className="mt-4 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity">여행 기록하기</button>
