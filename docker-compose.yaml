@@ -1,7 +1,7 @@
 # Kroaddy MSA - 통합 Docker Compose
 # 포트 구성:
 #   gateway → 8080 (Spring Boot / 인증·프록시)
-#   festival → 8002 (FastAPI / 전국문화축제표준데이터)
+#   guide    → 8002 (FastAPI / 장소/행사 추천 데이터)
 #   planer   → 8003 (FastAPI / AI 여행 루트·일정·날씨)
 #   profile  → 8004 (FastAPI / 개인화 프로필)
 #
@@ -22,7 +22,7 @@ services:
       - ./backend/api.kroaddy.site/.env
     environment:
       SPRING_PROFILES_ACTIVE: local
-      AI_SERVICE_FESTIVAL_URL: http://festival:8002
+      AI_SERVICE_GUIDE_URL: http://guide:8002
       AI_SERVICE_TOURPLANER_URL: http://planer:8003
       AI_SERVICE_USER_INFO_URL: http://profile:8004
       AI_SERVICE_TOURSTAR_URL: http://tourstar:8010
@@ -30,7 +30,7 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - festival
+      - guide
       - planer
       - profile
       - tourstar
@@ -44,15 +44,15 @@ services:
     networks:
       - kroaddy-net
 
-  # ── Festival API (전국문화축제표준데이터, 포트 8002) ──────────────────────
-  festival:
+  # ── Guide API (장소/행사 추천 데이터, 포트 8002) ──────────────────────────
+  guide:
     build:
-      context: ./backend/festival.kroaddy.site
+      context: ./backend/guide.kroaddy.site
       dockerfile: Dockerfile
-    image: kroaddy-festival:latest
-    container_name: kroaddy-festival
+    image: ${DOCKER_USERNAME:-kroaddy}/kroaddy-guide:latest
+    container_name: kroaddy-guide
     env_file:
-      - ./backend/festival.kroaddy.site/.env
+      - ./backend/guide.kroaddy.site/.env
     ports:
       - "8002:8002"
     restart: unless-stopped
@@ -69,12 +69,12 @@ services:
     env_file:
       - ./backend/planer.kroaddy.site/.env
     environment:
-      FESTIVAL_SERVICE_URL: http://festival:8002
+      GUIDE_SERVICE_URL: http://guide:8002
       USER_INFO_SERVICE_URL: http://profile:8004
     ports:
       - "8003:8003"
     depends_on:
-      - festival
+      - guide
       - profile
     restart: unless-stopped
     networks:

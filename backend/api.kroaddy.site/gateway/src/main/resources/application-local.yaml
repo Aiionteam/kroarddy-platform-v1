@@ -35,8 +35,11 @@ ai:
     vision:
       url: ${AI_SERVICE_VISION_URL:}
     # Docker 환경: host.docker.internal / 로컬 직접 실행: localhost
+    guide:
+      url: ${AI_SERVICE_GUIDE_URL:${AI_SERVICE_FESTIVAL_URL:http://guide:8002}}
+    # backward-compat alias
     festival:
-      url: ${AI_SERVICE_FESTIVAL_URL:http://localhost:8002}
+      url: ${AI_SERVICE_GUIDE_URL:${AI_SERVICE_FESTIVAL_URL:http://guide:8002}}
     tourplaner:
       url: ${AI_SERVICE_TOURPLANER_URL:http://localhost:8003}
     user-info:
