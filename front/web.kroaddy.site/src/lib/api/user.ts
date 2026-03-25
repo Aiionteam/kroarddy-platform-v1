@@ -31,6 +31,23 @@ export const findUserById = async (id: number): Promise<UserResponse> => {
   return data as UserResponse;
 };
 
+export interface UsersListResponse {
+  code: number;
+  message: string;
+  data?: UserModel | UserModel[];
+}
+
+export const findAllUsers = async (): Promise<UsersListResponse> => {
+  const { data } = await apiClient.get<UsersListResponse>("/api/users");
+  return data as UsersListResponse;
+};
+
+export const findUserByNickname = async (nickname: string): Promise<UserModel | null> => {
+  const res = await findAllUsers();
+  const list: UserModel[] = Array.isArray(res.data) ? res.data : (res.data ? [res.data] : []);
+  return list.find((u) => (u.nickname || u.name || "").trim() === nickname.trim()) ?? null;
+};
+
 export const updateUser = async (user: UserModel): Promise<UserResponse> => {
   const { data } = await apiClient.put<UserResponse>("/api/users", user);
   return data as UserResponse;

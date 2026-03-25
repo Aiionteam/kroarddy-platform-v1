@@ -4,7 +4,7 @@ import React, { useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLoginStore } from "@/store";
 import { getAppUserIdFromToken, getNicknameFromToken, getUserIdFromToken } from "@/lib/api/auth";
-import { findUserById } from "@/lib/api/user";
+import { findUserById, findUserByNickname } from "@/lib/api/user";
 import { listFriends, sendFriendRequest } from "@/lib/api/friends";
 import type { UserModel } from "@/lib/api/user";
 import { AppLayout } from "@/components/organisms/AppLayout";
@@ -964,10 +964,21 @@ function AuthorPopover({
   const isOwnPost = post.isOwner;
 
   const handleSendRequest = async () => {
-    if (!post.userId) return;
     setSending(true);
     try {
-      const res = await sendFriendRequest(post.userId);
+      let targetUserId = post.userId;
+
+      // userId가 없으면 닉네임으로 유저 검색
+      if (!targetUserId) {
+        const found = await findUserByNickname(post.author);
+        if (!found?.id) {
+          window.alert(`${post.author}님의 계정을 찾을 수 없습니다.`);
+          return;
+        }
+        targetUserId = found.id;
+      }
+
+      const res = await sendFriendRequest(targetUserId);
       if (res.code === 200) {
         window.alert(`${post.author}님에게 친구 요청을 보냈습니다.`);
         setOpen(false);
@@ -1021,7 +1032,7 @@ function AuthorPopover({
           {!post.isFriend && (
             <button
               type="button"
-              disabled={sending || !post.userId}
+              disabled={sending}
               onClick={handleSendRequest}
               className="flex w-full items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
             >
