@@ -94,6 +94,7 @@ export interface TourstarPostRecord {
   id: string;
   user_id?: number | null;
   author_nickname?: string | null;
+  author_profile_image_url?: string | null;
   title: string;
   location: string;
   comment: string;
@@ -293,13 +294,13 @@ export async function getTourstarSharePreview(postId: string): Promise<TourstarS
 }
 
 /** 프로필 사진을 S3 posts_profile/ 폴더에 업로드하고 공개 URL을 반환한다. */
-export async function uploadProfileImage(file: File): Promise<string> {
+export async function uploadProfileImage(file: File, userId?: number | null): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
-  const res = await fetch(toApiUrl("/v1/photo-selection/upload-profile-image"), {
-    method: "POST",
-    body: formData,
-  });
+  const url = userId != null
+    ? `${toApiUrl("/v1/photo-selection/upload-profile-image")}?user_id=${userId}`
+    : toApiUrl("/v1/photo-selection/upload-profile-image");
+  const res = await fetch(url, { method: "POST", body: formData });
   if (!res.ok) {
     throw new Error(`프로필 사진 업로드 실패: ${res.status}`);
   }

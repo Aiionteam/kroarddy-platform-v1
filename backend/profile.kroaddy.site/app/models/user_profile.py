@@ -32,5 +32,8 @@ class UserProfile(Base):
     # 국적/거주 국가
     nationality = Column(String(50), nullable=True)
 
+    # 프로필 이미지 S3 URL
+    profile_image_url = Column(String(1000), nullable=True)
+
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=datetime.utcnow, nullable=False)

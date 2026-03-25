@@ -56,6 +56,7 @@ interface TourPost {
   id: string;
   userId?: number | null;
   author: string;
+  authorProfileImageUrl?: string | null;
   title: string;
   location: string;
   date: string;
@@ -811,9 +812,11 @@ interface DetailModalProps {
   onEdit: (post: TourPost) => void;
   onBookmark: (id: string) => void;
   onDeletePost: (postId: string) => Promise<boolean>;
+  ownerProfileImage?: string | null;
+  ownerNickname?: string;
 }
 
-function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, onEdit, onBookmark, onDeletePost }: DetailModalProps) {
+function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, onEdit, onBookmark, onDeletePost, ownerProfileImage, ownerNickname }: DetailModalProps) {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [commentInput, setCommentInput] = useState("");
 
@@ -853,8 +856,11 @@ function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, o
         <div className="flex w-1/2 flex-col">
           <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-sm font-bold text-white">
-                {post.author.slice(0, 1).toUpperCase()}
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-sm font-bold text-white overflow-hidden">
+                {(post.isOwner ? (ownerProfileImage || post.authorProfileImageUrl) : post.authorProfileImageUrl)
+                  ? <img src={(post.isOwner ? (ownerProfileImage || post.authorProfileImageUrl) : post.authorProfileImageUrl)!} alt="프로필" className="h-full w-full object-cover" />
+                  : post.author.slice(0, 1).toUpperCase()
+                }
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-800">{post.author}</p>
@@ -902,15 +908,26 @@ function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, o
             <p className="text-xs text-gray-400">{post.date}</p>
             <div className="border-t border-gray-100 pt-3">
               <p className="mb-2 text-xs font-semibold text-gray-700">댓글 {post.comments.length}개</p>
-              <div className="max-h-32 space-y-2 overflow-y-auto pr-1">
-                {post.comments.length > 0 ? post.comments.map((item) => (
-                  <div key={item.id} className="rounded-lg bg-gray-50 px-2.5 py-2">
-                    <div className="mb-0.5 flex items-center gap-1.5 text-[11px] text-gray-500">
-                      <span className="font-semibold text-gray-700">{item.author}</span><span>·</span><span>{item.createdAt}</span>
+              <div className="max-h-40 space-y-2 overflow-y-auto pr-1">
+                {post.comments.length > 0 ? post.comments.map((item) => {
+                  const isMyComment = ownerNickname && item.author === ownerNickname;
+                  return (
+                    <div key={item.id} className="flex items-start gap-2 rounded-lg bg-gray-50 px-2.5 py-2">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-pink-400 text-[10px] font-bold text-white overflow-hidden">
+                        {isMyComment && ownerProfileImage
+                          ? <img src={ownerProfileImage} alt="프로필" className="h-full w-full object-cover" />
+                          : <span>{(item.author || "?").slice(0, 1).toUpperCase()}</span>
+                        }
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-0.5 flex items-center gap-1.5 text-[11px] text-gray-500">
+                          <span className="font-semibold text-gray-700">{item.author}</span><span>·</span><span>{item.createdAt}</span>
+                        </div>
+                        <p className="text-xs text-gray-700">{item.content}</p>
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-700">{item.content}</p>
-                  </div>
-                )) : <p className="text-xs text-gray-400">첫 댓글을 남겨보세요.</p>}
+                  );
+                }) : <p className="text-xs text-gray-400">첫 댓글을 남겨보세요.</p>}
               </div>
               <div className="mt-2 flex items-center gap-2">
                 <input type="text" value={commentInput} onChange={(e) => setCommentInput(e.target.value)}
@@ -1072,13 +1089,18 @@ function FeedCard({ post, onClick, onToggleLike, onShare, onBookmark, onEdit, on
   onViewAuthorPosts: (userId: number | null, authorName: string) => void;
   ownerProfileImage: string | null;
 }) {
+  // 표시할 아바타: 내 게시물이면 ownerProfileImage(최신 업로드 우선), 아니면 post.authorProfileImageUrl
+  const avatarUrl = post.isOwner
+    ? (ownerProfileImage || post.authorProfileImageUrl || null)
+    : (post.authorProfileImageUrl || null);
+
   return (
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all hover:shadow-md">
       {/* 작성자 헤더 */}
       <div className="flex items-center gap-2.5 px-3 py-2.5">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-xs font-bold text-white overflow-hidden">
-          {post.isOwner && ownerProfileImage
-            ? <img src={ownerProfileImage} alt="프로필" className="h-full w-full object-cover" />
+          {avatarUrl
+            ? <img src={avatarUrl} alt="프로필" className="h-full w-full object-cover" />
             : <span>{post.author.slice(0, 1).toUpperCase()}</span>
           }
         </div>
@@ -1239,6 +1261,7 @@ function mapRecordToPost(
     id: record.id,
     userId: uid,
     author,
+    authorProfileImageUrl: record.author_profile_image_url ?? null,
     title: record.title,
     location: record.location || "위치 미확인",
     date: (record.created_at || "").slice(0, 10) || new Date().toISOString().slice(0, 10),
@@ -1598,7 +1621,7 @@ export default function TourstarContent() {
   };
 
   const addComment = async (postId: string, content: string) => {
-    const saved = await createTourstarComment(postId, { author: "me", content });
+    const saved = await createTourstarComment(postId, { author: authorName || "me", content });
     const newComment: TourPostComment = { id: saved.id, author: saved.author, content: saved.content, createdAt: "방금 전" };
     setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p));
     setDetailPost((prev) => prev && prev.id === postId ? { ...prev, comments: [...prev.comments, newComment] } : prev);
@@ -1653,9 +1676,13 @@ export default function TourstarContent() {
                 const localUrl = URL.createObjectURL(file);
                 setProfileImageUrl(localUrl);
                 try {
-                  const s3Url = await uploadProfileImage(file);
+                  const s3Url = await uploadProfileImage(file, currentUserId);
                   setProfileImageUrl(s3Url);
                   localStorage.setItem("tourstar_profile_image", s3Url);
+                  // 내 게시물의 authorProfileImageUrl도 즉시 반영
+                  setPosts((prev) => prev.map((p) =>
+                    p.isOwner ? { ...p, authorProfileImageUrl: s3Url } : p,
+                  ));
                 } catch (err) {
                   console.error("[profile] S3 업로드 실패:", err);
                   // 업로드 실패 시 로컬 미리보기 유지 (localStorage에는 저장하지 않음)
@@ -1843,6 +1870,8 @@ export default function TourstarContent() {
         onEdit={(p) => { setDetailPost(null); setEditTargetPost(p); }}
         onBookmark={toggleBookmark}
         onDeletePost={deletePost}
+        ownerProfileImage={profileImageUrl}
+        ownerNickname={authorName}
       />
     </AppLayout>
   );
