@@ -9,7 +9,7 @@ import React, {
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
 import { AppLayout } from "@/components/organisms/AppLayout";
-import { getAppUserIdFromToken } from "@/lib/api/auth";
+import { getAppUserIdFromToken, getNicknameFromToken } from "@/lib/api/auth";
 import {
   polishRoute,
   saveUserRoute,
@@ -129,6 +129,14 @@ function RouteCard({
         <p className="font-bold text-white text-sm leading-snug line-clamp-2">{route.title}</p>
         <p className="mt-1 text-xs text-white/70">📍 {route.location}</p>
         <p className="mt-1.5 text-xs text-white/60 line-clamp-2">{route.description}</p>
+        {route.nickname && (
+          <p className="mt-2 flex items-center gap-1 text-[11px] text-white/80">
+            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-white/20 text-[9px] font-bold">
+              👤
+            </span>
+            {route.nickname}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -380,10 +388,12 @@ type Step = "photo" | "form" | "polish" | "done";
 
 function UploadModal({
   userId,
+  nickname,
   onClose,
   onSaved,
 }: {
   userId: number | null;
+  nickname?: string | null;
   onClose: () => void;
   onSaved: (route: UserRoute) => void;
 }) {
@@ -529,6 +539,7 @@ function UploadModal({
       }
       const saved = await saveUserRoute({
         user_id: userId,
+        nickname: nickname ?? null,
         title: polished.title,
         location: polished.location,
         description: polished.description,
@@ -937,26 +948,53 @@ export default function UserContentPage() {
   const router = useRouter();
   const { isAuthenticated, logout, accessToken } = useLoginStore();
   const userId = getAppUserIdFromToken(accessToken ?? undefined);
+  const myNickname = getNicknameFromToken(accessToken ?? undefined);
 
   const [routes, setRoutes] = useState<UserRoute[]>([]);
   const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
   const [feedLoading, setFeedLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
   const [detailRoute, setDetailRoute] = useState<UserRoute | null>(null);
+  const [nicknameQuery, setNicknameQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [viewMode, setViewMode] = useState<"all" | "mine">("all");
 
   useEffect(() => {
     if (!isAuthenticated) router.replace("/");
   }, [isAuthenticated, router]);
 
-  useEffect(() => {
-    fetchUserRoutes(20, 0, userId)
+  const loadRoutes = useCallback((opts?: { query?: string; mode?: "all" | "mine" }) => {
+    const { query, mode } = opts ?? {};
+    setFeedLoading(true);
+    const ownerId = (mode ?? viewMode) === "mine" ? userId : undefined;
+    fetchUserRoutes(50, 0, userId, query || undefined, ownerId)
       .then((fetched) => {
         setRoutes(fetched);
         setLikedIds(new Set(fetched.filter((r) => r.liked_by_me).map((r) => r.id)));
       })
       .catch(() => setRoutes([]))
       .finally(() => setFeedLoading(false));
-  }, [userId]);
+  }, [userId, viewMode]);
+
+  useEffect(() => { loadRoutes(); }, [loadRoutes]);
+
+  const handleTabChange = useCallback((mode: "all" | "mine") => {
+    setViewMode(mode);
+    setSearchInput("");
+    setNicknameQuery("");
+    loadRoutes({ mode });
+  }, [loadRoutes]);
+
+  const handleSearch = useCallback(() => {
+    setNicknameQuery(searchInput.trim());
+    loadRoutes({ query: searchInput.trim() });
+  }, [searchInput, loadRoutes]);
+
+  const handleClearSearch = useCallback(() => {
+    setSearchInput("");
+    setNicknameQuery("");
+    loadRoutes({ query: "" });
+  }, [loadRoutes]);
 
   const handleLike = useCallback(async (id: number) => {
     if (!userId) return;
@@ -1018,24 +1056,90 @@ export default function UserContentPage() {
       <div className="flex flex-1 flex-col overflow-hidden">
 
         {/* 헤더 */}
-        <div className="shrink-0 border-b border-gray-200 bg-white px-6 py-4 flex items-center gap-3">
-          <button
-            onClick={() => router.push("/planner")}
-            className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-          >
-            ←
-          </button>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-base font-bold text-gray-800">유저 컨텐츠</h2>
-            <p className="text-[11px] text-gray-400">여행자들이 공유한 추천 루트</p>
+        <div className="shrink-0 border-b border-gray-200 bg-white px-6 py-4 flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push("/planner")}
+              className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+            >
+              ←
+            </button>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-base font-bold text-gray-800">유저 컨텐츠</h2>
+              <p className="text-[11px] text-gray-400">여행자들이 공유한 추천 루트</p>
+            </div>
+            <button
+              onClick={() => setShowUpload(true)}
+              className="flex items-center gap-1.5 rounded-xl bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-700 transition-colors"
+            >
+              <span className="text-base leading-none">＋</span>
+              내 루트 업로드
+            </button>
           </div>
-          <button
-            onClick={() => setShowUpload(true)}
-            className="flex items-center gap-1.5 rounded-xl bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-700 transition-colors"
-          >
-            <span className="text-base leading-none">＋</span>
-            내 루트 업로드
-          </button>
+
+          {/* 전체 / 내 루트 탭 */}
+          <div className="flex gap-1.5">
+            <button
+              type="button"
+              onClick={() => handleTabChange("all")}
+              className={`rounded-xl px-4 py-1.5 text-sm font-semibold transition-all
+                ${viewMode === "all"
+                  ? "bg-purple-600 text-white shadow-sm"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}
+            >
+              🌍 전체 루트
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange("mine")}
+              disabled={!userId}
+              className={`rounded-xl px-4 py-1.5 text-sm font-semibold transition-all disabled:opacity-40
+                ${viewMode === "mine"
+                  ? "bg-purple-600 text-white shadow-sm"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}
+            >
+              👤 내 루트
+            </button>
+          </div>
+
+          {/* 닉네임 검색창 (전체 탭에서만 표시) */}
+          {viewMode === "all" && <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                placeholder="닉네임으로 검색..."
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-9 pr-4 py-2 text-sm text-gray-800 outline-none focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-100 transition-all"
+              />
+              {searchInput && (
+                <button
+                  type="button"
+                  onClick={handleClearSearch}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={handleSearch}
+              className="rounded-xl bg-purple-100 px-4 py-2 text-sm font-semibold text-purple-700 hover:bg-purple-200 transition-colors"
+            >
+              검색
+            </button>
+          </div>}
+
+          {/* 검색 중 표시 */}
+          {viewMode === "all" && nicknameQuery && (
+            <p className="text-xs text-purple-600">
+              <span className="font-semibold">"{nicknameQuery}"</span> 닉네임 검색 결과
+              <button type="button" onClick={handleClearSearch} className="ml-2 text-gray-400 hover:text-gray-600 underline">전체 보기</button>
+            </p>
+          )}
         </div>
 
         {/* 피드 */}
@@ -1052,17 +1156,35 @@ export default function UserContentPage() {
             </div>
           ) : routes.length === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center py-24">
-              <span className="text-6xl">👥</span>
-              <div>
-                <p className="text-lg font-semibold text-gray-700">아직 공유된 루트가 없습니다</p>
-                <p className="mt-1.5 text-sm text-gray-400">첫 번째로 루트를 공유해보세요!</p>
-              </div>
-              <button
-                onClick={() => setShowUpload(true)}
-                className="flex items-center gap-2 rounded-xl border border-purple-300 bg-white px-5 py-2.5 text-sm font-medium text-purple-600 hover:bg-purple-50 transition-colors shadow-sm"
-              >
-                ＋ 첫 번째로 루트를 공유해보세요
-              </button>
+              {viewMode === "mine" ? (
+                <>
+                  <span className="text-6xl">🗺️</span>
+                  <div>
+                    <p className="text-lg font-semibold text-gray-700">아직 내가 올린 루트가 없습니다</p>
+                    <p className="mt-1.5 text-sm text-gray-400">나만의 여행 루트를 공유해보세요!</p>
+                  </div>
+                  <button
+                    onClick={() => setShowUpload(true)}
+                    className="flex items-center gap-2 rounded-xl border border-purple-300 bg-white px-5 py-2.5 text-sm font-medium text-purple-600 hover:bg-purple-50 transition-colors shadow-sm"
+                  >
+                    ＋ 첫 루트 올리기
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="text-6xl">👥</span>
+                  <div>
+                    <p className="text-lg font-semibold text-gray-700">아직 공유된 루트가 없습니다</p>
+                    <p className="mt-1.5 text-sm text-gray-400">첫 번째로 루트를 공유해보세요!</p>
+                  </div>
+                  <button
+                    onClick={() => setShowUpload(true)}
+                    className="flex items-center gap-2 rounded-xl border border-purple-300 bg-white px-5 py-2.5 text-sm font-medium text-purple-600 hover:bg-purple-50 transition-colors shadow-sm"
+                  >
+                    ＋ 첫 번째로 루트를 공유해보세요
+                  </button>
+                </>
+              )}
             </div>
           ) : (
             <div className="flex flex-wrap gap-4">
@@ -1085,6 +1207,7 @@ export default function UserContentPage() {
       {showUpload && (
         <UploadModal
           userId={userId}
+          nickname={myNickname}
           onClose={() => setShowUpload(false)}
           onSaved={(saved) => {
             handleSaved(saved);
