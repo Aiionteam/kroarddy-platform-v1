@@ -107,9 +107,20 @@ async function fetchCarRoute(
 ): Promise<{ path: [number, number][]; summary: RouteSummary } | null> {
   if (coords.length < 2) return null;
 
+  // 0,0 좌표(geocoding 실패) 및 한국 범위 외 좌표 사전 제거
+  const KOREA_LAT = [33.0, 38.7] as const;
+  const KOREA_LNG = [124.5, 132.0] as const;
+  const validCoords = coords.filter(
+    (c) =>
+      c.lat !== 0 && c.lng !== 0 &&
+      isFinite(c.lat) && isFinite(c.lng) &&
+      c.lat >= KOREA_LAT[0] && c.lat <= KOREA_LAT[1] &&
+      c.lng >= KOREA_LNG[0] && c.lng <= KOREA_LNG[1]
+  );
+
   // 동일/근접 좌표 제거 — Naver Directions API는 출발·도착 동일 좌표를 허용하지 않음
-  const deduped = deduplicateCoords(coords);
-  if (deduped.length < 2) return null; // 모든 장소가 동일 위치: 경로 없음
+  const deduped = deduplicateCoords(validCoords);
+  if (deduped.length < 2) return null; // 유효 장소 부족: 경로 없음
 
   // Directions 5: start(1) + waypoints(최대 5) + goal(1) = 최대 7개
   const limited = deduped.slice(0, 7);
@@ -126,8 +137,10 @@ async function fetchCarRoute(
         waypoints: waypoints.map((w) => ({ lng: w.lng, lat: w.lat })),
       }),
     });
+    // 백엔드가 Naver API 실패 시 200 + {fallback: true} 반환 → null로 처리 (직선 fallback)
     if (!res.ok) return null;
     const data = await res.json();
+    if (data.fallback || !data.path?.length) return null;
     return {
       path: data.path as [number, number][],
       summary: data.summary ?? { distance: 0, duration: 0 },

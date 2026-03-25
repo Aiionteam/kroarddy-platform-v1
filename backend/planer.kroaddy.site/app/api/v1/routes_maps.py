@@ -76,20 +76,56 @@ def _haversine_m(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     return R * 2 * atan2(sqrt(a), sqrt(1 - a))
 
 
+# Directions API 실패 시 반환하는 fallback 응답.
+# 5xx 대신 200으로 반환하여 브라우저 콘솔 에러를 방지하고,
+# 프론트엔드가 직선 경로(fallback)로 자동 전환하도록 한다.
+_DIRECTIONS_FALLBACK = {
+    "path": [],
+    "summary": {"distance": 0, "duration": 0},
+    "fallback": True,
+}
+
+# 한국 영토 좌표 범위 (근사치) – 이 범위 밖 좌표는 geocoding 실패로 간주
+_KOREA_LAT = (33.0, 38.7)
+_KOREA_LNG = (124.5, 132.0)
+
+
+def _is_valid_korea_coord(lat: float, lng: float) -> bool:
+    """좌표가 한국 범위 내 유효한 값인지 검증."""
+    if lat == 0.0 or lng == 0.0:
+        return False  # geocoding 실패로 생성된 0,0 좌표
+    return _KOREA_LAT[0] <= lat <= _KOREA_LAT[1] and _KOREA_LNG[0] <= lng <= _KOREA_LNG[1]
+
+
 @router.post("/directions", summary="Directions 5 – 실제 도로 경로 조회")
 async def get_route_directions(body: DirectionsRequest):
     """start → waypoints → goal 순서로 실제 도로 경로 좌표 배열 반환.
 
     waypoints는 최대 5개 (Directions 5 제한). 하루 일정 단위로 호출할 것.
-    Returns: {"path": [[lng, lat], ...], "summary": {"distance": m, "duration": ms}}
+
+    Returns:
+        성공: {"path": [[lng, lat], ...], "summary": {"distance": m, "duration": ms}}
+        실패: {"path": [], "summary": ..., "fallback": true}  ← 항상 200, 브라우저 에러 없음
+
+    Naver API 실패 원인: 할당량 초과·도로망 밖 좌표·동일 출발/도착·geocoding 0,0 등
+    모두 fallback으로 처리 → 프론트엔드가 직선 점선 경로로 자동 대체한다.
     """
-    # 출발지 == 도착지 검증: Naver Directions API는 동일 좌표를 거부하므로
-    # 프론트에서 걸러지지 않은 경우 502 대신 명확한 400 반환
-    if _haversine_m(body.start.lat, body.start.lng, body.goal.lat, body.goal.lng) < 50:
-        raise HTTPException(
-            status_code=400,
-            detail="출발지와 도착지가 50m 이내로 동일한 위치입니다. 경로를 계산할 수 없습니다.",
+    all_points = [body.start, body.goal] + list(body.waypoints)
+
+    # 유효하지 않은 좌표 감지 (0,0 또는 한국 범위 외 geocoding 실패 좌표)
+    invalid = [p for p in all_points if not _is_valid_korea_coord(p.lat, p.lng)]
+    if invalid:
+        logger.warning(
+            "Directions fallback – 유효하지 않은 좌표 %d개: %s",
+            len(invalid),
+            [(round(p.lat, 4), round(p.lng, 4)) for p in invalid],
         )
+        return _DIRECTIONS_FALLBACK
+
+    # 출발지 == 도착지 (50m 이내) – Naver API 거부 케이스
+    if _haversine_m(body.start.lat, body.start.lng, body.goal.lat, body.goal.lng) < 50:
+        logger.info("Directions fallback – 출발지/도착지 동일 위치 (50m 이내)")
+        return _DIRECTIONS_FALLBACK
 
     wp = [(w.lng, w.lat) for w in body.waypoints] if body.waypoints else None
 
@@ -102,6 +138,8 @@ async def get_route_directions(body: DirectionsRequest):
     )
 
     if result is None:
-        raise HTTPException(status_code=502, detail="경로를 계산할 수 없습니다.")
+        # 할당량 초과, 경로 없음(도서 등), 기타 Naver API 오류
+        logger.warning("Directions fallback – Naver API 응답 없음 (할당량 초과 또는 경로 불가)")
+        return _DIRECTIONS_FALLBACK
 
     return result
