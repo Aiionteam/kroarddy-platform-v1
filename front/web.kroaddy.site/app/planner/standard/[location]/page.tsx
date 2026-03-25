@@ -79,7 +79,7 @@ export default function LocationPlannerPage() {
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [savedPlanId, setSavedPlanId] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [useSearch, setUseSearch] = useState(false);
+  const useSearch = true;
 
   useEffect(() => {
     if (!isAuthenticated) router.replace("/");
@@ -277,41 +277,20 @@ export default function LocationPlannerPage() {
                   className="bg-transparent text-sm text-gray-700 outline-none"
                 />
               </div>
-              <div className="flex flex-col items-end gap-1.5">
-                <button
-                  onClick={loadRoutes}
-                  disabled={routesLoading || !startDate || !endDate}
-                  className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-50"
-                >
-                  {routesLoading ? (
-                    <>
-                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      생성 중…
-                    </>
-                  ) : (
-                    <>✨ 루트 생성</>
-                  )}
-                </button>
-                <label className="flex cursor-pointer items-center gap-1.5 select-none">
-                  <input
-                    type="checkbox"
-                    checked={useSearch}
-                    onChange={(e) => {
-                      setUseSearch(e.target.checked);
-                      routesFetchedRef.current = null;
-                      setRoutes([]);
-                      setRoutesTriggered(false);
-                      setSelectedRoute(null);
-                      setSchedule([]);
-                      setSavedPlanId(null);
-                    }}
-                    className="h-3.5 w-3.5 accent-indigo-600"
-                  />
-                  <span className="text-xs text-gray-500">
-                    구글 검색 사용 (시간이 걸리지만 정확한 정보를 제공합니다)
-                  </span>
-                </label>
-              </div>
+              <button
+                onClick={loadRoutes}
+                disabled={routesLoading || !startDate || !endDate}
+                className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {routesLoading ? (
+                  <>
+                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    정확한 정보 검색 중…
+                  </>
+                ) : (
+                  <>✨ 루트 생성</>
+                )}
+              </button>
             </div>
           </div>
         </header>
