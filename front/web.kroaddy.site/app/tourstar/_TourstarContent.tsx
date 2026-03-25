@@ -21,6 +21,7 @@ import {
   localArtifactPathToUrl,
   deleteTourstarPost,
   updateTourstarPost,
+  uploadProfileImage,
   type TourstarPostRecord,
   type TourstarStyleFilter,
   uploadTourstarPhotos,
@@ -1644,17 +1645,21 @@ export default function TourstarContent() {
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                  const url = ev.target?.result as string;
-                  setProfileImageUrl(url);
-                  localStorage.setItem("tourstar_profile_image", url);
-                };
-                reader.readAsDataURL(file);
                 e.target.value = "";
+                // 즉시 로컬 미리보기 적용
+                const localUrl = URL.createObjectURL(file);
+                setProfileImageUrl(localUrl);
+                try {
+                  const s3Url = await uploadProfileImage(file);
+                  setProfileImageUrl(s3Url);
+                  localStorage.setItem("tourstar_profile_image", s3Url);
+                } catch (err) {
+                  console.error("[profile] S3 업로드 실패:", err);
+                  // 업로드 실패 시 로컬 미리보기 유지 (localStorage에는 저장하지 않음)
+                }
               }}
             />
             <button

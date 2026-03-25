@@ -292,6 +292,21 @@ export async function getTourstarSharePreview(postId: string): Promise<TourstarS
   return res.json();
 }
 
+/** 프로필 사진을 S3 posts_profile/ 폴더에 업로드하고 공개 URL을 반환한다. */
+export async function uploadProfileImage(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch(toApiUrl("/v1/photo-selection/upload-profile-image"), {
+    method: "POST",
+    body: formData,
+  });
+  if (!res.ok) {
+    throw new Error(`프로필 사진 업로드 실패: ${res.status}`);
+  }
+  const data: { profile_image_url: string } = await res.json();
+  return data.profile_image_url;
+}
+
 /** 로컬 서버에 저장된 임시 파일들을 S3에 올리고 퍼블릭 URL 목록을 반환한다. */
 export async function finalizeTourstarUploads(
   imagePaths: string[],
