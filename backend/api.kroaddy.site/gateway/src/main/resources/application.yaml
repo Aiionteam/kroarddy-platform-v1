@@ -45,9 +45,23 @@ spring:
               - RemoveResponseHeader=Access-Control-Expose-Headers
               - RemoveResponseHeader=Access-Control-Max-Age
 
-          # ── Festival 서비스 (8002) ───────────────────────────────────────
-          - id: festival
-            uri: ${AI_SERVICE_FESTIVAL_URL:http://festival:8002}
+          # ── Guide 공개 경로 (/guide/** -> guide 서비스) ──────────────────────
+          - id: guide-public
+            uri: ${AI_SERVICE_GUIDE_URL:${AI_SERVICE_FESTIVAL_URL:http://guide:8002}}
+            predicates:
+              - Path=/guide,/guide/**
+            filters:
+              - RewritePath=/guide/?(?<remaining>.*), /${remaining}
+              - RemoveResponseHeader=Access-Control-Allow-Origin
+              - RemoveResponseHeader=Access-Control-Allow-Methods
+              - RemoveResponseHeader=Access-Control-Allow-Headers
+              - RemoveResponseHeader=Access-Control-Allow-Credentials
+              - RemoveResponseHeader=Access-Control-Expose-Headers
+              - RemoveResponseHeader=Access-Control-Max-Age
+
+          # ── Guide 서비스 (8002) ──────────────────────────────────────────
+          - id: guide
+            uri: ${AI_SERVICE_GUIDE_URL:${AI_SERVICE_FESTIVAL_URL:http://guide:8002}}
             predicates:
               - Path=/api/v1/festivals,/api/v1/festivals/**
             filters:
@@ -105,6 +119,23 @@ spring:
             filters:
               # /api/tourstar-files/... → /tourstar-files/... 로 경로 변환
               - RewritePath=/api/tourstar-files/(?<remaining>.*), /tourstar-files/${remaining}
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins:
+                  - https://web.kroaddy.site
+                  - http://localhost:3000
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - PATCH
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders:
+                  - "*"
+                allowCredentials: true
+                maxAge: 3600
   datasource:
     driver-class-name: org.postgresql.Driver
     hikari:
@@ -164,14 +195,17 @@ kakao:
 
 # AI 서비스 URL – spring.cloud.gateway.mvc.routes 에서 참조
 # MSA 구조 (루트 docker-compose.yaml 기준 서비스명):
-#   festival  → http://festival:8002
+#   guide     → http://guide:8002
 #   planer    → http://planer:8003
 #   user_info → http://user_info:8004
 # 로컬 직접 실행 시: http://localhost:PORT
 ai:
   service:
+    guide:
+      url: ${AI_SERVICE_GUIDE_URL:${AI_SERVICE_FESTIVAL_URL:http://guide:8002}}
+    # backward-compat alias
     festival:
-      url: ${AI_SERVICE_FESTIVAL_URL:http://festival:8002}
+      url: ${AI_SERVICE_GUIDE_URL:${AI_SERVICE_FESTIVAL_URL:http://guide:8002}}
     tourplaner:
       url: ${AI_SERVICE_TOURPLANER_URL:http://planer:8003}
     user-info:
