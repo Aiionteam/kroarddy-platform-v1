@@ -183,6 +183,10 @@ function buildNaverTransitUrl(
   )}/${goal.lng},${goal.lat},${encodeURIComponent(goal.name)}/-/transit`;
 }
 
+function buildNaverSearchUrl(name: string): string {
+  return `https://map.naver.com/v5/search/${encodeURIComponent(name)}`;
+}
+
 export function NaverRouteMapModal({
   places,
   planName,
@@ -286,9 +290,17 @@ export function NaverRouteMapModal({
         const dist = totalStraightDistance(sortedCoords);
         setSummary({ distance: dist * 1.2, duration: (dist * 1.2) / 80 * 60000 });
       } else {
-        // transit: 마커만 찍고 링크 제공
+        // transit: 마커만 찍고 구간별 링크는 목록에서 제공
         const dist = totalStraightDistance(sortedCoords);
         setSummary({ distance: dist, duration: 0 });
+        new naver.maps.Polyline({
+          map,
+          path: latLngs,
+          strokeColor: cfg.stroke,
+          strokeWeight: 3,
+          strokeOpacity: 0.5,
+          strokeStyle: "shortdash",
+        });
       }
 
       // ── 뷰포트 ───────────────────────────────────────────────
@@ -391,9 +403,6 @@ export function NaverRouteMapModal({
   function handleOverlay(e: React.MouseEvent<HTMLDivElement>) {
     if (e.target === overlayRef.current) onClose();
   }
-
-  const transitStart = coordsCache?.[0];
-  const transitGoal = coordsCache?.[coordsCache.length - 1];
 
   return (
     <div
@@ -502,27 +511,7 @@ export function NaverRouteMapModal({
             </div>
           )}
 
-          {/* 대중교통 오버레이 버튼 */}
-          {status === "ok" && mode === "transit" && transitStart && transitGoal && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/30">
-              <div className="rounded-2xl bg-white px-6 py-5 text-center shadow-xl">
-                <p className="mb-1 text-sm font-bold text-gray-800">
-                  대중교통 경로 안내
-                </p>
-                <p className="mb-4 text-xs text-gray-500">
-                  네이버 지도에서 상세 경로를 확인하세요
-                </p>
-                <a
-                  href={buildNaverTransitUrl(transitStart, transitGoal)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl bg-sky-500 px-5 py-2.5 text-sm font-bold text-white shadow-md hover:bg-sky-600 transition-colors"
-                >
-                  <span>🚌</span> 네이버 지도로 보기
-                </a>
-              </div>
-            </div>
-          )}
+          {/* transit: 구간 안내는 하단 목록에서 제공 */}
         </div>
 
         {/* ── 경유지 목록 ───────────────────────────────────── */}
@@ -531,6 +520,20 @@ export function NaverRouteMapModal({
             {validPlaces.map((p, idx) => {
               const color = MARKER_COLORS[idx % MARKER_COLORS.length];
               const isFailed = failedNames.has(p.name);
+
+              // 네이버 지도 링크 생성
+              const prevCoord = coordsCache?.find((c) => c.idx === idx - 1);
+              const currCoord = coordsCache?.find((c) => c.idx === idx);
+              const naverUrl =
+                mode === "transit" && prevCoord && currCoord
+                  ? buildNaverTransitUrl(prevCoord, currCoord)
+                  : buildNaverSearchUrl(p.name);
+              const naverLabel =
+                mode === "transit" && prevCoord && currCoord
+                  ? `${idx}→${idx + 1} 경로`
+                  : "지도 보기";
+              const naverIcon = mode === "transit" ? "🚌" : "📍";
+
               return (
                 <div key={idx} className="flex items-center gap-3 py-2.5">
                   <span
@@ -542,9 +545,7 @@ export function NaverRouteMapModal({
                   <div className="min-w-0 flex-1">
                     <p
                       className={`text-xs font-semibold leading-tight ${
-                        isFailed
-                          ? "text-gray-300 line-through"
-                          : "text-gray-800"
+                        isFailed ? "text-gray-300 line-through" : "text-gray-800"
                       }`}
                     >
                       {p.title}
@@ -557,18 +558,22 @@ export function NaverRouteMapModal({
                       📍 {p.name}
                     </p>
                   </div>
-                  {idx < validPlaces.length - 1 && (
-                    <svg
-                      className="shrink-0 text-gray-300"
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
+                  {/* 네이버 지도 링크 버튼 */}
+                  {!isFailed && (
+                    <a
+                      href={naverUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`shrink-0 flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-colors ${
+                        mode === "transit" && prevCoord && currCoord
+                          ? "bg-sky-50 text-sky-600 hover:bg-sky-100"
+                          : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                      }`}
+                      title={`${p.name} 네이버 지도로 보기`}
                     >
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
+                      <span>{naverIcon}</span>
+                      <span>{naverLabel}</span>
+                    </a>
                   )}
                 </div>
               );
