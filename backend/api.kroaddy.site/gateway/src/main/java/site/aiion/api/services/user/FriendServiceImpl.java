@@ -61,10 +61,13 @@ public class FriendServiceImpl implements FriendService {
     public Messenger listPendingToMe(Long toUserId) {
         List<FriendRequest> list = friendRequestRepository.findByToUserIdAndStatus(toUserId, "PENDING");
         List<Long> fromIds = list.stream().map(FriendRequest::getFromUserId).distinct().collect(Collectors.toList());
-        List<UserModel> users = new ArrayList<>();
-        for (Long id : fromIds) {
-            userRepository.findById(id).ifPresent(u -> users.add(toModel(u)));
+        if (fromIds.isEmpty()) {
+            return Messenger.builder().code(200).message("받은 친구 요청").data(new ArrayList<>()).build();
         }
+        // N+1 → WHERE id IN (...) 단일 쿼리
+        List<UserModel> users = userRepository.findAllById(fromIds).stream()
+                .map(this::toModel)
+                .collect(Collectors.toList());
         return Messenger.builder().code(200).message("받은 친구 요청").data(users).build();
     }
 
@@ -82,13 +85,17 @@ public class FriendServiceImpl implements FriendService {
 
     @Override
     public Messenger listFriends(Long userId) {
-        List<FriendRequest> sent = friendRequestRepository.findByFromUserIdAndStatus(userId, "ACCEPTED");
-        List<FriendRequest> received = friendRequestRepository.findByToUserIdAndStatus(userId, "ACCEPTED");
-        List<Long> friendIds = new ArrayList<>();
-        sent.forEach(f -> friendIds.add(f.getToUserId()));
-        received.forEach(f -> friendIds.add(f.getFromUserId()));
-        List<UserModel> friends = friendIds.stream().distinct()
-                .flatMap(id -> userRepository.findById(id).stream())
+        // 기존: sent + received 두 번 쿼리 → 단일 OR 쿼리로 통합
+        List<FriendRequest> accepted = friendRequestRepository.findAcceptedByUserId(userId);
+        List<Long> friendIds = accepted.stream()
+                .map(f -> f.getFromUserId().equals(userId) ? f.getToUserId() : f.getFromUserId())
+                .distinct()
+                .collect(Collectors.toList());
+        if (friendIds.isEmpty()) {
+            return Messenger.builder().code(200).message("친구 목록").data(new ArrayList<>()).build();
+        }
+        // N+1 → WHERE id IN (...) 단일 쿼리
+        List<UserModel> friends = userRepository.findAllById(friendIds).stream()
                 .map(this::toModel)
                 .collect(Collectors.toList());
         return Messenger.builder().code(200).message("친구 목록").data(friends).build();

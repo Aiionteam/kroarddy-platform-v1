@@ -8,9 +8,18 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "friend_requests", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"from_user_id", "to_user_id"})
-})
+@Table(
+    name = "friend_requests",
+    uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"from_user_id", "to_user_id"})
+    },
+    indexes = {
+        // listFriends / sendRequest 에서 (fromUserId, status) 조건으로 조회
+        @Index(name = "idx_friend_req_from_status", columnList = "from_user_id, status"),
+        // listPendingToMe / listFriends 에서 (toUserId, status) 조건으로 조회
+        @Index(name = "idx_friend_req_to_status",   columnList = "to_user_id, status")
+    }
+)
 @Data
 @Builder
 @NoArgsConstructor
