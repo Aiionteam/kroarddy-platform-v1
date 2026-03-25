@@ -815,9 +815,10 @@ interface DetailModalProps {
   onDeletePost: (postId: string) => Promise<boolean>;
   ownerProfileImage?: string | null;
   ownerNickname?: string;
+  authorProfileMap?: Map<string, string>;
 }
 
-function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, onEdit, onBookmark, onDeletePost, ownerProfileImage, ownerNickname }: DetailModalProps) {
+function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, onEdit, onBookmark, onDeletePost, ownerProfileImage, ownerNickname, authorProfileMap }: DetailModalProps) {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [commentInput, setCommentInput] = useState("");
 
@@ -911,13 +912,13 @@ function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, o
               <p className="mb-2 text-xs font-semibold text-gray-700">댓글 {post.comments.length}개</p>
               <div className="max-h-40 space-y-2 overflow-y-auto pr-1">
                 {post.comments.length > 0 ? post.comments.map((item) => {
-                  // 내 댓글 여부: 현재 로그인 사용자의 닉네임과 정확히 일치할 때만
-                  const isMyComment = Boolean(ownerNickname && item.author === ownerNickname);
+                  // 댓글 작성자 프로필 이미지: authorProfileMap에서 조회 (모든 사용자 커버)
+                  const commentAvatarUrl = authorProfileMap?.get(item.author) ?? null;
                   return (
                     <div key={item.id} className="flex items-start gap-2 rounded-lg bg-gray-50 px-2.5 py-2">
                       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-pink-400 text-[10px] font-bold text-white overflow-hidden">
-                        {isMyComment && ownerProfileImage
-                          ? <img src={ownerProfileImage} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                        {commentAvatarUrl
+                          ? <img src={commentAvatarUrl} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                           : <span>{(item.author || "?").slice(0, 1).toUpperCase()}</span>
                         }
                       </div>
@@ -1558,6 +1559,22 @@ export default function TourstarContent() {
     myLikes: posts.filter((p) => p.isOwner).reduce((acc, p) => acc + p.likes, 0),
   }), [posts]);
 
+  // 닉네임 → 프로필 이미지 URL 맵 (댓글 아바타 표시용)
+  const authorProfileMap = useMemo(() => {
+    const map = new Map<string, string>();
+    // 게시물 작성자 이미지 수집
+    for (const p of posts) {
+      if (p.author && p.authorProfileImageUrl) {
+        map.set(p.author, p.authorProfileImageUrl);
+      }
+    }
+    // 현재 로그인 사용자 이미지 (최신값으로 덮어쓰기)
+    if (authorName && profileImageUrl) {
+      map.set(authorName, profileImageUrl);
+    }
+    return map;
+  }, [posts, authorName, profileImageUrl]);
+
   /* ── 핸들러 ── */
   const toggleLike = (id: string) => {
     setPosts((prev) => prev.map((p) => p.id === id ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 } : p));
@@ -1920,6 +1937,7 @@ export default function TourstarContent() {
         onDeletePost={deletePost}
         ownerProfileImage={profileImageUrl}
         ownerNickname={authorName}
+        authorProfileMap={authorProfileMap}
       />
     </AppLayout>
   );
