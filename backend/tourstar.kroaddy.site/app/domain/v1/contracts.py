@@ -161,6 +161,15 @@ class UpdatePostRequest(BaseModel):
     image_paths: list[str] | None = None
 
 
+class FinalizeUploadsRequest(BaseModel):
+    image_paths: list[str] = Field(default_factory=list)
+
+
+class FinalizeUploadsResponse(BaseModel):
+    s3_urls: list[str] = Field(default_factory=list)
+    failed_count: int = 0
+
+
 class DeletePostRequest(BaseModel):
     user_id: int = Field(..., ge=1, description="삭제를 요청하는 로그인 사용자 ID")
 
