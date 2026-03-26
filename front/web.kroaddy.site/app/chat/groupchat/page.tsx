@@ -98,7 +98,8 @@ export default function GroupChatPage() {
         setMessages(sorted);
         const last = sorted[sorted.length - 1];
         if (last?.id) lastMessageIdRef.current = last.id;
-      } else {
+      } else if (response.code !== 401 && response.code !== 403) {
+        // 401/403은 쿠키 인증 타이밍 문제로 일시적으로 발생할 수 있음 — SSE 재연결에서 처리
         setError(response.message || "메시지를 불러올 수 없습니다.");
       }
     } catch (err: any) {
@@ -157,6 +158,7 @@ export default function GroupChatPage() {
       try {
         const data = JSON.parse(event.data) as GroupChatMessage;
         if (data.id) {
+          setError(null);
           if (data.id > lastMessageIdRef.current) lastMessageIdRef.current = data.id;
           setMessages((prev) => {
             if (prev.some((m) => m.id === data.id)) return prev;
