@@ -5,8 +5,20 @@
 환경변수: OPENWEATHER_API_KEY
 """
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
+
+# 한국 표준시 (UTC+9)
+KST = timezone(timedelta(hours=9))
+
+# 오전(9시) / 점심(12시) / 오후(15시) / 저녁(18시) – KST 시각 기준
+TIME_LABELS: dict[str, int] = {
+    "오전": 9,
+    "점심": 12,
+    "오후": 15,
+    "저녁": 18,
+    "밤":   21,
+}
 
 import httpx
 
@@ -130,13 +142,20 @@ async def fetch_weather_forecast(
         logger.warning("OWM 예보 API 실패: %s", e)
         return {"available": False, "reason": str(e), "dates": {}}
 
-    # 날짜별 집계
+    # 날짜별 집계 (KST 기준)
+    # OWM dt_txt 는 UTC 이므로 +9h 하여 KST 날짜/시각으로 분류
     by_date: dict[str, dict] = {}
     for slot in data.get("list", []):
-        dt_txt = slot.get("dt_txt", "")  # "2025-06-01 12:00:00"
-        date_str = dt_txt[:10]
-        if not date_str:
+        dt_txt = slot.get("dt_txt", "")  # "2025-06-01 12:00:00" UTC
+        if not dt_txt:
             continue
+
+        # UTC → KST 변환
+        utc_dt = datetime.strptime(dt_txt, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+        kst_dt = utc_dt.astimezone(KST)
+        date_str = kst_dt.strftime("%Y-%m-%d")   # KST 날짜
+        kst_hour = kst_dt.hour                    # KST 시각 (0~23)
+
         # 여행 기간 외 슬롯 제외
         if start_date and date_str < start_date:
             continue
@@ -150,16 +169,33 @@ async def fetch_weather_forecast(
         condition_desc = w.get("description", "")
         temp = float(main_data.get("temp", 0))
         pop = int(round(float(slot.get("pop", 0)) * 100))
+        ko_cond = _ko_desc(condition_main, condition_desc)
 
         if date_str not in by_date:
             by_date[date_str] = {
                 "temps": [],
                 "conditions": [],
                 "pop_max": 0,
+                # 각 KST 시각 슬롯 저장 (오전9·점심12·오후15·저녁18·밤21)
+                "time_slots": {},
             }
         by_date[date_str]["temps"].append(temp)
-        by_date[date_str]["conditions"].append(_ko_desc(condition_main, condition_desc))
+        by_date[date_str]["conditions"].append(ko_cond)
         by_date[date_str]["pop_max"] = max(by_date[date_str]["pop_max"], pop)
+
+        # 오전(9)/점심(12)/오후(15)/저녁(18)/밤(21) 중 가장 가까운 슬롯에 매핑
+        _SLOT_HOURS = (9, 12, 15, 18, 21)
+        closest_hour = min(_SLOT_HOURS, key=lambda h: abs(kst_hour - h))
+        slot_key = f"{closest_hour:02d}"
+        # 같은 슬롯에 여러 개 들어오면 더 가까운 것만 보관
+        existing = by_date[date_str]["time_slots"].get(slot_key)
+        if existing is None or abs(kst_hour - closest_hour) < existing["_dist"]:
+            by_date[date_str]["time_slots"][slot_key] = {
+                "temp": round(temp, 1),
+                "condition": ko_cond,
+                "pop": pop,
+                "_dist": abs(kst_hour - closest_hour),
+            }
 
     result_dates: dict[str, dict] = {}
     for date_str, agg in by_date.items():
@@ -167,16 +203,21 @@ async def fetch_weather_forecast(
         conditions = agg["conditions"]
         pop = agg["pop_max"]
 
-        # 대표 날씨: 가장 많이 등장한 상태
         dominant = max(set(conditions), key=conditions.count)
-
         advice = _build_weather_advice(dominant, pop, min(temps), max(temps))
+
+        # time_slots에서 _dist 제거 후 반환
+        clean_slots: dict[str, dict] = {}
+        for slot_key, slot_val in agg["time_slots"].items():
+            clean_slots[slot_key] = {k: v for k, v in slot_val.items() if k != "_dist"}
+
         result_dates[date_str] = {
             "temp_min": round(min(temps), 1),
             "temp_max": round(max(temps), 1),
             "condition": dominant,
             "pop": pop,
             "advice": advice,
+            "time_slots": clean_slots,   # {"09": {...}, "12": {...}, "15": {...}, "18": {...}}
         }
 
     return {"available": bool(result_dates), "dates": result_dates}
