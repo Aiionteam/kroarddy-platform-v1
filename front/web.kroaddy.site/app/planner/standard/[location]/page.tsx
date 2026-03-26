@@ -80,13 +80,14 @@ export default function LocationPlannerPage() {
   const [savedPlanId, setSavedPlanId] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const useSearch = true;
+  const [transportMode, setTransportMode] = useState<"car" | "transit" | "walk">("car");
 
   useEffect(() => {
     if (!isAuthenticated) router.replace("/");
   }, [isAuthenticated, router]);
 
   const loadRoutes = useCallback(async () => {
-    const dedupeKey = `${location}:${startDate}:${endDate}:${useSearch}`;
+    const dedupeKey = `${location}:${startDate}:${endDate}:${useSearch}:${transportMode}`;
     if (routesFetchedRef.current === dedupeKey) return;
     routesFetchedRef.current = dedupeKey;
 
@@ -123,6 +124,7 @@ export default function LocationPlannerPage() {
         existingRoutes: existingRoutes.length > 0 ? existingRoutes : undefined,
         useSearch,
         newsTop10: newsTop10.length > 0 ? newsTop10 : undefined,
+        transportMode,
       });
       setRoutes(res.routes);
       if (res.error && res.routes.length === 0) {
@@ -137,7 +139,7 @@ export default function LocationPlannerPage() {
     } finally {
       setRoutesLoading(false);
     }
-  }, [location, startDate, endDate, appUserId, useSearch]);
+  }, [location, startDate, endDate, appUserId, useSearch, transportMode]);
 
   useEffect(() => {
     routesFetchedRef.current = null;
@@ -173,6 +175,7 @@ export default function LocationPlannerPage() {
           userId: appUserId ?? undefined,
           useSearch,
           newsTop10: newsTop10.length > 0 ? newsTop10 : undefined,
+          transportMode,
         });
         setSchedule(res.schedule);
         if (res.cost_summary) setCostSummary(res.cost_summary);
@@ -188,7 +191,7 @@ export default function LocationPlannerPage() {
         setScheduleLoading(false);
       }
     },
-    [location, startDate, endDate, appUserId, useSearch]
+    [location, startDate, endDate, appUserId, useSearch, transportMode]
   );
 
   const handleSavePlan = useCallback(async () => {
@@ -277,6 +280,38 @@ export default function LocationPlannerPage() {
                   className="bg-transparent text-sm text-gray-700 outline-none"
                 />
               </div>
+
+              {/* 이동수단 선택 */}
+              <div className="flex items-center gap-1 rounded-xl border border-gray-200 bg-gray-50 p-1">
+                {(
+                  [
+                    { value: "car",     label: "🚗 자가용" },
+                    { value: "transit", label: "🚇 대중교통" },
+                    { value: "walk",    label: "🚶 도보" },
+                  ] as const
+                ).map(({ value, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => {
+                      setTransportMode(value);
+                      routesFetchedRef.current = null;
+                      setRoutes([]);
+                      setRoutesTriggered(false);
+                      setSelectedRoute(null);
+                      setSchedule([]);
+                      setSavedPlanId(null);
+                    }}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+                      transportMode === value
+                        ? "bg-indigo-600 text-white shadow-sm"
+                        : "text-gray-500 hover:bg-gray-100"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
               <button
                 onClick={loadRoutes}
                 disabled={routesLoading || !startDate || !endDate}
@@ -498,6 +533,11 @@ export default function LocationPlannerPage() {
                                 )}
                               </div>
                               <p className="mt-0.5 text-xs text-indigo-500 font-medium">📍 {item.place}</p>
+                              {item.business_hours && (
+                                <p className="mt-1 rounded bg-slate-50 px-2 py-1 text-xs text-slate-600 leading-relaxed">
+                                  🕐 {item.business_hours}
+                                </p>
+                              )}
                               <p className="mt-1 text-sm text-gray-600">{item.description}</p>
                               {item.tips && (
                                 <p className="mt-1.5 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">

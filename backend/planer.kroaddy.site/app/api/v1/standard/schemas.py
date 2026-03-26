@@ -11,6 +11,7 @@ class RoutesRequest(BaseModel):
     existing_routes: Optional[list[str]] = None
     use_search: bool = False  # True: Google Search grounding 사용 (느리지만 정확)
     news_top10: Optional[list[Any]] = None  # 프론트에서 전달한 뉴스 Top10 (없으면 직접 fetch)
+    transport_mode: Optional[str] = None  # "car" | "transit" | "walk"
 
 
 class ScheduleRequest(BaseModel):
@@ -20,6 +21,7 @@ class ScheduleRequest(BaseModel):
     user_id: Optional[int] = None
     use_search: bool = False  # True: Google Search grounding 사용
     news_top10: Optional[list[Any]] = None  # 프론트에서 전달한 뉴스 Top10 (없으면 직접 fetch)
+    transport_mode: Optional[str] = None  # "car" | "transit" | "walk"
 
 
 class SavePlanRequest(BaseModel):
