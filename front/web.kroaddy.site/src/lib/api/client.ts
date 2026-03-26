@@ -138,10 +138,17 @@ class ApiClient {
     throw err;
   }
 
+  private isLoggingOut = false;
+
   private doLogout() {
-    if (typeof window !== "undefined") {
-      const store = (window as any).__loginStore;
-      if (store) store.getState().logout();
+    if (typeof window !== "undefined" && !this.isLoggingOut) {
+      this.isLoggingOut = true;
+      sessionStorage.removeItem("isAuthenticated");
+      sessionStorage.removeItem("loadingType");
+      sessionStorage.removeItem("isGuest");
+      sessionStorage.removeItem("app_user_id");
+      sessionStorage.removeItem("nickname");
+      window.location.href = "/";
     }
   }
 

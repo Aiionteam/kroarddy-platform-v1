@@ -52,9 +52,8 @@ export function useTokenRefresher() {
     if (!isAuthenticated || loadingType === "guest") return;
     if (typeof window === "undefined") return;
 
-    // 마운트 직후 한 번 즉시 갱신 (이전 세션에서 토큰이 만료 근접일 수 있음)
-    tryRefresh();
-
+    // 마운트 직후 즉시 호출하지 않음 — restoreAuthState와 RTR 충돌 방지
+    // 12분 간격으로만 선제 갱신 (15분 TTL 대비)
     const timerId = setInterval(tryRefresh, PROACTIVE_REFRESH_INTERVAL_MS);
     return () => clearInterval(timerId);
   }, [isAuthenticated, loadingType, tryRefresh]);

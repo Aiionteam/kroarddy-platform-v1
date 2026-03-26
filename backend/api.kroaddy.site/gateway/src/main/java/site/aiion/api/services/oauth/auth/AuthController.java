@@ -35,6 +35,19 @@ public class AuthController {
     }
 
     /**
+     * ALB/Nginx SSL 종료 환경에서도 HTTPS 여부를 올바르게 판단합니다.
+     * request.isSecure()는 프록시 뒤에서 항상 false를 반환하므로
+     * X-Forwarded-Proto 헤더를 우선 확인합니다.
+     */
+    private boolean isHttpsRequest(HttpServletRequest request) {
+        String proto = request.getHeader("X-Forwarded-Proto");
+        if (proto != null) {
+            return "https".equalsIgnoreCase(proto);
+        }
+        return request.isSecure();
+    }
+
+    /**
      * Access Token 갱신
      * HttpOnly 쿠키의 Refresh Token을 사용하여 새로운 Access Token 발급
      */
@@ -85,7 +98,7 @@ public class AuthController {
                 System.err.println("Refresh Token이 유효하지 않습니다.");
                 
                 // 쿠키 삭제 (ResponseCookie 사용 — HttpOnly 직렬화 보장)
-                CookieUtil.expireRefreshTokenCookie(response, request.isSecure());
+                CookieUtil.expireRefreshTokenCookie(response, isHttpsRequest(request));
                 
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("success", false);
@@ -144,7 +157,7 @@ public class AuthController {
             System.out.println("새 Access Token 생성 완료 (TTL 15분)");
 
             // 7. 쿠키 갱신 (Access + Refresh)
-            boolean isHttps = request.isSecure();
+            boolean isHttps = isHttpsRequest(request);
             CookieUtil.setAccessTokenCookie(response, newAccessToken, isHttps);
             CookieUtil.setRefreshTokenCookie(response, newRefreshToken, isHttps);
 
@@ -224,7 +237,7 @@ public class AuthController {
             }
             
             // 3. HttpOnly 쿠키 삭제 (Access + Refresh 모두 만료)
-            boolean isHttps = request.isSecure();
+            boolean isHttps = isHttpsRequest(request);
             CookieUtil.expireAccessTokenCookie(response, isHttps);
             CookieUtil.expireRefreshTokenCookie(response, isHttps);
 
@@ -242,8 +255,8 @@ public class AuthController {
             e.printStackTrace();
             
             // 오류가 발생해도 쿠키는 삭제
-            CookieUtil.expireAccessTokenCookie(response, request.isSecure());
-            CookieUtil.expireRefreshTokenCookie(response, request.isSecure());
+            CookieUtil.expireAccessTokenCookie(response, isHttpsRequest(request));
+            CookieUtil.expireRefreshTokenCookie(response, isHttpsRequest(request));
             
             Map<String, Object> successResponse = new HashMap<>();
             successResponse.put("success", true);
