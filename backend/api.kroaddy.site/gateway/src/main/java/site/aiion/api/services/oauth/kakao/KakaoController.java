@@ -239,6 +239,9 @@ public class KakaoController {
                         site.aiion.api.services.oauth.util.TokenHashUtil.hash(jwtRefreshToken));
                 System.out.println("Refresh Token 해시를 User 테이블에 저장 완료: userId=" + appUserId);
 
+                // 재로그인 시 이전 로그아웃으로 설정된 REVOKED 마커 즉시 해제
+                tokenService.clearRevoked("kakao", String.valueOf(appUserId));
+
                 boolean isHttps = frontendUrl != null && frontendUrl.startsWith("https");
 
                 // 6. Access Token + Refresh Token 모두 HttpOnly 쿠키로 설정
