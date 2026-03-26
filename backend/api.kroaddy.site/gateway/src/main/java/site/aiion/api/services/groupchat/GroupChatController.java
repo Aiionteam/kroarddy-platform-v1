@@ -89,30 +89,12 @@ public class GroupChatController {
     public Messenger sendMessage(
             @RequestBody GroupChatModel groupChatModel,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        
-        // JWT 토큰에서 userId 추출 및 검증
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+
+        Long tokenUserId = getUserIdFromAuth(authHeader);
+        if (tokenUserId == null) {
             return Messenger.builder()
                     .code(401)
                     .message("인증 토큰이 필요합니다. 로그인 후 메시지를 보낼 수 있습니다.")
-                    .build();
-        }
-
-        String token = authHeader.substring(7);
-        if (token.isEmpty() || !jwtTokenProvider.validateToken(token)) {
-            return Messenger.builder()
-                    .code(401)
-                    .message("유효하지 않은 토큰입니다.")
-                    .build();
-        }
-
-        Long tokenUserId;
-        try {
-            tokenUserId = Long.parseLong(jwtTokenProvider.getUserIdFromToken(token));
-        } catch (NumberFormatException e) {
-            return Messenger.builder()
-                    .code(401)
-                    .message("토큰에서 사용자 ID를 추출할 수 없습니다.")
                     .build();
         }
 
@@ -200,30 +182,12 @@ public class GroupChatController {
     @Operation(summary = "모든 메시지 삭제", description = "단체 채팅방의 모든 메시지를 삭제합니다. userId 1만 권한이 있습니다.")
     public Messenger deleteAllMessages(
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        
-        // JWT 토큰에서 userId 추출 및 검증
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+
+        Long tokenUserId = getUserIdFromAuth(authHeader);
+        if (tokenUserId == null) {
             return Messenger.builder()
                     .code(401)
                     .message("인증 토큰이 필요합니다.")
-                    .build();
-        }
-
-        String token = authHeader.substring(7);
-        if (token.isEmpty() || !jwtTokenProvider.validateToken(token)) {
-            return Messenger.builder()
-                    .code(401)
-                    .message("유효하지 않은 토큰입니다.")
-                    .build();
-        }
-
-        Long tokenUserId;
-        try {
-            tokenUserId = Long.parseLong(jwtTokenProvider.getUserIdFromToken(token));
-        } catch (NumberFormatException e) {
-            return Messenger.builder()
-                    .code(401)
-                    .message("토큰에서 사용자 ID를 추출할 수 없습니다.")
                     .build();
         }
 
