@@ -62,18 +62,28 @@ public class AuthController {
         
         try {
             // 1. HttpOnly 쿠키에서 Refresh Token 가져오기 (웹 브라우저)
+            // 동일 이름의 쿠키가 여러 개 있을 수 있으므로 (host-only + domain 공존) 모두 수집
+            java.util.List<String> refreshTokenCandidates = new java.util.ArrayList<>();
             String refreshToken = null;
             Cookie[] cookies = request.getCookies();
-            
+
             if (cookies != null) {
                 for (Cookie cookie : cookies) {
-                    if ("refresh_token".equals(cookie.getName())) {
-                        refreshToken = cookie.getValue();
-                        break;
+                    if ("refresh_token".equals(cookie.getName()) && cookie.getValue() != null && !cookie.getValue().isEmpty()) {
+                        refreshTokenCandidates.add(cookie.getValue());
                     }
                 }
             }
-            
+
+            if (refreshTokenCandidates.size() == 1) {
+                refreshToken = refreshTokenCandidates.get(0);
+            } else if (refreshTokenCandidates.size() > 1) {
+                // 복수 쿠키: 유효한 JWT인 것만 후보로 유지, DB 해시 비교는 아래서 수행
+                // 우선 마지막(가장 최근에 추가된) 것을 시도하고, 실패 시 나머지를 순서대로 시도
+                System.out.println("경고: refresh_token 쿠키가 " + refreshTokenCandidates.size() + "개 감지됨 (stale 쿠키 공존). 순차 검증합니다.");
+                refreshToken = refreshTokenCandidates.get(refreshTokenCandidates.size() - 1);
+            }
+
             // 2. 쿠키에 없으면 요청 body에서 가져오기 (모바일 앱)
             if ((refreshToken == null || refreshToken.isEmpty()) && body != null) {
                 Object bodyToken = body.get("refresh_token");
@@ -133,15 +143,32 @@ public class AuthController {
             UserModel user = (UserModel) userMessenger.getData();
             String storedHash = user.getRefreshToken();
 
-            // DB에는 SHA-256 해시가 저장되어 있으므로 수신 토큰도 해시 후 비교
+            // DB에는 HMAC-SHA256 해시가 저장되어 있으므로 수신 토큰도 해시 후 비교
+            // 복수 쿠키 공존 시: 후보 중 DB 해시와 일치하는 토큰을 탐색
             if (storedHash == null || !storedHash.equals(TokenHashUtil.hash(refreshToken))) {
-                System.err.println("User 테이블에 저장된 Refresh Token 해시와 일치하지 않습니다.");
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("success", false);
-                errorResponse.put("message", "유효하지 않은 Refresh Token입니다.");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+                // 마지막 후보가 실패 → 나머지 후보를 순서 역순으로 시도
+                String matchedToken = null;
+                if (refreshTokenCandidates.size() > 1) {
+                    for (int i = refreshTokenCandidates.size() - 2; i >= 0; i--) {
+                        String candidate = refreshTokenCandidates.get(i);
+                        if (storedHash != null && storedHash.equals(TokenHashUtil.hash(candidate))
+                                && jwtTokenProvider.validateToken(candidate)) {
+                            matchedToken = candidate;
+                            System.out.println("stale 쿠키 탐색: 후보 " + i + "번이 DB 해시와 일치함");
+                            break;
+                        }
+                    }
+                }
+                if (matchedToken == null) {
+                    System.err.println("User 테이블에 저장된 Refresh Token 해시와 일치하지 않습니다.");
+                    Map<String, Object> errorResponse = new HashMap<>();
+                    errorResponse.put("success", false);
+                    errorResponse.put("message", "유효하지 않은 Refresh Token입니다.");
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+                }
+                refreshToken = matchedToken;
             }
-            
+
             System.out.println("User 테이블의 Refresh Token 해시 검증 완료");
 
             // 5. Refresh Token Rotation: 새 Refresh Token 발급 + DB 갱신

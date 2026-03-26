@@ -15,14 +15,27 @@ public class WhisperController {
     private final JwtTokenProvider jwtTokenProvider;
 
     private Long extractUserId(String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) return null;
-        String token = authHeader.substring(7);
-        if (!jwtTokenProvider.validateToken(token)) return null;
-        try {
-            return Long.parseLong(jwtTokenProvider.getUserIdFromToken(token));
-        } catch (NumberFormatException e) {
-            return null;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            if (jwtTokenProvider.validateToken(token)) {
+                try {
+                    return Long.parseLong(jwtTokenProvider.getUserIdFromToken(token));
+                } catch (NumberFormatException e) {
+                    return null;
+                }
+            }
         }
+        var auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated()
+                && !"anonymousUser".equals(auth.getPrincipal())) {
+            try {
+                return Long.parseLong(auth.getName());
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
     }
 
     private Messenger unauthorized() {

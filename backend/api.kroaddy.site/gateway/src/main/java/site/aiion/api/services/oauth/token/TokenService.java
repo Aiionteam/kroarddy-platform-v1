@@ -117,6 +117,20 @@ public class TokenService {
     }
 
     /**
+     * 재로그인 시 REVOKED 마커를 삭제합니다.
+     * 로그아웃 후 15분 TTL이 남아있어도 즉시 해제됩니다.
+     */
+    public void clearRevoked(String provider, String userId) {
+        try {
+            String key = String.format("REVOKED:%s:%s", provider, userId);
+            redisTemplate.delete(key);
+            System.out.println("[TokenService] REVOKED 마커 삭제 (재로그인): " + key);
+        } catch (Exception e) {
+            System.err.println(REDIS_WARN + e.getMessage());
+        }
+    }
+
+    /**
      * REVOKED 마커 조회 — 로그아웃/강제 폐기 여부 확인.
      * JwtAuthenticationFilter에서 호출합니다.
      * Redis 장애 시 false 반환 (degraded mode: 서명 검증만으로 진행).
