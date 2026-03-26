@@ -71,6 +71,8 @@ services:
     environment:
       GUIDE_SERVICE_URL: http://guide:8002
       USER_INFO_SERVICE_URL: http://profile:8004
+      # .env 파일에 없을 경우 대비해 명시 (EC2에서 환경변수로 주입 가능)
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY:-}
     ports:
       - "8003:8003"
     depends_on:
