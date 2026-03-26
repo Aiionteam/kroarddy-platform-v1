@@ -9,7 +9,6 @@ import React, {
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
 import { AppLayout } from "@/components/organisms/AppLayout";
-import { getAppUserIdFromToken, getNicknameFromToken } from "@/lib/api/auth";
 import {
   polishRoute,
   saveUserRoute,
@@ -1024,9 +1023,9 @@ function UploadModal({
 
 export default function UserContentPage() {
   const router = useRouter();
-  const { isAuthenticated, logout, accessToken } = useLoginStore();
-  const userId = getAppUserIdFromToken(accessToken ?? undefined);
-  const myNickname = getNicknameFromToken(accessToken ?? undefined);
+  const { isAuthenticated, logout } = useLoginStore();
+  const userId = typeof window !== "undefined" ? Number(sessionStorage.getItem("app_user_id")) || null : null;
+  const myNickname = typeof window !== "undefined" ? sessionStorage.getItem("nickname") ?? "" : "";
 
   const [routes, setRoutes] = useState<UserRoute[]>([]);
   const [likedIds, setLikedIds] = useState<Set<number>>(new Set());

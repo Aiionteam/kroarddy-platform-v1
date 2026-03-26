@@ -6,7 +6,6 @@ import { useLoginStore } from "@/store";
 import { useNewsStore } from "@/store/slices/newsSlice";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/organisms/AppLayout";
-import { getAppUserIdFromToken } from "@/lib/api/auth";
 import { fetchUserProfile } from "@/lib/api/userProfile";
 import {
   fetchProcessedNews,
@@ -96,24 +95,24 @@ const RURAL_REBATE_REGIONS: { province: string; emoji: string; cities: { name: s
 ];
 
 export default function HomePage() {
-  const { isAuthenticated, logout, accessToken } = useLoginStore();
+  const { isAuthenticated, logout } = useLoginStore();
   const { setNewsTop10 } = useNewsStore();
   const router = useRouter();
-  const appUserId = getAppUserIdFromToken(accessToken ?? undefined);
+  const appUserId = typeof window !== "undefined" ? Number(sessionStorage.getItem("app_user_id")) || null : null;
 
   const [showBanner, setShowBanner]         = useState(false);
   const [profileChecked, setProfileChecked] = useState(false);
   const [data, setData]       = useState<ProcessedNewsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(false);
-  const [rebateOpen, setRebateOpen] = useState(true);
+  const [rebateOpen, setRebateOpen] = useState(false);
 
   const loadNews = React.useCallback(async () => {
-    if (!isAuthenticated || !accessToken) return;
+    if (!isAuthenticated) return;
     setLoading(true);
     setError(false);
     try {
-      const d = await fetchProcessedNews(0, accessToken);
+      const d = await fetchProcessedNews(0);
       setData(d);
       if (d.top10?.length) {
         const slim = d.top10.map(({ thumbnail: _t, ...rest }) => rest);
@@ -127,7 +126,7 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, accessToken, setNewsTop10]);
+  }, [isAuthenticated, setNewsTop10]);
 
   useEffect(() => {
     if (!isAuthenticated) { router.replace("/"); return; }
@@ -148,9 +147,9 @@ export default function HomePage() {
   }, [isAuthenticated, appUserId, router]);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) return;
+    if (!isAuthenticated) return;
     loadNews();
-  }, [isAuthenticated, accessToken, loadNews]);
+  }, [isAuthenticated, loadNews]);
 
   if (!isAuthenticated) return null;
 

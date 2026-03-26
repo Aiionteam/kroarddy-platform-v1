@@ -13,7 +13,6 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useLoginStore } from "@/store";
 import { useLangStore } from "@/store/slices/langSlice";
-import { getUserIdFromToken, getAppUserIdFromToken } from "@/lib/api/auth";
 import { findUserById, updateUser, deleteUser, type UserModel } from "@/lib/api/user";
 import {
   upsertUserProfile,
@@ -55,7 +54,7 @@ function ProfileChip({ label, selected, onClick }: { label: string; selected: bo
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { isAuthenticated, accessToken, logout } = useLoginStore();
+  const { isAuthenticated, logout } = useLoginStore();
   const { setLangByNationality } = useLangStore();
   const { t } = useTranslation();
   const [user, setUser] = useState<UserModel | null>(null);
@@ -80,10 +79,9 @@ export default function SettingsPage() {
   }, [isAuthenticated, router]);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) return;
-    const userId = getUserIdFromToken(accessToken);
-    const appUserId = getAppUserIdFromToken(accessToken);
-    if (!userId) {
+    if (!isAuthenticated) return;
+    const appUserId = typeof window !== "undefined" ? Number(sessionStorage.getItem("app_user_id")) || null : null;
+    if (!appUserId) {
       setLoading(false);
       return;
     }
@@ -91,8 +89,8 @@ export default function SettingsPage() {
     (async () => {
       try {
         const [userRes, profileRes] = await Promise.all([
-          findUserById(Number(userId)),
-          appUserId ? fetchUserProfile(appUserId) : Promise.resolve(null),
+          findUserById(appUserId),
+          fetchUserProfile(appUserId),
         ]);
         if (!cancelled && userRes.code === 200 && userRes.data) {
           setUser(userRes.data);
@@ -116,11 +114,11 @@ export default function SettingsPage() {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, accessToken]);
+  }, [isAuthenticated]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.id || !accessToken) return;
+    if (!user?.id) return;
     setSaving(true);
     setMessage(null);
     try {
@@ -142,7 +140,7 @@ export default function SettingsPage() {
   };
 
   const handleProfileSave = async () => {
-    const appUserId = getAppUserIdFromToken(accessToken ?? undefined);
+    const appUserId = typeof window !== "undefined" ? Number(sessionStorage.getItem("app_user_id")) || null : null;
     if (!appUserId) return;
     setProfileSaving(true);
     setProfileMsg(null);

@@ -15,7 +15,6 @@ import {
 import { listFriends, type FriendsResponse } from "@/lib/api/friends";
 import { blockUser, unblockUser, isBlocked } from "@/lib/api/block";
 import type { UserModel } from "@/lib/api/user";
-import { getAppUserIdFromToken } from "@/lib/api/auth";
 import { getTourstarSharePreview, type TourstarSharePreview } from "@/lib/api/tourstar";
 import { extractTourstarPostIdFromMessage } from "@/lib/tourstar-share";
 import { AppLayout } from "@/components/organisms/AppLayout";
@@ -44,8 +43,8 @@ function fmtTime(s?: string) {
 
 export default function WhisperPage() {
   const router = useRouter();
-  const { isAuthenticated, logout, accessToken, restoreAuthState } = useLoginStore();
-  const myId = getAppUserIdFromToken(accessToken ?? undefined);
+  const { isAuthenticated, logout, restoreAuthState } = useLoginStore();
+  const myId = typeof window !== "undefined" ? Number(sessionStorage.getItem("app_user_id")) || null : null;
 
   const [isHydrated, setIsHydrated] = useState(false);
   const [conversations, setConversations] = useState<WhisperConversationSummary[]>([]);

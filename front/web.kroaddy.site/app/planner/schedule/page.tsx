@@ -14,7 +14,6 @@ import {
   type TravelPlanRecord,
   type ScheduleItem,
 } from "@/lib/api/planner";
-import { getAppUserIdFromToken } from "@/lib/api/auth";
 
 // ── 플랜별 컬러 팔레트 ────────────────────────────────────────
 const COLORS = [
@@ -891,8 +890,8 @@ function PlanCard({
 // ── 메인 페이지 ───────────────────────────────────────────────
 export default function SchedulePage() {
   const router = useRouter();
-  const { isAuthenticated, logout, accessToken } = useLoginStore();
-  const appUserId = getAppUserIdFromToken(accessToken ?? undefined);
+  const { isAuthenticated, logout } = useLoginStore();
+  const appUserId = typeof window !== "undefined" ? Number(sessionStorage.getItem("app_user_id")) || null : null;
 
   const now = new Date();
   const [calYear, setCalYear] = useState(now.getFullYear());

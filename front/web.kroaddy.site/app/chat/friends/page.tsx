@@ -34,7 +34,7 @@ interface WhisperModal {
 
 export default function FriendsPage() {
   const router = useRouter();
-  const { isAuthenticated, accessToken, logout, restoreAuthState } = useLoginStore();
+  const { isAuthenticated, logout, restoreAuthState } = useLoginStore();
   const [friends, setFriends] = useState<UserModel[]>([]);
   const [pending, setPending] = useState<UserModel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +65,7 @@ export default function FriendsPage() {
   }, [isHydrated, isAuthenticated, router]);
 
   const load = async () => {
-    if (!accessToken) return;
+    if (!isAuthenticated) return;
     setLoading(true);
     setMessage(null);
     try {

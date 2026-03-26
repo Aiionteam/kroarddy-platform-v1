@@ -20,7 +20,7 @@ public class JwtTokenProvider {
     @Value("${jwt.secret}")
     private String jwtSecret;
     
-    @Value("${jwt.access-token-expiration:3600000}") // 기본 1시간
+    @Value("${jwt.access-token-expiration:900000}") // 기본 15분
     private long accessTokenExpiration;
     
     @Value("${jwt.refresh-token-expiration:2592000000}") // 기본 30일
