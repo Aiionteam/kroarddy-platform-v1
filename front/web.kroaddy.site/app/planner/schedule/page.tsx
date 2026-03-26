@@ -14,6 +14,12 @@ import {
   type TravelPlanRecord,
   type ScheduleItem,
 } from "@/lib/api/planner";
+import {
+  fetchWeather,
+  weatherEmoji,
+  isWithinForecastRange,
+  type WeatherDay,
+} from "@/lib/api/weather";
 
 // ── 플랜별 컬러 팔레트 ────────────────────────────────────────
 const COLORS = [
@@ -487,6 +493,29 @@ function DayPlanGroup({
   );
 }
 
+// ── 날씨 뱃지 ────────────────────────────────────────────────
+function WeatherBadge({ weather }: { weather: WeatherDay }) {
+  const emoji = weatherEmoji(weather.condition);
+  return (
+    <div className="flex items-center gap-2 rounded-xl bg-sky-50 border border-sky-100 px-3 py-1.5">
+      <span className="text-lg leading-none">{emoji}</span>
+      <div className="min-w-0">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-semibold text-sky-700">{weather.condition}</span>
+          <span className="text-xs text-sky-600">
+            {weather.temp_min}°<span className="text-gray-400 mx-0.5">/</span>
+            <span className="font-semibold">{weather.temp_max}°C</span>
+          </span>
+          {weather.pop > 0 && (
+            <span className="text-[10px] text-blue-500 font-medium">💧{weather.pop}%</span>
+          )}
+        </div>
+        <p className="truncate text-[10px] text-sky-500 max-w-[220px]">{weather.advice}</p>
+      </div>
+    </div>
+  );
+}
+
 // ── DayPanel ─────────────────────────────────────────────────
 function DayPanel({
   date,
@@ -505,22 +534,42 @@ function DayPanel({
   const [d] = date.split("T");
   const [y, m, day] = d.split("-");
 
+  const [weather, setWeather] = useState<WeatherDay | null>(null);
+
+  useEffect(() => {
+    if (!isWithinForecastRange(date)) return;
+    const location = matched.find(({ plan }) => plan.location)?.plan.location;
+    if (!location) return;
+    let cancelled = false;
+    fetchWeather(location, date, date)
+      .then((res) => {
+        if (!cancelled && res.available && res.dates[date]) {
+          setWeather(res.dates[date]);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [date, matched]);
+
   return (
     <div className="flex flex-col">
       {/* 날짜 헤더 */}
-      <div className="flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3">
-        <div>
-          <span className="text-sm font-bold text-gray-800">
-            {parseInt(y)}년 {parseInt(m)}월 {parseInt(day)}일
-          </span>
-          <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">
-            {matched.reduce((acc, { items }) => acc + items.length, 0)}개 일정
-          </span>
+      <div className="flex flex-wrap items-start justify-between gap-2 border-b border-gray-100 bg-white px-4 py-3">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-gray-800">
+              {parseInt(y)}년 {parseInt(m)}월 {parseInt(day)}일
+            </span>
+            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">
+              {matched.reduce((acc, { items }) => acc + items.length, 0)}개 일정
+            </span>
+          </div>
+          {weather && <WeatherBadge weather={weather} />}
         </div>
         <button
           type="button"
           onClick={onClear}
-          className="text-xs text-gray-400 hover:text-gray-600 underline"
+          className="text-xs text-gray-400 hover:text-gray-600 underline shrink-0"
         >
           전체 보기
         </button>
@@ -571,12 +620,25 @@ function PlanCard({
   const [modifyResult, setModifyResult] = useState<{ notPossible: boolean; reason: string } | null>(null);
   const [highlightedTitles, setHighlightedTitles] = useState<Set<string>>(new Set());
   const [mapPlace, setMapPlace] = useState<{ name: string; lat?: number; lng?: number } | null>(null);
-  // 날짜별 경로 지도: 열려있는 day 번호 (null이면 닫힘)
   const [routeMapDay, setRouteMapDay] = useState<number | null>(null);
-  // 리롤 중인 항목 인덱스 (전체 schedule 배열 기준)
   const [rerollingIdx, setRerollingIdx] = useState<number | null>(null);
   const [rerolledIdx, setRerolledIdx] = useState<number | null>(null);
+  const [planWeather, setPlanWeather] = useState<Record<string, WeatherDay>>({});
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // 카드 마운트 시 여행 기간 날씨 일괄 조회
+  useEffect(() => {
+    const { location, start_date, end_date } = plan;
+    if (!location || !start_date) return;
+    if (!isWithinForecastRange(start_date) && !(end_date && isWithinForecastRange(end_date))) return;
+    let cancelled = false;
+    fetchWeather(location, start_date, end_date ?? start_date)
+      .then((res) => {
+        if (!cancelled && res.available) setPlanWeather(res.dates);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [plan.id, plan.location, plan.start_date, plan.end_date]);
 
   async function handleDelete() {
     if (!confirm("이 플랜을 삭제하시겠어요?")) return;
@@ -664,6 +726,23 @@ function PlanCard({
               저장일 {formatDateKo(plan.created_at)}
               {plan.start_date && ` · ${plan.start_date}${plan.end_date ? ` ~ ${plan.end_date}` : ""}`}
             </p>
+            {/* 여행 기간 날씨 미니 요약 */}
+            {Object.keys(planWeather).length > 0 && (
+              <div className="mt-1 flex flex-wrap gap-1">
+                {Object.entries(planWeather).map(([dateKey, w]) => (
+                  <span
+                    key={dateKey}
+                    title={w.advice}
+                    className="inline-flex items-center gap-1 rounded-full bg-sky-50 border border-sky-100 px-2 py-0.5 text-[10px] text-sky-700"
+                  >
+                    <span>{weatherEmoji(w.condition)}</span>
+                    <span className="font-medium">{dateKey.slice(5).replace("-", "/")}</span>
+                    <span>{w.temp_min}°/{w.temp_max}°C</span>
+                    {w.pop > 0 && <span className="text-blue-400">💧{w.pop}%</span>}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1.5 ml-2">
@@ -696,6 +775,20 @@ function PlanCard({
                     {day}
                   </span>
                   <span className="flex-1">{entries[0]?.item.date}</span>
+                  {/* 해당 날짜 날씨 인라인 */}
+                  {(() => {
+                    const dateKey = entries[0]?.item.date;
+                    const w = dateKey ? planWeather[dateKey] : null;
+                    return w ? (
+                      <span
+                        title={w.advice}
+                        className="inline-flex items-center gap-1 rounded-full bg-sky-50 border border-sky-100 px-2 py-0.5 text-[10px] text-sky-600 font-normal"
+                      >
+                        {weatherEmoji(w.condition)} {w.temp_min}°/{w.temp_max}°C
+                        {w.pop > 0 && <span className="text-blue-400"> 💧{w.pop}%</span>}
+                      </span>
+                    ) : null;
+                  })()}
                   <button
                     type="button"
                     onClick={() => setRouteMapDay(Number(day))}
