@@ -20,6 +20,16 @@
 * { -webkit-tap-highlight-color: transparent; }
 input, textarea, select, button { touch-action: manipulation; }
 
+/*
+  일부 PC/브라우저에서 입력 필드 텍스트가 투명하게 보이는 버그 수정.
+  .bg-clip-text 가 상위 요소에 있을 때 -webkit-text-fill-color: transparent 가
+  input/textarea 에 상속되어 사용자 입력 텍스트가 보이지 않게 된다.
+  currentColor 를 명시하면 해당 요소 자신의 color 값을 따르므로 상속을 차단한다.
+*/
+input, textarea, select {
+  -webkit-text-fill-color: currentColor;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
