@@ -70,6 +70,7 @@ export async function fetchWeather(
   if (typeof latOrLocation === "number" && lon !== undefined) {
     params.set("lat", latOrLocation.toString());
     params.set("lon", lon.toString());
+    params.set("location", "coords"); // 구 백엔드 호환 (required 파라미터, lat/lon 있으면 무시됨)
   } else if (typeof latOrLocation === "string" && latOrLocation) {
     params.set("location", latOrLocation);
   } else {
