@@ -135,7 +135,9 @@ export default function GroupChatPage() {
       freshToken = sseTokenRef.current; // 리프레시 실패 시 마지막 토큰으로 재시도
     }
     if (!freshToken) {
-      logout();
+      // 토큰 취득 실패 — 세션 만료는 restoreAuthState/client.ts 401 핸들러가 처리하므로
+      // 여기서 logout()을 호출하면 REVOKED 마커 → 재로그인 차단의 악순환이 발생함
+      setError("채팅 연결을 위한 인증에 실패했습니다. 잠시 후 다시 시도해 주세요.");
       return;
     }
 
