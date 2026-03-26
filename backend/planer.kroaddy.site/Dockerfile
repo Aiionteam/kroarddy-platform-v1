@@ -7,7 +7,8 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    && playwright install --with-deps chromium
 
 # NudeNet ONNX 모델 빌드 타임에 미리 다운로드
 # (~550 MB, 런타임 첫 요청 시 다운로드 대기 방지)

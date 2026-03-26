@@ -74,6 +74,13 @@ class Settings(BaseSettings):
     naver_search_client_id: str = ""
     naver_search_client_secret: str = ""
 
+    # 네이버 플레이스 영업시간 (Playwright + pcmap.place.naver.com, Chromium 필요)
+    naver_place_hours_enabled: bool = False
+    naver_place_hours_page_timeout_ms: int = 25000
+
+    # OpenWeatherMap (5-day forecast) – https://openweathermap.org/api
+    openweather_api_key: str = ""
+
     model_config = {"env_file": str(_env_path), "extra": "ignore"}
 
     def get_async_url(self) -> str:

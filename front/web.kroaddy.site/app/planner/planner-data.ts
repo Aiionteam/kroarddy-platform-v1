@@ -161,6 +161,8 @@ export const REGION_GROUPS: RegionGroup[] = [
           { name: "춘천",   slug: "chuncheon",   emoji: "🍗", highlights: ["남이섬", "닭갈비골목", "소양강"],    popular: true },
           { name: "원주",   slug: "wonju",       emoji: "🎨", highlights: ["뮤지엄산", "소금산출렁다리"],        popular: true },
           { name: "평창",   slug: "pyeongchang", emoji: "🐑", highlights: ["대관령양떼목장", "오대산"],          popular: true },
+          { name: "영월",   slug: "yeongwol",    emoji: "🛶", highlights: ["동강래프팅", "선암마을", "청령포"]               },
+          { name: "횡성",   slug: "hoengseong",  emoji: "🥩", highlights: ["횡성한우", "횡성온천", "강천산"]                 },
           { name: "정선",   slug: "jeongseon",   emoji: "⛰️", highlights: ["민둥산", "아우라지", "레일바이크"]               },
           { name: "인제",   slug: "inje",        emoji: "🦌", highlights: ["내린천", "자작나무숲"]                           },
           { name: "태백",   slug: "taebaek",     emoji: "⛏️", highlights: ["태백산", "용연동굴"]                             },
@@ -249,6 +251,7 @@ export const REGION_GROUPS: RegionGroup[] = [
           { name: "전주",   slug: "jeonju",   emoji: "🏮", highlights: ["한옥마을", "막걸리골목"],               popular: true },
           { name: "군산",   slug: "gunsan",   emoji: "🚢", highlights: ["근대문화유산거리", "이성당"],            popular: true },
           { name: "익산",   slug: "iksan",    emoji: "🏛️", highlights: ["미륵사지", "왕궁리유적"]                           },
+          { name: "고창",   slug: "gochang",  emoji: "🏯", highlights: ["고창읍성", "선운사", "갯벌센터"]                   },
         ],
       },
       {
@@ -277,6 +280,11 @@ export const REGION_GROUPS: RegionGroup[] = [
           { name: "순천",   slug: "suncheon", emoji: "🦢", highlights: ["순천만국가정원", "낙안읍성"],           popular: true },
           { name: "목포",   slug: "mokpo",    emoji: "🌉", highlights: ["해상케이블카", "유달산"],               popular: true },
           { name: "완도",   slug: "wando",    emoji: "🐟", highlights: ["청산도", "완도수목원"]                              },
+          { name: "강진",   slug: "gangjin",  emoji: "🏺", highlights: ["백자박물관", "다산초당", "전통시장"]               },
+          { name: "영광",   slug: "yeonggwang", emoji: "⛰️", highlights: ["불갑산", "백수해안", "법성포"]                  },
+          { name: "해남",   slug: "haenam",   emoji: "🧭", highlights: ["땅끝마을", "대흥사", "달마산"]                    },
+          { name: "고흥",   slug: "goheung",  emoji: "🚀", highlights: ["나로우주센터", "풍양점", "보길도"]                 },
+          { name: "영암",   slug: "yeongam",  emoji: "🏎️", highlights: ["영암호", "왕인문화축제", "월출산"]                },
         ],
       },
       {
@@ -441,6 +449,7 @@ export const REGION_GROUPS: RegionGroup[] = [
           { name: "함양",   slug: "hamyang",    emoji: "🌲", highlights: ["지리산", "상림공원"]                           },
           { name: "산청",   slug: "sancheong",  emoji: "🌿", highlights: ["지리산", "동의보감촌"]                         },
           { name: "하동",   slug: "hadong",     emoji: "🍵", highlights: ["화개장터", "최참판댁", "쌍계사"],   popular: true },
+          { name: "거창",   slug: "geochang",   emoji: "🌲", highlights: ["수승대", "가조계곡", "거창시장"]                 },
         ],
       },
       {

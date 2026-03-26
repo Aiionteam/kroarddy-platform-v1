@@ -1,11 +1,23 @@
 """네이버 Maps API 클라이언트 – Geocoding / Static Map / Directions 15."""
 import logging
+import re
 
 import httpx
 
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+# 지역검색 link URL 내 플레이스 ID (pcmap.place.naver.com/place/123/… 등)
+_NAVER_PLACE_ID_RE = re.compile(r"place/(\d{5,})")
+
+
+def extract_naver_place_id_from_link(link: str | None) -> str | None:
+    """네이버 지역검색 API item.link 에서 숫자 place id 추출."""
+    if not link:
+        return None
+    m = _NAVER_PLACE_ID_RE.search(link)
+    return m.group(1) if m else None
 
 _GEOCODE_URL    = "https://maps.apigw.ntruss.com/map-geocode/v2/geocode"
 _STATIC_MAP_URL = "https://maps.apigw.ntruss.com/map-static/v2/raster"
@@ -133,14 +145,16 @@ async def keyword_search(query: str) -> dict | None:
             lat = int(item["mapy"]) / 1e7
 
             # HTML 태그 제거 (e.g. <b>군산</b>근대역사박물관)
-            import re
             name = re.sub(r"<[^>]+>", "", item.get("title", query))
+            link = item.get("link") or ""
 
             return {
                 "x": str(lng),
                 "y": str(lat),
                 "name": name,
                 "address": item.get("roadAddress") or item.get("address", ""),
+                "link": link,
+                "place_id": extract_naver_place_id_from_link(link),
             }
         except Exception as e:
             logger.error("지역 검색 오류 (query=%s): %s", query, e)

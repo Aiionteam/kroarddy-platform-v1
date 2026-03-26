@@ -18,3 +18,5 @@ class PlannerState(TypedDict):
     existing_routes: Optional[list]  # 이미 저장된 루트명 목록 (AI가 중복 제외)
     use_search: bool                 # True: Google Search grounding 사용 (느리지만 실시간 정확)
     news_top10: Optional[list]       # GPT 선정 Top10 K-콘텐츠 뉴스 (공연/이벤트 반영용)
+    weather_forecast: Optional[dict] # OpenWeatherMap 날씨 예보 요약 (5일 한계)
+    transport_mode: Optional[str]    # "car" | "transit" | "walk" – 루트 생성 시 이동수단
