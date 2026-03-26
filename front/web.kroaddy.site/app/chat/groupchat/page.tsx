@@ -87,7 +87,7 @@ export default function GroupChatPage() {
       if (!cancelled) setRooms(FALLBACK_ROOMS);
     })();
     return () => { cancelled = true; };
-  }, [isAuthenticated, accessToken]);
+  }, [isAuthenticated]);
 
   const loadMessages = async () => {
     try {
