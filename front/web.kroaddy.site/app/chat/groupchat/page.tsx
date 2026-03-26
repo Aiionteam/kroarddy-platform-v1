@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
-import { getUserIdFromToken, getEnsuredAccessToken } from "@/lib/api/auth";
 import {
   getGroupChatRooms,
   getRecentGroupChatMessages,
@@ -36,7 +35,9 @@ const FALLBACK_ROOMS: ChatRoomInfo[] = [
 
 export default function GroupChatPage() {
   const router = useRouter();
-  const { isAuthenticated, accessToken, logout, restoreAuthState, setAccessToken } = useLoginStore();
+  const { isAuthenticated, logout, restoreAuthState } = useLoginStore();
+  // SSE URL에 전달할 토큰 (HttpOnly 쿠키 기반이므로 SSE 연결 시 refresh로 취득)
+  const sseTokenRef = useRef<string | null>(null);
   const [rooms, setRooms] = useState<ChatRoomInfo[] | null>(null);
   const [showRoomList, setShowRoomList] = useState(true);
   const [roomType, setRoomType] = useState<string>("SILVER");
@@ -73,7 +74,7 @@ export default function GroupChatPage() {
   }, [isHydrated, isAuthenticated, router]);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) return;
+    if (!isAuthenticated) return;
     let cancelled = false;
     (async () => {
       try {
@@ -110,11 +111,11 @@ export default function GroupChatPage() {
   useEffect(() => {
     if (!isAuthenticated || showRoomList) return;
     loadMessages();
-  }, [isAuthenticated, showRoomList, roomType, accessToken]);
+  }, [isAuthenticated, showRoomList, roomType]);
 
   const sseReconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const connectSSE = async (tokenOverride?: string) => {
+  const connectSSE = async () => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
       eventSourceRef.current = null;
@@ -124,17 +125,18 @@ export default function GroupChatPage() {
       sseReconnectTimerRef.current = null;
     }
 
-    // 토큰 만료 체크 → 만료됐으면 리프레시 먼저
-    const rawToken = tokenOverride ?? accessToken;
-    const freshToken = await getEnsuredAccessToken(rawToken);
+    // SSE는 쿠키 전송이 안 되므로 refresh API로 토큰 값을 취득
+    const { refreshAccessToken } = await import("@/lib/api/auth");
+    let freshToken: string | null = null;
+    try {
+      freshToken = await refreshAccessToken();
+      sseTokenRef.current = freshToken;
+    } catch {
+      freshToken = sseTokenRef.current; // 리프레시 실패 시 마지막 토큰으로 재시도
+    }
     if (!freshToken) {
-      // 리프레시도 실패 → 로그아웃 처리
       logout();
       return;
-    }
-    // 갱신된 토큰이 기존과 다르면 store 업데이트
-    if (freshToken !== rawToken) {
-      setAccessToken(freshToken);
     }
 
     let url = `${API_BASE}/api/groupchat/stream?roomType=${encodeURIComponent(roomType)}&lastId=${lastMessageIdRef.current}`;
@@ -186,7 +188,7 @@ export default function GroupChatPage() {
         eventSourceRef.current = null;
       }
     };
-  }, [isAuthenticated, showRoomList, roomType, accessToken]);
+  }, [isAuthenticated, showRoomList, roomType]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -203,7 +205,7 @@ export default function GroupChatPage() {
 
   const handleSend = async () => {
     const text = input.trim();
-    if (!text || !accessToken) return;
+    if (!text || !isAuthenticated) return;
     setInput("");
     setIsLoading(true);
     setError(null);
@@ -333,8 +335,7 @@ export default function GroupChatPage() {
 
   if (!isHydrated || !isAuthenticated) return null;
 
-  const currentUserId = accessToken ? getUserIdFromToken(accessToken) : null;
-  const myId = currentUserId != null ? Number(currentUserId) : null;
+  const myId = typeof window !== "undefined" ? Number(sessionStorage.getItem("app_user_id")) || null : null;
 
   // id 기준 중복 제거 (전송 응답 + SSE 동시 수신 시 같은 메시지 두 번 들어오는 것 방지)
   const uniqueMessages = messages.filter(

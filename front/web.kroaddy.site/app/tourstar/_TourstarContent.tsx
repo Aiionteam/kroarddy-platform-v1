@@ -3,7 +3,6 @@
 import React, { useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLoginStore } from "@/store";
-import { getAppUserIdFromToken, getNicknameFromToken, getUserIdFromToken } from "@/lib/api/auth";
 import { findUserById, findUserByNickname } from "@/lib/api/user";
 import { listFriends, sendFriendRequest } from "@/lib/api/friends";
 import type { UserModel } from "@/lib/api/user";
@@ -1284,7 +1283,7 @@ function mapRecordToPost(
 export default function TourstarContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated, logout, accessToken } = useLoginStore();
+  const { isAuthenticated, logout } = useLoginStore();
 
   const [authorName, setAuthorName] = useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -1315,25 +1314,12 @@ export default function TourstarContent() {
   const [editTargetPost, setEditTargetPost] = useState<TourPost | null>(null);
   const [analysisStatus, setAnalysisStatus] = useState<string>("");
 
-  /* userId 추출 — DB user_id 는 app_user_id 등 숫자 클레임과 일치해야 함 (sub 는 UUID 인 경우가 많음) */
+  /* userId 추출 — sessionStorage에 로그인 시 저장된 app_user_id를 읽습니다 */
   React.useEffect(() => {
-    if (!accessToken) {
-      setCurrentUserId(null);
-      return;
-    }
-    const appId = getAppUserIdFromToken(accessToken);
-    if (appId != null) {
-      setCurrentUserId(appId);
-      return;
-    }
-    const raw = getUserIdFromToken(accessToken);
-    if (!raw) {
-      setCurrentUserId(null);
-      return;
-    }
-    const n = Number(raw);
-    setCurrentUserId(Number.isFinite(n) && n > 0 ? n : null);
-  }, [accessToken]);
+    if (!isAuthenticated) { setCurrentUserId(null); return; }
+    const id = typeof window !== "undefined" ? Number(sessionStorage.getItem("app_user_id")) || null : null;
+    setCurrentUserId(id);
+  }, [isAuthenticated]);
 
   /* 북마크 로드 */
   React.useEffect(() => {
@@ -1383,30 +1369,25 @@ export default function TourstarContent() {
 
   /* 닉네임 조회 */
   React.useEffect(() => {
-    if (!isAuthenticated || !accessToken) return;
+    if (!isAuthenticated) return;
 
-    // 1순위: JWT 클레임에서 즉시 추출
-    const jwtNickname = getNicknameFromToken(accessToken);
-    if (jwtNickname) {
-      setAuthorName(jwtNickname);
-      localStorage.setItem("tourstar_author_name", jwtNickname);
-      sessionStorage.setItem("_tourstar_author", jwtNickname);
+    // 1순위: sessionStorage에 로그인 시 저장된 nickname
+    const sessionNickname = sessionStorage.getItem("nickname");
+    if (sessionNickname) {
+      setAuthorName(sessionNickname);
+      localStorage.setItem("tourstar_author_name", sessionNickname);
+      sessionStorage.setItem("_tourstar_author", sessionNickname);
     }
 
-    // 2순위: sessionStorage 캐시
+    // 2순위: sessionStorage 캐시 (profile/settings 페이지에서 갱신됨)
     const cached = sessionStorage.getItem("_tourstar_author");
-    if (cached && !jwtNickname) {
+    if (cached && !sessionNickname) {
       setAuthorName(cached);
       localStorage.setItem("tourstar_author_name", cached);
     }
 
     // 3순위: profile API 호출 (가장 정확)
-    const userId = getAppUserIdFromToken(accessToken) ?? (() => {
-      const raw = getUserIdFromToken(accessToken);
-      if (!raw) return null;
-      const n = Number(raw);
-      return Number.isFinite(n) && n > 0 ? n : null;
-    })();
+    const userId = typeof window !== "undefined" ? Number(sessionStorage.getItem("app_user_id")) || null : null;
     if (!userId) return;
     let cancelled = false;
     (async () => {
@@ -1425,7 +1406,7 @@ export default function TourstarContent() {
       }
     })();
     return () => { cancelled = true; };
-  }, [isAuthenticated, accessToken]);
+  }, [isAuthenticated]);
 
   React.useEffect(() => { if (!isAuthenticated) { router.replace("/"); } }, [isAuthenticated, router]);
 
@@ -1663,8 +1644,8 @@ export default function TourstarContent() {
     // authorName 우선, 플레이스홀더·빈 값이면 JWT·세션에서 재추출
     const placeholder = "내 여행기록";
     let resolvedAuthor = authorName && authorName !== placeholder ? authorName : "";
-    if (!resolvedAuthor && accessToken) {
-      resolvedAuthor = getNicknameFromToken(accessToken) || "";
+    if (!resolvedAuthor) {
+      resolvedAuthor = sessionStorage.getItem("nickname") || "";
     }
     if (!resolvedAuthor) {
       resolvedAuthor = sessionStorage.getItem("_tourstar_author") || localStorage.getItem("tourstar_author_name") || "익명";

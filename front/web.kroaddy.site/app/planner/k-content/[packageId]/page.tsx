@@ -17,7 +17,6 @@ import {
   K_CONTENT_PLACEHOLDER_IMAGE,
   pickRandomImage,
 } from "@/constants/k-content-images";
-import { getAppUserIdFromToken } from "@/lib/api/auth";
 
 type KScheduleItem = {
   day: number;
@@ -227,9 +226,9 @@ function parseResponse(res: KContentResponse, startDate: string): {
 export default function KContentPackagePage() {
   const router = useRouter();
   const { packageId } = useParams<{ packageId: string }>();
-  const { isAuthenticated, logout, accessToken } = useLoginStore();
+  const { isAuthenticated, logout } = useLoginStore();
   const newsTop10 = useNewsStore((s) => s.newsTop10);
-  const appUserId = getAppUserIdFromToken(accessToken ?? undefined);
+  const appUserId = typeof window !== "undefined" ? Number(sessionStorage.getItem("app_user_id")) || null : null;
 
   const [startDate, setStartDate] = useState(todayStr);
   const [endDate, setEndDate] = useState(() => offsetDate(1));

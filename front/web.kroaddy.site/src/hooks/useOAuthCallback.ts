@@ -12,7 +12,7 @@ export const useOAuthCallback = (isHydrated: boolean, isAuthenticated: boolean) 
   useEffect(() => {
     if (!isHydrated || isAuthenticated || isProcessingOAuth) return;
     const params = extractOAuthParams(searchParams);
-    if (!params.token && !params.error) return;
+    if (!params.userId && !params.error) return;
 
     setIsProcessingOAuth(true);
     const result = handleOAuthCallback(params, {

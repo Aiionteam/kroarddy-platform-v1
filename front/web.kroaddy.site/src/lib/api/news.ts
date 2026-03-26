@@ -1,11 +1,5 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-function authHeaders(accessToken?: string): HeadersInit | undefined {
-  const token = accessToken?.trim();
-  if (!token) return undefined;
-  return { Authorization: `Bearer ${token}` };
-}
-
 export interface NewsItem {
   title: string;
   link: string;
@@ -29,21 +23,20 @@ export interface NewsCategory {
 
 export async function fetchNews(
   category: string = "entertainment",
-  limit: number = 20,
-  accessToken?: string
+  limit: number = 20
 ): Promise<NewsResponse> {
   const res = await fetch(
     `${API_BASE}/api/v1/news?category=${category}&limit=${limit}`,
-    { cache: "no-store", headers: authHeaders(accessToken) }
+    { cache: "no-store", credentials: "include" }
   );
   if (!res.ok) throw new Error(`뉴스 API 오류: ${res.status}`);
   return res.json();
 }
 
-export async function fetchNewsCategories(accessToken?: string): Promise<NewsCategory[]> {
+export async function fetchNewsCategories(): Promise<NewsCategory[]> {
   const res = await fetch(`${API_BASE}/api/v1/news/categories`, {
     cache: "no-store",
-    headers: authHeaders(accessToken),
+    credentials: "include",
   });
   if (!res.ok) return [];
   const data = await res.json();
@@ -75,12 +68,11 @@ export interface ProcessedNewsResponse {
 }
 
 export async function fetchProcessedNews(
-  limitRest = 50,
-  accessToken?: string
+  limitRest = 50
 ): Promise<ProcessedNewsResponse> {
   const res = await fetch(
     `${API_BASE}/api/v1/news/processed?limit_rest=${limitRest}`,
-    { cache: "no-store", headers: authHeaders(accessToken) }
+    { cache: "no-store", credentials: "include" }
   );
   if (!res.ok) throw new Error(`뉴스 API 오류: ${res.status}`);
   return res.json();

@@ -117,18 +117,30 @@ public class TokenService {
     }
 
     /**
-     * 토큰 삭제 (Redis 실패 시 무시)
+     * REVOKED 마커 조회 — 로그아웃/강제 폐기 여부 확인.
+     * JwtAuthenticationFilter에서 호출합니다.
+     * Redis 장애 시 false 반환 (degraded mode: 서명 검증만으로 진행).
+     */
+    public boolean isRevoked(String provider, String userId) {
+        try {
+            String key = String.format("REVOKED:%s:%s", provider, userId);
+            return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+        } catch (Exception e) {
+            System.err.println(REDIS_WARN + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 로그아웃 처리: REVOKED 마커 설정 (Redis는 블랙리스트 전용으로 사용).
+     * 기존 access/refresh 키는 더 이상 Redis에 저장하지 않으므로 삭제 불필요.
      */
     public void deleteTokens(String provider, String userId) {
         try {
-            String accessKey = String.format("token:%s:%s:access", provider, userId);
-            String refreshKey = String.format("token:%s:%s:refresh", provider, userId);
-            System.out.println("[TokenService] 토큰 삭제 - provider: " + provider + ", userId: " + userId);
-            redisTemplate.delete(accessKey);
-            redisTemplate.delete(refreshKey);
-            // REVOKED 마커 설정 (1시간 — access token TTL과 동일)
-            revokeTokens(provider, userId, 3600);
-            System.out.println("[TokenService] 토큰 삭제 완료");
+            System.out.println("[TokenService] 로그아웃 REVOKED 마커 설정 - provider: " + provider + ", userId: " + userId);
+            // REVOKED 마커: Access Token TTL(15분)과 동일하게 유지하면 충분
+            revokeTokens(provider, userId, 900);
+            System.out.println("[TokenService] REVOKED 마커 설정 완료");
         } catch (Exception e) {
             System.err.println(REDIS_WARN + e.getMessage());
         }
