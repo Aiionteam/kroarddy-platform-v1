@@ -116,17 +116,15 @@ export const useLoginStore = create<LoginState>((set) => ({
           (error instanceof Error && /failed to fetch|network|load failed|서버에 연결/i.test(error.message));
         if (isNetworkError) {
           console.warn("[LoginStore] 서버에 연결할 수 없어 로그인 화면으로 돌아갑니다.");
+        } else {
+          console.warn("[LoginStore] 세션이 만료되어 로그아웃합니다:", error?.message);
         }
-        if (
-          (error instanceof Error && error.message.includes("Refresh Token이 만료")) ||
-          isNetworkError
-        ) {
-          sessionStorage.removeItem("isAuthenticated");
-          sessionStorage.removeItem("loadingType");
-          sessionStorage.removeItem("app_user_id");
-          sessionStorage.removeItem("nickname");
-          set({ ...initialState, isAuthenticated: false });
-        }
+        // 네트워크 오류든 인증 오류든 세션 정리 (네트워크 오류는 오프라인 상태일 뿐)
+        sessionStorage.removeItem("isAuthenticated");
+        sessionStorage.removeItem("loadingType");
+        sessionStorage.removeItem("app_user_id");
+        sessionStorage.removeItem("nickname");
+        set({ ...initialState, isAuthenticated: false });
       }
     }
   },
