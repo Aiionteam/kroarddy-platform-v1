@@ -33,6 +33,8 @@ function OAuthCallbackContent() {
         if (typeof window !== "undefined") {
           sessionStorage.setItem("isAuthenticated", "true");
           sessionStorage.setItem("loadingType", provider);
+          // 방금 로그인 완료 — restoreAuthState가 즉시 재검증하지 않도록 타임스탬프 기록
+          sessionStorage.setItem("lastSessionVerified", String(Date.now()));
         }
         setStatus("success");
 
