@@ -20,7 +20,7 @@ import {
   isWithinForecastRange,
   type WeatherDay,
 } from "@/lib/api/weather";
-import { SLUG_TO_NAME, SLUG_TO_WEATHER_CITY } from "@/app/planner/planner-data";
+import { SLUG_TO_NAME, SLUG_TO_WEATHER_CITY } from "../planner-data";
 
 // ── 플랜별 컬러 팔레트 ────────────────────────────────────────
 const COLORS = [
