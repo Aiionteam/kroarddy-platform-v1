@@ -125,17 +125,23 @@ export default function GroupChatPage() {
       sseReconnectTimerRef.current = null;
     }
 
-    // SSE는 쿠키 전송이 안 되므로 refresh API로 토큰 값을 취득
-    const { refreshAccessToken } = await import("@/lib/api/auth");
+    // SSE는 쿠키 전송이 불가 → access token 값을 URL에 포함해야 함.
+    // 캐시된 토큰이 아직 유효하면 재사용(RTR 최소화), 만료/미존재 시에만 refresh 호출.
+    const { refreshAccessToken, isTokenExpired } = await import("@/lib/api/auth");
     let freshToken: string | null = null;
-    try {
-      freshToken = await refreshAccessToken();
-      sseTokenRef.current = freshToken;
-    } catch {
-      freshToken = sseTokenRef.current; // 리프레시 실패 시 마지막 토큰으로 재시도
+    const cached = sseTokenRef.current;
+    if (cached && !isTokenExpired(cached)) {
+      freshToken = cached;
+    } else {
+      try {
+        freshToken = await refreshAccessToken();
+        sseTokenRef.current = freshToken;
+      } catch {
+        freshToken = cached ?? null; // refresh 실패 시 만료된 캐시라도 마지막 시도
+      }
     }
     if (!freshToken) {
-      // 토큰 취득 실패 — 세션 만료는 restoreAuthState/client.ts 401 핸들러가 처리하므로
+      // 세션 만료는 restoreAuthState/client.ts 401 핸들러가 처리하므로
       // 여기서 logout()을 호출하면 REVOKED 마커 → 재로그인 차단의 악순환이 발생함
       setError("채팅 연결을 위한 인증에 실패했습니다. 잠시 후 다시 시도해 주세요.");
       return;
@@ -599,7 +605,7 @@ export default function GroupChatPage() {
                 onFocus={() => { inputWasFocused.current = true; }}
                 onBlur={() => { inputWasFocused.current = false; }}
                 placeholder="메시지를 입력하세요..."
-                className="flex-1 rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-purple-500"
+                className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-gray-900 placeholder:text-gray-400 outline-none focus:border-purple-500"
                 disabled={isLoading}
               />
               <button

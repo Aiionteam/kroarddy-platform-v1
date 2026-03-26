@@ -209,7 +209,7 @@ export default function SettingsPage() {
                     type="text"
                     value={nickname}
                     onChange={(e) => setNickname(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-purple-500"
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 placeholder:text-gray-400 outline-none focus:border-purple-500"
                     placeholder={user?.name ? `${user.name} (기본값)` : "닉네임 미입력 시 이름으로 표시"}
                   />
                   <p className="mt-1 text-xs text-gray-500">미입력 시 이름으로 표시됩니다.</p>
@@ -350,7 +350,7 @@ export default function SettingsPage() {
                   value={withdrawConfirmInput}
                   onChange={(e) => setWithdrawConfirmInput(e.target.value)}
                   placeholder="Delete account"
-                  className="mb-4 w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-red-500"
+                  className="mb-4 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 placeholder:text-gray-400 outline-none focus:border-red-500"
                   autoFocus
                   disabled={withdrawing}
                 />
