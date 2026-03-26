@@ -104,12 +104,21 @@ export const useLoginStore = create<LoginState>((set) => ({
     const loadingType = (sessionStorage.getItem("loadingType") as LoadingType) || null;
     set({ isAuthenticated: true, loadingType });
 
-    // access_token은 HttpOnly 쿠키에 저장되므로 JS에서 읽지 않아도 됩니다.
-    // 첫 API 요청에서 401이 오면 client.ts가 /auth/refresh를 호출합니다.
-    // 단, sessionStorage에 app_user_id가 없을 때는 refresh를 통해 세션이 살아있는지 확인합니다.
-    if (!sessionStorage.getItem("app_user_id")) {
+    // 쿠키가 수동으로 삭제된 경우 등 세션 불일치를 감지하기 위해
+    // 마지막 검증 이후 5분이 지났으면 항상 서버에 세션 유효성 확인.
+    // 타임스탬프 가드로 여러 탭 동시 마운트 시 RTR 충돌을 방지합니다.
+    const lastVerified = Number(sessionStorage.getItem("lastSessionVerified") || 0);
+    const VERIFY_INTERVAL_MS = 5 * 60 * 1000; // 5분
+    const needsVerify = Date.now() - lastVerified > VERIFY_INTERVAL_MS;
+
+    if (needsVerify) {
       try {
         await authAPI.refreshAccessToken();
+        sessionStorage.setItem("lastSessionVerified", String(Date.now()));
+        // app_user_id가 없을 경우 refresh 응답에서 복원 (하위호환)
+        if (!sessionStorage.getItem("app_user_id")) {
+          console.warn("[LoginStore] app_user_id 없음 — 재로그인 필요");
+        }
       } catch (error: any) {
         const isNetworkError =
           (error instanceof TypeError && error.message === "Failed to fetch") ||
@@ -119,11 +128,11 @@ export const useLoginStore = create<LoginState>((set) => ({
         } else {
           console.warn("[LoginStore] 세션이 만료되어 로그아웃합니다:", error?.message);
         }
-        // 네트워크 오류든 인증 오류든 세션 정리 (네트워크 오류는 오프라인 상태일 뿐)
         sessionStorage.removeItem("isAuthenticated");
         sessionStorage.removeItem("loadingType");
         sessionStorage.removeItem("app_user_id");
         sessionStorage.removeItem("nickname");
+        sessionStorage.removeItem("lastSessionVerified");
         set({ ...initialState, isAuthenticated: false });
       }
     }
@@ -168,6 +177,7 @@ export const useLoginStore = create<LoginState>((set) => ({
       sessionStorage.removeItem("isGuest");
       sessionStorage.removeItem("app_user_id");
       sessionStorage.removeItem("nickname");
+      sessionStorage.removeItem("lastSessionVerified");
       window.location.href = "/";
     }
   },
