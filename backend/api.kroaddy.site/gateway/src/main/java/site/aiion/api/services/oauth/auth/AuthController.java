@@ -145,13 +145,15 @@ public class AuthController {
 
             // DB에는 HMAC-SHA256 해시가 저장되어 있으므로 수신 토큰도 해시 후 비교
             // 복수 쿠키 공존 시: 후보 중 DB 해시와 일치하는 토큰을 탐색
-            if (storedHash == null || !storedHash.equals(TokenHashUtil.hash(refreshToken))) {
+            String currentHash = TokenHashUtil.hash(refreshToken);
+            if (storedHash == null || !storedHash.equals(currentHash)) {
                 // 마지막 후보가 실패 → 나머지 후보를 순서 역순으로 시도
                 String matchedToken = null;
                 if (refreshTokenCandidates.size() > 1) {
                     for (int i = refreshTokenCandidates.size() - 2; i >= 0; i--) {
                         String candidate = refreshTokenCandidates.get(i);
-                        if (storedHash != null && storedHash.equals(TokenHashUtil.hash(candidate))
+                        String candidateHash = TokenHashUtil.hash(candidate);
+                        if (storedHash != null && storedHash.equals(candidateHash)
                                 && jwtTokenProvider.validateToken(candidate)) {
                             matchedToken = candidate;
                             System.out.println("stale 쿠키 탐색: 후보 " + i + "번이 DB 해시와 일치함");
@@ -159,6 +161,14 @@ public class AuthController {
                         }
                     }
                 }
+
+                // RTR Grace Period 확인: 직전에 교체된 구 토큰인지 Redis에서 검증 (30초 유예)
+                if (matchedToken == null && tokenService.isInGracePeriod(provider, userId, currentHash)) {
+                    System.out.println("RTR Grace Period 내 구 토큰 허용: userId=" + userId);
+                    // Grace Period 토큰은 검증 통과 — 아래에서 새 RTR 진행
+                    matchedToken = refreshToken;
+                }
+
                 if (matchedToken == null) {
                     System.err.println("User 테이블에 저장된 Refresh Token 해시와 일치하지 않습니다.");
                     Map<String, Object> errorResponse = new HashMap<>();
@@ -172,6 +182,8 @@ public class AuthController {
             System.out.println("User 테이블의 Refresh Token 해시 검증 완료");
 
             // 5. Refresh Token Rotation: 새 Refresh Token 발급 + DB 갱신
+            // 구 토큰 해시를 Grace Period로 보관 (30초) → 동시 요청 Race Condition 흡수
+            tokenService.saveGraceToken(provider, userId, TokenHashUtil.hash(refreshToken));
             String newRefreshToken = jwtTokenProvider.generateRefreshToken(userId, provider);
             userService.updateRefreshToken(Long.parseLong(userId), TokenHashUtil.hash(newRefreshToken));
             System.out.println("RTR: 새 Refresh Token 발급 및 해시 DB 갱신 완료");

@@ -4,11 +4,38 @@ export const logout = async (): Promise<void> => {
   await apiClient.post("/api/auth/logout");
 };
 
+/**
+ * 싱글턴 Refresh 패턴
+ *
+ * 여러 컴포넌트/훅이 동시에 refreshAccessToken()을 호출해도
+ * 실제 HTTP 요청은 딱 1번만 나갑니다.
+ * 진행 중인 요청이 있으면 모든 호출자가 같은 Promise를 공유하고
+ * 완료 후 동일한 새 토큰을 받습니다.
+ *
+ * 이 패턴이 없으면:
+ *  - restoreAuthState, groupchat SSE, useTokenRefresher 등이 동시에 refresh 요청
+ *  - RTR로 인해 첫 번째만 성공하고 나머지는 "이미 폐기된 토큰" 401
+ *  - groupchat의 logout() 호출 → REVOKED 마커 → 재로그인 차단 악순환
+ */
+let _refreshPromise: Promise<string> | null = null;
+
 export const refreshAccessToken = async (): Promise<string> => {
-  const { data } = await apiClient.post<{ access_token: string }>("/api/auth/refresh");
-  if (!data?.access_token?.trim())
-    throw new Error("Refresh Token이 만료되었거나 유효하지 않습니다. 다시 로그인해주세요.");
-  return data.access_token;
+  if (_refreshPromise) {
+    return _refreshPromise;
+  }
+
+  _refreshPromise = apiClient
+    .post<{ access_token: string }>("/api/auth/refresh")
+    .then(({ data }) => {
+      if (!data?.access_token?.trim())
+        throw new Error("Refresh Token이 만료되었거나 유효하지 않습니다. 다시 로그인해주세요.");
+      return data.access_token;
+    })
+    .finally(() => {
+      _refreshPromise = null;
+    });
+
+  return _refreshPromise;
 };
 
 function _decodeJwtPayload(token: string): Record<string, unknown> | null {
