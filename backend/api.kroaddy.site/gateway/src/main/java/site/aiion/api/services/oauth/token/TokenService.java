@@ -160,6 +160,41 @@ public class TokenService {
         }
     }
 
+    // ── RTR Grace Period ──────────────────────────────────────────────────────
+
+    /**
+     * RTR(Refresh Token Rotation) 직후, 구 토큰 해시를 30초간 유예 허용합니다.
+     *
+     * 문제: 프론트엔드 여러 컴포넌트가 동시에 refresh를 호출하면
+     *   1번 요청이 RTR 성공 → DB에 새 해시 저장
+     *   2번 요청이 같은 구 토큰으로 도착 → DB 해시와 불일치 → 401 → 로그아웃
+     *
+     * 해결: 구 해시를 Redis에 30초 TTL로 보관. 검증 시 DB 해시와 함께 확인.
+     */
+    public void saveGraceToken(String provider, String userId, String oldTokenHash) {
+        try {
+            String key = String.format("GRACE:%s:%s", provider, userId);
+            redisTemplate.opsForValue().set(key, oldTokenHash, 30, TimeUnit.SECONDS);
+            System.out.println("[TokenService] Grace Period 설정 (30s): " + key);
+        } catch (Exception e) {
+            System.err.println(REDIS_WARN + e.getMessage());
+        }
+    }
+
+    /**
+     * 구 토큰 해시가 Grace Period 내에 있는지 확인합니다.
+     */
+    public boolean isInGracePeriod(String provider, String userId, String tokenHash) {
+        try {
+            String key = String.format("GRACE:%s:%s", provider, userId);
+            Object stored = redisTemplate.opsForValue().get(key);
+            return stored != null && stored.toString().equals(tokenHash);
+        } catch (Exception e) {
+            System.err.println(REDIS_WARN + e.getMessage());
+            return false;
+        }
+    }
+
     /**
      * Authorization Code 저장 (Redis 실패 시 무시)
      */
