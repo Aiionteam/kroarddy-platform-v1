@@ -32,6 +32,8 @@ public final class CookieUtil {
 
     /**
      * refresh_token HttpOnly 쿠키를 응답 헤더에 추가합니다.
+     * HTTPS(운영) 환경에서는 이전 코드가 남긴 host-only(SameSite=Lax) 쿠키도 동시에 삭제하여
+     * 브라우저에 동명의 쿠키가 두 개 공존하는 문제를 방지합니다.
      */
     public static void setRefreshTokenCookie(HttpServletResponse response,
                                              String tokenValue,
@@ -45,13 +47,20 @@ public final class CookieUtil {
 
         applyDomainAndSameSite(builder, isHttps);
         response.addHeader("Set-Cookie", builder.build().toString());
+
+        // 운영 환경: 이전 코드가 남긴 host-only 쿠키(domain 없음, SameSite=Lax)를 즉시 삭제
+        if (isHttps) {
+            response.addHeader("Set-Cookie", ResponseCookie
+                    .from(REFRESH_TOKEN_NAME, "")
+                    .httpOnly(true).secure(false).path("/").maxAge(0).sameSite("Lax")
+                    .build().toString());
+        }
     }
 
     /**
      * refresh_token 쿠키를 만료(삭제)합니다.
-     * 운영 환경에서 ALB가 SSL을 종료하면 isHttps가 false로 들어올 수 있으므로
-     * 프로덕션 속성(SameSite=None, Secure, domain)과 로컬 속성(Lax, 도메인 없음) 두 버전을
-     * 모두 삭제하여 어떤 환경에서 설정된 쿠키도 확실히 제거합니다.
+     * 프로덕션 속성(SameSite=None, Secure, domain=.kroaddy.site)과
+     * host-only 속성(SameSite=Lax, domain 없음) 두 버전을 항상 모두 삭제합니다.
      */
     public static void expireRefreshTokenCookie(HttpServletResponse response,
                                                 boolean isHttps) {
@@ -65,23 +74,18 @@ public final class CookieUtil {
         applyDomainAndSameSite(prodBuilder, true);
         response.addHeader("Set-Cookie", prodBuilder.build().toString());
 
-        // 로컬 버전 삭제 (SameSite=Lax, 도메인 없음)
-        if (!isHttps) {
-            ResponseCookie.ResponseCookieBuilder localBuilder = ResponseCookie
-                    .from(REFRESH_TOKEN_NAME, "")
-                    .httpOnly(true)
-                    .secure(false)
-                    .path("/")
-                    .maxAge(0);
-            applyDomainAndSameSite(localBuilder, false);
-            response.addHeader("Set-Cookie", localBuilder.build().toString());
-        }
+        // host-only 버전 삭제 (이전 코드의 SameSite=Lax, domain 없음) — 운영/로컬 모두 항상 실행
+        response.addHeader("Set-Cookie", ResponseCookie
+                .from(REFRESH_TOKEN_NAME, "")
+                .httpOnly(true).secure(false).path("/").maxAge(0).sameSite("Lax")
+                .build().toString());
     }
 
     // ── Access Token ─────────────────────────────────────────────────────────
 
     /**
      * access_token HttpOnly 쿠키를 응답 헤더에 추가합니다. TTL 15분.
+     * HTTPS(운영) 환경에서는 이전 코드가 남긴 host-only 쿠키도 동시에 삭제합니다.
      */
     public static void setAccessTokenCookie(HttpServletResponse response,
                                             String tokenValue,
@@ -95,11 +99,19 @@ public final class CookieUtil {
 
         applyDomainAndSameSite(builder, isHttps);
         response.addHeader("Set-Cookie", builder.build().toString());
+
+        // 운영 환경: 이전 코드가 남긴 host-only 쿠키를 즉시 삭제
+        if (isHttps) {
+            response.addHeader("Set-Cookie", ResponseCookie
+                    .from(ACCESS_TOKEN_NAME, "")
+                    .httpOnly(true).secure(false).path("/").maxAge(0).sameSite("Lax")
+                    .build().toString());
+        }
     }
 
     /**
      * access_token 쿠키를 만료(삭제)합니다.
-     * 프로덕션/로컬 두 버전 모두 삭제합니다.
+     * 프로덕션/host-only 두 버전을 항상 모두 삭제합니다.
      */
     public static void expireAccessTokenCookie(HttpServletResponse response,
                                                boolean isHttps) {
@@ -113,17 +125,11 @@ public final class CookieUtil {
         applyDomainAndSameSite(prodBuilder, true);
         response.addHeader("Set-Cookie", prodBuilder.build().toString());
 
-        // 로컬 버전 삭제
-        if (!isHttps) {
-            ResponseCookie.ResponseCookieBuilder localBuilder = ResponseCookie
-                    .from(ACCESS_TOKEN_NAME, "")
-                    .httpOnly(true)
-                    .secure(false)
-                    .path("/")
-                    .maxAge(0);
-            applyDomainAndSameSite(localBuilder, false);
-            response.addHeader("Set-Cookie", localBuilder.build().toString());
-        }
+        // host-only 버전 삭제 — 항상 실행
+        response.addHeader("Set-Cookie", ResponseCookie
+                .from(ACCESS_TOKEN_NAME, "")
+                .httpOnly(true).secure(false).path("/").maxAge(0).sameSite("Lax")
+                .build().toString());
     }
 
     // ── 내부 헬퍼 ────────────────────────────────────────────────────────────

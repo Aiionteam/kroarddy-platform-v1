@@ -15,14 +15,28 @@ public class FriendController {
     private final JwtTokenProvider jwtTokenProvider;
 
     private Long getUserIdFromAuth(String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) return null;
-        String token = authHeader.substring(7);
-        if (!jwtTokenProvider.validateToken(token)) return null;
-        try {
-            return Long.parseLong(jwtTokenProvider.getUserIdFromToken(token));
-        } catch (NumberFormatException e) {
-            return null;
+        // 1. Authorization: Bearer 헤더 (모바일 / SSE 레거시)
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            if (!jwtTokenProvider.validateToken(token)) return null;
+            try {
+                return Long.parseLong(jwtTokenProvider.getUserIdFromToken(token));
+            } catch (NumberFormatException e) {
+                return null;
+            }
         }
+        // 2. HttpOnly 쿠키 인증 → JwtAuthenticationFilter가 SecurityContext에 설정한 값 사용
+        var auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated()
+                && !"anonymousUser".equals(auth.getPrincipal())) {
+            try {
+                return Long.parseLong(auth.getName());
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
     }
 
     @PostMapping("/request")

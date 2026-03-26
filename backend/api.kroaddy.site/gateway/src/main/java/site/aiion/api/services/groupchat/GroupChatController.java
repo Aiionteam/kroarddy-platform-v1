@@ -29,16 +29,29 @@ public class GroupChatController {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
 
-    /** JWT에서 userId 추출, 없으면 null */
+    /** JWT에서 userId 추출 — Bearer 헤더 → SecurityContext(쿠키 인증) 순으로 폴백 */
     private Long getUserIdFromAuth(String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) return null;
-        String token = authHeader.substring(7);
-        if (token.isEmpty() || !jwtTokenProvider.validateToken(token)) return null;
-        try {
-            return Long.parseLong(jwtTokenProvider.getUserIdFromToken(token));
-        } catch (NumberFormatException e) {
-            return null;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            if (!token.isEmpty() && jwtTokenProvider.validateToken(token)) {
+                try {
+                    return Long.parseLong(jwtTokenProvider.getUserIdFromToken(token));
+                } catch (NumberFormatException e) {
+                    return null;
+                }
+            }
         }
+        var auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated()
+                && !"anonymousUser".equals(auth.getPrincipal())) {
+            try {
+                return Long.parseLong(auth.getName());
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
     }
 
     /** 사용자 명예도 조회 (없으면 0) */

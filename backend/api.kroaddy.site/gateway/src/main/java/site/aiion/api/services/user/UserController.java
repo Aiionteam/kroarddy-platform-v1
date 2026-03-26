@@ -75,18 +75,21 @@ public class UserController {
     public Messenger voteHonor(
             @RequestBody java.util.Map<String, Object> body,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        Long voterId = null;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            if (jwtTokenProvider.validateToken(token)) {
+                try { voterId = Long.parseLong(jwtTokenProvider.getUserIdFromToken(token)); } catch (NumberFormatException ignored) {}
+            }
+        }
+        if (voterId == null) {
+            var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+                try { voterId = Long.parseLong(auth.getName()); } catch (NumberFormatException ignored) {}
+            }
+        }
+        if (voterId == null) {
             return Messenger.builder().code(401).message("인증이 필요합니다.").build();
-        }
-        String token = authHeader.substring(7);
-        if (!jwtTokenProvider.validateToken(token)) {
-            return Messenger.builder().code(401).message("유효하지 않은 토큰입니다.").build();
-        }
-        Long voterId;
-        try {
-            voterId = Long.parseLong(jwtTokenProvider.getUserIdFromToken(token));
-        } catch (NumberFormatException e) {
-            return Messenger.builder().code(401).message("토큰에서 사용자 ID를 추출할 수 없습니다.").build();
         }
         Object targetObj = body.get("targetUserId");
         Object actionObj = body.get("action");
