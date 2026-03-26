@@ -20,6 +20,7 @@ import {
   isWithinForecastRange,
   type WeatherDay,
 } from "@/lib/api/weather";
+import { SLUG_TO_NAME, SLUG_TO_WEATHER_CITY } from "@/app/planner/planner-data";
 
 // ── 플랜별 컬러 팔레트 ────────────────────────────────────────
 const COLORS = [
@@ -494,13 +495,13 @@ function DayPlanGroup({
 }
 
 // ── 날씨 뱃지 ────────────────────────────────────────────────
-function WeatherBadge({ weather }: { weather: WeatherDay }) {
+function WeatherBadge({ weather, cityName }: { weather: WeatherDay; cityName?: string }) {
   const emoji = weatherEmoji(weather.condition);
   return (
     <div className="flex items-center gap-2 rounded-xl bg-sky-50 border border-sky-100 px-3 py-1.5">
       <span className="text-lg leading-none">{emoji}</span>
       <div className="min-w-0">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-xs font-semibold text-sky-700">{weather.condition}</span>
           <span className="text-xs text-sky-600">
             {weather.temp_min}°<span className="text-gray-400 mx-0.5">/</span>
@@ -509,8 +510,13 @@ function WeatherBadge({ weather }: { weather: WeatherDay }) {
           {weather.pop > 0 && (
             <span className="text-[10px] text-blue-500 font-medium">💧{weather.pop}%</span>
           )}
+          {cityName && (
+            <span className="text-[10px] text-gray-400 font-normal">
+              ({cityName} 기준)
+            </span>
+          )}
         </div>
-        <p className="truncate text-[10px] text-sky-500 max-w-[220px]">{weather.advice}</p>
+        <p className="truncate text-[10px] text-sky-500 max-w-[240px]">{weather.advice}</p>
       </div>
     </div>
   );
@@ -536,12 +542,19 @@ function DayPanel({
 
   const [weather, setWeather] = useState<WeatherDay | null>(null);
 
+  // plans에서 해당 날짜에 속한 첫 번째 플랜의 날씨용 도시명 추출
+  // (광역시 하위 지역은 부모 광역시로, 지방 도시는 자신의 이름으로 변환)
+  const locationForWeather = useMemo(() => {
+    const slug = getPlansOnDate(date, plans).find(({ plan }) => plan.location)?.plan.location;
+    if (!slug) return null;
+    return SLUG_TO_WEATHER_CITY[slug] ?? SLUG_TO_NAME[slug] ?? slug;
+  }, [date, plans]);
+
   useEffect(() => {
-    if (!isWithinForecastRange(date)) return;
-    const location = matched.find(({ plan }) => plan.location)?.plan.location;
-    if (!location) return;
+    setWeather(null);
+    if (!locationForWeather || !isWithinForecastRange(date)) return;
     let cancelled = false;
-    fetchWeather(location, date, date)
+    fetchWeather(locationForWeather, date, date)
       .then((res) => {
         if (!cancelled && res.available && res.dates[date]) {
           setWeather(res.dates[date]);
@@ -549,7 +562,7 @@ function DayPanel({
       })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [date, matched]);
+  }, [date, locationForWeather]);
 
   return (
     <div className="flex flex-col">
@@ -564,7 +577,7 @@ function DayPanel({
               {matched.reduce((acc, { items }) => acc + items.length, 0)}개 일정
             </span>
           </div>
-          {weather && <WeatherBadge weather={weather} />}
+          {weather && <WeatherBadge weather={weather} cityName={locationForWeather ?? undefined} />}
         </div>
         <button
           type="button"
@@ -624,15 +637,18 @@ function PlanCard({
   const [rerollingIdx, setRerollingIdx] = useState<number | null>(null);
   const [rerolledIdx, setRerolledIdx] = useState<number | null>(null);
   const [planWeather, setPlanWeather] = useState<Record<string, WeatherDay>>({});
+  const [weatherCityName, setWeatherCityName] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // 카드 마운트 시 여행 기간 날씨 일괄 조회
+  // 카드 마운트 시 여행 기간 날씨 일괄 조회 (슬러그 → 한글 지명 변환 후 요청)
   useEffect(() => {
-    const { location, start_date, end_date } = plan;
-    if (!location || !start_date) return;
+    const { location: slug, start_date, end_date } = plan;
+    if (!slug || !start_date) return;
     if (!isWithinForecastRange(start_date) && !(end_date && isWithinForecastRange(end_date))) return;
+    const locationKo = SLUG_TO_WEATHER_CITY[slug] ?? SLUG_TO_NAME[slug] ?? slug;
+    setWeatherCityName(locationKo);
     let cancelled = false;
-    fetchWeather(location, start_date, end_date ?? start_date)
+    fetchWeather(locationKo, start_date, end_date ?? start_date)
       .then((res) => {
         if (!cancelled && res.available) setPlanWeather(res.dates);
       })
@@ -728,19 +744,27 @@ function PlanCard({
             </p>
             {/* 여행 기간 날씨 미니 요약 */}
             {Object.keys(planWeather).length > 0 && (
-              <div className="mt-1 flex flex-wrap gap-1">
-                {Object.entries(planWeather).map(([dateKey, w]) => (
-                  <span
-                    key={dateKey}
-                    title={w.advice}
-                    className="inline-flex items-center gap-1 rounded-full bg-sky-50 border border-sky-100 px-2 py-0.5 text-[10px] text-sky-700"
-                  >
-                    <span>{weatherEmoji(w.condition)}</span>
-                    <span className="font-medium">{dateKey.slice(5).replace("-", "/")}</span>
-                    <span>{w.temp_min}°/{w.temp_max}°C</span>
-                    {w.pop > 0 && <span className="text-blue-400">💧{w.pop}%</span>}
-                  </span>
-                ))}
+              <div className="mt-1.5">
+                <p className="mb-1 text-[10px] text-gray-400">
+                  🌤 날씨 예보
+                  {weatherCityName && (
+                    <span className="ml-1 text-gray-300">({weatherCityName} 기준 · 5일 이내)</span>
+                  )}
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {Object.entries(planWeather).map(([dateKey, w]) => (
+                    <span
+                      key={dateKey}
+                      title={w.advice}
+                      className="inline-flex items-center gap-1 rounded-full bg-sky-50 border border-sky-100 px-2 py-0.5 text-[10px] text-sky-700"
+                    >
+                      <span>{weatherEmoji(w.condition)}</span>
+                      <span className="font-medium">{dateKey.slice(5).replace("-", "/")}</span>
+                      <span>{w.temp_min}°/{w.temp_max}°C</span>
+                      {w.pop > 0 && <span className="text-blue-400">💧{w.pop}%</span>}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
           </div>
