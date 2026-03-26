@@ -234,27 +234,31 @@ public class KakaoController {
                 String jwtAccessToken = jwtTokenProvider.generateAccessToken(String.valueOf(appUserId), "kakao", extractedUserInfo);
                 String jwtRefreshToken = jwtTokenProvider.generateRefreshToken(String.valueOf(appUserId), "kakao");
                 
-                // 5. Redis에는 Access Token만 저장, Refresh Token은 User 테이블에 저장
-                tokenService.saveAccessToken("kakao", String.valueOf(appUserId), jwtAccessToken, 3600);
-                userService.updateRefreshToken(appUserId, jwtRefreshToken);
-                System.out.println("Refresh Token을 User 테이블에 저장 완료: userId=" + appUserId);
-                
-                // 6. Refresh Token을 HttpOnly 쿠키로 설정 (ResponseCookie 사용 — HttpOnly 직렬화 보장)
-                if (jwtRefreshToken != null) {
-                    boolean isHttps = frontendUrl != null && frontendUrl.startsWith("https");
-                    CookieUtil.setRefreshTokenCookie(response, jwtRefreshToken, isHttps);
-                    System.out.println("Refresh Token을 HttpOnly 쿠키로 설정 완료");
+                // 5. Refresh Token HMAC-SHA256 해시 → User 테이블 저장
+                userService.updateRefreshToken(appUserId,
+                        site.aiion.api.services.oauth.util.TokenHashUtil.hash(jwtRefreshToken));
+                System.out.println("Refresh Token 해시를 User 테이블에 저장 완료: userId=" + appUserId);
+
+                boolean isHttps = frontendUrl != null && frontendUrl.startsWith("https");
+
+                // 6. Access Token + Refresh Token 모두 HttpOnly 쿠키로 설정
+                CookieUtil.setAccessTokenCookie(response, jwtAccessToken, isHttps);
+                CookieUtil.setRefreshTokenCookie(response, jwtRefreshToken, isHttps);
+                System.out.println("Access/Refresh Token HttpOnly 쿠키 설정 완료");
+
+                // 7. 프론트엔드로 리다이렉트 (토큰은 URL에 노출하지 않고 메타데이터만 전달)
+                String nickname = user.getNickname() != null ? user.getNickname() : (user.getName() != null ? user.getName() : "");
+                boolean isMobileDeepLink = !frontendUrl.startsWith("http");
+                String redirectUrl = frontendUrl
+                        + "/login/callback?provider=kakao"
+                        + "&user_id=" + appUserId
+                        + "&nickname=" + URLEncoder.encode(nickname, StandardCharsets.UTF_8);
+                if (isMobileDeepLink) {
+                    redirectUrl += "&token=" + URLEncoder.encode(jwtAccessToken, StandardCharsets.UTF_8)
+                            + "&refresh_token=" + URLEncoder.encode(jwtRefreshToken, StandardCharsets.UTF_8);
+                    System.out.println("모바일 딥링크 감지: 토큰 URL 포함");
                 }
-                
-                // 7. 프론트엔드로 리다이렉트
-                // 모바일 딥링크(http/https가 아닌 커스텀 스킴)인 경우 refresh_token도 URL에 포함
-                boolean isMobileDeepLink = frontendUrl != null && !frontendUrl.startsWith("http");
-                String redirectUrl = frontendUrl + "/login/callback?provider=kakao&token=" + URLEncoder.encode(jwtAccessToken, StandardCharsets.UTF_8);
-                if (isMobileDeepLink && jwtRefreshToken != null && !jwtRefreshToken.isEmpty()) {
-                    redirectUrl += "&refresh_token=" + URLEncoder.encode(jwtRefreshToken, StandardCharsets.UTF_8);
-                    System.out.println("모바일 딥링크 감지: refresh_token을 URL에 포함");
-                }
-                
+
                 System.out.println("JWT 토큰 생성 완료, 프론트엔드로 리다이렉트: " + redirectUrl);
                 return new RedirectView(redirectUrl);
                 

@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useLoginStore } from "@/store";
 import { useLangStore } from "@/store/slices/langSlice";
-import { getAppUserIdFromToken } from "@/lib/api/auth";
 import {
   upsertUserProfile,
   fetchUserProfile,
@@ -46,10 +45,10 @@ type Form = { nationality: string; gender: string; age_band: string; dietary_pre
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { isAuthenticated, accessToken } = useLoginStore();
+  const { isAuthenticated } = useLoginStore();
   const { setLangByNationality } = useLangStore();
   const { t } = useTranslation();
-  const appUserId = getAppUserIdFromToken(accessToken ?? undefined);
+  const appUserId = typeof window !== "undefined" ? Number(sessionStorage.getItem("app_user_id")) || null : null;
 
   const [form, setForm] = useState<Form>({ nationality: "", gender: "", age_band: "", dietary_pref: "", religion: "" });
   const [saving, setSaving] = useState(false);

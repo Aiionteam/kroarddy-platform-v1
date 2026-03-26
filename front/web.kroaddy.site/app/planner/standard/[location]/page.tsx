@@ -21,7 +21,6 @@ import {
   readSchedule,
   writeSchedule,
 } from "@/lib/plannerCache";
-import { getAppUserIdFromToken } from "@/lib/api/auth";
 import { SLUG_TO_NAME } from "../../planner-data";
 
 const THEME_META: Record<string, { emoji: string; bg: string; text: string }> = {
@@ -56,11 +55,11 @@ function offsetDate(days: number) {
 export default function LocationPlannerPage() {
   const router = useRouter();
   const { location } = useParams<{ location: string }>();
-  const { isAuthenticated, logout, accessToken } = useLoginStore();
+  const { isAuthenticated, logout } = useLoginStore();
   const newsTop10 = useNewsStore((s) => s.newsTop10);
 
   const locationName = SLUG_TO_NAME[location] ?? location;
-  const appUserId = getAppUserIdFromToken(accessToken ?? undefined);
+  const appUserId = typeof window !== "undefined" ? Number(sessionStorage.getItem("app_user_id")) || null : null;
 
   const [startDate, setStartDate] = useState(todayStr);
   const [endDate, setEndDate] = useState(todayStr);

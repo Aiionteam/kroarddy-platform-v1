@@ -12,6 +12,7 @@ import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWrite
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import site.aiion.api.services.oauth.token.TokenService;
 import site.aiion.api.services.oauth.util.JwtTokenProvider;
 
 import java.util.ArrayList;
@@ -27,14 +28,16 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final TokenService tokenService;
 
-    public SecurityConfig(JwtTokenProvider jwtTokenProvider) {
+    public SecurityConfig(JwtTokenProvider jwtTokenProvider, TokenService tokenService) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.tokenService = tokenService;
     }
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(jwtTokenProvider);
+        return new JwtAuthenticationFilter(jwtTokenProvider, tokenService);
     }
 
     /**

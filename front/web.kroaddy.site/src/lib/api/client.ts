@@ -1,8 +1,12 @@
 /**
  * API Client - 로컬: http://localhost:8080 / 배포: NEXT_PUBLIC_API_URL 필수
  * Vercel 배포 시 환경 변수에 NEXT_PUBLIC_API_URL 을 게이트웨이 URL 로 설정하세요.
+ *
+ * 쿠키 기반 인증 전환 후 변경사항:
+ * - Authorization: Bearer 헤더 제거 (access_token은 HttpOnly 쿠키로 자동 전송)
+ * - credentials: "include" 는 유지 (쿠키 전송 필수)
+ * - 401 자동 갱신 시 tokenStore 동기화 코드 제거 (서버가 쿠키를 갱신함)
  */
-import { getSharedToken, setSharedToken } from "./tokenStore";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -32,25 +36,12 @@ class ApiClient {
     this.baseURL = baseURL;
   }
 
-  private static readonly PUBLIC_PATHS = [
-    "/api/google/auth-url",
-    "/api/kakao/auth-url",
-    "/api/naver/auth-url",
-  ];
-
-  private isPublicPath(endpoint: string): boolean {
-    return ApiClient.PUBLIC_PATHS.some((p) => endpoint.startsWith(p) || endpoint.includes(p));
-  }
-
-  private getHeaders(_endpoint: string = ""): HeadersInit {
-    const headers: HeadersInit = {
+  private getHeaders(): HeadersInit {
+    return {
       "Content-Type": "application/json",
       Accept: "application/json",
+      // access_token은 HttpOnly 쿠키로 자동 전송 (credentials: "include")
     };
-    // tokenStore에서 직접 읽기 — window.__loginStore 타이밍 문제 없음
-    const token = getSharedToken();
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-    return headers;
   }
 
   private async fetchWithTimeout(
@@ -81,7 +72,7 @@ class ApiClient {
   }
 
   private isRefreshing = false;
-  private refreshPromise: Promise<string> | null = null;
+  private refreshPromise: Promise<void> | null = null;
 
   private resetRefreshState() {
     this.isRefreshing = false;
@@ -116,15 +107,9 @@ class ApiClient {
         this.refreshPromise = (async () => {
           try {
             const { refreshAccessToken } = await import("./auth");
-            const newToken = await refreshAccessToken();
-            // tokenStore 동기화 (Zustand는 loginSlice에서 별도 동기화)
-            setSharedToken(newToken);
-            // Zustand도 업데이트 (window.__loginStore는 fallback으로만 사용)
-            if (typeof window !== "undefined") {
-              const store = (window as any).__loginStore;
-              if (store) store.getState().setAccessToken(newToken);
-            }
-            return newToken;
+            // refreshAccessToken은 서버가 새 access_token 쿠키를 Set-Cookie로 응답
+            // — 클라이언트에서 토큰 값을 저장할 필요 없음
+            await refreshAccessToken();
           } catch (error) {
             this.resetRefreshState();
             this.doLogout();
@@ -155,7 +140,6 @@ class ApiClient {
 
   private doLogout() {
     if (typeof window !== "undefined") {
-      setSharedToken(null);
       const store = (window as any).__loginStore;
       if (store) store.getState().logout();
     }
@@ -166,7 +150,7 @@ class ApiClient {
     const makeRequest = () =>
       this.fetchWithTimeout(
         url,
-        { method: "GET", headers: this.getHeaders(endpoint), credentials: "include", ...options },
+        { method: "GET", headers: this.getHeaders(), credentials: "include", ...options },
         options.timeout || 10000
       );
     const response = await makeRequest();
@@ -183,7 +167,7 @@ class ApiClient {
         url,
         {
           method: "POST",
-          headers: this.getHeaders(endpoint),
+          headers: this.getHeaders(),
           credentials: "include",
           body: body ? JSON.stringify(body) : undefined,
           ...options,
@@ -203,7 +187,7 @@ class ApiClient {
       url,
       {
         method: "PUT",
-        headers: this.getHeaders(endpoint),
+        headers: this.getHeaders(),
         credentials: "include",
         body: body ? JSON.stringify(body) : undefined,
         ...options,
@@ -223,7 +207,7 @@ class ApiClient {
         url,
         {
           method: "PATCH",
-          headers: this.getHeaders(endpoint),
+          headers: this.getHeaders(),
           credentials: "include",
           body: body ? JSON.stringify(body) : undefined,
           ...options,
@@ -243,7 +227,7 @@ class ApiClient {
       url,
       {
         method: "DELETE",
-        headers: this.getHeaders(endpoint),
+        headers: this.getHeaders(),
         credentials: "include",
         body: body ? JSON.stringify(body) : undefined,
         ...options,

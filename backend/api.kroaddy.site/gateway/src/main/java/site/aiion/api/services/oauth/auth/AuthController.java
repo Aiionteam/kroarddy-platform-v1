@@ -130,24 +130,31 @@ public class AuthController {
             }
             
             System.out.println("User 테이블의 Refresh Token 해시 검증 완료");
-            
-            // 5. 새로운 Access Token 생성
+
+            // 5. Refresh Token Rotation: 새 Refresh Token 발급 + DB 갱신
+            String newRefreshToken = jwtTokenProvider.generateRefreshToken(userId, provider);
+            userService.updateRefreshToken(Long.parseLong(userId), TokenHashUtil.hash(newRefreshToken));
+            System.out.println("RTR: 새 Refresh Token 발급 및 해시 DB 갱신 완료");
+
+            // 6. 새로운 Access Token 생성
             Map<String, Object> userInfo = new HashMap<>();
             userInfo.put("app_user_id", userId);
             String newAccessToken = jwtTokenProvider.generateAccessToken(userId, provider, userInfo);
-            
-            // 6. Redis에 새 Access Token 저장
-            tokenService.saveAccessToken(provider, userId, newAccessToken, 3600);
-            
-            System.out.println("새 Access Token 생성 완료");
-            
-            // 7. 응답 반환
+
+            System.out.println("새 Access Token 생성 완료 (TTL 15분)");
+
+            // 7. 쿠키 갱신 (Access + Refresh)
+            boolean isHttps = request.isSecure();
+            CookieUtil.setAccessTokenCookie(response, newAccessToken, isHttps);
+            CookieUtil.setRefreshTokenCookie(response, newRefreshToken, isHttps);
+
+            // 8. 응답 반환 (점진적 전환: body에도 포함하되 프론트가 쿠키 우선 사용)
             Map<String, Object> successResponse = new HashMap<>();
             successResponse.put("success", true);
             successResponse.put("access_token", newAccessToken);
             successResponse.put("token_type", "Bearer");
-            successResponse.put("expires_in", 3600);
-            
+            successResponse.put("expires_in", 900);
+
             return ResponseEntity.ok(successResponse);
             
         } catch (Exception e) {
@@ -216,10 +223,12 @@ public class AuthController {
                 System.out.println("쿠키에 Refresh Token이 없습니다. (이미 로그아웃되었거나 쿠키가 만료됨)");
             }
             
-            // 3. HttpOnly 쿠키 삭제 (ResponseCookie 사용 — HttpOnly 직렬화 보장)
-            CookieUtil.expireRefreshTokenCookie(response, request.isSecure());
-            
-            System.out.println("Refresh Token 쿠키 삭제 완료");
+            // 3. HttpOnly 쿠키 삭제 (Access + Refresh 모두 만료)
+            boolean isHttps = request.isSecure();
+            CookieUtil.expireAccessTokenCookie(response, isHttps);
+            CookieUtil.expireRefreshTokenCookie(response, isHttps);
+
+            System.out.println("Access/Refresh Token 쿠키 삭제 완료");
             
             // 4. 응답 반환
             Map<String, Object> successResponse = new HashMap<>();
@@ -232,7 +241,8 @@ public class AuthController {
             System.err.println("로그아웃 중 오류 발생: " + e.getMessage());
             e.printStackTrace();
             
-            // 오류가 발생해도 쿠키는 삭제 (ResponseCookie 사용)
+            // 오류가 발생해도 쿠키는 삭제
+            CookieUtil.expireAccessTokenCookie(response, request.isSecure());
             CookieUtil.expireRefreshTokenCookie(response, request.isSecure());
             
             Map<String, Object> successResponse = new HashMap<>();

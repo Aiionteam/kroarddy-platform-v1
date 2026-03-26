@@ -4,14 +4,12 @@ import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLoginStore } from "@/store";
 import { handleOAuthCallback, extractOAuthParams } from "@/service";
-import { setSharedToken } from "@/lib/api/tokenStore";
-import { getAppUserIdFromToken } from "@/lib/api/auth";
 import { fetchUserProfile } from "@/lib/api/userProfile";
 
 function OAuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { setAuthenticated, setLoadingType, setAccessToken } = useLoginStore();
+  const { setAuthenticated, setLoadingType } = useLoginStore();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -19,17 +17,15 @@ function OAuthCallbackContent() {
   useEffect(() => {
     if (isProcessing) return;
     const params = extractOAuthParams(searchParams);
-    if (!params.token && !params.error) {
+
+    // user_id 또는 에러가 없으면 처리할 게 없음
+    if (!params.userId && !params.error) {
       router.replace("/");
       return;
     }
     setIsProcessing(true);
 
-    if (params.token) {
-      setSharedToken(params.token);
-      setAccessToken(params.token);
-    }
-
+    // user_id / nickname은 oauth-base.service 내부의 handleOAuthCallbackBase에서 sessionStorage에 저장됨
     const result = handleOAuthCallback(params, {
       onSuccess: async (provider) => {
         setAuthenticated(true);
@@ -42,7 +38,8 @@ function OAuthCallbackContent() {
 
         // 프로필 완성 여부 확인 → 미완성이면 온보딩으로
         try {
-          const userId = getAppUserIdFromToken(params.token ?? undefined);
+          const storedUserId = sessionStorage.getItem("app_user_id");
+          const userId = storedUserId ? Number(storedUserId) : null;
           if (userId) {
             const profile = await fetchUserProfile(userId);
             if (!profile || !profile.is_complete) {
@@ -60,12 +57,11 @@ function OAuthCallbackContent() {
         setErrorMessage(error);
         setIsProcessing(false);
       },
-      onRedirect: (path) => router.replace(path), // fallback only
+      onRedirect: (path) => router.replace(path),
     });
 
-    // 라우팅은 onSuccess 내부에서 처리하므로 여기서는 상태만 업데이트
     if (result.success) setStatus("success");
-  }, [searchParams, router, setAuthenticated, setLoadingType, setAccessToken, isProcessing]);
+  }, [searchParams, router, setAuthenticated, setLoadingType, isProcessing]);
 
   if (status === "loading") {
     return (
