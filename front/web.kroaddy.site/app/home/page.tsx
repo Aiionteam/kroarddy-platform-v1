@@ -106,7 +106,7 @@ export default function HomePage() {
   const [data, setData]       = useState<ProcessedNewsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(false);
-  const [rebateOpen, setRebateOpen] = useState(true);
+  const [rebateOpen, setRebateOpen] = useState(false);
 
   const loadNews = React.useCallback(async () => {
     if (!isAuthenticated || !accessToken) return;
