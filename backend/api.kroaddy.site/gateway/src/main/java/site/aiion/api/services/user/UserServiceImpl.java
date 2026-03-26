@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
-import site.aiion.api.services.oauth.util.TokenHashUtil;
 import site.aiion.api.services.user.common.domain.Messenger;
 
 @Service
@@ -314,8 +313,10 @@ public class UserServiceImpl implements UserService {
                     .build();
         }
         
-        // DB에는 SHA-256 해시값만 저장 (null이면 그대로 null 저장 = 로그아웃)
-        String tokenToStore = TokenHashUtil.hash(refreshToken);
+        // 호출자(GoogleController, KakaoController, NaverController, AuthController)가
+        // 이미 HMAC-SHA256 해시를 계산해서 넘겨주므로 여기서 재해싱하지 않는다.
+        // null은 그대로 저장(로그아웃 시 DB Refresh Token 삭제).
+        String tokenToStore = refreshToken;
 
         Optional<User> optionalEntity = userRepository.findById(userId);
         if (optionalEntity.isPresent()) {
