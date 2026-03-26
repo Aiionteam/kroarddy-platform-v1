@@ -469,6 +469,8 @@ async def generate_routes(state: PlannerState) -> PlannerState:
 
     prompt = (
         f"여행지:{location_name} | {period_clause.strip()}\n"
+        f"⚠️ 지역 제한(CRITICAL): highlights의 모든 장소는 반드시 '{location_name}' 지역 내에 "
+        f"실제 존재해야 합니다. 이름이 비슷해도 다른 도시·지역 장소는 절대 포함 금지.\n\n"
         f"{user_block}{exclude_block}{festival_block}{weather_block}{transport_block}{news_block}"
         "아래 7가지 테마의 루트를 각 1개씩 순서대로 작성하세요:\n"
         f"1.{festival_theme_desc.split(':',1)[-1].strip()}\n"
@@ -478,7 +480,7 @@ async def generate_routes(state: PlannerState) -> PlannerState:
         "5.가성비:무료명소·저렴먹거리·대중교통 중심\n"
         "6.가족:키즈체험·동물원·놀이공원·자연탐방(유아·초등 기준)\n"
         "7.커플:야경·사진스팟·감성카페·데이트코스\n\n"
-        "highlights는 실존 장소·거리·행사만 사용.\n"
+        f"highlights는 {location_name} 내 실존 장소·거리·행사만 사용.\n"
         f"{lang_dir}"
         "\nRespond ONLY with valid JSON (no explanation):\n"
         '{"routes":[{"name":"name(≤15chars)","theme":"행사|먹거리|명소|럭셔리|가성비|가족|커플",'
@@ -574,12 +576,14 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
 
     prompt = (
         f"Destination:{location_name} | Route:{route_name}\n"
+        f"⚠️ GEOGRAPHIC CONSTRAINT (CRITICAL): ALL places must be physically located within "
+        f"'{location_name}'. Never use places from other cities or regions, even if names are similar.\n"
         f"{date_clause}\n"
         f"{festival_block}{weather_block}{transport_block}{news_block}"
         f"Create a detailed travel itinerary ({num_days} days, 4 items per day).\n\n"
         "Rules:\n"
         "- date field must use YYYY-MM-DD from the DateMapping above\n"
-        "- Use only real existing places/restaurants/attractions\n"
+        f"- Use only real existing places/restaurants/attractions within {location_name}\n"
         f"- time must be one of: {time_labels}\n"
         f"{cost_note}"
         "- cost_summary.per_day: sum of estimated_cost for each day (formatted KRW string)\n"
@@ -649,13 +653,14 @@ async def modify_schedule(
 
     prompt = (
         f'Destination:{location}\n'
+        f"⚠️ GEOGRAPHIC CONSTRAINT: ALL places must be within '{location}'. Never use places from other cities.\n"
         f'Modification instruction:"{instruction}"\n'
         f"{kobis_block}"
         f"Current schedule (JSON):\n{schedule_json}\n\n"
         "Rules:\n"
         "- Replace only the instructed items' place/title/description/tips\n"
         "- Never change day/date/time or other items\n"
-        "- Use only real existing places\n"
+        f"- Use only real existing places within {location}\n"
         "- For every item include: address (도로명 주소), lat, lng\n"
         "- If the requested place/event/movie does NOT exist or is NOT available (e.g. not currently screening, closed, fictional), "
         "  keep the schedule UNCHANGED and set 'not_possible' to true with a brief reason in 'reason' (1-2 sentences).\n"
@@ -724,11 +729,12 @@ async def reroll_single_item(
 
     prompt = (
         f"Destination:{location} | Day{day}({date_str}) {time_str}\n"
+        f"⚠️ GEOGRAPHIC CONSTRAINT: ALL places must be within '{location}'. Never use places from other cities.\n"
         f"Replace: {item.get('title')} (📍{item.get('place')})\n"
         f"{same_day_ctx}\n"
         f"{kobis_block}\n"
-        "Replace with a completely different place/activity. Keep day/date/time identical.\n"
-        "Use only real existing places.\n"
+        f"Replace with a completely different place/activity within {location}. Keep day/date/time identical.\n"
+        f"Use only real existing places within {location}.\n"
         "Include estimated_cost in KRW (e.g. '무료', '₩3,000', '₩15,000~₩20,000').\n"
         "Include address (도로명 주소), lat, lng for the new place.\n"
         f"{lang_dir}"
