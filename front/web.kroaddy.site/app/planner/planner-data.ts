@@ -511,3 +511,31 @@ export const SLUG_TO_NAME: Record<string, string> = Object.fromEntries(
 export const DESTINATION_SLUG: Record<string, string> = Object.fromEntries(
   ALL_DESTINATIONS.map((d) => [d.name, d.slug])
 );
+
+/**
+ * slug → 날씨 API에 사용할 도시명
+ *
+ * OWM은 소규모 동네(예: 송정, 해운대)를 못 찾거나 동명이인 지역을 잘못 매칭함.
+ * - 광역시 하위 지역(seoul-areas, busan, daegu, ulsan): 부모 광역시 이름 사용
+ *   예) songjeong → "부산", haeundae → "부산", gangnam → "서울"
+ * - 특별시/광역시 자체 slug: 그대로 사용
+ * - 지방 도시(경기·강원·충청 등 독립 시/군): 지명 자체 사용
+ *   예) gangneung → "강릉", chuncheon → "춘천", gapyeong → "가평"
+ */
+export const SLUG_TO_WEATHER_CITY: Record<string, string> = {
+  // 특별시·광역시 자체 → 그대로
+  ...Object.fromEntries(METRO_CITIES.map((d) => [d.slug, d.name])),
+  // REGION_GROUPS 하위 destinations
+  ...Object.fromEntries(
+    REGION_GROUPS.flatMap((group) => {
+      const isMetro = (METRO_REGION_GROUP_IDS as readonly string[]).includes(group.id);
+      return group.subSections.flatMap((sub) =>
+        sub.destinations.map((dest) => [
+          dest.slug,
+          // 광역시 하위 구역은 부모 광역시 이름, 그 외 지방 도시는 자신의 이름
+          isMetro ? group.label : dest.name,
+        ])
+      );
+    })
+  ),
+};
