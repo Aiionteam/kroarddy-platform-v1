@@ -1,6 +1,7 @@
 fastapi
 uvicorn[standard]
 httpx
+playwright
 python-dotenv
 pydantic-settings
 # LangGraph / Gemini / OpenAI fallback

@@ -39,6 +39,9 @@ export interface ScheduleItem {
   description: string;
   tips?: string;
   estimated_cost?: string;
+  /** 네이버 플레이스 크롤(백엔드 옵션) */
+  business_hours?: string;
+  naver_place_id?: string;
 }
 
 export interface CostSummary {
@@ -88,6 +91,7 @@ export async function fetchRoutes(
     existingRoutes?: string[];
     useSearch?: boolean;
     newsTop10?: object[];
+    transportMode?: "car" | "transit" | "walk";
   }
 ): Promise<RoutesResponse> {
   const res = await fetch(`${API_BASE}/api/v1/planner/${location}/routes`, {
@@ -100,6 +104,7 @@ export async function fetchRoutes(
       existing_routes: opts?.existingRoutes ?? null,
       use_search: opts?.useSearch ?? false,
       news_top10: opts?.newsTop10 ?? null,
+      transport_mode: opts?.transportMode ?? null,
     }),
     cache: "no-store",
   });
@@ -205,6 +210,7 @@ export async function fetchSchedule(
     userId?: number;
     useSearch?: boolean;
     newsTop10?: object[];
+    transportMode?: "car" | "transit" | "walk";
   }
 ): Promise<ScheduleResponse> {
   const res = await fetch(`${API_BASE}/api/v1/planner/${location}/schedule`, {
@@ -217,6 +223,7 @@ export async function fetchSchedule(
       user_id: opts?.userId ?? null,
       use_search: opts?.useSearch ?? false,
       news_top10: opts?.newsTop10 ?? null,
+      transport_mode: opts?.transportMode ?? null,
     }),
     cache: "no-store",
   });

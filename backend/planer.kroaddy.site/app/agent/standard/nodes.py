@@ -14,12 +14,14 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from app.agent.standard.state import PlannerState
 from app.core.config import settings
 from app.services.naver_map_client import geocode
+from app.services.naver_place_hours import enrich_schedule_items_with_hours
 from app.services.news_client import build_news_block_for_prompt
 from app.services.search_client import (
     fetch_boxoffice,
     format_boxoffice_context,
     is_movie_query,
 )
+from app.services.weather_client import build_weather_block_for_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -383,6 +385,33 @@ def _build_user_profile_block(profile: dict | None, lang: str = "Korean") -> str
     return "\n".join(lines) + "\n"
 
 
+def _build_transport_block(transport_mode: str | None) -> str:
+    """이동수단 → 프롬프트 지시 블록."""
+    if not transport_mode:
+        return ""
+    guides = {
+        "car": (
+            "【이동수단: 자가용】\n"
+            "- 주차 가능한 장소 우선 선택하세요 (주차장 있는 명소·식당).\n"
+            "- 하루 이동 반경을 넓게 설정해도 됩니다 (도시 외곽·드라이브 코스 포함 가능).\n"
+            "- tips 필드에 주차 정보를 간단히 포함하세요.\n\n"
+        ),
+        "transit": (
+            "【이동수단: 대중교통】\n"
+            "- 지하철·버스 접근이 쉬운 장소만 선택하세요.\n"
+            "- 하루 일정의 장소들은 반경 3km 이내에 밀집 배치하세요.\n"
+            "- tips 필드에 주요 교통편(지하철역·버스 노선)을 안내하세요.\n\n"
+        ),
+        "walk": (
+            "【이동수단: 도보】\n"
+            "- 하루 일정의 모든 장소를 도보 이동 가능하도록 반경 2km 이내로 배치하세요.\n"
+            "- 언덕·계단이 많은 장소는 최소화하세요.\n"
+            "- tips 필드에 도보 소요 시간(분) 또는 도보 경로 힌트를 포함하세요.\n\n"
+        ),
+    }
+    return guides.get(transport_mode, "")
+
+
 async def generate_routes(state: PlannerState) -> PlannerState:
     """노드 1: 여행지 루트 7개 추천 (행사/먹거리/명소/럭셔리/가성비/가족/커플 테마)."""
     location_name = state.get("location_name") or state["location"]
@@ -392,6 +421,8 @@ async def generate_routes(state: PlannerState) -> PlannerState:
     existing_routes: list = state.get("existing_routes") or []
     start_date = state.get("start_date")
     end_date = state.get("end_date")
+    weather_forecast: dict | None = state.get("weather_forecast")
+    transport_mode: str | None = state.get("transport_mode")
 
     if start_date and end_date:
         period_clause = f"여행 기간: {start_date} ~ {end_date}\n"
@@ -424,6 +455,8 @@ async def generate_routes(state: PlannerState) -> PlannerState:
     user_block = _build_user_profile_block(user_profile, lang)
     lang_dir = _lang_directive(lang)
     news_block = build_news_block_for_prompt(news_top10, location_name, for_k_content=False)
+    weather_block = build_weather_block_for_prompt(weather_forecast or {}, start_date, end_date)
+    transport_block = _build_transport_block(transport_mode)
 
     if existing_routes:
         quoted = ", ".join(f'"{r}"' for r in existing_routes)
@@ -436,7 +469,7 @@ async def generate_routes(state: PlannerState) -> PlannerState:
 
     prompt = (
         f"여행지:{location_name} | {period_clause.strip()}\n"
-        f"{user_block}{exclude_block}{festival_block}{news_block}"
+        f"{user_block}{exclude_block}{festival_block}{weather_block}{transport_block}{news_block}"
         "아래 7가지 테마의 루트를 각 1개씩 순서대로 작성하세요:\n"
         f"1.{festival_theme_desc.split(':',1)[-1].strip()}\n"
         "2.먹거리:재래시장·먹자골목·특산물 중심\n"
@@ -491,10 +524,14 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
     user_profile: dict | None = state.get("user_profile")
     festivals: list = state.get("festivals") or []
     news_top10: list = state.get("news_top10") or []
+    weather_forecast: dict | None = state.get("weather_forecast")
+    transport_mode: str | None = state.get("transport_mode")
 
     lang = _get_lang(user_profile)
     lang_dir = _lang_directive(lang)
     news_block = build_news_block_for_prompt(news_top10, location_name, for_k_content=False)
+    weather_block = build_weather_block_for_prompt(weather_forecast or {}, start_date, end_date)
+    transport_block = _build_transport_block(transport_mode)
 
     date_list = _build_date_list(start_date, end_date)
     num_days = len(date_list) if date_list else _TRAVEL_DAYS_DEFAULT
@@ -538,7 +575,7 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
     prompt = (
         f"Destination:{location_name} | Route:{route_name}\n"
         f"{date_clause}\n"
-        f"{festival_block}{news_block}"
+        f"{festival_block}{weather_block}{transport_block}{news_block}"
         f"Create a detailed travel itinerary ({num_days} days, 4 items per day).\n\n"
         "Rules:\n"
         "- date field must use YYYY-MM-DD from the DateMapping above\n"
@@ -799,3 +836,18 @@ async def geocode_schedule(state: PlannerState) -> PlannerState:
         )
 
     return {**state, "schedule": optimized}
+
+
+async def enrich_business_hours_schedule(state: PlannerState) -> PlannerState:
+    """네이버 플레이스에서 영업시간을 붙인다 (NAVER_PLACE_HOURS_ENABLED=1 일 때만)."""
+    if not settings.naver_place_hours_enabled:
+        return state
+    schedule = state.get("schedule") or []
+    if not schedule:
+        return state
+    try:
+        enriched = await enrich_schedule_items_with_hours(schedule)
+        return {**state, "schedule": enriched}
+    except Exception as e:
+        logger.warning("영업시간 보강 실패(무시): %s", e)
+        return state

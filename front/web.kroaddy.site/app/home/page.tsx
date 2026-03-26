@@ -58,6 +58,43 @@ const K_THEMES = [
   { label: "K-BEAUTY", emoji: "💄",  color: "bg-pink-50 border-pink-200 text-pink-600",    path: "/planner/k-content" },
 ];
 
+/** 2026 상반기 시범 – 시골 지역 여행 시 지출의 50%를 지역 상품권으로 환급 (공식 안내: visitkorea.or.kr) */
+const VISIT_KOREA_URL = "https://www.visitkorea.or.kr";
+
+/** planner-data.ts SLUG_TO_NAME과 동일 slug → 표준 플래너(/planner/standard/[slug]) 루트·일정 API 재사용 */
+const RURAL_REBATE_REGIONS: { province: string; emoji: string; cities: { name: string; plannerSlug: string }[] }[] = [
+  { province: "강원", emoji: "🏔️", cities: [
+    { name: "평창", plannerSlug: "pyeongchang" },
+    { name: "영월", plannerSlug: "yeongwol" },
+    { name: "횡성", plannerSlug: "hoengseong" },
+  ] },
+  { province: "충북", emoji: "🌾", cities: [{ name: "제천", plannerSlug: "jecheon" }] },
+  { province: "전북", emoji: "🎎", cities: [{ name: "고창", plannerSlug: "gochang" }] },
+  {
+    province: "전남",
+    emoji: "🌊",
+    cities: [
+      { name: "강진", plannerSlug: "gangjin" },
+      { name: "영광", plannerSlug: "yeonggwang" },
+      { name: "해남", plannerSlug: "haenam" },
+      { name: "고흥", plannerSlug: "goheung" },
+      { name: "완도", plannerSlug: "wando" },
+      { name: "영암", plannerSlug: "yeongam" },
+    ],
+  },
+  {
+    province: "경남",
+    emoji: "🌸",
+    cities: [
+      { name: "밀양", plannerSlug: "miryang" },
+      { name: "하동", plannerSlug: "hadong" },
+      { name: "합천", plannerSlug: "hapcheon" },
+      { name: "거창", plannerSlug: "geochang" },
+      { name: "남해", plannerSlug: "namhae" },
+    ],
+  },
+];
+
 export default function HomePage() {
   const { isAuthenticated, logout, accessToken } = useLoginStore();
   const { setNewsTop10 } = useNewsStore();
@@ -69,6 +106,7 @@ export default function HomePage() {
   const [data, setData]       = useState<ProcessedNewsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(false);
+  const [rebateOpen, setRebateOpen] = useState(true);
 
   const loadNews = React.useCallback(async () => {
     if (!isAuthenticated || !accessToken) return;
@@ -171,6 +209,96 @@ export default function HomePage() {
                 </button>
               ))}
             </div>
+          </section>
+
+          {/* ══════════════════════════════════════════════════
+              시골 여행 반값 환급 (visitkorea.or.kr)
+          ══════════════════════════════════════════════════ */}
+          <section className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 via-white to-teal-50/60 p-4 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">2026.4 ~ 6 · 시범사업</p>
+                <h2 className="mt-0.5 text-sm font-bold text-gray-900">🎫 지정 시골 지역 여행 시 최대 50% 환급</h2>
+                <p className="mt-1 text-xs leading-relaxed text-gray-600">
+                  여행 지출의 <span className="font-semibold text-emerald-700">절반</span>을 모바일 지역사랑 상품권으로 돌려받을 수 있어요.
+                  개인 최대 <span className="font-semibold">10만 원</span>, 2인 이상 단체 최대 <span className="font-semibold">20만 원</span>.
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+                <a
+                  href={VISIT_KOREA_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-emerald-700"
+                >
+                  대한민국 구석구석
+                  <span className="opacity-90">↗</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setRebateOpen((o) => !o)}
+                  className="text-[11px] font-semibold text-emerald-700 underline-offset-2 hover:underline"
+                >
+                  {rebateOpen ? "이용 방법 접기" : "이용 방법 · 대상 지역 보기"}
+                </button>
+              </div>
+            </div>
+
+            {rebateOpen && (
+              <div className="mt-4 space-y-4 border-t border-emerald-100 pt-4">
+                <ol className="space-y-2 text-[11px] text-gray-700">
+                  <li className="flex gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-200 text-[10px] font-bold text-emerald-900">1</span>
+                    <span><strong className="text-gray-900">사전 신청</strong> — <a href={VISIT_KOREA_URL} target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline">visitkorea.or.kr</a>에서 대상 지역 확인 후 여행 전 승인을 받으세요.</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-200 text-[10px] font-bold text-emerald-900">2</span>
+                    <span><strong className="text-gray-900">여행</strong> — 승인 지역에서 식비·숙박 등 지출 (영수증 보관).</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-200 text-[10px] font-bold text-emerald-900">3</span>
+                    <span><strong className="text-gray-900">증빙 제출</strong> — 여행 후 지자체 안내에 따라 영수증 등 제출.</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-200 text-[10px] font-bold text-emerald-900">4</span>
+                    <span><strong className="text-gray-900">환급</strong> — 확인 후 지출의 50%를 모바일 지역사랑 상품권으로 지급.</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-200 text-[10px] font-bold text-emerald-900">5</span>
+                    <span><strong className="text-gray-900">사용</strong> — 해당 지역 식당·카페·온라인몰 등에서 올해 안에 사용.</span>
+                  </li>
+                </ol>
+                <div className="rounded-xl bg-amber-50/90 px-3 py-2 text-[10px] leading-relaxed text-amber-900">
+                  <strong>주의</strong> 사전 신청·승인 필수 · 예산 한도로 조기 마감될 수 있음 · 세부는 지자체마다 다를 수 있으니 4월 초 공식 사이트를 꼭 확인하세요.
+                </div>
+                <div>
+                  <p className="mb-2 text-[11px] font-bold text-gray-800">대상 지역 16곳 · 플래너로 루트 보기 또는 공식 안내</p>
+                  <div className="space-y-3">
+                    {RURAL_REBATE_REGIONS.map((block) => (
+                      <div key={block.province}>
+                        <p className="mb-1.5 text-[10px] font-semibold text-gray-500">
+                          {block.emoji} {block.province}
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {block.cities.map((c) => (
+                            <button
+                              key={`${block.province}-${c.name}`}
+                              type="button"
+                              onClick={() => router.push(`/planner/standard/${c.plannerSlug}`)}
+                              className="rounded-lg border border-emerald-200/90 bg-white/90 px-2.5 py-1 text-[11px] font-medium text-gray-800 shadow-sm transition-all hover:border-emerald-400 hover:bg-emerald-50"
+                              title={`${c.name} 여행 루트·일정 (표준 플래너)`}
+                            >
+                              {c.name}
+                              <span className="ml-0.5 text-[9px] text-emerald-600">🗺️</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </section>
 
           {/* ══════════════════════════════════════════════════

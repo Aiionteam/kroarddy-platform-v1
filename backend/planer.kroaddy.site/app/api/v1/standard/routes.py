@@ -14,12 +14,15 @@ from sqlalchemy.orm.attributes import flag_modified
 
 from app.agent.standard.graph import routes_graph, schedule_graph
 from app.agent.standard.nodes import _is_daily_quota, _geocode_item, modify_schedule, reroll_single_item
+from app.core.config import settings
 from app.core.database.session import get_db
 from app.models.travel_plan import TravelPlan
 from app.models.plan_cache import RouteCache, ScheduleCache
 from app.services.festival_client import fetch_festivals_for_period
 from app.services.news_client import fetch_news_top10
+from app.services.naver_place_hours import enrich_schedule_items_with_hours
 from app.services.user_info_client import fetch_user_profile
+from app.services.weather_client import fetch_weather_for_planner
 from .schemas import ModifyRequest, RerollItemRequest, RoutesRequest, SavePlanRequest, ScheduleRequest
 
 logger = logging.getLogger(__name__)
@@ -181,6 +184,8 @@ SLUG_TO_NAME: dict[str, str] = {
     "samcheok":      "삼척",
     "yangyang":      "양양",
     "pyeongchang":   "평창",
+    "yeongwol":      "영월",
+    "hoengseong":    "횡성",
     "jeongseon":     "정선",
     "inje":          "인제",
     "goseong-gw":    "고성(강원)",
@@ -205,6 +210,7 @@ SLUG_TO_NAME: dict[str, str] = {
     "jeongeup":      "정읍",
     "namwon":        "남원",
     "gimje":         "김제",
+    "gochang":       "고창",
     "mokpo":         "목포",
     "yeosu":         "여수",
     "suncheon":      "순천",
@@ -213,6 +219,11 @@ SLUG_TO_NAME: dict[str, str] = {
     "damyang":       "담양",
     "boseong":       "보성",
     "wando":         "완도",
+    "gangjin":       "강진",
+    "yeonggwang":    "영광",
+    "haenam":        "해남",
+    "goheung":       "고흥",
+    "yeongam":       "영암",
     # 경상권
     "pohang":        "포항",
     "gyeongju":      "경주",
@@ -230,6 +241,8 @@ SLUG_TO_NAME: dict[str, str] = {
     "sacheon":       "사천",
     "gimhae":        "김해",
     "miryang":       "밀양",
+    "hadong":        "하동",
+    "geochang":      "거창",
     "geoje":         "거제",
     "yangsan":       "양산",
     "namhae":        "남해",
@@ -275,6 +288,8 @@ def _base_state(location: str, start_date: Optional[str], end_date: Optional[str
         "existing_routes": [],
         "use_search": False,
         "news_top10": [],
+        "weather_forecast": None,
+        "transport_mode": None,
         "error": None,
     }
 
@@ -298,8 +313,9 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
     existing_routes: list[str] = req.existing_routes or []
     eh = _existing_hash(existing_routes)
     search_tag = "s1" if req.use_search else "s0"
+    transport_tag = req.transport_mode or "any"
     # 언어별 캐시 분리를 위해 user_profile 조회 후 cache_key 확정 (아래 lock 블록에서 재정의)
-    _preliminary_key = f"{location}:{req.start_date}:{req.end_date}:{eh}:{search_tag}"
+    _preliminary_key = f"{location}:{req.start_date}:{req.end_date}:{eh}:{search_tag}:{transport_tag}"
 
     cached = _routes_cache.get(_preliminary_key)
     if cached and time.time() - cached[1] < _ROUTES_TTL:
@@ -314,23 +330,26 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
 
         # 뉴스 Top10: 프론트에서 이미 가져온 데이터가 있으면 재사용 (API 호출 절약)
         _has_client_news = bool(req.news_top10)
-        festivals, user_profile, news_top10 = await asyncio.gather(
+        festivals, user_profile, news_top10, weather_forecast = await asyncio.gather(
             fetch_festivals_for_period(location, location_name, req.start_date, req.end_date),
             fetch_user_profile(req.user_id),
             asyncio.sleep(0) if _has_client_news else fetch_news_top10(req.start_date, req.end_date),
+            fetch_weather_for_planner(location_name, None, req.start_date, req.end_date),
         )
         if _has_client_news:
             news_top10 = req.news_top10  # type: ignore[assignment]
 
         nationality = (user_profile or {}).get("nationality", "")
         lang_code = nationality[:3].lower() if nationality else "ko"  # 캐시 키용 짧은 식별자
-        cache_key = f"{location}:{req.start_date}:{req.end_date}:{eh}:{lang_code}:{search_tag}"
+        cache_key = f"{location}:{req.start_date}:{req.end_date}:{eh}:{lang_code}:{search_tag}:{transport_tag}"
 
         logger.info(
-            "행사 연동: location=%s, 건수=%d | 뉴스 Top10: %d건(%s) | 유저 프로필: %s (국적=%s) | 기존 제외=%d건",
+            "행사 연동: location=%s, 건수=%d | 뉴스 Top10: %d건(%s) | 유저 프로필: %s (국적=%s) | 기존 제외=%d건 | 날씨=%s | 이동수단=%s",
             location, len(festivals), len(news_top10 or []),
             "client" if _has_client_news else "fetched",
             bool(user_profile), nationality, len(existing_routes),
+            "available" if (weather_forecast or {}).get("available") else "unavailable",
+            transport_tag,
         )
 
         state = {
@@ -340,6 +359,8 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
             "existing_routes": existing_routes,
             "use_search": req.use_search,
             "news_top10": news_top10,
+            "weather_forecast": weather_forecast,
+            "transport_mode": req.transport_mode,
         }
         try:
             result = await routes_graph.ainvoke(state)
@@ -374,7 +395,8 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
     nationality = (user_profile or {}).get("nationality", "")
     lang_code = nationality[:3].lower() if nationality else "ko"
     sched_search_tag = "s1" if req.use_search else "s0"
-    sched_key = f"{location}:{req.route_name}:{req.start_date}:{req.end_date}:{lang_code}:{sched_search_tag}"
+    sched_transport_tag = req.transport_mode or "any"
+    sched_key = f"{location}:{req.route_name}:{req.start_date}:{req.end_date}:{lang_code}:{sched_search_tag}:{sched_transport_tag}"
 
     cached_sched = _schedule_cache.get(sched_key)
     if cached_sched and time.time() - cached_sched[1] < _SCHEDULE_TTL:
@@ -411,20 +433,23 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
                 "error": None,
             }
 
-        # 일정 생성에도 행사·뉴스 정보 반영
+        # 일정 생성에도 행사·뉴스·날씨 정보 반영
         # 뉴스 Top10: 프론트에서 이미 가져온 데이터가 있으면 재사용
         _has_client_news_s = bool(req.news_top10)
-        festivals, news_top10 = await asyncio.gather(
+        festivals, news_top10, weather_forecast_s = await asyncio.gather(
             fetch_festivals_for_period(location, location_name, req.start_date, req.end_date),
             asyncio.sleep(0) if _has_client_news_s else fetch_news_top10(req.start_date, req.end_date),
+            fetch_weather_for_planner(location_name, None, req.start_date, req.end_date),
         )
         if _has_client_news_s:
             news_top10 = req.news_top10  # type: ignore[assignment]
 
         logger.info(
-            "일정 생성 연동: location=%s, 행사=%d건, 뉴스Top10=%d건(%s)",
+            "일정 생성 연동: location=%s, 행사=%d건, 뉴스Top10=%d건(%s), 날씨=%s, 이동수단=%s",
             location, len(festivals), len(news_top10 or []),
             "client" if _has_client_news_s else "fetched",
+            "available" if (weather_forecast_s or {}).get("available") else "unavailable",
+            sched_transport_tag,
         )
 
         state = {
@@ -434,6 +459,8 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
             "festivals": festivals,
             "use_search": req.use_search,
             "news_top10": news_top10,
+            "weather_forecast": weather_forecast_s,
+            "transport_mode": req.transport_mode,
         }
         try:
             result = await schedule_graph.ainvoke(state)
@@ -463,13 +490,20 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
 @router.post("/plans", summary="여행 플랜 저장")
 async def save_plan(req: SavePlanRequest, db: AsyncSession = Depends(get_db)):
     location_name = SLUG_TO_NAME.get(req.location, req.location)
+    schedule = req.schedule
+    if settings.naver_place_hours_enabled and schedule:
+        try:
+            schedule = await enrich_schedule_items_with_hours(schedule)
+        except Exception as e:
+            logger.warning("저장 전 영업시간 보강 실패(무시): %s", e)
+
     plan = TravelPlan(
         user_id=req.user_id,
         location=location_name,
         route_name=req.route_name,
         start_date=req.start_date,
         end_date=req.end_date,
-        schedule=req.schedule,
+        schedule=schedule,
     )
     db.add(plan)
     await db.flush()
@@ -554,6 +588,13 @@ async def reroll_item(
 
     # 새 항목 지오코딩 보강
     new_item = await _geocode_item(new_item)
+    if settings.naver_place_hours_enabled:
+        try:
+            enriched_one = await enrich_schedule_items_with_hours([new_item])
+            if enriched_one:
+                new_item = enriched_one[0]
+        except Exception as e:
+            logger.warning("리롤 항목 영업시간 보강 실패(무시): %s", e)
 
     new_schedule = list(schedule)
     new_schedule[req.item_index] = new_item

@@ -400,6 +400,11 @@ function DayPlanGroup({
                           </span>
                         )}
                       </div>
+                      {item.business_hours && (
+                        <p className="mt-1 rounded bg-slate-50 px-2 py-1 text-xs text-slate-600 leading-relaxed">
+                          🕐 {item.business_hours}
+                        </p>
+                      )}
                       <p className="mt-0.5 text-xs text-gray-600">{item.description}</p>
                       {item.tips && (
                         <p className="mt-1 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">💡 {item.tips}</p>
@@ -788,6 +793,11 @@ function PlanCard({
                                   </span>
                                 )}
                               </div>
+                              {item.business_hours && (
+                                <p className="mt-1 rounded bg-slate-50 px-2 py-1 text-xs text-slate-600 leading-relaxed">
+                                  🕐 {item.business_hours}
+                                </p>
+                              )}
                               <p className="mt-1 text-xs text-gray-600">{item.description}</p>
                               {item.tips && (
                                 <p className="mt-1.5 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">
