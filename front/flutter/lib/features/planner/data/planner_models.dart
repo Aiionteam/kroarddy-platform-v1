@@ -32,6 +32,10 @@ class ScheduleItem {
     required this.description,
     this.tips,
     this.estimatedCost,
+    this.address,
+    this.lat,
+    this.lng,
+    this.businessHours,
   });
 
   final int day;
@@ -42,6 +46,10 @@ class ScheduleItem {
   final String description;
   final String? tips;
   final String? estimatedCost;
+  final String? address;
+  final double? lat;
+  final double? lng;
+  final String? businessHours;
 
   factory ScheduleItem.fromJson(Map<String, dynamic> json) {
     return ScheduleItem(
@@ -53,6 +61,10 @@ class ScheduleItem {
       description: json["description"]?.toString() ?? "",
       tips: json["tips"]?.toString(),
       estimatedCost: json["estimated_cost"]?.toString(),
+      address: json["address"]?.toString(),
+      lat: (json["lat"] as num?)?.toDouble(),
+      lng: (json["lng"] as num?)?.toDouble(),
+      businessHours: json["business_hours"]?.toString(),
     );
   }
 
@@ -66,6 +78,10 @@ class ScheduleItem {
       "description": description,
       "tips": tips,
       "estimated_cost": estimatedCost,
+      "address": address,
+      "lat": lat,
+      "lng": lng,
+      "business_hours": businessHours,
     };
   }
 }

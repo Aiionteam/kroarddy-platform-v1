@@ -6,6 +6,11 @@ import "package:exif/exif.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:image_picker/image_picker.dart";
 
+import "../../../../core/auth/jwt_claims.dart";
+import "../../../../core/auth/token_store.dart";
+import "../../../../core/network/api_client.dart";
+import "../../../chat/data/friend_repository.dart";
+import "../../../profile/data/profile_repository.dart";
 import "../../data/tourstar_models.dart";
 import "../../data/tourstar_repository.dart";
 import "tourstar_state.dart";
@@ -21,9 +26,64 @@ class TourstarController extends Notifier<TourstarState> {
   final Map<String, DateTime> _shotDateCache = <String, DateTime>{};
 
   TourstarRepository get _repo => ref.read(tourstarRepositoryProvider);
+  FriendRepository get _friendRepo => ref.read(friendRepositoryProvider);
+  TokenStore get _tokenStore => ref.read(tokenStoreProvider);
 
   @override
-  TourstarState build() => TourstarState.initial();
+  TourstarState build() {
+    // 초기화: 사용자 정보 + 친구 목록 + 게시물 로드
+    Future.microtask(() => _init());
+    return TourstarState.initial();
+  }
+
+  Future<void> _init() async {
+    await _loadUserInfo();
+    await Future.wait([loadPosts(), loadFriends()]);
+  }
+
+  Future<void> _loadUserInfo() async {
+    try {
+      final token = await _tokenStore.readAccessToken();
+      if (token == null || token.isEmpty) return;
+      final userId = getUserIdFromToken(token);
+
+      // JWT claim 닉네임 우선, 없으면 API 조회
+      String? nickname = getNicknameFromToken(token);
+      if ((nickname == null || nickname.isEmpty) && userId != null) {
+        try {
+          final userModel = await ref.read(profileRepositoryProvider).findUserById(userId);
+          nickname = userModel?.nickname;
+        } catch (_) {}
+      }
+
+      state = state.copyWith(myUserId: userId, myNickname: nickname);
+
+      if (userId != null) {
+        final imageUrl = await _repo.fetchProfileImage(userId);
+        if (imageUrl != null && imageUrl.isNotEmpty) {
+          state = state.copyWith(profileImageUrl: imageUrl);
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> loadFriends() async {
+    try {
+      final friends = await _friendRepo.getFriendList();
+      final nicknames = friends.map((f) => f.nickname).toSet();
+      state = state.copyWith(friendNicknames: nicknames);
+    } catch (_) {}
+  }
+
+  Future<void> uploadProfileImage(XFile file) async {
+    try {
+      final userId = state.myUserId;
+      final url = await _repo.uploadProfileImage(file, userId: userId);
+      if (url != null && url.isNotEmpty) {
+        state = state.copyWith(profileImageUrl: url);
+      }
+    } catch (_) {}
+  }
 
   Future<void> pickImages() async {
     final files = await _picker.pickMultiImage();
@@ -185,6 +245,84 @@ class TourstarController extends Notifier<TourstarState> {
     }
   }
 
+  // ── 게시글 수정 ─────────────────────────────────────────────
+  Future<bool> updatePost({
+    required String postId,
+    String? title,
+    String? location,
+    String? comment,
+    String? visibility,
+    List<String>? tags,
+    List<String>? keepPhotoUrls,
+    List<String>? newImagePaths,
+  }) async {
+    state = state.copyWith(loading: true, statusMessage: "게시글을 수정하는 중...");
+    try {
+      final updated = await _repo.updatePost(
+        postId: postId,
+        title: title,
+        location: location,
+        comment: comment,
+        visibility: visibility,
+        tags: tags,
+        keepPhotoUrls: keepPhotoUrls,
+        newImagePaths: newImagePaths,
+      );
+      final posts = state.serverPosts.map((p) => p.id == postId ? updated : p).toList();
+      state = state.copyWith(serverPosts: posts, statusMessage: "게시글이 수정되었습니다.");
+      return true;
+    } catch (e) {
+      state = state.copyWith(statusMessage: "게시글 수정 오류: $e");
+      return false;
+    } finally {
+      state = state.copyWith(loading: false);
+    }
+  }
+
+  // ── 게시글 삭제 ─────────────────────────────────────────────
+  Future<bool> deletePost(String postId) async {
+    final userId = state.myUserId;
+    if (userId == null) return false;
+    state = state.copyWith(loading: true, statusMessage: "게시글을 삭제하는 중...");
+    try {
+      await _repo.deletePost(postId: postId, userId: userId);
+      final posts = state.serverPosts.where((p) => p.id != postId).toList();
+      state = state.copyWith(serverPosts: posts, statusMessage: "게시글이 삭제되었습니다.");
+      return true;
+    } catch (e) {
+      state = state.copyWith(statusMessage: "게시글 삭제 오류: $e");
+      return false;
+    } finally {
+      state = state.copyWith(loading: false);
+    }
+  }
+
+  // ── 스크랩(북마크) 토글 ────────────────────────────────────
+  void toggleBookmark(String postId) {
+    final posts = state.serverPosts.map((p) {
+      if (p.id != postId) return p;
+      return p.copyWith(bookmarked: !p.bookmarked);
+    }).toList();
+    state = state.copyWith(serverPosts: posts);
+  }
+
+  // ── 좋아요 토글 (로컬 낙관적 업데이트) ─────────────────────
+  void toggleLike(String postId) {
+    final liked = <String>{...state.likedPostIds};
+    final wasLiked = liked.contains(postId);
+    if (wasLiked) {
+      liked.remove(postId);
+    } else {
+      liked.add(postId);
+    }
+    final posts = state.serverPosts.map((p) {
+      if (p.id != postId) return p;
+      final newLikes = wasLiked ? (p.likes - 1).clamp(0, 999999) : p.likes + 1;
+      return p.copyWith(likes: newLikes);
+    }).toList();
+    state = state.copyWith(serverPosts: posts, likedPostIds: liked);
+  }
+
   // ── 서버 게시글 저장 ──────────────────────────────────────────
   Future<void> savePost({
     required String title,
@@ -219,24 +357,25 @@ class TourstarController extends Notifier<TourstarState> {
 
   // ── 댓글 등록 ─────────────────────────────────────────────────
   Future<void> addComment(String postId, String content) async {
+    // 실제 닉네임으로 댓글 작성 (토큰에서 추출, 없으면 "익명")
+    String author = state.myNickname ?? "익명";
+    if (author.isEmpty) {
+      try {
+        final token = await _tokenStore.readAccessToken();
+        if (token != null && token.isNotEmpty) {
+          author = getNicknameFromToken(token) ?? "익명";
+        }
+      } catch (_) {}
+    }
     try {
-      final comment = await _repo.createComment(postId: postId, content: content);
+      final comment = await _repo.createComment(
+        postId: postId,
+        content: content,
+        author: author,
+      );
       final updated = state.serverPosts.map((p) {
         if (p.id != postId) return p;
-        return TourstarPostRecord(
-          id: p.id,
-          userId: p.userId,
-          title: p.title,
-          location: p.location,
-          comment: p.comment,
-          visibility: p.visibility,
-          tags: p.tags,
-          photoUrls: p.photoUrls,
-          selectedScores: p.selectedScores,
-          comments: [...p.comments, comment],
-          createdAt: p.createdAt,
-          updatedAt: p.updatedAt,
-        );
+        return p.copyWith(comments: [...p.comments, comment]);
       }).toList();
       state = state.copyWith(serverPosts: updated);
     } catch (_) {}

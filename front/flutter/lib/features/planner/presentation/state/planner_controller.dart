@@ -55,6 +55,20 @@ class PlannerController extends Notifier<PlannerState> {
     );
   }
 
+  void setTransportMode(String mode) {
+    state = state.copyWith(
+      transportMode: mode,
+      routes: const [],
+      schedule: const [],
+      routesTriggered: false,
+      clearSelectedRoute: true,
+      clearSavedPlanId: true,
+      clearCostSummary: true,
+      clearRoutesError: true,
+      clearScheduleError: true,
+    );
+  }
+
   void setDateRange({required String startDate, required String endDate}) {
     state = state.copyWith(
       startDate: startDate,
@@ -120,6 +134,7 @@ class PlannerController extends Notifier<PlannerState> {
         existingRoutes: existingRoutes.isEmpty ? null : existingRoutes,
         useSearch: state.useSearch,
         newsTop10: _newsTop10Payload(),
+        transportMode: state.transportMode,
       );
       final routes = result.routes;
       state = state.copyWith(
@@ -171,6 +186,7 @@ class PlannerController extends Notifier<PlannerState> {
         userId: _currentAppUserId(),
         useSearch: state.useSearch,
         newsTop10: _newsTop10Payload(),
+        transportMode: state.transportMode,
       );
       state = state.copyWith(
         scheduleLoading: false,

@@ -40,6 +40,10 @@ class TourstarPostRecord {
     required this.updatedAt,
     this.userId,
     this.selectedScores,
+    this.authorNickname,
+    this.authorProfileImageUrl,
+    this.likes = 0,
+    this.bookmarked = false,
   });
 
   final String id;
@@ -54,6 +58,18 @@ class TourstarPostRecord {
   final List<TourstarComment> comments;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+
+  /// 게시글 작성자 닉네임 (백엔드 author_nickname 필드)
+  final String? authorNickname;
+
+  /// 게시글 작성자 프로필 이미지 URL (presigned)
+  final String? authorProfileImageUrl;
+
+  /// 좋아요 수
+  final int likes;
+
+  /// 현재 사용자가 스크랩(북마크)한 여부 (클라이언트 측 관리)
+  final bool bookmarked;
 
   factory TourstarPostRecord.fromJson(Map<String, dynamic> json) {
     final tagsRaw = (json["tags"] as List?) ?? [];
@@ -77,6 +93,34 @@ class TourstarPostRecord {
           .toList(),
       createdAt: DateTime.tryParse(json["created_at"]?.toString() ?? ""),
       updatedAt: DateTime.tryParse(json["updated_at"]?.toString() ?? ""),
+      authorNickname: json["author_nickname"]?.toString(),
+      authorProfileImageUrl: json["author_profile_image_url"]?.toString(),
+      likes: (json["likes"] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  TourstarPostRecord copyWith({
+    bool? bookmarked,
+    List<TourstarComment>? comments,
+    int? likes,
+  }) {
+    return TourstarPostRecord(
+      id: id,
+      title: title,
+      location: location,
+      comment: comment,
+      visibility: visibility,
+      tags: tags,
+      photoUrls: photoUrls,
+      comments: comments ?? this.comments,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      userId: userId,
+      selectedScores: selectedScores,
+      authorNickname: authorNickname,
+      authorProfileImageUrl: authorProfileImageUrl,
+      likes: likes ?? this.likes,
+      bookmarked: bookmarked ?? this.bookmarked,
     );
   }
 }

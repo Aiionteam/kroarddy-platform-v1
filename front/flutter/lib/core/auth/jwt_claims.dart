@@ -28,3 +28,14 @@ int? getAppUserIdFromToken(String token) {
   final id = int.tryParse(raw?.toString() ?? "");
   return (id != null && id > 0) ? id : null;
 }
+
+String? getNicknameFromToken(String token) {
+  final payload = decodeJwtPayload(token);
+  // sub(userId)는 fallback으로 사용하지 않음 - 실제 닉네임 claim만 사용
+  final raw = payload?["nickname"] ??
+      payload?["name"] ??
+      payload?["preferred_username"];
+  if (raw == null) return null;
+  final s = raw.toString().trim();
+  return s.isEmpty ? null : s;
+}
