@@ -1,4 +1,4 @@
-"""네이버 Maps API 클라이언트 – Geocoding / Static Map / Directions 15."""
+"""네이버 Maps API 클라이언트 – Geocoding / Static Map / Directions 5."""
 import logging
 import re
 
@@ -76,11 +76,18 @@ async def fetch_static_map(
     height: int = 300,
     zoom: int = 15,
 ) -> bytes | None:
-    """네이버 Static Map 이미지 바이너리 반환."""
+    """네이버 Static Map 이미지 바이너리 반환.
+
+    모바일(Flutter 등) 호환: 이 함수는 **서버에서만** NCP 키로 Naver를 호출한다.
+    앱은 Naver에 직접 붙지 말고, 백엔드 ``GET /api/v1/maps/static-map`` 를 호출하고
+    응답 바디를 **바이너리(JPEG)** 로 받으면 된다. (웹 전용이 아님)
+    """
     if not settings.naver_map_client_id or not settings.naver_map_client_secret:
         logger.warning("네이버 Maps API 키가 설정되지 않았습니다.")
         return None
 
+    # markers: 공식 형식은 pos:경도,위도(쉼표). 공백+%20은 스펙과 맞지 않고,
+    # httpx가 쿼리 인코딩 시 % → %25 로 이중 인코딩되어 Naver 4xx를 유발할 수 있음.
     params = {
         "center": f"{lng},{lat}",
         "level": zoom,
@@ -89,7 +96,7 @@ async def fetch_static_map(
         "maptype": "basic",
         "format": "jpg",
         "scale": 1,
-        "markers": f"type:d|size:mid|color:Red|pos:{lng}%20{lat}",
+        "markers": f"type:d|size:mid|color:Red|pos:{lng},{lat}",
     }
 
     headers = {
@@ -102,6 +109,15 @@ async def fetch_static_map(
             resp = await client.get(_STATIC_MAP_URL, params=params, headers=headers)
             resp.raise_for_status()
             return resp.content
+        except httpx.HTTPStatusError as e:
+            logger.error(
+                "Static Map HTTP 오류 %d (lat=%s, lng=%s): %s",
+                e.response.status_code,
+                lat,
+                lng,
+                e.response.text[:300],
+            )
+            return None
         except Exception as e:
             logger.error("Static Map 오류 (lat=%s, lng=%s): %s", lat, lng, e)
             return None

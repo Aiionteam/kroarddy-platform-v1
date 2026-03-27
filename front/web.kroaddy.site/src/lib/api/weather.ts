@@ -103,12 +103,12 @@ export function weatherEmoji(condition: string): string {
   return "🌤️";
 }
 
-/** 오늘~+5일 이내 날짜인지 확인 (5일 예보 범위) */
+/** 오늘~+5일 이내 날짜인지 확인 (5일 예보 범위, 과거 날짜 제외) */
 export function isWithinForecastRange(dateStr: string): boolean {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const target = new Date(dateStr);
   target.setHours(0, 0, 0, 0);
   const diffDays = (target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
-  return diffDays >= -1 && diffDays <= 5;
+  return diffDays >= 0 && diffDays <= 5;
 }
