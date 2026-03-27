@@ -98,3 +98,17 @@ htmlcov/
 .pytest_cache/
 backend/tourstar.kroaddy.site/artifacts/
 .env*
+
+# --- LLM finetuning (generated / large local artifacts) ---
+backend/guide.kroaddy.site/finetuning/wandb/
+backend/guide.kroaddy.site/finetuning/unsloth_compiled_cache/
+backend/guide.kroaddy.site/finetuning/outputs/
+backend/guide.kroaddy.site/finetuning/dataset/
+backend/guide.kroaddy.site/finetuning/k_tour_train.jsonl
+backend/guide.kroaddy.site/finetuning/mapping_table.json
+backend/guide.kroaddy.site/finetuning/k_tour_model_lora/
+backend/guide.kroaddy.site/finetuning/k_tour_3b_model/
+backend/guide.kroaddy.site/finetuning/**/*.safetensors
+backend/guide.kroaddy.site/finetuning/**/*.bin
+backend/guide.kroaddy.site/finetuning/**/*.pt
+backend/guide.kroaddy.site/finetuning/**/*.ckpt

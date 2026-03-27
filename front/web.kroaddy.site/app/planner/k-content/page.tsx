@@ -17,6 +17,7 @@ import {
   K_CONTENT_KDRAMA_FALLBACK_ITEMS,
   K_CONTENT_KPOP_FALLBACK_ITEMS,
 } from "@/constants/k-content-fallback-items";
+import { K_CONTENT_KFOOD_FALLBACK_ITEMS } from "./constants";
 import { fetchKContentPackages, type KContentPackageListItem } from "@/service/k_content/k_content";
 
 // ─── Mock data: Sample itinerary ─────────────────────────────────────────────
@@ -110,6 +111,7 @@ export default function KContentPage() {
   const [heroImage, setHeroImage] = React.useState<string>("/k_content/banner/panorama-downtown-cityscape-seoul-tower-seoul-south-korea.jpg");
   const [cardItems, setCardItems] = React.useState<ContentRowItem[]>([]);
   const [kDramaItems, setKDramaItems] = React.useState<ContentRowItem[]>([]);
+  const [kFoodItems, setKFoodItems] = React.useState<ContentRowItem[]>(K_CONTENT_KFOOD_FALLBACK_ITEMS);
 
   const dramaGradients = React.useMemo(
     () => [
@@ -209,10 +211,19 @@ export default function KContentPage() {
       setKDramaItems(
         shuffleItems(mappedDrama.length > 0 ? mappedDrama : [...K_CONTENT_KDRAMA_FALLBACK_ITEMS])
       );
+
+      const mappedKFood = await Promise.all(
+        K_CONTENT_KFOOD_FALLBACK_ITEMS.map(async (item) => ({
+          ...item,
+          imageUrl: await resolveCardImage(item.id),
+        }))
+      );
+      setKFoodItems(mappedKFood);
     };
     run().catch(() => {
       setCardItems(shuffleItems([...K_CONTENT_KPOP_FALLBACK_ITEMS]));
       setKDramaItems(shuffleItems([...K_CONTENT_KDRAMA_FALLBACK_ITEMS]));
+      setKFoodItems(K_CONTENT_KFOOD_FALLBACK_ITEMS);
     });
   }, [mapDramaMoviePackages, mapKpopPackages, shuffleItems]);
 
@@ -276,7 +287,7 @@ export default function KContentPage() {
             />
             <ContentRow
               title="K-FOOD"
-              items={K_FOOD_EXAMPLE_ITEMS}
+              items={kFoodItems}
               onCardClick={handleCardClick}
             />
             <ContentRow

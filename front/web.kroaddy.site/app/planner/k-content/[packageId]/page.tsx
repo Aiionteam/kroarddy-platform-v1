@@ -14,9 +14,59 @@ import {
 import { HeroBanner } from "@/components/k-content/HeroBanner";
 import {
   fetchPackageImages,
+  K_CONTENT_KF_CAFE_FALLBACK_IMAGE,
   K_CONTENT_PLACEHOLDER_IMAGE,
   pickRandomImage,
 } from "@/constants/k-content-images";
+import { getAppUserIdFromToken } from "@/lib/api/auth";
+import { ItineraryCard } from "@/components/k-content/ItineraryCard";
+import { K_FOOD_MARKET_LIST } from "../constants";
+
+type FoodRegionKey = keyof typeof K_FOOD_MARKET_LIST;
+type FoodRegionTab = "ALL" | FoodRegionKey;
+
+const K_FOOD_REGION_TABS: { id: FoodRegionTab; label: string }[] = [
+  { id: "ALL", label: "전체" },
+  { id: "SEOUL", label: "서울" },
+  { id: "GANGWON", label: "강원" },
+  { id: "JEONLA", label: "전라" },
+  { id: "GYEONGSANG", label: "경상" },
+  { id: "JEJU", label: "제주" },
+];
+
+const CAFE_VIBES = [
+  {
+    id: "industrial_raw",
+    label: "Industrial/Raw",
+    descriptionKo: "거친 콘크리트와 철제의 힙한 감성",
+  },
+  {
+    id: "traditional_zen",
+    label: "Traditional/Zen",
+    descriptionKo: "한옥과 나무가 주는 고요한 휴식",
+  },
+  {
+    id: "nature_botanical",
+    label: "Nature/Botanical",
+    descriptionKo: "초록 식물과 햇살이 가득한 공간",
+  },
+  {
+    id: "retro_newtro",
+    label: "Retro/Newtro",
+    descriptionKo: "응답하라 감성, 빈티지한 골목 투어",
+  },
+  {
+    id: "modern_minimal",
+    label: "Modern/Minimal",
+    descriptionKo: "세련된 무채색과 현대적인 조형미",
+  },
+] as const;
+
+type CafeVibeId = (typeof CAFE_VIBES)[number]["id"];
+
+const HERO_IMAGE_FALLBACK_BY_PACKAGE: Record<string, string> = {
+  KF_CAFE: K_CONTENT_KF_CAFE_FALLBACK_IMAGE,
+};
 
 type KScheduleItem = {
   day: number;
@@ -28,6 +78,10 @@ type KScheduleItem = {
   tips?: string;
   estimated_cost?: string;
   source?: "db" | "external";
+  /** API가 주는 경우(없으면 일정 카드에서 일차 내 순번으로 계산)*/
+  order?: number;
+  is_twist?: boolean;
+  vibe_reason?: string;
 };
 
 type KCostSummary = {
@@ -50,6 +104,7 @@ function inferCategoryFromPackageId(packageId: string | undefined): string {
   // KD 네임스페이스에는 DRAMA/MOVIE가 함께 존재하므로 fallback 매핑을 분리한다.
   if (ref === "KD_05" || ref === "KD_12") return "KMOVIE";
   if (ref.startsWith("KD_")) return "KDRAMA";
+  if (ref.startsWith("KF_")) return "KFOOD";
   return "KCONTENT";
 }
 
@@ -58,6 +113,7 @@ function toCategoryBadgeText(category?: string): string {
   if (c === "KPOP") return "K-POP";
   if (c === "KDRAMA") return "K-DRAMA";
   if (c === "KMOVIE") return "K-MOVIE";
+  if (c === "KFOOD") return "K-FOOD";
   return "K-CONTENT";
 }
 
@@ -197,6 +253,13 @@ function parseResponse(res: KContentResponse, startDate: string): {
     d.setDate(d.getDate() + (day - 1));
     const date = d.toISOString().slice(0, 10);
     const place = typeof row.place === "string" ? row.place : "";
+    const orderRaw = row.order;
+    const order =
+      typeof orderRaw === "number"
+        ? orderRaw
+        : typeof orderRaw === "string" && orderRaw.trim() !== ""
+          ? Number(orderRaw) || undefined
+          : undefined;
     return {
       day,
       date,
@@ -207,6 +270,9 @@ function parseResponse(res: KContentResponse, startDate: string): {
       tips: typeof row.tips === "string" ? row.tips : undefined,
       estimated_cost: typeof row.estimated_cost === "string" ? row.estimated_cost : undefined,
       source: sourceByName.get(place) ?? "external",
+      order,
+      is_twist: row.is_twist === true,
+      vibe_reason: typeof row.vibe_reason === "string" ? row.vibe_reason : undefined,
     };
   });
 
@@ -246,9 +312,29 @@ export default function KContentPackagePage() {
   const [lang, setLang] = useState<"ko" | "en">("ko");
   const [heroImage, setHeroImage] = useState<string | null>(null);
 
+  const isKFoodMarket = packageId === "KF_MARKET";
+  const isKFoodCafeVibe = packageId?.toUpperCase() === "KF_CAFE";
+  const [foodRegionTab, setFoodRegionTab] = useState<FoodRegionTab>("ALL");
+  const [selectedMarket, setSelectedMarket] = useState<{ name: string; description: string } | null>(null);
+  const [selectedVibe, setSelectedVibe] = useState<CafeVibeId | null>(null);
+  const [cafeKeyword, setCafeKeyword] = useState("");
+
+  const foodMarketsForTab = useMemo(() => {
+    if (foodRegionTab === "ALL") {
+      return (Object.keys(K_FOOD_MARKET_LIST) as FoodRegionKey[]).flatMap((key) =>
+        K_FOOD_MARKET_LIST[key].map((m) => ({ ...m, regionKey: key }))
+      );
+    }
+    return K_FOOD_MARKET_LIST[foodRegionTab].map((m) => ({ ...m, regionKey: foodRegionTab }));
+  }, [foodRegionTab]);
+
   useEffect(() => {
     if (!isAuthenticated) router.replace("/");
   }, [isAuthenticated, router]);
+
+  useEffect(() => {
+    setSelectedMarket(null);
+  }, [foodRegionTab]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -262,8 +348,13 @@ export default function KContentPackagePage() {
   useEffect(() => {
     if (!packageId) return;
     const run = async () => {
+      const packageKey = packageId.toUpperCase();
       const images = await fetchPackageImages(packageId);
-      setHeroImage(pickRandomImage(images) ?? K_CONTENT_PLACEHOLDER_IMAGE);
+      setHeroImage(
+        pickRandomImage(images) ??
+          HERO_IMAGE_FALLBACK_BY_PACKAGE[packageKey] ??
+          K_CONTENT_PLACEHOLDER_IMAGE
+      );
       const detail = await fetchKContentPackage(packageId);
       if (detail) {
         setPackageMeta({
@@ -280,39 +371,108 @@ export default function KContentPackagePage() {
     });
   }, [packageId]);
 
-  const generateSchedule = useCallback(async () => {
-    if (!packageId || loading) return;
-    setTriggered(true);
-    setLoading(true);
-    setError(null);
-    setSchedule([]);
-    setCostSummary(null);
-    setSavedPlanId(null);
-    try {
-      const res = await generateKContent(
-        packageId,
-        { travel_start_date: startDate, travel_end_date: endDate },
-        { startDate, endDate, locationName: "Seoul", newsTop10: newsTop10.length > 0 ? newsTop10 : undefined }
-      );
-      const parsed = parseResponse(res, startDate);
-      setSchedule(parsed.schedule);
-      setCostSummary(parsed.costSummary);
-      if (parsed.packageMeta?.package_id) setPackageMeta(parsed.packageMeta);
-      setPlaces(Array.isArray(res.places) ? (res.places as Record<string, unknown>[]) : []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "일정을 불러오지 못했습니다.");
-    } finally {
-      setLoading(false);
-    }
-  }, [packageId, loading, startDate, endDate]);
+  const generateSchedule = useCallback(
+    async (overrides?: {
+      locationName?: string;
+      keyword?: string;
+      pickedVibe?: string | null;
+    }) => {
+      if (!packageId || loading) return;
+      if (isKFoodMarket && !overrides?.locationName) return;
 
-  const selectedMeta = packageMeta ?? (packageId ? {
-    package_id: packageId,
-    category: inferCategoryFromPackageId(packageId),
-    title_ko: packageId,
-    title_en: "K-Content package",
-    tags: "",
-  } : null);
+      setTriggered(true);
+      setLoading(true);
+      setError(null);
+      setSchedule([]);
+      setCostSummary(null);
+      setSavedPlanId(null);
+      try {
+        const locationName = overrides?.locationName ?? "Seoul";
+        const keyword = overrides?.keyword ?? overrides?.locationName;
+        const picked =
+          overrides?.pickedVibe != null && String(overrides.pickedVibe).trim() !== ""
+            ? String(overrides.pickedVibe).trim()
+            : undefined;
+
+        const res = await generateKContent(
+          packageId,
+          {
+            travel_start_date: startDate,
+            travel_end_date: endDate,
+            ...(keyword ? { keyword } : {}),
+            ...(picked ? { pickedVibe: picked } : {}),
+          },
+          {
+            startDate,
+            endDate,
+            locationName,
+            newsTop10: newsTop10.length > 0 ? newsTop10 : undefined,
+          }
+        );
+        const parsed = parseResponse(res, startDate);
+        setSchedule(parsed.schedule);
+        setCostSummary(parsed.costSummary);
+        if (parsed.packageMeta?.package_id) setPackageMeta(parsed.packageMeta);
+        setPlaces(Array.isArray(res.places) ? (res.places as Record<string, unknown>[]) : []);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "일정을 불러오지 못했습니다.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [packageId, loading, startDate, endDate, isKFoodMarket, newsTop10]
+  );
+
+  const handleKFoodMarketGenerate = useCallback(() => {
+    if (!selectedMarket) return;
+    void generateSchedule({
+      locationName: selectedMarket.name,
+      keyword: selectedMarket.name,
+    });
+  }, [selectedMarket, generateSchedule]);
+
+  const handleKFoodCafeGenerate = useCallback(() => {
+    const v = CAFE_VIBES.find((item) => item.id === selectedVibe);
+    const vibePart =
+      v != null ? `${v.label} — ${v.descriptionKo}` : "";
+    const trimmedKeyword = cafeKeyword.trim();
+    const keyword = trimmedKeyword
+      ? vibePart
+        ? `${vibePart} | 카페·장소 힌트: ${trimmedKeyword}`
+        : trimmedKeyword
+      : vibePart;
+    if (!keyword) return;
+    void generateSchedule({
+      locationName: trimmedKeyword || "Seoul",
+      keyword,
+      pickedVibe: selectedVibe ?? undefined,
+    });
+  }, [selectedVibe, cafeKeyword, generateSchedule]);
+
+  const selectedMeta = packageMeta ?? (packageId
+    ? {
+        package_id: packageId,
+        category: inferCategoryFromPackageId(packageId),
+        title_ko:
+          packageId === "KF_MARKET"
+            ? "전국 전통시장 먹거리 탐방"
+            : packageId?.toUpperCase() === "KF_CAFE"
+            ? "K-디저트 & 카페 감성 투어"
+            : packageId,
+        title_en:
+          packageId === "KF_MARKET"
+            ? "Traditional markets & street food across Korea"
+            : packageId?.toUpperCase() === "KF_CAFE"
+            ? "K-dessert and vibe-matched cafe tour"
+            : "K-Content package",
+        tags:
+          packageId === "KF_MARKET"
+            ? "전통시장, 먹거리, 로컬푸드"
+            : packageId?.toUpperCase() === "KF_CAFE"
+            ? "카페, 디저트, 편집샵, 감성투어"
+            : "",
+      }
+    : null);
 
   const handleSavePlan = useCallback(async () => {
     if (schedule.length === 0 || isSaving) return;
@@ -410,8 +570,18 @@ export default function KContentPackagePage() {
                 />
               </div>
               <button
-                onClick={generateSchedule}
-                disabled={loading || !startDate || !endDate}
+                onClick={() => {
+                  if (isKFoodMarket) void handleKFoodMarketGenerate();
+                  else if (isKFoodCafeVibe) void handleKFoodCafeGenerate();
+                  else void generateSchedule();
+                }}
+                disabled={
+                  loading ||
+                  !startDate ||
+                  !endDate ||
+                  (isKFoodMarket && !selectedMarket) ||
+                  (isKFoodCafeVibe && !selectedVibe && !cafeKeyword.trim())
+                }
                 className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-50"
               >
                 {loading ? (
@@ -444,7 +614,9 @@ export default function KContentPackagePage() {
 
             <div className="rounded-xl border border-gray-200 bg-white p-4">
               <div className="flex items-start gap-2 sm:gap-3">
-                <span className="mt-0.5 text-xl sm:text-2xl">🎬</span>
+                <span className="mt-0.5 text-xl sm:text-2xl">
+                  {isKFoodMarket ? "🍜" : isKFoodCafeVibe ? "☕" : "🎬"}
+                </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-gray-900">{selectedMeta?.title_ko ?? packageId}</span>
@@ -465,13 +637,148 @@ export default function KContentPackagePage() {
               </div>
             </div>
 
-            {!triggered && !loading && (
+            {isKFoodMarket && (
+              <div className="mt-4 space-y-4">
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    지역 선택
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {K_FOOD_REGION_TABS.map((tab) => {
+                      const active = foodRegionTab === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setFoodRegionTab(tab.id)}
+                          disabled={loading}
+                          className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
+                            active
+                              ? "bg-indigo-600 text-white shadow-sm"
+                              : "border border-gray-200 bg-white text-gray-600 hover:border-indigo-300 hover:bg-indigo-50"
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    전통시장
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3">
+                    {foodMarketsForTab.map((m) => {
+                      const selected = selectedMarket?.name === m.name;
+                      return (
+                        <button
+                          key={`${m.regionKey}-${m.name}`}
+                          type="button"
+                          onClick={() => !loading && setSelectedMarket({ name: m.name, description: m.description })}
+                          disabled={loading}
+                          className={`rounded-xl border-2 p-3 text-left text-sm transition-all disabled:opacity-50 ${
+                            selected
+                              ? "border-indigo-500 bg-indigo-50 shadow-md ring-2 ring-indigo-100"
+                              : "border-gray-200 bg-white hover:border-indigo-200 hover:shadow-sm"
+                          }`}
+                        >
+                          <span className="font-semibold text-gray-900">{m.name}</span>
+                          <p className="mt-1 text-xs leading-snug text-gray-500">{m.description}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => void handleKFoodMarketGenerate()}
+                  disabled={!selectedMarket || loading}
+                  className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  이 시장 먹방 일정 생성하기
+                </button>
+              </div>
+            )}
+
+            {isKFoodCafeVibe && (
+              <div className="mt-4 space-y-4">
+                <div>
+                  <h3 className="mb-2 text-base font-bold text-gray-900">
+                    당신의 오늘 하루는 어떤 감성인가요?
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    취향에 맞는 Vibe를 고르거나 카페 이름을 직접 입력해 AI 코스를 생성하세요.
+                  </p>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Vibe Grid
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-3">
+                    {CAFE_VIBES.map((vibe) => {
+                      const selected = selectedVibe === vibe.id;
+                      return (
+                        <button
+                          key={vibe.id}
+                          type="button"
+                          onClick={() => !loading && setSelectedVibe(vibe.id)}
+                          disabled={loading}
+                          className={`flex min-h-[5.5rem] w-full flex-col items-center justify-center gap-1 rounded-xl border-2 px-2 py-2.5 text-center transition-all disabled:opacity-50 ${
+                            selected
+                              ? "border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm"
+                              : "border-gray-200 bg-white text-gray-700 hover:border-indigo-200 hover:bg-indigo-50"
+                          }`}
+                        >
+                          <span className="text-sm font-medium leading-tight">{vibe.label}</span>
+                          <span
+                            className={`text-[11px] leading-snug ${
+                              selected ? "text-indigo-600/90" : "text-gray-500"
+                            }`}
+                          >
+                            {vibe.descriptionKo}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Search Bar
+                  </p>
+                  <input
+                    type="text"
+                    value={cafeKeyword}
+                    onChange={(e) => setCafeKeyword(e.target.value)}
+                    disabled={loading}
+                    placeholder="직접 카페 이름을 입력해 보세요 (예: 성수 텅플래닛)"
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none transition-colors placeholder:text-gray-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => void handleKFoodCafeGenerate()}
+                  disabled={loading || (!selectedVibe && !cafeKeyword.trim())}
+                  className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  AI 일정 생성하기
+                </button>
+              </div>
+            )}
+
+            {!triggered && !loading && !isKFoodMarket && !isKFoodCafeVibe && (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 py-10 text-center text-gray-400">
                 <span className="text-4xl">📅</span>
                 <p className="text-sm font-medium text-gray-600">날짜를 설정하고<br />일정을 생성해주세요</p>
                 <p className="text-xs text-gray-400">{startDate} ~ {endDate}</p>
                 <button
-                  onClick={generateSchedule}
+                  onClick={() => void generateSchedule()}
                   disabled={loading}
                   className="mt-1 flex items-center gap-1.5 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-indigo-700 transition-colors"
                 >
@@ -505,8 +812,20 @@ export default function KContentPackagePage() {
             {!triggered && !loading && (
               <div className="flex flex-1 flex-col items-center justify-center text-center text-gray-400">
                 <span className="mb-3 text-5xl">🗺️</span>
-                <p className="text-base font-medium">날짜 선택 후 일정을 생성하세요</p>
-                <p className="mt-1 text-sm">상단의 ✨ 일정 생성 버튼을 눌러주세요</p>
+                <p className="text-base font-medium">
+                  {isKFoodMarket && !selectedMarket
+                    ? "시장을 선택한 뒤 일정을 생성하세요"
+                    : isKFoodCafeVibe && !selectedVibe && !cafeKeyword.trim()
+                    ? "감성(Vibe) 또는 카페 이름을 선택하세요"
+                    : "날짜 선택 후 일정을 생성하세요"}
+                </p>
+                <p className="mt-1 text-sm">
+                  {isKFoodMarket
+                    ? "왼쪽에서 시장을 고르고 [이 시장 먹방 일정 생성하기] 또는 상단 ✨ 일정 생성을 눌러주세요"
+                    : isKFoodCafeVibe
+                    ? "왼쪽에서 감성/카페명을 정하고 [AI 일정 생성하기]를 눌러주세요"
+                    : "상단의 ✨ 일정 생성 버튼을 눌러주세요"}
+                </p>
               </div>
             )}
 
@@ -588,47 +907,14 @@ export default function KContentPackagePage() {
                             <span className="absolute -left-[1.35rem] top-1 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-200 text-[10px] font-bold text-indigo-700">
                               {idx + 1}
                             </span>
-                            <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
-                              <div className="flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-0 min-w-0">
-                                  {item.time && (
-                                    <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-400">
-                                      {item.time}
-                                    </span>
-                                  )}
-                                  <span className="font-semibold text-gray-900 truncate">{item.title}</span>
-                                  {item.source === "db" && (
-                                    <span className="relative inline-flex items-center group shrink-0">
-                                      <span className="ml-2 animate-kroaddy-float text-[10px] font-semibold text-indigo-700">
-                                        Kroaddy PICK
-                                      </span>
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                  {item.estimated_cost && (
-                                    <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
-                                      {item.estimated_cost}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              <p className="mt-0.5 text-xs text-indigo-500 font-medium">📍 {item.place}</p>
-                              <p className="mt-1 text-sm text-gray-600">
-                                {getLocalizedDescription({
-                                  description: item.description,
-                                  tips: item.tips,
-                                  place: item.place || item.title,
-                                  source: item.source,
-                                  lang,
-                                })}
-                              </p>
-                              {localizeTip(item.tips, lang) && (
-                                <p className="mt-1.5 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">
-                                  💡 {localizeTip(item.tips, lang)}
-                                </p>
-                              )}
-                            </div>
+                            <ItineraryCard
+                              packageId={packageId}
+                              item={item}
+                              stepIndex={idx}
+                              lang={lang}
+                              getLocalizedDescription={getLocalizedDescription}
+                              localizeTip={localizeTip}
+                            />
                           </li>
                         ))}
                       </ol>

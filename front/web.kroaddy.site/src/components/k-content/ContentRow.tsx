@@ -5,7 +5,10 @@ import { ContentCard } from "./ContentCard";
 import type { ContentCardProps } from "./ContentCard";
 
 export interface ContentRowItem
-  extends Pick<ContentCardProps, "title" | "description" | "imageUrl" | "placeholderGradient"> {
+  extends Pick<
+    ContentCardProps,
+    "title" | "description" | "imageUrl" | "placeholderGradient" | "href" | "badges"
+  > {
   id: string;
 }
 
@@ -57,6 +60,8 @@ export function ContentRow({ title, items, onCardClick }: ContentRowProps) {
               description={item.description}
               imageUrl={item.imageUrl}
               placeholderGradient={item.placeholderGradient}
+              href={item.href}
+              badges={item.badges}
               onClick={() => onCardClick?.(item)}
             />
           ))}
