@@ -11,6 +11,7 @@ import "../../../core/router/main_shell.dart";
 import "../data/tourstar_models.dart";
 import "../data/tourstar_repository.dart";
 import "state/tourstar_controller.dart";
+import "state/tourstar_state.dart";
 
 // ── Design tokens ────────────────────────────────────────────
 const _kPurple = Color(0xFF8A2BE2);
@@ -24,7 +25,6 @@ const _kGray400 = Color(0xFF9CA3AF);
 const _kGray500 = Color(0xFF6B7280);
 const _kGray700 = Color(0xFF374151);
 const _kGray800 = Color(0xFF1F2937);
-const _kGreen = Color(0xFF10B981);
 
 // ── MBTI groups ──────────────────────────────────────────────
 class _MbtiGroup {
@@ -53,25 +53,66 @@ class TourstarPage extends ConsumerStatefulWidget {
 
 class _TourstarPageState extends ConsumerState<TourstarPage> {
   String _filter = "all";
+  String _sortBy = "latest";   // latest | likes | comments
+  String _searchQuery = "";
   bool _gridView = false;
+  final ImagePicker _picker = ImagePicker();
+  final TextEditingController _searchCtrl = TextEditingController();
 
-  List<TourstarPostRecord> get _serverPosts =>
-      ref.read(tourstarControllerProvider).serverPosts;
-
-  List<TourstarPostRecord> get _filtered {
-    final all = ref.read(tourstarControllerProvider).serverPosts;
-    if (_filter == "all") return all;
-    return all.where((p) => p.visibility == _filter).toList();
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
   }
 
-  Map<String, int> get _stats {
-    final posts = ref.read(tourstarControllerProvider).serverPosts;
-    return {
-      "total": posts.length,
-      "photos": posts.fold(0, (a, p) => a + p.photoUrls.length),
-      "likes": 0,
-      "public": posts.where((p) => p.visibility == "public").length,
-    };
+  bool _isMyPost(TourstarPostRecord p, TourstarState s) {
+    if (s.myUserId != null && p.userId != null) return p.userId == s.myUserId;
+    if ((s.myNickname ?? "").isNotEmpty) return p.authorNickname == s.myNickname;
+    return false;
+  }
+
+  List<TourstarPostRecord> _getFiltered(TourstarState tourState) {
+    final all = tourState.serverPosts;
+    List<TourstarPostRecord> result;
+    switch (_filter) {
+      case "friends":
+        final nicknames = tourState.friendNicknames;
+        result = all.where((p) {
+          final nick = p.authorNickname ?? "";
+          return nick.isNotEmpty && nicknames.contains(nick);
+        }).toList();
+      case "mine":
+        result = all.where((p) => _isMyPost(p, tourState)).toList();
+      case "bookmarked":
+        result = all.where((p) => p.bookmarked).toList();
+      default:
+        result = List<TourstarPostRecord>.from(all);
+    }
+    // 검색 필터
+    if (_searchQuery.isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
+      result = result.where((p) =>
+        (p.title.toLowerCase().contains(q)) ||
+        (p.comment.toLowerCase().contains(q)) ||
+        (p.location.toLowerCase().contains(q)) ||
+        p.tags.any((t) => t.toLowerCase().contains(q)) ||
+        (p.authorNickname ?? "").toLowerCase().contains(q),
+      ).toList();
+    }
+    // 정렬
+    switch (_sortBy) {
+      case "likes":
+        result.sort((a, b) => b.likes.compareTo(a.likes));
+      case "comments":
+        result.sort((a, b) => b.comments.length.compareTo(a.comments.length));
+      default: // latest
+        result.sort((a, b) {
+          final at = a.createdAt ?? DateTime(2000);
+          final bt = b.createdAt ?? DateTime(2000);
+          return bt.compareTo(at);
+        });
+    }
+    return result;
   }
 
   @override
@@ -93,7 +134,19 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
     });
   }
 
+  Future<void> _pickAndUploadProfileImage() async {
+    final file = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    if (file == null) return;
+    await ref.read(tourstarControllerProvider.notifier).uploadProfileImage(file);
+  }
+
   void _openDetail(TourstarPostRecord post) {
+    final tourState = ref.read(tourstarControllerProvider);
+    final isOwner = _isOwner(post, tourState);
+    final effectiveImg = tourState.profileImageUrl ??
+        tourState.serverPosts
+            .where((p) => _isMyPost(p, tourState) && (p.authorProfileImageUrl ?? "").isNotEmpty)
+            .firstOrNull?.authorProfileImageUrl;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -101,8 +154,61 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
       backgroundColor: Colors.transparent,
       builder: (_) => _PostDetailSheet(
         post: post,
+        isOwner: isOwner,
+        myNickname: tourState.myNickname,
+        myProfileImageUrl: effectiveImg,
+        authorProfileMap: _buildAuthorMap(tourState),
         onAddComment: (id, c) {
           ref.read(tourstarControllerProvider.notifier).addComment(id, c);
+        },
+        onDeletePost: (id) async {
+          final ok = await ref.read(tourstarControllerProvider.notifier).deletePost(id);
+          return ok;
+        },
+        onEditPost: (p) => _openEdit(p),
+      ),
+    );
+  }
+
+  bool _isOwner(TourstarPostRecord post, TourstarState s) {
+    if (s.myUserId != null && post.userId != null) return post.userId == s.myUserId;
+    if (s.myNickname != null && post.authorNickname != null) return post.authorNickname == s.myNickname;
+    return false;
+  }
+
+  /// 닉네임 → 프로필 이미지 URL 맵 (댓글 아바타용)
+  Map<String, String> _buildAuthorMap(TourstarState s) {
+    final map = <String, String>{};
+    for (final p in s.serverPosts) {
+      if ((p.authorNickname ?? "").isNotEmpty && (p.authorProfileImageUrl ?? "").isNotEmpty) {
+        map[p.authorNickname!] = p.authorProfileImageUrl!;
+      }
+    }
+    if ((s.myNickname ?? "").isNotEmpty && (s.profileImageUrl ?? "").isNotEmpty) {
+      map[s.myNickname!] = s.profileImageUrl!;
+    }
+    return map;
+  }
+
+  Widget _verticalDivider() => Container(width: 1, height: 28, color: const Color(0xFFF3F4F6));
+
+  void _openEdit(TourstarPostRecord post) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _EditPostSheet(
+        post: post,
+        onSave: (title, location, comment, tags) async {
+          final ok = await ref.read(tourstarControllerProvider.notifier).updatePost(
+            postId: post.id,
+            title: title,
+            location: location,
+            comment: comment,
+            tags: tags,
+          );
+          return ok;
         },
       ),
     );
@@ -124,14 +230,28 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
     // 상태 구독 - serverPosts / postsLoading 변화 시 rebuild
     final tourState = ref.watch(tourstarControllerProvider);
     final allPosts = tourState.serverPosts;
-    final filtered = _filter == "all"
-        ? allPosts
-        : allPosts.where((p) => p.visibility == _filter).toList();
+    final filtered = _getFiltered(tourState);
+
+    // 프로필 이미지: state.profileImageUrl 없으면 내 게시물의 authorProfileImageUrl 사용
+    final effectiveProfileImage = tourState.profileImageUrl ??
+        allPosts.where((p) => _isMyPost(p, tourState) && (p.authorProfileImageUrl ?? "").isNotEmpty)
+            .firstOrNull?.authorProfileImageUrl;
+
+    final myPosts = allPosts.where((p) => _isMyPost(p, tourState)).toList();
+    final bookmarkedPosts = allPosts.where((p) => p.bookmarked).toList();
+    final friendPosts = allPosts.where((p) {
+      final nick = p.authorNickname ?? "";
+      return nick.isNotEmpty && tourState.friendNicknames.contains(nick);
+    }).toList();
+    final myLikes = myPosts.fold(0, (a, p) => a + p.likes);
     final stats = {
       "total": allPosts.length,
-      "photos": allPosts.fold(0, (a, p) => a + p.photoUrls.length),
-      "likes": 0,
-      "public": allPosts.where((p) => p.visibility == "public").length,
+      "mine": myPosts.length,
+      "bookmarked": bookmarkedPosts.length,
+      "photos": myPosts.fold(0, (a, p) => a + p.photoUrls.length),
+      "likes": myLikes,
+      "friends": tourState.friendNicknames.length,
+      "friendPosts": friendPosts.length,
     };
 
     return Scaffold(
@@ -182,7 +302,7 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
           SliverToBoxAdapter(
             child: Container(
               margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
@@ -194,93 +314,156 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                   ),
                 ],
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [_kPurple2, _kPink],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: _kPurple2.withValues(alpha: 0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: const Center(
-                      child: Text(
-                        "T",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "내 여행기록",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: _kGray800,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          "소중한 여행의 순간들을 기록하세요",
-                          style: TextStyle(fontSize: 11, color: _kGray400),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
+                  // 아바타 + 이름
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: _pickAndUploadProfileImage,
+                        child: Stack(
                           children: [
-                            _StatItem(
-                              value: "${stats['total']}",
-                              label: "게시물",
+                            Container(
+                              width: 72,
+                              height: 72,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [_kPurple2, _kPink],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: _kPurple2.withValues(alpha: 0.25),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: ClipOval(
+                                child: effectiveProfileImage != null
+                                    ? Image.network(
+                                        effectiveProfileImage,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Center(
+                                          child: Text(
+                                            (tourState.myNickname ?? "T").substring(0, 1).toUpperCase(),
+                                            style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      )
+                                    : Center(
+                                        child: Text(
+                                          (tourState.myNickname ?? "T").substring(0, 1).toUpperCase(),
+                                          style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                              ),
                             ),
-                            const SizedBox(width: 20),
-                            _StatItem(
-                              value: "${stats['photos']}",
-                              label: "사진",
-                            ),
-                            const SizedBox(width: 20),
-                            _StatItem(
-                              value: "${stats['likes']}",
-                              label: "좋아요",
-                              color: _kPink,
-                            ),
-                            const SizedBox(width: 20),
-                            _StatItem(
-                              value: "${stats['public']}",
-                              label: "공개",
-                              color: _kGreen,
+                            Positioned(
+                              right: 0,
+                              bottom: 0,
+                              child: Container(
+                                width: 22,
+                                height: 22,
+                                decoration: BoxDecoration(
+                                  color: _kPurple,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 1.5),
+                                ),
+                                child: const Icon(Icons.camera_alt, size: 12, color: Colors.white),
+                              ),
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              tourState.myNickname ?? "내 여행기록",
+                              style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                                color: _kGray800,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              "소중한 여행의 순간들을 기록하세요 ✈️",
+                              style: TextStyle(fontSize: 12, color: _kGray400),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(height: 1, color: Color(0xFFF3F4F6)),
+                  const SizedBox(height: 14),
+                  // 통계 (전체 폭으로)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _StatItem(value: "${stats['total']}", label: "전체"),
+                      _verticalDivider(),
+                      _StatItem(value: "${stats['mine']}", label: "내 게시물"),
+                      _verticalDivider(),
+                      _StatItem(value: "${stats['bookmarked']}", label: "스크랩"),
+                      _verticalDivider(),
+                      _StatItem(value: "${stats['likes']}", label: "좋아요", color: _kPink),
+                      _verticalDivider(),
+                      _StatItem(value: "${stats['friends']}", label: "친구", color: _kPurple),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
 
-          // ── Filter / View Toggle ─────────────────────────
+          // ── 검색 바 ──────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: _kGray200),
+                ),
+                child: TextField(
+                  controller: _searchCtrl,
+                  style: const TextStyle(fontSize: 13),
+                  onChanged: (v) => setState(() => _searchQuery = v.trim()),
+                  decoration: InputDecoration(
+                    hintText: "게시물 검색...",
+                    hintStyle: const TextStyle(color: _kGray400, fontSize: 13),
+                    prefixIcon: const Icon(Icons.search, size: 18, color: _kGray400),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.close, size: 16, color: _kGray400),
+                            onPressed: () {
+                              _searchCtrl.clear();
+                              setState(() => _searchQuery = "");
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // ── Filter Tabs + View Toggle ─────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: Row(
                 children: [
                   Expanded(
@@ -290,28 +473,19 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                         children: [
                           for (final tab in [
                             ("all", "전체"),
-                            ("public", "공개"),
-                            ("private", "비공개"),
+                            ("mine", "내 게시물 (${stats['mine']})"),
+                            ("friends", "친구 게시물 (${stats['friendPosts']})"),
+                            ("bookmarked", "스크랩 (${stats['bookmarked']})"),
                           ])
                             Padding(
                               padding: const EdgeInsets.only(right: 8),
                               child: GestureDetector(
-                                onTap: () =>
-                                    setState(() => _filter = tab.$1),
+                                onTap: () => setState(() => _filter = tab.$1),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 7,
-                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                                   decoration: BoxDecoration(
-                                    color: _filter == tab.$1
-                                        ? _kPurpleLight
-                                        : Colors.white,
-                                    border: Border.all(
-                                      color: _filter == tab.$1
-                                          ? const Color(0xFFD8B4FE)
-                                          : _kGray200,
-                                    ),
+                                    color: _filter == tab.$1 ? _kPurpleLight : Colors.white,
+                                    border: Border.all(color: _filter == tab.$1 ? const Color(0xFFD8B4FE) : _kGray200),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Text(
@@ -319,21 +493,12 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
-                                      color: _filter == tab.$1
-                                          ? _kPurple
-                                          : _kGray500,
+                                      color: _filter == tab.$1 ? _kPurple : _kGray500,
                                     ),
                                   ),
                                 ),
                               ),
                             ),
-                          Text(
-                            "${filtered.length}개의 기록",
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: _kGray400,
-                            ),
-                          ),
                         ],
                       ),
                     ),
@@ -347,19 +512,44 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                     ),
                     child: Row(
                       children: [
-                        _ViewToggleBtn(
-                          icon: Icons.view_stream,
-                          active: !_gridView,
-                          onTap: () => setState(() => _gridView = false),
-                        ),
-                        _ViewToggleBtn(
-                          icon: Icons.grid_view,
-                          active: _gridView,
-                          onTap: () => setState(() => _gridView = true),
-                        ),
+                        _ViewToggleBtn(icon: Icons.view_stream, active: !_gridView, onTap: () => setState(() => _gridView = false)),
+                        _ViewToggleBtn(icon: Icons.grid_view, active: _gridView, onTap: () => setState(() => _gridView = true)),
                       ],
                     ),
                   ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── 정렬 바 (최신순 / 좋아요순 / 댓글순) ─────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Row(
+                children: [
+                  for (final sort in [("latest", "최신순"), ("likes", "좋아요순"), ("comments", "댓글순")])
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: GestureDetector(
+                        onTap: () => setState(() => _sortBy = sort.$1),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: _sortBy == sort.$1 ? _kPurpleLight : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            sort.$2,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: _sortBy == sort.$1 ? FontWeight.w700 : FontWeight.w400,
+                              color: _sortBy == sort.$1 ? _kPurple : _kGray400,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -401,13 +591,44 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
-                  (_, i) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _FeedCard(
-                      post: filtered[i],
-                      onTap: () => _openDetail(filtered[i]),
-                    ),
-                  ),
+                  (_, i) {
+                    final p = filtered[i];
+                    final isFriend = (p.authorNickname ?? "").isNotEmpty &&
+                        tourState.friendNicknames.contains(p.authorNickname);
+                    final isOwner = _isOwner(p, tourState);
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _FeedCard(
+                        post: p,
+                        isFriend: isFriend,
+                        isOwner: isOwner,
+                        myProfileImageUrl: effectiveProfileImage,
+                        isLiked: tourState.likedPostIds.contains(p.id),
+                        onTap: () => _openDetail(p),
+                        onLike: () => ref.read(tourstarControllerProvider.notifier).toggleLike(p.id),
+                        onBookmark: () => ref.read(tourstarControllerProvider.notifier).toggleBookmark(p.id),
+                        onDelete: isOwner
+                            ? () async {
+                                final confirmed = await showDialog<bool>(
+                                  context: context,
+                                  builder: (_) => AlertDialog(
+                                    title: const Text("게시물 삭제"),
+                                    content: const Text("정말로 삭제하시겠습니까?"),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("취소")),
+                                      TextButton(onPressed: () => Navigator.pop(context, true),
+                                          child: const Text("삭제", style: TextStyle(color: Colors.red))),
+                                    ],
+                                  ),
+                                );
+                                if (confirmed == true && mounted) {
+                                  await ref.read(tourstarControllerProvider.notifier).deletePost(p.id);
+                                }
+                              }
+                            : null,
+                      ),
+                    );
+                  },
                   childCount: filtered.length,
                 ),
               ),
@@ -628,9 +849,42 @@ class _FeedCard extends StatelessWidget {
   const _FeedCard({
     required this.post,
     required this.onTap,
+    this.isFriend = false,
+    this.isOwner = false,
+    this.isLiked = false,
+    this.myProfileImageUrl,
+    this.onBookmark,
+    this.onDelete,
+    this.onLike,
   });
   final TourstarPostRecord post;
   final VoidCallback onTap;
+  final bool isFriend;
+  final bool isOwner;
+  final bool isLiked;
+  final String? myProfileImageUrl;
+  final VoidCallback? onBookmark;
+  final VoidCallback? onDelete;
+  final VoidCallback? onLike;
+
+  Widget _buildAvatar() {
+    final imageUrl = isOwner ? myProfileImageUrl : post.authorProfileImageUrl;
+    final initial = (post.authorNickname ?? "?").substring(0, 1).toUpperCase();
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(colors: [_kPurple2, _kPink]),
+        shape: BoxShape.circle,
+      ),
+      child: ClipOval(
+        child: imageUrl != null && imageUrl.isNotEmpty
+            ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) =>
+                Center(child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold))))
+            : Center(child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold))),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -671,16 +925,6 @@ class _FeedCard extends StatelessWidget {
                             errorBuilder: (_, __, ___) => _PhotoPlaceholder(),
                           )
                         : _PhotoPlaceholder(),
-                  ),
-                  Positioned(
-                    top: 10,
-                    left: 10,
-                    child: _Badge(
-                      label: post.visibility == "public" ? "공개" : "비공개",
-                      color: post.visibility == "public"
-                          ? _kGreen
-                          : _kGray700.withValues(alpha: 0.8),
-                    ),
                   ),
                   if (post.photoUrls.length > 1)
                     Positioned(
@@ -759,12 +1003,71 @@ class _FeedCard extends StatelessWidget {
                           .toList(),
                     ),
                   ],
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
+                      _buildAvatar(),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Text(
+                              post.authorNickname ?? "알 수 없음",
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _kGray700),
+                            ),
+                            if (isFriend) ...[
+                              const SizedBox(width: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: _kPurpleLight,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: const Color(0xFFD8B4FE)),
+                                ),
+                                child: const Text("친구", style: TextStyle(fontSize: 9, color: _kPurple, fontWeight: FontWeight.w600)),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      // 좋아요 버튼
+                      GestureDetector(
+                        onTap: onLike,
+                        child: Icon(
+                          isLiked ? Icons.favorite : Icons.favorite_border,
+                          size: 16,
+                          color: isLiked ? _kPink : _kGray400,
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        "${post.likes}",
+                        style: TextStyle(fontSize: 11, color: isLiked ? _kPink : _kGray500),
+                      ),
+                      const SizedBox(width: 8),
+                      // 댓글 수
                       const Icon(Icons.chat_bubble_outline, size: 12, color: _kGray400),
-                      const SizedBox(width: 4),
-                      Text("댓글 ${post.comments.length}", style: const TextStyle(fontSize: 11, color: _kGray500)),
+                      const SizedBox(width: 2),
+                      Text("${post.comments.length}", style: const TextStyle(fontSize: 11, color: _kGray500)),
+                      const SizedBox(width: 6),
+                      // 스크랩 버튼
+                      if (onBookmark != null)
+                        GestureDetector(
+                          onTap: onBookmark,
+                          child: Icon(
+                            post.bookmarked ? Icons.bookmark : Icons.bookmark_border,
+                            size: 16,
+                            color: post.bookmarked ? _kPurple : _kGray400,
+                          ),
+                        ),
+                      // 삭제 버튼 (내 게시물)
+                      if (isOwner && onDelete != null) ...[
+                        const SizedBox(width: 4),
+                        GestureDetector(
+                          onTap: onDelete,
+                          child: const Icon(Icons.delete_outline, size: 16, color: Color(0xFFEF4444)),
+                        ),
+                      ],
                     ],
                   ),
                 ],
@@ -818,15 +1121,6 @@ class _GridCard extends StatelessWidget {
                       gradient: LinearGradient(colors: [_kPurple2, _kPink]),
                     ),
                   ),
-            Positioned(
-              top: 4,
-              left: 4,
-              child: _Badge(
-                label: post.visibility == "public" ? "공개" : "비공개",
-                color: post.visibility == "public" ? _kGreen : Colors.black54,
-                fontSize: 8,
-              ),
-            ),
             if (post.photoUrls.length > 1)
               Positioned(
                 top: 4,
@@ -878,9 +1172,21 @@ class _PostDetailSheet extends ConsumerStatefulWidget {
   const _PostDetailSheet({
     required this.post,
     required this.onAddComment,
+    this.isOwner = false,
+    this.myNickname,
+    this.myProfileImageUrl,
+    this.authorProfileMap = const {},
+    this.onDeletePost,
+    this.onEditPost,
   });
   final TourstarPostRecord post;
   final void Function(String postId, String content) onAddComment;
+  final bool isOwner;
+  final String? myNickname;
+  final String? myProfileImageUrl;
+  final Map<String, String> authorProfileMap;
+  final Future<bool> Function(String postId)? onDeletePost;
+  final void Function(TourstarPostRecord post)? onEditPost;
 
   @override
   ConsumerState<_PostDetailSheet> createState() => _PostDetailSheetState();
@@ -902,6 +1208,32 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("공유 링크가 클립보드에 복사되었습니다.")),
+    );
+  }
+
+  Widget _buildCommentAvatar(TourstarComment c) {
+    // 댓글 작성자 아바타: authorProfileMap 우선, 없으면 이니셜
+    final nick = c.author;
+    String? imageUrl;
+    if (nick == widget.myNickname) {
+      imageUrl = widget.myProfileImageUrl;
+    } else {
+      imageUrl = widget.authorProfileMap[nick];
+    }
+    final initial = nick.isNotEmpty ? nick.substring(0, 1).toUpperCase() : "?";
+    return Container(
+      width: 28,
+      height: 28,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(colors: [_kPurple2, _kPink]),
+        shape: BoxShape.circle,
+      ),
+      child: ClipOval(
+        child: imageUrl != null && imageUrl.isNotEmpty
+            ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) =>
+                Center(child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))))
+            : Center(child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))),
+      ),
     );
   }
 
@@ -1033,31 +1365,96 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // 작성자 정보
+                          Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: const BoxDecoration(
+                                  gradient: LinearGradient(colors: [_kPurple2, _kPink]),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: ClipOval(
+                                  child: () {
+                                    final imgUrl = widget.isOwner
+                                        ? widget.myProfileImageUrl
+                                        : post.authorProfileImageUrl;
+                                    final initial = (post.authorNickname ?? "?").substring(0, 1).toUpperCase();
+                                    if (imgUrl != null && imgUrl.isNotEmpty) {
+                                      return Image.network(imgUrl, fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) => Center(child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold))));
+                                    }
+                                    return Center(child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)));
+                                  }(),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      post.authorNickname ?? "알 수 없음",
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _kGray800),
+                                    ),
+                                    if (dateStr.isNotEmpty)
+                                      Text(dateStr, style: const TextStyle(fontSize: 11, color: _kGray400)),
+                                  ],
+                                ),
+                              ),
+                              // 내 게시물이면 수정/삭제 메뉴
+                              if (widget.isOwner) ...[
+                                const SizedBox(width: 4),
+                                PopupMenuButton<String>(
+                                  icon: const Icon(Icons.more_vert, size: 20, color: _kGray500),
+                                  onSelected: (value) async {
+                                    if (value == "edit") {
+                                      if (!mounted) return;
+                                      Navigator.pop(context);
+                                      widget.onEditPost?.call(post);
+                                    } else if (value == "delete") {
+                                      final confirmed = await showDialog<bool>(
+                                        context: context,
+                                        builder: (_) => AlertDialog(
+                                          title: const Text("게시물 삭제"),
+                                          content: const Text("정말로 삭제하시겠습니까?"),
+                                          actions: [
+                                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("취소")),
+                                            TextButton(onPressed: () => Navigator.pop(context, true),
+                                                child: const Text("삭제", style: TextStyle(color: Colors.red))),
+                                          ],
+                                        ),
+                                      );
+                                      if (confirmed == true && mounted) {
+                                        final ok = await widget.onDeletePost?.call(post.id) ?? false;
+                                        if (ok && mounted) Navigator.pop(context);
+                                      }
+                                    }
+                                  },
+                                  itemBuilder: (_) => const [
+                                    PopupMenuItem(value: "edit", child: Row(children: [
+                                      Icon(Icons.edit_outlined, size: 18, color: _kPurple),
+                                      SizedBox(width: 8),
+                                      Text("수정", style: TextStyle(color: _kPurple, fontWeight: FontWeight.w600)),
+                                    ])),
+                                    PopupMenuItem(value: "delete", child: Row(children: [
+                                      Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                                      SizedBox(width: 8),
+                                      Text("삭제", style: TextStyle(color: Colors.red)),
+                                    ])),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 12),
                           Row(
                             children: [
                               Expanded(
                                 child: Text(
                                   post.title,
                                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _kGray800),
-                                ),
-                              ),
-                              // 공개 배지
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                decoration: BoxDecoration(
-                                  color: post.visibility == "public" ? const Color(0xFFECFDF5) : _kGray100,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: post.visibility == "public" ? const Color(0xFF6EE7B7) : _kGray200,
-                                  ),
-                                ),
-                                child: Text(
-                                  post.visibility == "public" ? "공개" : "비공개",
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: post.visibility == "public" ? const Color(0xFF059669) : _kGray500,
-                                  ),
                                 ),
                               ),
                             ],
@@ -1070,10 +1467,6 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                               Expanded(
                                 child: Text(post.location, style: const TextStyle(fontSize: 12, color: _kGray500)),
                               ),
-                              if (dateStr.isNotEmpty) ...[
-                                const Text(" · ", style: TextStyle(color: _kGray400)),
-                                Text(dateStr, style: const TextStyle(fontSize: 12, color: _kGray400)),
-                              ],
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -1148,12 +1541,22 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                                 margin: const EdgeInsets.only(bottom: 8),
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(color: _kGray100, borderRadius: BorderRadius.circular(10)),
-                                child: Column(
+                                child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    if (c.author.isNotEmpty)
-                                      Text(c.author, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _kGray700)),
-                                    Text(c.content, style: const TextStyle(fontSize: 12, color: _kGray700)),
+                                    _buildCommentAvatar(c),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          if (c.author.isNotEmpty)
+                                            Text(c.author, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _kGray700)),
+                                          const SizedBox(height: 2),
+                                          Text(c.content, style: const TextStyle(fontSize: 12, color: _kGray700)),
+                                        ],
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -1946,6 +2349,177 @@ class _VisibilityBtn extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// Edit Post Sheet
+// ══════════════════════════════════════════════════════════════
+class _EditPostSheet extends StatefulWidget {
+  const _EditPostSheet({required this.post, required this.onSave});
+  final TourstarPostRecord post;
+  final Future<bool> Function(String title, String location, String comment, List<String> tags) onSave;
+
+  @override
+  State<_EditPostSheet> createState() => _EditPostSheetState();
+}
+
+class _EditPostSheetState extends State<_EditPostSheet> {
+  late final TextEditingController _titleCtrl;
+  late final TextEditingController _locationCtrl;
+  late final TextEditingController _commentCtrl;
+  late final TextEditingController _tagsCtrl;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleCtrl = TextEditingController(text: widget.post.title);
+    _locationCtrl = TextEditingController(text: widget.post.location);
+    _commentCtrl = TextEditingController(text: widget.post.comment);
+    _tagsCtrl = TextEditingController(text: widget.post.tags.join(", "));
+  }
+
+  @override
+  void dispose() {
+    _titleCtrl.dispose();
+    _locationCtrl.dispose();
+    _commentCtrl.dispose();
+    _tagsCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final title = _titleCtrl.text.trim();
+    final location = _locationCtrl.text.trim();
+    final comment = _commentCtrl.text.trim();
+    final tags = _tagsCtrl.text
+        .split(",")
+        .map((t) => t.trim())
+        .where((t) => t.isNotEmpty)
+        .toList();
+    if (title.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("제목을 입력해 주세요.")));
+      return;
+    }
+    setState(() => _saving = true);
+    final ok = await widget.onSave(title, location, comment, tags);
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (ok) {
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("수정에 실패했습니다.")));
+    }
+  }
+
+  Widget _field(String label, TextEditingController ctrl, {int maxLines = 1}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _kGray700)),
+        const SizedBox(height: 6),
+        Container(
+          decoration: BoxDecoration(
+            color: _kGray100,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: _kGray200),
+          ),
+          child: TextField(
+            controller: ctrl,
+            maxLines: maxLines,
+            style: const TextStyle(fontSize: 14, color: _kGray800),
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.85,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (ctx, scrollCtrl) => Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 12, bottom: 4),
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(color: _kGray200, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 8, 0),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      "게시물 수정",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _kGray800),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, color: _kGray500),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                controller: scrollCtrl,
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _field("제목", _titleCtrl),
+                    _field("장소", _locationCtrl),
+                    _field("내용", _commentCtrl, maxLines: 5),
+                    _field("태그 (쉼표로 구분)", _tagsCtrl),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+              child: SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: FilledButton(
+                  onPressed: _saving ? null : _save,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _kPurple,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: _saving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text("저장하기", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

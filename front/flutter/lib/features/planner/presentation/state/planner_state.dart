@@ -18,6 +18,7 @@ class PlannerState {
     required this.costSummary,
     required this.savedPlanId,
     required this.useSearch,
+    required this.transportMode,
   });
 
   factory PlannerState.initial() {
@@ -38,6 +39,7 @@ class PlannerState {
       costSummary: null,
       savedPlanId: null,
       useSearch: false,
+      transportMode: "car",
     );
   }
 
@@ -57,6 +59,7 @@ class PlannerState {
   final CostSummary? costSummary;
   final int? savedPlanId;
   final bool useSearch;
+  final String transportMode;
 
   PlannerState copyWith({
     bool? routesLoading,
@@ -80,6 +83,7 @@ class PlannerState {
     int? savedPlanId,
     bool clearSavedPlanId = false,
     bool? useSearch,
+    String? transportMode,
   }) {
     return PlannerState(
       routesLoading: routesLoading ?? this.routesLoading,
@@ -98,6 +102,7 @@ class PlannerState {
       costSummary: clearCostSummary ? null : (costSummary ?? this.costSummary),
       savedPlanId: clearSavedPlanId ? null : (savedPlanId ?? this.savedPlanId),
       useSearch: useSearch ?? this.useSearch,
+      transportMode: transportMode ?? this.transportMode,
     );
   }
 }

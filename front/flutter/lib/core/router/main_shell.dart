@@ -116,6 +116,7 @@ class _AppDrawer extends ConsumerWidget {
               activeIcon: Icons.map,
               label: "여행플래너",
               path: "/planner",
+              excludePrefixes: const ["/planner/schedule"],
               current: location,
             ),
             _DrawerItem(
@@ -194,6 +195,7 @@ class _DrawerItem extends StatelessWidget {
     required this.label,
     required this.path,
     required this.current,
+    this.excludePrefixes = const [],
   });
 
   final IconData icon;
@@ -201,8 +203,12 @@ class _DrawerItem extends StatelessWidget {
   final String label;
   final String path;
   final String current;
+  final List<String> excludePrefixes;
 
-  bool get _isActive => current == path || current.startsWith("$path/");
+  bool get _isActive {
+    if (excludePrefixes.any((p) => current.startsWith(p))) return false;
+    return current == path || current.startsWith("$path/");
+  }
 
   @override
   Widget build(BuildContext context) {
