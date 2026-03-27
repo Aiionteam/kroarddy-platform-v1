@@ -2,6 +2,21 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 
 import "../data/news_repository.dart";
 
+// bool / num / String 혼재 대응 헬퍼 (Python API가 bool로 반환하는 필드 처리)
+int? _toInt(dynamic v) {
+  if (v == null) return null;
+  if (v is bool) return v ? 1 : 0;
+  if (v is num) return v.toInt();
+  return int.tryParse(v.toString());
+}
+
+double? _toDouble(dynamic v) {
+  if (v == null) return null;
+  if (v is bool) return v ? 1.0 : 0.0;
+  if (v is num) return v.toDouble();
+  return double.tryParse(v.toString());
+}
+
 class SlimNewsItem {
   SlimNewsItem({
     required this.id,
@@ -11,6 +26,7 @@ class SlimNewsItem {
     required this.gptSummary,
     required this.source,
     required this.published,
+    required this.thumbnail,
     required this.category,
     required this.location,
     required this.dateMentioned,
@@ -26,6 +42,7 @@ class SlimNewsItem {
   final String gptSummary;
   final String source;
   final String published;
+  final String thumbnail;
   final String category;
   final String location;
   final String? dateMentioned;
@@ -42,12 +59,13 @@ class SlimNewsItem {
       gptSummary: json["gpt_summary"]?.toString() ?? "",
       source: json["source"]?.toString() ?? "",
       published: json["published"]?.toString() ?? "",
+      thumbnail: json["thumbnail"]?.toString() ?? "",
       category: json["category"]?.toString() ?? "",
       location: json["location"]?.toString() ?? "",
       dateMentioned: json["date_mentioned"]?.toString(),
-      relevanceScore: (json["relevance_score"] as num?)?.toDouble() ?? 0,
-      isTop10: (json["is_top10"] as num?)?.toInt() ?? 0,
-      top10Rank: (json["top10_rank"] as num?)?.toInt(),
+      relevanceScore: _toDouble(json["relevance_score"]) ?? 0,
+      isTop10: _toInt(json["is_top10"]) ?? 0,
+      top10Rank: _toInt(json["top10_rank"]),
     );
   }
 
@@ -60,6 +78,7 @@ class SlimNewsItem {
       "gpt_summary": gptSummary,
       "source": source,
       "published": published,
+      "thumbnail": thumbnail,
       "category": category,
       "location": location,
       "date_mentioned": dateMentioned,

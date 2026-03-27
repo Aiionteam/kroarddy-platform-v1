@@ -6,15 +6,30 @@ import "../../../core/config/app_env.dart";
 import "../../../core/network/api_client.dart";
 import "tourstar_models.dart";
 
+/// Tourstar FastAPI base URL (게이트웨이가 아닌 tourstar 서비스 직접 호출)
+const _kTourstarBaseUrl = "https://tourstar.kroaddy.site";
+
 final tourstarRepositoryProvider = Provider<TourstarRepository>((ref) {
   final dio = ref.watch(dioProvider);
-  return TourstarRepository(dio);
+  // Tourstar 전용 Dio (presigned URL / S3 등 tourstar 서비스 직접 호출용)
+  final tourstarDio = Dio(
+    BaseOptions(
+      baseUrl: _kTourstarBaseUrl,
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(minutes: 2),
+      sendTimeout: const Duration(minutes: 3),
+    ),
+  );
+  return TourstarRepository(dio, tourstarDio);
 });
 
 class TourstarRepository {
-  TourstarRepository(this._dio);
+  TourstarRepository(this._dio, this._tourstarDio);
 
   final Dio _dio;
+
+  /// tourstar.kroaddy.site 직접 호출용 (프로필 이미지 업로드 등)
+  final Dio _tourstarDio;
 
   static String _trimTrailingSlash(String v) => v.replaceAll(RegExp(r"/+$"), "");
 
@@ -161,11 +176,120 @@ class TourstarRepository {
     return TourstarPostRecord.fromJson(res.data ?? const {});
   }
 
+  // ── 게시글 수정 ────────────────────────────────────────────
+  Future<TourstarPostRecord> updatePost({
+    required String postId,
+    String? title,
+    String? location,
+    String? comment,
+    String? visibility,
+    List<String>? tags,
+    List<String>? keepPhotoUrls,
+    List<String>? newImagePaths,
+  }) async {
+    final data = <String, dynamic>{};
+    if (title != null) data["title"] = title;
+    if (location != null) data["location"] = location;
+    if (comment != null) data["comment"] = comment;
+    if (visibility != null) data["visibility"] = visibility;
+    if (tags != null) data["tags"] = tags;
+    if (keepPhotoUrls != null) data["keep_photo_urls"] = keepPhotoUrls;
+    if (newImagePaths != null) data["image_paths"] = newImagePaths;
+
+    try {
+      final res = await _dio.patch<Map<String, dynamic>>(
+        "/v1/photo-selection/posts/$postId",
+        data: data,
+        options: Options(receiveTimeout: const Duration(minutes: 2)),
+      );
+      return TourstarPostRecord.fromJson(res.data ?? const {});
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 405) {
+        // PATCH 미지원 폴백 → POST /update
+        final res = await _dio.post<Map<String, dynamic>>(
+          "/v1/photo-selection/posts/$postId/update",
+          data: data,
+          options: Options(receiveTimeout: const Duration(minutes: 2)),
+        );
+        return TourstarPostRecord.fromJson(res.data ?? const {});
+      }
+      rethrow;
+    }
+  }
+
+  // ── 게시글 삭제 ────────────────────────────────────────────
+  Future<void> deletePost({required String postId, required int userId}) async {
+    try {
+      await _dio.delete<void>(
+        "/v1/photo-selection/posts/$postId",
+        queryParameters: {"user_id": userId},
+        options: Options(receiveTimeout: const Duration(minutes: 1)),
+      );
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 405) {
+        // DELETE 미지원 폴백 → POST /delete
+        await _dio.post<void>(
+          "/v1/photo-selection/posts/$postId/delete",
+          data: {"user_id": userId},
+          options: Options(receiveTimeout: const Duration(minutes: 1)),
+        );
+        return;
+      }
+      rethrow;
+    }
+  }
+
+  // ── S3 finalize (임시 경로 → S3 URL 변환) ──────────────────
+  Future<List<String>> finalizeUploads(List<String> imagePaths) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      "/v1/photo-selection/finalize-uploads",
+      data: {"image_paths": imagePaths},
+      options: Options(receiveTimeout: const Duration(minutes: 3)),
+    );
+    final raw = (res.data?["s3_urls"] as List?) ?? const [];
+    return raw.map((e) => e.toString()).toList();
+  }
+
+  // ── 프로필 이미지 조회 ─────────────────────────────────────
+  Future<String?> fetchProfileImage(int userId) async {
+    try {
+      final res = await _tourstarDio.get<Map<String, dynamic>>(
+        "/api/v1/photo-selection/profile-image",
+        queryParameters: {"user_id": userId},
+        options: Options(receiveTimeout: const Duration(minutes: 1)),
+      );
+      return res.data?["profile_image_url"]?.toString();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ── 프로필 이미지 업로드 ───────────────────────────────────
+  Future<String?> uploadProfileImage(XFile file, {int? userId}) async {
+    final formData = FormData.fromMap({
+      "file": await MultipartFile.fromFile(
+        file.path,
+        filename: _fileNameFromPath(file.path),
+      ),
+    });
+    final res = await _tourstarDio.post<Map<String, dynamic>>(
+      "/api/v1/photo-selection/upload-profile-image",
+      data: formData,
+      queryParameters: userId != null ? {"user_id": userId} : null,
+      options: Options(
+        contentType: "multipart/form-data",
+        sendTimeout: const Duration(minutes: 2),
+        receiveTimeout: const Duration(minutes: 2),
+      ),
+    );
+    return res.data?["profile_image_url"]?.toString();
+  }
+
   // ── 댓글 등록 ─────────────────────────────────────────────
   Future<TourstarComment> createComment({
     required String postId,
     required String content,
-    String author = "me",
+    String author = "익명",
   }) async {
     final res = await _dio.post<Map<String, dynamic>>(
       "/v1/photo-selection/posts/$postId/comments",

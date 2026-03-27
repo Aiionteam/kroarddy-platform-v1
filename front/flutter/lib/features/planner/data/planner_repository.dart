@@ -1,3 +1,5 @@
+import "dart:typed_data";
+
 import "package:dio/dio.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
@@ -33,6 +35,7 @@ class PlannerRepository {
     List<String>? existingRoutes,
     bool useSearch = false,
     List<Map<String, dynamic>>? newsTop10,
+    String? transportMode,
   }) async {
     try {
       final res = await _dio.post<Map<String, dynamic>>(
@@ -44,6 +47,7 @@ class PlannerRepository {
           "existing_routes": existingRoutes,
           "use_search": useSearch,
           "news_top10": newsTop10,
+          if (transportMode != null) "transport_mode": transportMode,
         },
       );
       return RoutesResponse.fromJson(res.data ?? const {});
@@ -60,6 +64,7 @@ class PlannerRepository {
     int? userId,
     bool useSearch = false,
     List<Map<String, dynamic>>? newsTop10,
+    String? transportMode,
   }) async {
     try {
       final res = await _dio.post<Map<String, dynamic>>(
@@ -71,6 +76,7 @@ class PlannerRepository {
           "user_id": userId,
           "use_search": useSearch,
           "news_top10": newsTop10,
+          if (transportMode != null) "transport_mode": transportMode,
         },
       );
       return ScheduleResponse.fromJson(res.data ?? const {});
@@ -111,6 +117,58 @@ class PlannerRepository {
         .whereType<Map>()
         .map((e) => TravelPlanRecord.fromJson(Map<String, dynamic>.from(e)))
         .toList();
+  }
+
+  /// 네이버 Static Map 이미지 bytes 반환 (백엔드 프록시)
+  /// 네이버 Static Map 이미지 bytes 반환 (백엔드 프록시)
+  /// 실패 시 에러 메시지를 담은 Exception을 throw합니다.
+  Future<Uint8List> fetchStaticMapBytes({
+    required double lat,
+    required double lng,
+    int w = 600,
+    int h = 400,
+    int zoom = 15,
+  }) async {
+    try {
+      final res = await _dio.get<dynamic>(
+        "/v1/maps/static-map",
+        queryParameters: {"lat": lat, "lng": lng, "w": w, "h": h, "zoom": zoom},
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final data = res.data;
+      if (data is List<int>) return Uint8List.fromList(data);
+      if (data is Uint8List) return data;
+      throw Exception("지도 이미지 데이터가 비어있습니다.");
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      final detail = e.response?.data is Map
+          ? (e.response?.data["detail"]?.toString() ?? "")
+          : "";
+      throw Exception("지도 API 오류 (HTTP $status)${detail.isNotEmpty ? ": $detail" : ""}");
+    } catch (e) {
+      throw Exception("지도 로드 실패: $e");
+    }
+  }
+
+  /// 장소명 → 좌표 (Naver 지역 검색 API 프록시)
+  /// 실패 시 에러 메시지를 담은 Exception을 throw합니다.
+  Future<Map<String, dynamic>> placeSearch(String query) async {
+    try {
+      final res = await _dio.get<Map<String, dynamic>>(
+        "/v1/maps/place-search",
+        queryParameters: {"query": query},
+      );
+      if (res.data == null) throw Exception("검색 결과 없음");
+      return res.data!;
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      final detail = e.response?.data is Map
+          ? (e.response?.data["detail"]?.toString() ?? "")
+          : "";
+      throw Exception("장소 검색 오류 (HTTP $status)${detail.isNotEmpty ? ": $detail" : ""}");
+    } catch (e) {
+      throw Exception("장소 검색 실패: $e");
+    }
   }
 
   Future<void> deletePlan({required int planId, required int userId}) async {

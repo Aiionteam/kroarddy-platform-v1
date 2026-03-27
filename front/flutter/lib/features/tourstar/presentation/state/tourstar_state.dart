@@ -17,7 +17,12 @@ class TourstarState {
     required this.generatedPost,
     required this.serverPosts,
     required this.postsLoading,
+    required this.friendNicknames,
+    required this.likedPostIds,
     this.openPostId,
+    this.myUserId,
+    this.myNickname,
+    this.profileImageUrl,
   });
 
   factory TourstarState.initial() {
@@ -36,6 +41,11 @@ class TourstarState {
       serverPosts: <TourstarPostRecord>[],
       postsLoading: false,
       openPostId: null,
+      myUserId: null,
+      myNickname: null,
+      profileImageUrl: null,
+      friendNicknames: <String>{},
+      likedPostIds: <String>{},
     );
   }
 
@@ -58,6 +68,21 @@ class TourstarState {
   /// 딥링크로 바로 열어야 할 post ID
   final String? openPostId;
 
+  /// 현재 로그인 사용자 ID (JWT sub)
+  final int? myUserId;
+
+  /// 현재 로그인 사용자 닉네임
+  final String? myNickname;
+
+  /// 현재 로그인 사용자 프로필 이미지 URL (presigned)
+  final String? profileImageUrl;
+
+  /// 친구 닉네임 Set (친구 게시물 필터링 & 배지 표시용)
+  final Set<String> friendNicknames;
+
+  /// 로컬에서 좋아요 누른 게시물 ID Set
+  final Set<String> likedPostIds;
+
   TourstarState copyWith({
     bool? loading,
     String? statusMessage,
@@ -76,6 +101,12 @@ class TourstarState {
     bool? postsLoading,
     String? openPostId,
     bool clearOpenPostId = false,
+    int? myUserId,
+    String? myNickname,
+    String? profileImageUrl,
+    bool clearProfileImageUrl = false,
+    Set<String>? friendNicknames,
+    Set<String>? likedPostIds,
   }) {
     return TourstarState(
       loading: loading ?? this.loading,
@@ -92,6 +123,11 @@ class TourstarState {
       serverPosts: serverPosts ?? this.serverPosts,
       postsLoading: postsLoading ?? this.postsLoading,
       openPostId: clearOpenPostId ? null : (openPostId ?? this.openPostId),
+      myUserId: myUserId ?? this.myUserId,
+      myNickname: myNickname ?? this.myNickname,
+      profileImageUrl: clearProfileImageUrl ? null : (profileImageUrl ?? this.profileImageUrl),
+      friendNicknames: friendNicknames ?? this.friendNicknames,
+      likedPostIds: likedPostIds ?? this.likedPostIds,
     );
   }
 }

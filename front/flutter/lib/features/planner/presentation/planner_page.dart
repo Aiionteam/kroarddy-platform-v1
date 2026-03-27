@@ -1232,6 +1232,35 @@ class _PlannerWorkspace extends ConsumerWidget {
                                   ],
                                 ),
                                 const SizedBox(height: 8),
+                                // 이동수단 선택
+                                Row(
+                                  children: [
+                                    _TransportButton(
+                                      label: "🚗 차량",
+                                      mode: "car",
+                                      selected: state.transportMode == "car",
+                                      disabled: state.routesLoading || state.scheduleLoading,
+                                      onTap: () => ctrl.setTransportMode("car"),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    _TransportButton(
+                                      label: "🚌 대중교통",
+                                      mode: "transit",
+                                      selected: state.transportMode == "transit",
+                                      disabled: state.routesLoading || state.scheduleLoading,
+                                      onTap: () => ctrl.setTransportMode("transit"),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    _TransportButton(
+                                      label: "🚶 도보",
+                                      mode: "walk",
+                                      selected: state.transportMode == "walk",
+                                      disabled: state.routesLoading || state.scheduleLoading,
+                                      onTap: () => ctrl.setTransportMode("walk"),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
                                 FilledButton.icon(
                                   onPressed: state.routesLoading ? null : ctrl.fetchRoutes,
                                   icon: const Icon(Icons.auto_awesome),
@@ -1438,6 +1467,35 @@ class _PlannerWorkspace extends ConsumerWidget {
                               ),
                             ),
                           ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // 이동수단 선택
+                    Row(
+                      children: [
+                        _TransportButton(
+                          label: "🚗 차량",
+                          mode: "car",
+                          selected: state.transportMode == "car",
+                          disabled: state.routesLoading || state.scheduleLoading,
+                          onTap: () => ctrl.setTransportMode("car"),
+                        ),
+                        const SizedBox(width: 6),
+                        _TransportButton(
+                          label: "🚌 대중교통",
+                          mode: "transit",
+                          selected: state.transportMode == "transit",
+                          disabled: state.routesLoading || state.scheduleLoading,
+                          onTap: () => ctrl.setTransportMode("transit"),
+                        ),
+                        const SizedBox(width: 6),
+                        _TransportButton(
+                          label: "🚶 도보",
+                          mode: "walk",
+                          selected: state.transportMode == "walk",
+                          disabled: state.routesLoading || state.scheduleLoading,
+                          onTap: () => ctrl.setTransportMode("walk"),
                         ),
                       ],
                     ),
@@ -3222,6 +3280,54 @@ class _KContentRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ── 이동수단 선택 버튼 ─────────────────────────────────────────
+class _TransportButton extends StatelessWidget {
+  const _TransportButton({
+    required this.label,
+    required this.mode,
+    required this.selected,
+    required this.disabled,
+    required this.onTap,
+  });
+
+  final String label;
+  final String mode;
+  final bool selected;
+  final bool disabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: disabled ? null : onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: selected ? _primary : Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: selected ? _primary : Colors.grey.shade300,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                color: selected ? Colors.white : const Color(0xFF6B7280),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
