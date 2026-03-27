@@ -115,12 +115,20 @@ async def fetch_weather_forecast(
     if not key:
         return {"available": False, "reason": "OPENWEATHER_API_KEY 미설정", "dates": {}}
 
-    # 5일 예보 한계 체크
-    today = datetime.now(timezone.utc).date()
+    # 날짜 범위 체크 (KST 기준 오늘)
+    today_kst = datetime.now(KST).date()
     if start_date:
         try:
             travel_start = datetime.strptime(start_date, "%Y-%m-%d").date()
-            days_until = (travel_start - today).days
+            # 과거 날짜 체크 (end_date가 있으면 end_date 기준)
+            travel_end = datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else travel_start
+            if travel_end < today_kst:
+                return {
+                    "available": False,
+                    "reason": "지난 날짜는 날씨 예보를 제공하지 않습니다.",
+                    "dates": {},
+                }
+            days_until = (travel_start - today_kst).days
             if days_until > 5:
                 return {
                     "available": False,
