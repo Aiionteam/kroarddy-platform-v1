@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
-import { getKDramaFolder, getPackageFolder } from "@/constants/k-content-images";
+import { getKDramaFolder, getKFoodFolder, getPackageFolder } from "@/constants/k-content-images";
 
 export const runtime = "nodejs";
 
@@ -14,6 +14,7 @@ export async function GET(
   const { packageId } = await params;
   const kpopFolder = getPackageFolder(packageId);
   const kdramaFolder = getKDramaFolder(packageId);
+  const kfoodFolder = getKFoodFolder(packageId);
 
   let targetDir = "";
   let webBasePath = "";
@@ -23,6 +24,9 @@ export async function GET(
   } else if (kdramaFolder) {
     targetDir = path.join(process.cwd(), "public", "k_content", "k-drama", kdramaFolder);
     webBasePath = `/k_content/k-drama/${kdramaFolder}`;
+  } else if (kfoodFolder) {
+    targetDir = path.join(process.cwd(), "public", "k_content", "k-food", kfoodFolder);
+    webBasePath = `/k_content/k-food/${kfoodFolder}`;
   } else {
     return NextResponse.json({ images: [] });
   }

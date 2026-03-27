@@ -177,8 +177,10 @@ async def generate_k_itinerary(req: KContentGenerateRequest):
         news_top10 = req.news_top10 if req.news_top10 else await fetch_news_top10(req.start_date, req.end_date)
 
         # LangGraph State: KContentState(KContent agent)에서 필요한 키만 넣습니다.
+        pkg_raw = str(req.package_id).strip()
         initial_state = {
             "package_id": resolved_package_id,
+            "legacy_package_ref": pkg_raw if pkg_raw.upper().startswith("KF_") else None,
             "location_name": req.location_name or "",
             "location": req.location_name or "",
             "start_date": req.start_date,

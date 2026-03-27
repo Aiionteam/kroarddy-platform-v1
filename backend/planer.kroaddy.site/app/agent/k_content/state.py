@@ -27,6 +27,8 @@ class KContentState(PlannerState, total=False):
     """
 
     package_id: int
+    # KF_MARKET 등 문자열 package_id 원본 (DB 센티널 id와 함께 사용)
+    legacy_package_ref: Optional[str]
 
     # DB에서 읽어온 필수 앵커(반드시 일정에 포함해야 하는 장소들)
     db_places: list[KContentPlaceInfo]
