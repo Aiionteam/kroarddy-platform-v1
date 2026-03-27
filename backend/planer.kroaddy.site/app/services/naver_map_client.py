@@ -20,7 +20,7 @@ def extract_naver_place_id_from_link(link: str | None) -> str | None:
     return m.group(1) if m else None
 
 _GEOCODE_URL    = "https://maps.apigw.ntruss.com/map-geocode/v2/geocode"
-_STATIC_MAP_URL = "https://maps.apigw.ntruss.com/map-static/v2/raster"
+_STATIC_MAP_URL = "https://maps.apigw.ntruss.com/map-static/v2/raster-cors"
 _DIRECTIONS_URL = "https://maps.apigw.ntruss.com/map-direction/v1/driving"
 # 네이버 지역 검색 API (장소명 → 좌표, developers.naver.com)
 _SEARCH_LOCAL_URL = "https://openapi.naver.com/v1/search/local.json"
@@ -86,8 +86,10 @@ async def fetch_static_map(
         logger.warning("네이버 Maps API 키가 설정되지 않았습니다.")
         return None
 
-    # markers: 공식 형식은 pos:경도,위도(쉼표). 공백+%20은 스펙과 맞지 않고,
-    # httpx가 쿼리 인코딩 시 % → %25 로 이중 인코딩되어 Naver 4xx를 유발할 수 있음.
+    # raster-cors 엔드포인트: 인증을 쿼리 파라미터로 전달
+    # (헤더 방식의 raster는 NCP 서버환경 등록 필요 → 403)
+    # markers pos 구분자는 공백(스페이스) 사용 – 웹(NaverMapModal.tsx)과 동일하게.
+    # %20을 직접 쓰면 httpx가 %2520으로 이중 인코딩하므로 리터럴 스페이스로 작성.
     params = {
         "center": f"{lng},{lat}",
         "level": zoom,
@@ -96,17 +98,13 @@ async def fetch_static_map(
         "maptype": "basic",
         "format": "jpg",
         "scale": 1,
-        "markers": f"type:d|size:mid|color:Red|pos:{lng},{lat}",
-    }
-
-    headers = {
-        "x-ncp-apigw-api-key-id": settings.naver_map_client_id,
-        "x-ncp-apigw-api-key": settings.naver_map_client_secret,
+        "markers": f"type:d|size:mid|pos:{lng} {lat}",
+        "X-NCP-APIGW-API-KEY-ID": settings.naver_map_client_id,
     }
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         try:
-            resp = await client.get(_STATIC_MAP_URL, params=params, headers=headers)
+            resp = await client.get(_STATIC_MAP_URL, params=params)
             resp.raise_for_status()
             return resp.content
         except httpx.HTTPStatusError as e:
