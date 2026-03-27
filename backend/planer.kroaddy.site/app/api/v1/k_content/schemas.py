@@ -8,6 +8,9 @@ from pydantic import BaseModel, Field
 
 KContentCategory = Literal["KPOP", "KDRAMA", "KMOVIE"]
 
+# K-FOOD 등 DB 행이 아직 없을 때 LangGraph까지 전달하기 위한 임시 DB PK (실제 KContentPackage와 충돌하지 않게 큰 값 사용)
+KF_SENTINEL_DB_ID = 999_999
+
 
 def build_legacy_package_id(*, db_id: int, category: str) -> str:
     """DB int id + category를 프런트 호환 string package_id로 변환."""
@@ -40,6 +43,10 @@ def parse_package_ref_to_db_id(package_ref: int | str) -> int | None:
         if not num.isdigit():
             return None
         return int(num) + 8
+
+    # K-FOOD 등 (예: KF_MARKET) — DB 시드 전까지 센티널 id로 라우팅 (에이전트에서 합성 메타 사용)
+    if ref.startswith("KF_"):
+        return KF_SENTINEL_DB_ID
 
     return None
 
