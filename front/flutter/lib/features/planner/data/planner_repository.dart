@@ -1,3 +1,4 @@
+import "dart:convert";
 import "dart:typed_data";
 
 import "package:dio/dio.dart";
@@ -120,7 +121,6 @@ class PlannerRepository {
   }
 
   /// 네이버 Static Map 이미지 bytes 반환 (백엔드 프록시)
-  /// 네이버 Static Map 이미지 bytes 반환 (백엔드 프록시)
   /// 실패 시 에러 메시지를 담은 Exception을 throw합니다.
   Future<Uint8List> fetchStaticMapBytes({
     required double lat,
@@ -141,13 +141,29 @@ class PlannerRepository {
       throw Exception("지도 이미지 데이터가 비어있습니다.");
     } on DioException catch (e) {
       final status = e.response?.statusCode;
-      final detail = e.response?.data is Map
-          ? (e.response?.data["detail"]?.toString() ?? "")
-          : "";
+      // ResponseType.bytes 일 때 에러 응답도 bytes로 수신 → JSON 디코딩 시도
+      final detail = _extractDetail(e.response?.data);
       throw Exception("지도 API 오류 (HTTP $status)${detail.isNotEmpty ? ": $detail" : ""}");
     } catch (e) {
       throw Exception("지도 로드 실패: $e");
     }
+  }
+
+  /// DioException 응답 data에서 detail 문자열 추출
+  /// ResponseType.bytes 사용 시 에러 응답이 List<int>로 옴
+  static String _extractDetail(dynamic data) {
+    try {
+      if (data is Map) return data["detail"]?.toString() ?? "";
+      if (data is List<int>) {
+        final json = jsonDecode(utf8.decode(data)) as Map;
+        return json["detail"]?.toString() ?? "";
+      }
+      if (data is String) {
+        final json = jsonDecode(data) as Map;
+        return json["detail"]?.toString() ?? "";
+      }
+    } catch (_) {}
+    return "";
   }
 
   /// 장소명 → 좌표 (Naver 지역 검색 API 프록시)
