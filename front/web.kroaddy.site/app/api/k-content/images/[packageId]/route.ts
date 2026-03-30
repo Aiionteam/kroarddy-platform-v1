@@ -7,6 +7,26 @@ export const runtime = "nodejs";
 
 const IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif"]);
 
+async function collectImageFilesRecursive(dir: string, relativeBase = ""): Promise<string[]> {
+  const dirents = await fs.readdir(dir, { withFileTypes: true });
+  const images: string[] = [];
+
+  for (const entry of dirents) {
+    const fullPath = path.join(dir, entry.name);
+    const relPath = relativeBase ? `${relativeBase}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) {
+      const nested = await collectImageFilesRecursive(fullPath, relPath);
+      images.push(...nested);
+      continue;
+    }
+    if (entry.isFile() && IMAGE_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) {
+      images.push(relPath);
+    }
+  }
+
+  return images;
+}
+
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ packageId: string }> }
@@ -32,13 +52,9 @@ export async function GET(
   }
 
   try {
-    const dirents = await fs.readdir(targetDir, { withFileTypes: true });
-    const files = dirents
-      .filter((d) => d.isFile())
-      .map((d) => d.name)
-      .filter((name) => IMAGE_EXTENSIONS.has(path.extname(name).toLowerCase()));
+    const files = await collectImageFilesRecursive(targetDir);
 
-    const images = files.map((file) => `${webBasePath}/${file}`);
+    const images = files.sort().map((file) => `${webBasePath}/${file}`);
     return NextResponse.json({ images });
   } catch {
     return NextResponse.json({ images: [] });
