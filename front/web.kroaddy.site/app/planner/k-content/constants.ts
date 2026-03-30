@@ -1,5 +1,8 @@
 import type { ContentRowItem } from "@/components/k-content/ContentRow";
-import { K_CONTENT_KF_CAFE_FALLBACK_IMAGE } from "@/constants/k-content-images";
+import {
+  K_CONTENT_KF_CAFE_FALLBACK_IMAGE,
+  K_CONTENT_KF_CONVENIENCE_FALLBACK_IMAGE,
+} from "@/constants/k-content-images";
 
 export const K_CONTENT_KFOOD_FALLBACK_ITEMS: ContentRowItem[] = [
   {
@@ -17,6 +20,15 @@ export const K_CONTENT_KFOOD_FALLBACK_ITEMS: ContentRowItem[] = [
     imageUrl: K_CONTENT_KF_CAFE_FALLBACK_IMAGE,
     placeholderGradient: "from-rose-500 to-fuchsia-600",
     href: "/planner/k-content/KF_CAFE",
+  },
+  {
+    id: "KF_CONVENIENCE",
+    title: "K-편의점 꿀조합 챌린지",
+    description:
+      "품절 대란 신상부터 나만의 시크릿 레시피까지, 편의점 모디슈머가 되어보세요!",
+    imageUrl: K_CONTENT_KF_CONVENIENCE_FALLBACK_IMAGE,
+    placeholderGradient: "from-lime-400 via-emerald-500 to-violet-600",
+    href: "/planner/k-content/KF_CONVENIENCE",
   },
 ];
 

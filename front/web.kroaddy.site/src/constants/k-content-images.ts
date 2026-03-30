@@ -15,6 +15,8 @@ export const K_CONTENT_KDRAMA_IMAGE_BASE = "/k_content/k-drama";
 /** KF_CAFE: 폴더 스캔/API 실패 시 리스트·카드용 기본 썸네일 */
 export const K_CONTENT_KF_CAFE_FALLBACK_IMAGE =
   "/k_content/k-food/KF_CAFE/rawkkim-1P7C9MaRzgU-unsplash.jpg";
+export const K_CONTENT_KF_CONVENIENCE_FALLBACK_IMAGE =
+  "/k_content/k-food/KF_CONVENIENCE/business_gs25_img02.jpg";
 
 export function getPackageFolder(packageId: string): string | null {
   const key = packageId.toUpperCase();
@@ -74,6 +76,7 @@ export async function resolveCardImage(packageId: string): Promise<string> {
     const picked = pickRandomImage(images);
     if (picked) return picked;
     if (packageId.toUpperCase() === "KF_CAFE") return K_CONTENT_KF_CAFE_FALLBACK_IMAGE;
+    if (packageId.toUpperCase() === "KF_CONVENIENCE") return K_CONTENT_KF_CONVENIENCE_FALLBACK_IMAGE;
     return K_CONTENT_PLACEHOLDER_IMAGE;
   }
   return K_CONTENT_PLACEHOLDER_IMAGE;
