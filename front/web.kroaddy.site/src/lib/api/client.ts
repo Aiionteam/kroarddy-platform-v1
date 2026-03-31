@@ -138,6 +138,28 @@ class ApiClient {
     throw err;
   }
 
+  /**
+   * 게이트웨이가 HTTP 200 + body { code: 401 } 형태로 인증 오류를 주는 레거시 케이스 대응.
+   * (Spring Security는 permitAll이고, 실제 인증은 컨트롤러에서 Messenger.code로 판단)
+   */
+  private async retryIfBodyCode401<T>(
+    data: any,
+    requestedUrl: string,
+    makeRequest: () => Promise<Response>
+  ): Promise<T | null> {
+    if (!data || data.code !== 401) return null;
+    if (requestedUrl.includes("/api/auth/refresh")) return null;
+
+    // refresh 후 1회 재시도
+    const { refreshAccessToken } = await import("./auth");
+    await refreshAccessToken();
+
+    const retried = await makeRequest();
+    if (!retried.ok) await this.handleErrorResponse(retried, requestedUrl, makeRequest);
+    const ct = retried.headers.get("content-type");
+    return (ct?.includes("application/json") ? await retried.json() : await retried.text()) as T;
+  }
+
   private isLoggingOut = false;
 
   private doLogout() {
@@ -164,6 +186,10 @@ class ApiClient {
     if (!response.ok) await this.handleErrorResponse(response, url, makeRequest);
     const contentType = response.headers.get("content-type");
     const data = contentType?.includes("application/json") ? await response.json() : await response.text();
+    if (contentType?.includes("application/json")) {
+      const retried = await this.retryIfBodyCode401<T>(data, url, makeRequest);
+      if (retried != null) return { data: retried as T };
+    }
     return { data: data as T };
   }
 
@@ -185,6 +211,10 @@ class ApiClient {
     if (!response.ok) await this.handleErrorResponse(response, url, makeRequest);
     const contentType = response.headers.get("content-type");
     const data = contentType?.includes("application/json") ? await response.json() : await response.text();
+    if (contentType?.includes("application/json")) {
+      const retried = await this.retryIfBodyCode401<T>(data, url, makeRequest);
+      if (retried != null) return { data: retried as T };
+    }
     return { data: (data ?? null) as T };
   }
 
@@ -225,25 +255,35 @@ class ApiClient {
     if (!response.ok) await this.handleErrorResponse(response, url, makeRequest);
     const contentType = response.headers.get("content-type");
     const data = contentType?.includes("application/json") ? await response.json() : await response.text();
+    if (contentType?.includes("application/json")) {
+      const retried = await this.retryIfBodyCode401<T>(data, url, makeRequest);
+      if (retried != null) return { data: retried as T };
+    }
     return { data: (data ?? null) as T };
   }
 
   async delete<T = any>(endpoint: string, body?: any, options: RequestOptions = {}): Promise<{ data: T }> {
     const url = `${this.baseURL}${endpoint}`;
-    const response = await this.fetchWithTimeout(
-      url,
-      {
-        method: "DELETE",
-        headers: this.getHeaders(),
-        credentials: "include",
-        body: body ? JSON.stringify(body) : undefined,
-        ...options,
-      },
-      options.timeout || 10000
-    );
-    if (!response.ok) await this.handleErrorResponse(response, url);
+    const makeRequest = () =>
+      this.fetchWithTimeout(
+        url,
+        {
+          method: "DELETE",
+          headers: this.getHeaders(),
+          credentials: "include",
+          body: body ? JSON.stringify(body) : undefined,
+          ...options,
+        },
+        options.timeout || 10000
+      );
+    const response = await makeRequest();
+    if (!response.ok) await this.handleErrorResponse(response, url, makeRequest);
     const contentType = response.headers.get("content-type");
     const data = contentType?.includes("application/json") ? await response.json() : await response.text();
+    if (contentType?.includes("application/json")) {
+      const retried = await this.retryIfBodyCode401<T>(data, url, makeRequest);
+      if (retried != null) return { data: retried as T };
+    }
     return { data: (data ?? null) as T };
   }
 }
