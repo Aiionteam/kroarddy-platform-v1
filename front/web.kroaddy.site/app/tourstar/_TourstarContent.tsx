@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLoginStore } from "@/store";
 import { findUserById, findUserByNickname } from "@/lib/api/user";
@@ -1412,6 +1412,22 @@ export default function TourstarContent() {
     [friendList],
   );
 
+  /* 비동기 게시글 로드 완료 시점의 최신 친구/북마크/닉네임 매핑용 (늦은 응답이 빈 Set 클로저로 덮어쓰는 버그 방지) */
+  const tourstarMapContextRef = useRef({
+    currentUserId: null as number | null,
+    authorName: "내 여행기록",
+    bookmarkedIds: new Set<string>(),
+    friendUserIds: new Set<number>(),
+    friendNicknames: new Set<string>(),
+  });
+  tourstarMapContextRef.current = {
+    currentUserId,
+    authorName,
+    bookmarkedIds,
+    friendUserIds,
+    friendNicknames,
+  };
+
   /* 닉네임 조회 */
   React.useEffect(() => {
     if (!isAuthenticated) return;
@@ -1455,21 +1471,24 @@ export default function TourstarContent() {
 
   React.useEffect(() => { if (!isAuthenticated) { router.replace("/"); } }, [isAuthenticated, router]);
 
-  /* 게시글 목록 로드 */
+  /* 게시글 목록 로드 — 응답이 늦게 올 때 친구 목록이 이미 로드된 뒤여도 stale 클로저로 배지가 지워지지 않도록 ref로 최신 값 매핑 */
   React.useEffect(() => {
     if (!isAuthenticated) return;
     let cancelled = false;
+    const viewerId = currentUserId;
     (async () => {
       try {
-        const rows = await listTourstarPosts(currentUserId);
+        const rows = await listTourstarPosts(viewerId);
         if (!cancelled) {
-          setPosts(rows.map((r) => mapRecordToPost(r, authorName, currentUserId, bookmarkedIds, friendUserIds, friendNicknames)));
+          const ctx = tourstarMapContextRef.current;
+          setPosts(rows.map((r) =>
+            mapRecordToPost(r, ctx.authorName, ctx.currentUserId, ctx.bookmarkedIds, ctx.friendUserIds, ctx.friendNicknames),
+          ));
         }
       } catch (error) { console.error("[tourstar] 게시글 목록 조회 실패:", error); }
     })();
     return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated]);
+  }, [isAuthenticated, currentUserId]);
 
   /* authorName 갱신 시 기존 포스트 반영 */
   React.useEffect(() => {
