@@ -234,7 +234,9 @@ class _DrawerItem extends StatelessWidget {
         ),
         onTap: () {
           Navigator.of(context).pop();
-          context.go(path);
+          final loc = GoRouterState.of(context).uri.path;
+          if (loc == path) return;
+          context.push(path);
         },
         dense: true,
         contentPadding: const EdgeInsets.symmetric(horizontal: 10),

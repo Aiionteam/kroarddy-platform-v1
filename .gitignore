@@ -61,6 +61,10 @@ keystore/
 *.jks
 *.keystore
 
+# ─── Flutter Android signing (local only) ────────────────────────────────────
+front/flutter/key.properties
+front/flutter/upload-keystore.jks
+
 # ─── Docker ──────────────────────────────────────────────────────────────────
 # docker-compose.override.yml  ← 필요시 주석 해제
 

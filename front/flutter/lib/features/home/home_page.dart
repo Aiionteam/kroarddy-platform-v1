@@ -217,9 +217,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                       return GestureDetector(
                         onTap: () {
                           if (path == "/group-chat") {
-                            context.go("/chat");
+                            context.push("/chat");
                           } else if (path == "/planner/standard") {
-                            context.go("/planner");
+                            context.push("/planner");
                           } else {
                             context.go(path);
                           }
@@ -393,7 +393,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     spacing: 6,
                                     runSpacing: 4,
                                     children: cities.map((c) => GestureDetector(
-                                      onTap: () => context.go("/planner"),
+                                      onTap: () => context.push("/planner"),
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                         decoration: BoxDecoration(
@@ -431,14 +431,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                   _SectionHeader(
                     title: "🎭 K-콘텐츠 테마 여행",
                     actionLabel: "전체 보기",
-                    onAction: () => context.go("/planner/k-content"),
+                    onAction: () => context.push("/planner/k-content"),
                   ),
                   const SizedBox(height: 10),
                   Row(
                     children: _kThemes.map((t) {
                       return Expanded(
                         child: GestureDetector(
-                          onTap: () => context.go("/planner/k-content"),
+                          onTap: () => context.push("/planner/k-content"),
                           child: Container(
                             margin: EdgeInsets.only(
                               right: _kThemes.indexOf(t) < _kThemes.length - 1 ? 6 : 0,
@@ -477,7 +477,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   _SectionHeader(
                     title: "📍 인기 여행지",
                     actionLabel: "더 보기",
-                    onAction: () => context.go("/planner"),
+                    onAction: () => context.push("/planner"),
                   ),
                   const SizedBox(height: 10),
                   GridView.builder(
@@ -494,7 +494,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       final dest = _popularDests[i];
                       final colors = dest["colors"] as List<Color>;
                       return GestureDetector(
-                        onTap: () => context.go("/planner"),
+                        onTap: () => context.push("/planner"),
                         child: Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(

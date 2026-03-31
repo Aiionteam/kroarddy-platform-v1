@@ -19,6 +19,7 @@ import {
   listTourstarPosts,
   localArtifactPathToUrl,
   deleteTourstarPost,
+  toggleTourstarLike,
   updateTourstarPost,
   uploadProfileImage,
   fetchProfileImage,
@@ -33,6 +34,21 @@ type ViewMode = "grid" | "feed";
 type FilterType = "all" | "mine" | "bookmarked" | "friends";
 type SortType = "latest" | "likes" | "comments";
 type SearchField = "all" | "author" | "title" | "content" | "tags" | "location";
+
+function formatRelativeTime(isoLike: string): string {
+  const t = Date.parse(isoLike);
+  if (Number.isNaN(t)) return "";
+  const diffSec = Math.floor((Date.now() - t) / 1000);
+  if (diffSec < 0) return "방금 전";
+  if (diffSec < 60) return "방금 전";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}분 전`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}시간 전`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 7) return `${diffDay}일 전`;
+  return isoLike.slice(0, 10);
+}
 
 interface TourPhoto {
   id: string;
@@ -50,6 +66,7 @@ interface TourPostComment {
   author: string;
   content: string;
   createdAt: string;
+  authorProfileImageUrl?: string | null;
 }
 
 interface TourPost {
@@ -912,7 +929,7 @@ function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, o
               <div className="max-h-40 space-y-2 overflow-y-auto pr-1">
                 {post.comments.length > 0 ? post.comments.map((item) => {
                   // 댓글 작성자 프로필 이미지: authorProfileMap에서 조회 (모든 사용자 커버)
-                  const commentAvatarUrl = authorProfileMap?.get(item.author) ?? null;
+                  const commentAvatarUrl = item.authorProfileImageUrl ?? (authorProfileMap?.get(item.author) ?? null);
                   return (
                     <div key={item.id} className="flex items-start gap-2 rounded-lg bg-gray-50 px-2.5 py-2">
                       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-pink-400 text-[10px] font-bold text-white overflow-hidden">
@@ -1270,10 +1287,16 @@ function mapRecordToPost(
     comment: record.comment,
     visibility: record.visibility,
     photos,
-    likes: 0,
-    liked: false,
+    likes: Number(record.likes ?? 0),
+    liked: Boolean(record.liked ?? false),
     tags: record.tags || [],
-    comments: (record.comments || []).map((item) => ({ id: item.id, author: item.author, content: item.content, createdAt: "방금 전" })),
+    comments: (record.comments || []).map((item) => ({
+      id: item.id,
+      author: item.author,
+      content: item.content,
+      createdAt: formatRelativeTime(item.created_at),
+      authorProfileImageUrl: item.author_profile_image_url ?? null,
+    })),
     isOwner,
     bookmarked,
     isFriend,
@@ -1416,7 +1439,7 @@ export default function TourstarContent() {
     let cancelled = false;
     (async () => {
       try {
-        const rows = await listTourstarPosts();
+        const rows = await listTourstarPosts(currentUserId);
         if (!cancelled) {
           setPosts(rows.map((r) => mapRecordToPost(r, authorName, currentUserId, bookmarkedIds, friendUserIds, friendNicknames)));
         }
@@ -1557,9 +1580,19 @@ export default function TourstarContent() {
   }, [posts, authorName, profileImageUrl]);
 
   /* ── 핸들러 ── */
-  const toggleLike = (id: string) => {
-    setPosts((prev) => prev.map((p) => p.id === id ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 } : p));
-    setDetailPost((prev) => prev && prev.id === id ? { ...prev, liked: !prev.liked, likes: prev.liked ? prev.likes - 1 : prev.likes + 1 } : prev);
+  const toggleLike = async (id: string) => {
+    if (!currentUserId) {
+      window.alert("로그인이 필요합니다.");
+      return;
+    }
+    try {
+      const res = await toggleTourstarLike(id, currentUserId);
+      setPosts((prev) => prev.map((p) => p.id === id ? { ...p, liked: res.liked, likes: res.likes } : p));
+      setDetailPost((prev) => prev && prev.id === id ? { ...prev, liked: res.liked, likes: res.likes } : prev);
+    } catch (error) {
+      console.error(error);
+      window.alert("좋아요 처리에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    }
   };
 
   const toggleBookmark = (id: string) => {
@@ -1651,8 +1684,14 @@ export default function TourstarContent() {
       resolvedAuthor = sessionStorage.getItem("_tourstar_author") || localStorage.getItem("tourstar_author_name") || "익명";
       if (resolvedAuthor === placeholder) resolvedAuthor = "익명";
     }
-    const saved = await createTourstarComment(postId, { author: resolvedAuthor, content });
-    const newComment: TourPostComment = { id: saved.id, author: saved.author, content: saved.content, createdAt: "방금 전" };
+    const saved = await createTourstarComment(postId, { user_id: currentUserId ?? undefined, author: resolvedAuthor, content });
+    const newComment: TourPostComment = {
+      id: saved.id,
+      author: saved.author,
+      content: saved.content,
+      createdAt: formatRelativeTime(saved.created_at),
+      authorProfileImageUrl: saved.author_profile_image_url ?? null,
+    };
     setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p));
     setDetailPost((prev) => prev && prev.id === postId ? { ...prev, comments: [...prev.comments, newComment] } : prev);
   };

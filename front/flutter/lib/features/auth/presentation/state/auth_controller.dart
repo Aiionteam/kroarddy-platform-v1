@@ -1,5 +1,6 @@
 import "dart:convert";
 
+import "package:app_links/app_links.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
 import "../../../../core/auth/service/auth_service.dart";
@@ -19,8 +20,38 @@ class AuthController extends Notifier<AuthState> {
 
   @override
   AuthState build() {
-    Future.microtask(_restoreSession);
+    Future.microtask(() async {
+      // 콜드 스타트로 딥링크가 들어온 경우(특히 다른 기기/브라우저 조합에서 흔함)
+      // signInWithProvider의 stream을 못 타도 여기서 initial link로 토큰 저장 가능
+      await _tryConsumeInitialOAuthCallback();
+      await _restoreSession();
+    });
     return AuthState.initial();
+  }
+
+  Future<void> _tryConsumeInitialOAuthCallback() async {
+    try {
+      final appLinks = AppLinks();
+      final uri = await appLinks.getInitialLink();
+      if (uri == null) return;
+      if (uri.scheme != "kroaddy" || uri.host != "auth") return;
+
+      final error = uri.queryParameters["error"]?.trim();
+      if (error != null && error.isNotEmpty) {
+        state = state.copyWith(message: "OAuth 오류: $error");
+        return;
+      }
+      final token = uri.queryParameters["token"]?.trim() ?? "";
+      if (token.isEmpty) {
+        state = state.copyWith(message: "OAuth 콜백에 token이 없습니다. (받은 URI: $uri)");
+        return;
+      }
+      final refreshToken = uri.queryParameters["refresh_token"]?.trim();
+      await _tokenStore.writeTokens(accessToken: token, refreshToken: refreshToken);
+      state = state.copyWith(accessToken: token, message: "로그인 성공");
+    } catch (_) {
+      // ignore
+    }
   }
 
   /// 앱 시작 시 세션 복원

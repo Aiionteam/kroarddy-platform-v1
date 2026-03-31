@@ -5,6 +5,7 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
 import "../../../core/router/main_shell.dart";
+import "../../../core/router/shell_back_handler.dart";
 import "../data/k_content_repository.dart";
 import "../data/planner_models.dart";
 import "../data/user_content_models.dart";
@@ -440,19 +441,46 @@ class _StandardTabState extends ConsumerState<_StandardTab> {
     });
   }
 
+  /// 루트·일정 화면에서 뒤로: 세부 권역(드릴다운)을 거쳤으면 1단계로, 광역시 직선택(인천·대전 등)이면 지역 선택(0)으로
+  void _backFromWorkspace() {
+    if (_drillGroup == null) {
+      _backToSelect();
+    } else {
+      _backToDrill();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    late final Widget body;
     if (_step == 0) {
-      return _DestinationSelector(onSelect: _selectDest, onGroupTap: _onGroupTap);
-    }
-    if (_step == 1 && _drillGroup != null) {
-      return _DrillDownScreen(
+      body = _DestinationSelector(onSelect: _selectDest, onGroupTap: _onGroupTap);
+    } else if (_step == 1 && _drillGroup != null) {
+      body = _DrillDownScreen(
         group: _drillGroup!,
         onSelect: _selectDest,
         onBack: _backToSelect,
       );
+    } else {
+      body = _PlannerWorkspace(dest: _picked!, onBack: _backFromWorkspace);
     }
-    return _PlannerWorkspace(dest: _picked!, onBack: _backToDrill);
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        if (didPop) return;
+        if (_step > 0) {
+          if (_step == 2) {
+            _backFromWorkspace();
+          } else {
+            _backToSelect();
+          }
+          return;
+        }
+        handleShellBackButton(GoRouter.of(context));
+      },
+      child: body,
+    );
   }
 }
 

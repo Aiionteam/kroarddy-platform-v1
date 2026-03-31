@@ -85,9 +85,11 @@ export interface AutoCommentResponse {
 export interface TourstarComment {
   id: string;
   post_id: string;
+  user_id?: number | null;
   author: string;
   content: string;
   created_at: string;
+  author_profile_image_url?: string | null;
 }
 
 export interface TourstarPostRecord {
@@ -104,6 +106,8 @@ export interface TourstarPostRecord {
   selected_scores?: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
+  likes?: number;
+  liked?: boolean;
   comments: TourstarComment[];
 }
 
@@ -236,8 +240,11 @@ export async function generateTourstarAutoComment(
   return res.json();
 }
 
-export async function listTourstarPosts(): Promise<TourstarPostRecord[]> {
-  const res = await fetch(toApiUrl("/v1/photo-selection/posts"), { cache: "no-store" });
+export async function listTourstarPosts(viewerUserId?: number | null): Promise<TourstarPostRecord[]> {
+  const url = viewerUserId
+    ? `${toApiUrl("/v1/photo-selection/posts")}?viewer_user_id=${encodeURIComponent(String(viewerUserId))}`
+    : toApiUrl("/v1/photo-selection/posts");
+  const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) {
     throw new Error(`투어스타 게시물 조회 API 오류: ${res.status}`);
   }
@@ -269,7 +276,7 @@ export async function createTourstarPost(payload: {
 
 export async function createTourstarComment(
   postId: string,
-  payload: { author?: string; content: string },
+  payload: { user_id?: number; author?: string; content: string },
 ): Promise<TourstarComment> {
   const res = await fetch(toApiUrl(`/v1/photo-selection/posts/${postId}/comments`), {
     method: "POST",
@@ -279,6 +286,22 @@ export async function createTourstarComment(
   });
   if (!res.ok) {
     throw new Error(`투어스타 댓글 저장 API 오류: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function toggleTourstarLike(
+  postId: string,
+  userId: number,
+): Promise<{ post_id: string; likes: number; liked: boolean }> {
+  const res = await fetch(toApiUrl(`/v1/photo-selection/posts/${postId}/likes/toggle`), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: userId }),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`투어스타 좋아요 API 오류: ${res.status}`);
   }
   return res.json();
 }
