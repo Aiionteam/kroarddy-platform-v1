@@ -1320,6 +1320,7 @@ export default function TourstarContent() {
   const [friendList, setFriendList] = useState<UserModel[]>([]);
   const [viewAuthorId, setViewAuthorId] = useState<number | null>(null);
   const [viewAuthorName, setViewAuthorName] = useState<string>("");
+  const [viewAuthorProfileImageUrl, setViewAuthorProfileImageUrl] = useState<string | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(() => {
     if (typeof window !== "undefined") return localStorage.getItem("tourstar_profile_image");
     return null;
@@ -1327,7 +1328,8 @@ export default function TourstarContent() {
   const profileInputRef = React.useRef<HTMLInputElement>(null);
 
   const [posts, setPosts] = useState<TourPost[]>([]);
-  const [viewMode, setViewMode] = useState<ViewMode>("feed");
+  // 인스타그램처럼 “전체 게시물”을 기본 그리드로 보여주기
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [filter, setFilter] = useState<FilterType>("all");
   const [sortType, setSortType] = useState<SortType>("latest");
   const [searchQuery, setSearchQuery] = useState("");
@@ -1411,6 +1413,31 @@ export default function TourstarContent() {
     () => new Set(friendList.map((u) => (u.nickname || u.name || "").trim()).filter(Boolean)),
     [friendList],
   );
+
+  const isViewingAuthorFeed = filter === "friends" && Boolean(viewAuthorName);
+
+  /* 특정 작성자 피드 진입 시 프로필 이미지 로드 (가능하면 userId로, 없으면 posts에서 폴백) */
+  React.useEffect(() => {
+    if (!isViewingAuthorFeed) {
+      setViewAuthorProfileImageUrl(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        if (viewAuthorId != null) {
+          const url = await fetchProfileImage(viewAuthorId);
+          if (!cancelled) setViewAuthorProfileImageUrl(url || null);
+          return;
+        }
+        const fallback = posts.find((p) => p.author === viewAuthorName && p.authorProfileImageUrl)?.authorProfileImageUrl || null;
+        if (!cancelled) setViewAuthorProfileImageUrl(fallback);
+      } catch {
+        // ignore
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isViewingAuthorFeed, viewAuthorId, viewAuthorName, posts]);
 
   /* 비동기 게시글 로드 완료 시점의 최신 친구/북마크/닉네임 매핑용 (늦은 응답이 빈 Set 클로저로 덮어쓰는 버그 방지) */
   const tourstarMapContextRef = useRef({
@@ -1604,6 +1631,16 @@ export default function TourstarContent() {
     myLikes: posts.filter((p) => p.isOwner).reduce((acc, p) => acc + p.likes, 0),
   }), [posts]);
 
+  const viewedAuthorStats = useMemo(() => {
+    if (!isViewingAuthorFeed) return null;
+    const authorPosts = posts.filter((p) =>
+      (viewAuthorId != null && p.userId === viewAuthorId) || p.author === viewAuthorName,
+    );
+    const totalPhotos = authorPosts.reduce((acc, p) => acc + p.photos.length, 0);
+    const totalLikes = authorPosts.reduce((acc, p) => acc + p.likes, 0);
+    return { posts: authorPosts.length, photos: totalPhotos, likes: totalLikes };
+  }, [isViewingAuthorFeed, posts, viewAuthorId, viewAuthorName]);
+
   // 닉네임 → 프로필 이미지 URL 맵 (댓글 아바타 표시용)
   const authorProfileMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -1747,6 +1784,10 @@ export default function TourstarContent() {
     setViewAuthorId(userId);
     setViewAuthorName(authorName);
     setFilter("friends");
+    setViewMode("grid");
+    setSearchQuery("");
+    setSearchField("all");
+    setSortType("latest");
   };
 
   if (!isAuthenticated) return null;
@@ -1770,88 +1811,127 @@ export default function TourstarContent() {
         </header>
 
         <div className="mx-auto max-w-5xl px-6 py-6 space-y-6">
-          {/* 프로필 카드 */}
-          <div className="flex items-center gap-6 rounded-2xl bg-white border border-gray-100 p-6 shadow-sm">
-            {/* 아바타 — 클릭 시 이미지 업로드 */}
-            <input
-              ref={profileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                e.target.value = "";
-                // 즉시 로컬 미리보기 적용
-                const localUrl = URL.createObjectURL(file);
-                setProfileImageUrl(localUrl);
-                try {
-                  const s3Url = await uploadProfileImage(file, currentUserId);
-                  setProfileImageUrl(s3Url);
-                  localStorage.setItem("tourstar_profile_image", s3Url);
-                  // 내 게시물의 authorProfileImageUrl도 즉시 반영
-                  setPosts((prev) => prev.map((p) =>
-                    p.isOwner ? { ...p, authorProfileImageUrl: s3Url } : p,
-                  ));
-                } catch (err) {
-                  console.error("[profile] S3 업로드 실패:", err);
-                  // 업로드 실패 시 로컬 미리보기 유지 (localStorage에는 저장하지 않음)
-                }
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => profileInputRef.current?.click()}
-              title="프로필 사진 변경"
-              className="group relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-2xl font-bold text-white shadow-lg shadow-purple-200 overflow-hidden focus:outline-none"
-            >
-              {profileImageUrl ? (
-                <img
-                  src={profileImageUrl}
-                  alt=""
-                  className="h-full w-full object-cover"
-                  onError={() => {
-                    // 만료된 presigned URL → DB에서 즉시 재조회
-                    setProfileImageUrl(null);
-                    if (currentUserId) {
-                      fetchProfileImage(currentUserId).then((url) => {
-                        if (url) {
-                          setProfileImageUrl(url);
-                          localStorage.setItem("tourstar_profile_image", url);
-                        }
-                      });
-                    }
-                  }}
-                />
-              ) : (
-                <span>{(authorName || "?").slice(0, 1).toUpperCase()}</span>
-              )}
-              <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
-                </svg>
-              </span>
-            </button>
-            <div className="flex-1">
-              <h2 className="text-lg font-bold text-gray-800">{authorName}</h2>
-              <p className="mt-0.5 text-xs text-gray-400">소중한 여행의 순간들을 기록하고 공유하세요</p>
-              <div className="mt-3 flex gap-6">
-                {[
-                  { label: "전체", value: stats.total, color: "text-gray-800" },
-                  { label: "내 게시물", value: stats.mine, color: "text-purple-600" },
-                  { label: "스크랩", value: stats.bookmarked, color: "text-amber-500" },
-                  { label: "사진", value: stats.totalPhotos, color: "text-gray-800" },
-                  { label: "받은 좋아요", value: stats.myLikes, color: "text-pink-500" },
-                  { label: "친구", value: friendList.length, color: "text-blue-500" },
-                ].map((s) => (
-                  <div key={s.label} className="text-center">
-                    <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
-                    <p className="text-[11px] text-gray-400">{s.label}</p>
-                  </div>
-                ))}
+          {/* 프로필 카드 (기본: 내 프로필 / 특정 작성자 피드: 해당 유저 프로필) */}
+          {!isViewingAuthorFeed ? (
+            <div className="flex items-center gap-6 rounded-2xl bg-white border border-gray-100 p-6 shadow-sm">
+              {/* 아바타 — 클릭 시 이미지 업로드 */}
+              <input
+                ref={profileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  e.target.value = "";
+                  // 즉시 로컬 미리보기 적용
+                  const localUrl = URL.createObjectURL(file);
+                  setProfileImageUrl(localUrl);
+                  try {
+                    const s3Url = await uploadProfileImage(file, currentUserId);
+                    setProfileImageUrl(s3Url);
+                    localStorage.setItem("tourstar_profile_image", s3Url);
+                    // 내 게시물의 authorProfileImageUrl도 즉시 반영
+                    setPosts((prev) => prev.map((p) =>
+                      p.isOwner ? { ...p, authorProfileImageUrl: s3Url } : p,
+                    ));
+                  } catch (err) {
+                    console.error("[profile] S3 업로드 실패:", err);
+                    // 업로드 실패 시 로컬 미리보기 유지 (localStorage에는 저장하지 않음)
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => profileInputRef.current?.click()}
+                title="프로필 사진 변경"
+                className="group relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-2xl font-bold text-white shadow-lg shadow-purple-200 overflow-hidden focus:outline-none"
+              >
+                {profileImageUrl ? (
+                  <img
+                    src={profileImageUrl}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    onError={() => {
+                      // 만료된 presigned URL → DB에서 즉시 재조회
+                      setProfileImageUrl(null);
+                      if (currentUserId) {
+                        fetchProfileImage(currentUserId).then((url) => {
+                          if (url) {
+                            setProfileImageUrl(url);
+                            localStorage.setItem("tourstar_profile_image", url);
+                          }
+                        });
+                      }
+                    }}
+                  />
+                ) : (
+                  <span>{(authorName || "?").slice(0, 1).toUpperCase()}</span>
+                )}
+                <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+                  </svg>
+                </span>
+              </button>
+              <div className="flex-1">
+                <h2 className="text-lg font-bold text-gray-800">{authorName}</h2>
+                <p className="mt-0.5 text-xs text-gray-400">소중한 여행의 순간들을 기록하고 공유하세요</p>
+                <div className="mt-3 flex gap-6">
+                  {[
+                    { label: "전체", value: stats.total, color: "text-gray-800" },
+                    { label: "내 게시물", value: stats.mine, color: "text-purple-600" },
+                    { label: "스크랩", value: stats.bookmarked, color: "text-amber-500" },
+                    { label: "사진", value: stats.totalPhotos, color: "text-gray-800" },
+                    { label: "받은 좋아요", value: stats.myLikes, color: "text-pink-500" },
+                    { label: "친구", value: friendList.length, color: "text-blue-500" },
+                  ].map((s) => (
+                    <div key={s.label} className="text-center">
+                      <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
+                      <p className="text-[11px] text-gray-400">{s.label}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center gap-6 rounded-2xl bg-white border border-gray-100 p-6 shadow-sm">
+              <button
+                type="button"
+                onClick={() => { setViewAuthorId(null); setViewAuthorName(""); setViewAuthorProfileImageUrl(null); }}
+                className="shrink-0 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                title="뒤로"
+              >
+                ← 뒤로
+              </button>
+              <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-500 text-2xl font-bold text-white shadow-lg shadow-blue-100 overflow-hidden">
+                {viewAuthorProfileImageUrl ? (
+                  <img src={viewAuthorProfileImageUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <span>{(viewAuthorName || "?").slice(0, 1).toUpperCase()}</span>
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-gray-800">{viewAuthorName}</h2>
+                  <span className="rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-[11px] font-semibold text-blue-700">친구</span>
+                </div>
+                <p className="mt-0.5 text-xs text-gray-400">게시물 보기</p>
+                <div className="mt-3 flex gap-8">
+                  {[
+                    { label: "게시물", value: viewedAuthorStats?.posts ?? 0, color: "text-gray-800" },
+                    { label: "사진", value: viewedAuthorStats?.photos ?? 0, color: "text-gray-800" },
+                    { label: "좋아요", value: viewedAuthorStats?.likes ?? 0, color: "text-pink-500" },
+                  ].map((s) => (
+                    <div key={s.label} className="text-center">
+                      <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
+                      <p className="text-[11px] text-gray-400">{s.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* 검색 바 */}
           <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2.5 shadow-sm">
