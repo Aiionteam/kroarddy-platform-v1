@@ -131,9 +131,11 @@ class CreatePostRequest(BaseModel):
 class CommentResponse(BaseModel):
     id: str
     post_id: str
+    user_id: int | None = None
     author: str
     content: str
     created_at: datetime
+    author_profile_image_url: str | None = None
 
 
 class PostResponse(BaseModel):
@@ -150,6 +152,8 @@ class PostResponse(BaseModel):
     selected_scores: dict | None = None
     created_at: datetime
     updated_at: datetime
+    likes: int = 0
+    liked: bool = False
     comments: list[CommentResponse] = Field(default_factory=list)
 
 
@@ -180,8 +184,19 @@ class DeletePostRequest(BaseModel):
 
 
 class AddCommentRequest(BaseModel):
+    user_id: int | None = None
     author: str = "me"
     content: str = Field(min_length=1, max_length=1000)
+
+
+class ToggleLikeRequest(BaseModel):
+    user_id: int = Field(..., ge=1, description="좋아요 토글을 요청하는 사용자 ID")
+
+
+class ToggleLikeResponse(BaseModel):
+    post_id: str
+    likes: int
+    liked: bool
 
 
 class SharePreviewResponse(BaseModel):

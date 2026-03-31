@@ -1,4 +1,6 @@
+import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
@@ -18,6 +20,7 @@ import "../../features/profile/presentation/onboarding_page.dart";
 import "../../features/profile/presentation/profile_page.dart";
 import "../../features/tourstar/presentation/tourstar_page.dart";
 import "main_shell.dart";
+import "shell_back_handler.dart";
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
@@ -33,10 +36,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: "/login",
-        builder: (context, state) => const LoginPage(),
+        builder: (context, state) => PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (bool didPop, Object? result) {
+            if (didPop) return;
+            if (!kIsWeb) SystemNavigator.pop();
+          },
+          child: const LoginPage(),
+        ),
       ),
       ShellRoute(
-        builder: (context, state, child) => MainShell(child: child),
+        builder: (context, state, child) => PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (bool didPop, Object? result) {
+            if (didPop) return;
+            handleShellBackButton(GoRouter.of(context));
+          },
+          child: MainShell(child: child),
+        ),
         routes: [
           GoRoute(
             path: "/home",
