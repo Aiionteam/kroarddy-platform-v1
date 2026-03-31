@@ -136,9 +136,10 @@ class TourstarRepository {
   }
 
   // ── 게시글 목록 조회 ────────────────────────────────────────
-  Future<List<TourstarPostRecord>> listPosts() async {
+  Future<List<TourstarPostRecord>> listPosts({int? viewerUserId}) async {
     final res = await _dio.get<List<dynamic>>(
       "/v1/photo-selection/posts",
+      queryParameters: viewerUserId != null ? {"viewer_user_id": viewerUserId} : null,
       options: Options(receiveTimeout: const Duration(minutes: 1)),
     );
     final raw = res.data ?? const [];
@@ -157,8 +158,10 @@ class TourstarRepository {
     required List<String> tags,
     required List<String> imagePaths,
     int? userId,
+    String? authorNickname,
     Map<String, dynamic>? selectedScores,
   }) async {
+    final nick = authorNickname?.trim();
     final res = await _dio.post<Map<String, dynamic>>(
       "/v1/photo-selection/posts",
       data: {
@@ -169,6 +172,7 @@ class TourstarRepository {
         "tags": tags,
         "image_paths": imagePaths,
         if (userId != null) "user_id": userId,
+        if (nick != null && nick.isNotEmpty) "author_nickname": nick,
         if (selectedScores != null) "selected_scores": selectedScores,
       },
       options: Options(receiveTimeout: const Duration(minutes: 2)),
@@ -218,20 +222,24 @@ class TourstarRepository {
   }
 
   // ── 게시글 삭제 ────────────────────────────────────────────
+  /// 백엔드는 성공 시 204 No Content. Dio 5.x는 기본 JSON 변환으로 빈 본문에서 파싱 오류가 날 수 있어 plain 처리.
   Future<void> deletePost({required String postId, required int userId}) async {
+    final deleteOptions = Options(
+      receiveTimeout: const Duration(minutes: 1),
+      responseType: ResponseType.plain,
+    );
     try {
       await _dio.delete<void>(
         "/v1/photo-selection/posts/$postId",
         queryParameters: {"user_id": userId},
-        options: Options(receiveTimeout: const Duration(minutes: 1)),
+        options: deleteOptions,
       );
     } on DioException catch (e) {
       if (e.response?.statusCode == 405) {
-        // DELETE 미지원 폴백 → POST /delete
         await _dio.post<void>(
           "/v1/photo-selection/posts/$postId/delete",
           data: {"user_id": userId},
-          options: Options(receiveTimeout: const Duration(minutes: 1)),
+          options: deleteOptions,
         );
         return;
       }
@@ -289,14 +297,29 @@ class TourstarRepository {
   Future<TourstarComment> createComment({
     required String postId,
     required String content,
+    int? userId,
     String author = "익명",
   }) async {
     final res = await _dio.post<Map<String, dynamic>>(
       "/v1/photo-selection/posts/$postId/comments",
-      data: {"author": author, "content": content},
+      data: {"author": author, "content": content, if (userId != null) "user_id": userId},
       options: Options(receiveTimeout: const Duration(minutes: 1)),
     );
     return TourstarComment.fromJson(res.data ?? const {});
+  }
+
+  // ── 좋아요 토글 ─────────────────────────────────────────────
+  Future<({int likes, bool liked})> toggleLike({required String postId, required int userId}) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      "/v1/photo-selection/posts/$postId/likes/toggle",
+      data: {"user_id": userId},
+      options: Options(receiveTimeout: const Duration(minutes: 1)),
+    );
+    final data = res.data ?? const <String, dynamic>{};
+    return (
+      likes: (data["likes"] as num?)?.toInt() ?? 0,
+      liked: (data["liked"] == true),
+    );
   }
 
   // ── 공유 미리보기 ──────────────────────────────────────────

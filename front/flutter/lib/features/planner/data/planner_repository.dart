@@ -17,6 +17,15 @@ class PlannerRepository {
 
   final Dio _dio;
 
+  /// Spring 게이트웨이 `read-timeout: 180s` 및 LLM 루트·일정 생성 시간에 맞춤.
+  /// 웹 fetch API는 브라우저 기본으로 긴 대기가 가능해, 앱만 30초에서 끊기던 불일치를 맞춤.
+  static const Duration _plannerAiReceiveTimeout = Duration(seconds: 180);
+
+  static final Options _plannerAiOptions = Options(
+    receiveTimeout: _plannerAiReceiveTimeout,
+    sendTimeout: const Duration(seconds: 60),
+  );
+
   Never _throwApiError(DioException e, String fallback) {
     final status = e.response?.statusCode;
     if (status == 429 || status == 503) {
@@ -25,7 +34,23 @@ class PlannerRepository {
           : null;
       throw Exception("$status: ${detail ?? (status == 503 ? "AI 서버가 바쁩니다. 잠시 후 다시 시도해 주세요." : "AI 사용량이 초과됐습니다. 잠시 후 다시 시도해 주세요.")}");
     }
-    throw Exception(fallback);
+    if (e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.sendTimeout) {
+      throw Exception(
+        "$fallback: 응답 시간이 초과되었습니다. AI 루트·일정 생성은 1~2분 걸릴 수 있습니다.",
+      );
+    }
+    if (e.type == DioExceptionType.connectionTimeout) {
+      throw Exception("$fallback: 연결 시간 초과");
+    }
+    final raw = e.response?.data;
+    final detail = raw is Map ? (raw["detail"]?.toString() ?? "") : "";
+    if (status != null) {
+      throw Exception(
+        "$fallback (HTTP $status)${detail.isNotEmpty ? ": $detail" : ""}",
+      );
+    }
+    throw Exception("$fallback: ${e.message ?? e.toString()}");
   }
 
   Future<RoutesResponse> fetchRoutes({
@@ -47,9 +72,11 @@ class PlannerRepository {
           "user_id": userId,
           "existing_routes": existingRoutes,
           "use_search": useSearch,
-          "news_top10": newsTop10,
+          // 웹과 동일: 비어 있으면 필드 생략(백엔드가 null과 동일 처리)
+          if (newsTop10 != null && newsTop10.isNotEmpty) "news_top10": newsTop10,
           if (transportMode != null) "transport_mode": transportMode,
         },
+        options: _plannerAiOptions,
       );
       return RoutesResponse.fromJson(res.data ?? const {});
     } on DioException catch (e) {
@@ -76,9 +103,10 @@ class PlannerRepository {
           "end_date": endDate,
           "user_id": userId,
           "use_search": useSearch,
-          "news_top10": newsTop10,
+          if (newsTop10 != null && newsTop10.isNotEmpty) "news_top10": newsTop10,
           if (transportMode != null) "transport_mode": transportMode,
         },
+        options: _plannerAiOptions,
       );
       return ScheduleResponse.fromJson(res.data ?? const {});
     } on DioException catch (e) {
@@ -206,6 +234,7 @@ class PlannerRepository {
           "instruction": instruction,
           "user_id": userId,
         },
+        options: _plannerAiOptions,
       );
       return ModifyResponse.fromJson(res.data ?? const {});
     } on DioException catch (e) {
@@ -225,6 +254,7 @@ class PlannerRepository {
           "item_index": itemIndex,
           "user_id": userId,
         },
+        options: _plannerAiOptions,
       );
       return RerollResponse.fromJson(res.data ?? const {});
     } on DioException catch (e) {

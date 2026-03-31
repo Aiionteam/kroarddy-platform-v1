@@ -200,13 +200,22 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
       backgroundColor: Colors.transparent,
       builder: (_) => _EditPostSheet(
         post: post,
-        onSave: (title, location, comment, tags) async {
+        onSave: ({
+          required String title,
+          required String location,
+          required String comment,
+          required List<String> tags,
+          List<String>? keepPhotoUrls,
+          List<String>? newImagePaths,
+        }) async {
           final ok = await ref.read(tourstarControllerProvider.notifier).updatePost(
             postId: post.id,
             title: title,
             location: location,
             comment: comment,
             tags: tags,
+            keepPhotoUrls: keepPhotoUrls,
+            newImagePaths: newImagePaths,
           );
           return ok;
         },
@@ -385,7 +394,7 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              tourState.myNickname ?? "내 여행기록",
+                              tourState.myNickname ?? "닉네임을 불러오는 중…",
                               style: const TextStyle(
                                 fontSize: 17,
                                 fontWeight: FontWeight.bold,
@@ -593,8 +602,8 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                 delegate: SliverChildBuilderDelegate(
                   (_, i) {
                     final p = filtered[i];
-                    final isFriend = (p.authorNickname ?? "").isNotEmpty &&
-                        tourState.friendNicknames.contains(p.authorNickname);
+                    final nick = (p.authorNickname ?? "").trim();
+                    final isFriend = nick.isNotEmpty && tourState.friendNicknames.contains(nick);
                     final isOwner = _isOwner(p, tourState);
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
@@ -611,18 +620,29 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                             ? () async {
                                 final confirmed = await showDialog<bool>(
                                   context: context,
-                                  builder: (_) => AlertDialog(
+                                  builder: (dialogContext) => AlertDialog(
                                     title: const Text("게시물 삭제"),
                                     content: const Text("정말로 삭제하시겠습니까?"),
                                     actions: [
-                                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("취소")),
-                                      TextButton(onPressed: () => Navigator.pop(context, true),
-                                          child: const Text("삭제", style: TextStyle(color: Colors.red))),
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(dialogContext, false),
+                                        child: const Text("취소"),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(dialogContext, true),
+                                        child: const Text("삭제", style: TextStyle(color: Colors.red)),
+                                      ),
                                     ],
                                   ),
                                 );
                                 if (confirmed == true && mounted) {
-                                  await ref.read(tourstarControllerProvider.notifier).deletePost(p.id);
+                                  final ok = await ref.read(tourstarControllerProvider.notifier).deletePost(p.id);
+                                  if (!ok && mounted) {
+                                    final msg = ref.read(tourstarControllerProvider).statusMessage;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(msg.isNotEmpty ? msg : "게시글 삭제에 실패했습니다.")),
+                                    );
+                                  }
                                 }
                               }
                             : null,
@@ -705,7 +725,7 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
         backgroundColor: _kPurple,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text("새 기록"),
+        label: const Text("내 여행기록"),
         elevation: 4,
       ),
     );
@@ -810,7 +830,7 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            '"새 기록" 버튼으로 첫 번째 여행을 기록해보세요',
+            '"내 여행기록" 버튼으로 첫 번째 여행을 기록해보세요',
             style: TextStyle(fontSize: 12, color: _kGray300),
             textAlign: TextAlign.center,
           ),
@@ -1196,6 +1216,15 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
   int _photoIdx = 0;
   final _ctrl = TextEditingController();
 
+  String _relativeTime(DateTime t) {
+    final diff = DateTime.now().difference(t);
+    if (diff.inSeconds < 60) return "방금 전";
+    if (diff.inMinutes < 60) return "${diff.inMinutes}분 전";
+    if (diff.inHours < 24) return "${diff.inHours}시간 전";
+    if (diff.inDays < 7) return "${diff.inDays}일 전";
+    return "${t.year}-${t.month.toString().padLeft(2, '0')}-${t.day.toString().padLeft(2, '0')}";
+  }
+
   @override
   void dispose() {
     _ctrl.dispose();
@@ -1218,7 +1247,7 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
     if (nick == widget.myNickname) {
       imageUrl = widget.myProfileImageUrl;
     } else {
-      imageUrl = widget.authorProfileMap[nick];
+      imageUrl = c.authorProfileImageUrl ?? widget.authorProfileMap[nick];
     }
     final initial = nick.isNotEmpty ? nick.substring(0, 1).toUpperCase() : "?";
     return Container(
@@ -1239,10 +1268,22 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // 댓글 실시간 반영: state에서 최신 post를 찾아 사용
-    final allPosts = ref.watch(tourstarControllerProvider).serverPosts;
+    // 댓글 실시간 반영 + myUserId 비동기 로드 대응을 위해 state 전체를 감시
+    final tourState = ref.watch(tourstarControllerProvider);
+    final allPosts = tourState.serverPosts;
     final post = allPosts.where((p) => p.id == widget.post.id).firstOrNull ??
         widget.post;
+
+    // isOwner: myUserId가 나중에 로드되어도 즉시 반영되도록 동적 계산
+    final bool isOwner = () {
+      if (tourState.myUserId != null && post.userId != null) {
+        return post.userId == tourState.myUserId;
+      }
+      if (tourState.myNickname != null && post.authorNickname != null) {
+        return post.authorNickname == tourState.myNickname;
+      }
+      return false;
+    }();
     final dateStr = post.createdAt != null
         ? "${post.createdAt!.year}-${post.createdAt!.month.toString().padLeft(2, '0')}-${post.createdAt!.day.toString().padLeft(2, '0')}"
         : "";
@@ -1377,7 +1418,7 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                                 ),
                                 child: ClipOval(
                                   child: () {
-                                    final imgUrl = widget.isOwner
+                                    final imgUrl = isOwner
                                         ? widget.myProfileImageUrl
                                         : post.authorProfileImageUrl;
                                     final initial = (post.authorNickname ?? "?").substring(0, 1).toUpperCase();
@@ -1404,7 +1445,7 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                                 ),
                               ),
                               // 내 게시물이면 수정/삭제 메뉴
-                              if (widget.isOwner) ...[
+                              if (isOwner) ...[
                                 const SizedBox(width: 4),
                                 PopupMenuButton<String>(
                                   icon: const Icon(Icons.more_vert, size: 20, color: _kGray500),
@@ -1416,19 +1457,32 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                                     } else if (value == "delete") {
                                       final confirmed = await showDialog<bool>(
                                         context: context,
-                                        builder: (_) => AlertDialog(
+                                        builder: (dialogContext) => AlertDialog(
                                           title: const Text("게시물 삭제"),
                                           content: const Text("정말로 삭제하시겠습니까?"),
                                           actions: [
-                                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("취소")),
-                                            TextButton(onPressed: () => Navigator.pop(context, true),
-                                                child: const Text("삭제", style: TextStyle(color: Colors.red))),
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(dialogContext, false),
+                                              child: const Text("취소"),
+                                            ),
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(dialogContext, true),
+                                              child: const Text("삭제", style: TextStyle(color: Colors.red)),
+                                            ),
                                           ],
                                         ),
                                       );
                                       if (confirmed == true && mounted) {
                                         final ok = await widget.onDeletePost?.call(post.id) ?? false;
-                                        if (ok && mounted) Navigator.pop(context);
+                                        if (!mounted) return;
+                                        if (ok) {
+                                          Navigator.pop(context);
+                                        } else {
+                                          final msg = ref.read(tourstarControllerProvider).statusMessage;
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text(msg.isNotEmpty ? msg : "게시글 삭제에 실패했습니다.")),
+                                          );
+                                        }
                                       }
                                     }
                                   },
@@ -1551,7 +1605,24 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           if (c.author.isNotEmpty)
-                                            Text(c.author, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _kGray700)),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    c.author,
+                                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _kGray700),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                if (c.createdAt != null) ...[
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    _relativeTime(c.createdAt!),
+                                                    style: const TextStyle(fontSize: 10, color: _kGray400),
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
                                           const SizedBox(height: 2),
                                           Text(c.content, style: const TextStyle(fontSize: 12, color: _kGray700)),
                                         ],
@@ -2358,20 +2429,43 @@ class _VisibilityBtn extends StatelessWidget {
 // ══════════════════════════════════════════════════════════════
 // Edit Post Sheet
 // ══════════════════════════════════════════════════════════════
-class _EditPostSheet extends StatefulWidget {
-  const _EditPostSheet({required this.post, required this.onSave});
-  final TourstarPostRecord post;
-  final Future<bool> Function(String title, String location, String comment, List<String> tags) onSave;
 
-  @override
-  State<_EditPostSheet> createState() => _EditPostSheetState();
+/// 업로드 응답 URL → 백엔드 `image_paths`용 `/tourstar-files/...` 경로
+String _uploadedPathForPostUpdate(UploadedPhoto u) {
+  final url = u.url.trim();
+  if (url.startsWith("/")) return url;
+  final uri = Uri.tryParse(url);
+  if (uri != null && uri.path.isNotEmpty) return uri.path;
+  return url;
 }
 
-class _EditPostSheetState extends State<_EditPostSheet> {
+class _EditPostSheet extends ConsumerStatefulWidget {
+  const _EditPostSheet({required this.post, required this.onSave});
+  final TourstarPostRecord post;
+  final Future<bool> Function({
+    required String title,
+    required String location,
+    required String comment,
+    required List<String> tags,
+    List<String>? keepPhotoUrls,
+    List<String>? newImagePaths,
+  }) onSave;
+
+  @override
+  ConsumerState<_EditPostSheet> createState() => _EditPostSheetState();
+}
+
+class _EditPostSheetState extends ConsumerState<_EditPostSheet> {
+  static const int _maxPhotos = 10;
+
   late final TextEditingController _titleCtrl;
   late final TextEditingController _locationCtrl;
   late final TextEditingController _commentCtrl;
   late final TextEditingController _tagsCtrl;
+  late final List<String> _initialPhotoUrls;
+  late List<String> _keepUrls;
+  final List<XFile> _newFiles = [];
+  final ImagePicker _picker = ImagePicker();
   bool _saving = false;
 
   @override
@@ -2381,6 +2475,8 @@ class _EditPostSheetState extends State<_EditPostSheet> {
     _locationCtrl = TextEditingController(text: widget.post.location);
     _commentCtrl = TextEditingController(text: widget.post.comment);
     _tagsCtrl = TextEditingController(text: widget.post.tags.join(", "));
+    _initialPhotoUrls = List<String>.from(widget.post.photoUrls);
+    _keepUrls = List<String>.from(widget.post.photoUrls);
   }
 
   @override
@@ -2390,6 +2486,41 @@ class _EditPostSheetState extends State<_EditPostSheet> {
     _commentCtrl.dispose();
     _tagsCtrl.dispose();
     super.dispose();
+  }
+
+  bool _samePhotoList(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  bool get _photoDirty => _newFiles.isNotEmpty || !_samePhotoList(_keepUrls, _initialPhotoUrls);
+
+  Future<void> _pickImages() async {
+    final total = _keepUrls.length + _newFiles.length;
+    if (total >= _maxPhotos) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("사진은 최대 $_maxPhotos장까지 추가할 수 있습니다.")),
+      );
+      return;
+    }
+    final files = await _picker.pickMultiImage();
+    if (files.isEmpty || !mounted) return;
+    final room = _maxPhotos - total;
+    setState(() {
+      _newFiles.addAll(files.take(room));
+    });
+  }
+
+  void _removeKeptAt(int index) {
+    setState(() => _keepUrls.removeAt(index));
+  }
+
+  void _removeNewAt(int index) {
+    setState(() => _newFiles.removeAt(index));
   }
 
   Future<void> _save() async {
@@ -2406,13 +2537,43 @@ class _EditPostSheetState extends State<_EditPostSheet> {
       return;
     }
     setState(() => _saving = true);
-    final ok = await widget.onSave(title, location, comment, tags);
-    if (!mounted) return;
-    setState(() => _saving = false);
-    if (ok) {
-      Navigator.pop(context);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("수정에 실패했습니다.")));
+    try {
+      List<String>? newPaths;
+      if (_newFiles.isNotEmpty) {
+        final repo = ref.read(tourstarRepositoryProvider);
+        final upload = await repo.uploadPhotos(_newFiles);
+        newPaths = upload.uploaded.map(_uploadedPathForPostUpdate).where((p) => p.isNotEmpty).toList();
+        if (newPaths.isEmpty && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("새 사진 업로드에 실패했습니다.")),
+          );
+          setState(() => _saving = false);
+          return;
+        }
+      }
+
+      final ok = await widget.onSave(
+        title: title,
+        location: location,
+        comment: comment,
+        tags: tags,
+        keepPhotoUrls: _photoDirty ? List<String>.from(_keepUrls) : null,
+        newImagePaths: newPaths,
+      );
+      if (!mounted) return;
+      if (ok) {
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("수정에 실패했습니다.")));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("저장 중 오류: $e")),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -2436,6 +2597,176 @@ class _EditPostSheetState extends State<_EditPostSheet> {
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             ),
+          ),
+        ),
+        const SizedBox(height: 14),
+      ],
+    );
+  }
+
+  Widget _thumbKept(int index, String rawUrl) {
+    final display = TourstarRepository.toDisplayImageUrl(rawUrl);
+    return Padding(
+      padding: const EdgeInsets.only(right: 10),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: SizedBox(
+              width: 100,
+              height: 100,
+              child: display.isEmpty
+                  ? Container(color: _kGray200, child: const Icon(Icons.image_not_supported, color: _kGray400))
+                  : Image.network(
+                      display,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: _kGray200,
+                        child: const Icon(Icons.broken_image, color: _kGray400),
+                      ),
+                    ),
+            ),
+          ),
+          Positioned(
+            top: 4,
+            right: 4,
+            child: Material(
+              color: Colors.black54,
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => _removeKeptAt(index),
+                child: const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: Icon(Icons.close, size: 16, color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _thumbNew(int index, XFile file) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 10),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: SizedBox(
+              width: 100,
+              height: 100,
+              child: Image.file(
+                File(file.path),
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  color: _kGray200,
+                  child: const Icon(Icons.broken_image, color: _kGray400),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 4,
+            right: 4,
+            child: Material(
+              color: Colors.black54,
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => _removeNewAt(index),
+                child: const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: Icon(Icons.close, size: 16, color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 4,
+            left: 4,
+            right: 4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.black45,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                "NEW",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _addPhotoTile() {
+    final full = _keepUrls.length + _newFiles.length >= _maxPhotos;
+    return Padding(
+      padding: const EdgeInsets.only(right: 10),
+      child: Material(
+        color: _kGray100,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: full ? null : _pickImages,
+          borderRadius: BorderRadius.circular(10),
+          child: SizedBox(
+            width: 100,
+            height: 100,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.add_photo_alternate_outlined, size: 32, color: full ? _kGray300 : _kPurple),
+                const SizedBox(height: 6),
+                Text(
+                  "사진 추가",
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: full ? _kGray400 : _kPurple),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _photoSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text("사진", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _kGray700)),
+            const Spacer(),
+            Text(
+              "${_keepUrls.length + _newFiles.length}/$_maxPhotos",
+              style: const TextStyle(fontSize: 11, color: _kGray400),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          "× 를 눌러 삭제 · 갤러리에서 새 사진을 추가할 수 있습니다.",
+          style: TextStyle(fontSize: 11, color: _kGray400.withValues(alpha: 0.95)),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 100,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              ..._keepUrls.asMap().entries.map((e) => _thumbKept(e.key, e.value)),
+              ..._newFiles.asMap().entries.map((e) => _thumbNew(e.key, e.value)),
+              _addPhotoTile(),
+            ],
           ),
         ),
         const SizedBox(height: 14),
@@ -2493,6 +2824,7 @@ class _EditPostSheetState extends State<_EditPostSheet> {
                     _field("제목", _titleCtrl),
                     _field("장소", _locationCtrl),
                     _field("내용", _commentCtrl, maxLines: 5),
+                    _photoSection(),
                     _field("태그 (쉼표로 구분)", _tagsCtrl),
                   ],
                 ),

@@ -45,7 +45,8 @@ class TourstarController extends Notifier<TourstarState> {
     try {
       final token = await _tokenStore.readAccessToken();
       if (token == null || token.isEmpty) return;
-      final userId = getUserIdFromToken(token);
+      // 게이트웨이 JWT는 app_user_id에 앱 사용자 PK를 두는 경우가 많음 — 삭제/작성자 검증과 맞춤
+      final userId = getAppUserIdFromToken(token) ?? getUserIdFromToken(token);
 
       // JWT claim 닉네임 우선, 없으면 API 조회
       String? nickname = getNicknameFromToken(token);
@@ -142,9 +143,45 @@ class TourstarController extends Notifier<TourstarState> {
     state = state.copyWith(comment: value);
   }
 
+  /// 새 기록 시트를 열 때만 호출한다. 로그인 ID·피드·친구 등은 유지하고 작성용 필드만 비운다.
+  /// (기존: initial()로 전체 초기화 → myUserId 소실로 게시물이 익명 저장되고 목록이 비는 버그)
   void reset() {
-    state = TourstarState.initial();
+    state = state.copyWith(
+      loading: false,
+      statusMessage: "사진을 선택하고 업로드를 시작하세요.",
+      styleFilter: "AUTO",
+      comment: "",
+      pickedFiles: <XFile>[],
+      filteredPickedFiles: <XFile>[],
+      clearDateFilter: true,
+      rankedImages: <RankedImage>[],
+      selectedImagePaths: <String>{},
+      clearGeneratedPost: true,
+    );
     _shotDateCache.clear();
+  }
+
+  /// 게시 직전 토큰에서 다시 ID/닉네임을 읽어 state에 반영한다.
+  Future<bool> ensureIdentityForAuthoring() async {
+    final token = await _tokenStore.readAccessToken();
+    if (token == null || token.isEmpty) {
+      state = state.copyWith(statusMessage: "로그인이 필요합니다.");
+      return false;
+    }
+    final userId = getAppUserIdFromToken(token) ?? getUserIdFromToken(token);
+    String? nickname = getNicknameFromToken(token);
+    if (userId == null) {
+      state = state.copyWith(statusMessage: "회원 정보를 확인할 수 없습니다. 다시 로그인해 주세요.");
+      return false;
+    }
+    if (nickname == null || nickname.isEmpty) {
+      try {
+        final userModel = await ref.read(profileRepositoryProvider).findUserById(userId);
+        nickname = userModel?.nickname;
+      } catch (_) {}
+    }
+    state = state.copyWith(myUserId: userId, myNickname: nickname);
+    return true;
   }
 
   void toggleSelectedImagePath(String path, bool selected) {
@@ -238,8 +275,12 @@ class TourstarController extends Notifier<TourstarState> {
   Future<void> loadPosts() async {
     state = state.copyWith(postsLoading: true);
     try {
-      final posts = await _repo.listPosts();
-      state = state.copyWith(serverPosts: posts, postsLoading: false);
+      final posts = await _repo.listPosts(viewerUserId: state.myUserId);
+      final liked = <String>{...state.likedPostIds};
+      for (final p in posts) {
+        if (p.liked) liked.add(p.id);
+      }
+      state = state.copyWith(serverPosts: posts, likedPostIds: liked, postsLoading: false);
     } catch (e) {
       state = state.copyWith(postsLoading: false);
     }
@@ -281,14 +322,25 @@ class TourstarController extends Notifier<TourstarState> {
 
   // ── 게시글 삭제 ─────────────────────────────────────────────
   Future<bool> deletePost(String postId) async {
-    final userId = state.myUserId;
-    if (userId == null) return false;
     state = state.copyWith(loading: true, statusMessage: "게시글을 삭제하는 중...");
+    if (!await ensureIdentityForAuthoring()) {
+      state = state.copyWith(loading: false);
+      return false;
+    }
+    final userId = state.myUserId!;
     try {
       await _repo.deletePost(postId: postId, userId: userId);
       final posts = state.serverPosts.where((p) => p.id != postId).toList();
       state = state.copyWith(serverPosts: posts, statusMessage: "게시글이 삭제되었습니다.");
       return true;
+    } on DioException catch (e) {
+      final code = e.response?.statusCode;
+      final detail = e.response?.data?.toString() ?? "";
+      final msg = code == 403
+          ? "본인 게시글만 삭제할 수 있습니다. (로그인 계정을 확인해 주세요)"
+          : "게시글 삭제 오류${code != null ? " (HTTP $code)" : ""}: ${detail.isNotEmpty ? detail : (e.message ?? e)}";
+      state = state.copyWith(statusMessage: msg);
+      return false;
     } catch (e) {
       state = state.copyWith(statusMessage: "게시글 삭제 오류: $e");
       return false;
@@ -308,19 +360,27 @@ class TourstarController extends Notifier<TourstarState> {
 
   // ── 좋아요 토글 (로컬 낙관적 업데이트) ─────────────────────
   void toggleLike(String postId) {
-    final liked = <String>{...state.likedPostIds};
-    final wasLiked = liked.contains(postId);
-    if (wasLiked) {
-      liked.remove(postId);
-    } else {
-      liked.add(postId);
-    }
-    final posts = state.serverPosts.map((p) {
-      if (p.id != postId) return p;
-      final newLikes = wasLiked ? (p.likes - 1).clamp(0, 999999) : p.likes + 1;
-      return p.copyWith(likes: newLikes);
-    }).toList();
-    state = state.copyWith(serverPosts: posts, likedPostIds: liked);
+    // 서버와 동기화되는 좋아요 토글 (실패 시 메시지 표시)
+    Future.microtask(() async {
+      if (!await ensureIdentityForAuthoring()) return;
+      final userId = state.myUserId!;
+      try {
+        final res = await _repo.toggleLike(postId: postId, userId: userId);
+        final likedIds = <String>{...state.likedPostIds};
+        if (res.liked) {
+          likedIds.add(postId);
+        } else {
+          likedIds.remove(postId);
+        }
+        final posts = state.serverPosts.map((p) {
+          if (p.id != postId) return p;
+          return p.copyWith(likes: res.likes, liked: res.liked);
+        }).toList();
+        state = state.copyWith(serverPosts: posts, likedPostIds: likedIds);
+      } catch (e) {
+        state = state.copyWith(statusMessage: "좋아요 처리 오류: $e");
+      }
+    });
   }
 
   // ── 서버 게시글 저장 ──────────────────────────────────────────
@@ -334,6 +394,11 @@ class TourstarController extends Notifier<TourstarState> {
     Map<String, dynamic>? selectedScores,
   }) async {
     state = state.copyWith(loading: true, statusMessage: "게시글을 저장하는 중...");
+    if (!await ensureIdentityForAuthoring()) {
+      state = state.copyWith(loading: false);
+      return;
+    }
+    final userId = state.myUserId!;
     try {
       final created = await _repo.createPost(
         title: title,
@@ -342,6 +407,8 @@ class TourstarController extends Notifier<TourstarState> {
         visibility: visibility,
         tags: tags,
         imagePaths: imagePaths,
+        userId: userId,
+        authorNickname: state.myNickname,
         selectedScores: selectedScores,
       );
       state = state.copyWith(
@@ -372,6 +439,7 @@ class TourstarController extends Notifier<TourstarState> {
         postId: postId,
         content: content,
         author: author,
+        userId: state.myUserId,
       );
       final updated = state.serverPosts.map((p) {
         if (p.id != postId) return p;
@@ -426,6 +494,11 @@ class TourstarController extends Notifier<TourstarState> {
     }
 
     state = state.copyWith(loading: true, statusMessage: "게시글 생성 및 저장중...");
+    if (!await ensureIdentityForAuthoring()) {
+      state = state.copyWith(loading: false);
+      return false;
+    }
+    final userId = state.myUserId!;
     try {
       final generated = await _repo.generatePost(
         comment: comment,
@@ -439,6 +512,8 @@ class TourstarController extends Notifier<TourstarState> {
         visibility: visibility,
         tags: generated.tags,
         imagePaths: paths,
+        userId: userId,
+        authorNickname: state.myNickname,
       );
 
       state = state.copyWith(

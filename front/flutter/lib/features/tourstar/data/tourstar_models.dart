@@ -4,24 +4,30 @@ class TourstarComment {
   TourstarComment({
     required this.id,
     required this.postId,
+    this.userId,
     required this.author,
     required this.content,
     required this.createdAt,
+    this.authorProfileImageUrl,
   });
 
   final String id;
   final String postId;
+  final int? userId;
   final String author;
   final String content;
   final DateTime? createdAt;
+  final String? authorProfileImageUrl;
 
   factory TourstarComment.fromJson(Map<String, dynamic> json) {
     return TourstarComment(
       id: json["id"]?.toString() ?? "",
       postId: json["post_id"]?.toString() ?? "",
+      userId: (json["user_id"] as num?)?.toInt(),
       author: json["author"]?.toString() ?? "",
       content: json["content"]?.toString() ?? "",
       createdAt: DateTime.tryParse(json["created_at"]?.toString() ?? ""),
+      authorProfileImageUrl: json["author_profile_image_url"]?.toString(),
     );
   }
 }
@@ -43,6 +49,7 @@ class TourstarPostRecord {
     this.authorNickname,
     this.authorProfileImageUrl,
     this.likes = 0,
+    this.liked = false,
     this.bookmarked = false,
   });
 
@@ -67,6 +74,9 @@ class TourstarPostRecord {
 
   /// 좋아요 수
   final int likes;
+
+  /// 현재 사용자가 좋아요한 여부 (서버 응답 기반, 없으면 false)
+  final bool liked;
 
   /// 현재 사용자가 스크랩(북마크)한 여부 (클라이언트 측 관리)
   final bool bookmarked;
@@ -96,6 +106,7 @@ class TourstarPostRecord {
       authorNickname: json["author_nickname"]?.toString(),
       authorProfileImageUrl: json["author_profile_image_url"]?.toString(),
       likes: (json["likes"] as num?)?.toInt() ?? 0,
+      liked: json["liked"] == true,
     );
   }
 
@@ -103,6 +114,7 @@ class TourstarPostRecord {
     bool? bookmarked,
     List<TourstarComment>? comments,
     int? likes,
+    bool? liked,
   }) {
     return TourstarPostRecord(
       id: id,
@@ -120,6 +132,7 @@ class TourstarPostRecord {
       authorNickname: authorNickname,
       authorProfileImageUrl: authorProfileImageUrl,
       likes: likes ?? this.likes,
+      liked: liked ?? this.liked,
       bookmarked: bookmarked ?? this.bookmarked,
     );
   }

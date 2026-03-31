@@ -1,5 +1,5 @@
 """tourstar_posts 테이블 모델 – 사진 선택 후 생성된 게시물."""
-from typing import Optional
+from typing import ClassVar, Optional
 
 from sqlalchemy import BigInteger, Integer, String, Text, JSON
 from sqlalchemy.orm import Mapped, mapped_column
@@ -15,7 +15,7 @@ class TourstarPost(Base, TimestampMixin):
     selected_scores: 각 사진의 품질 점수 정보 (YOLO/MUSIQ 결과)
     """
 
-    __tablename__ = "tourstar_posts"
+    __tablename__: ClassVar[str] = "tourstar_posts"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
@@ -36,3 +36,6 @@ class TourstarPost(Base, TimestampMixin):
     visibility: Mapped[str] = mapped_column(
         String(20), nullable=False, server_default="public"
     )
+
+    # 좋아요 수 (집계 컬럼)
+    likes: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")

@@ -42,6 +42,8 @@ from ...domain.v1.contracts import (
     JobStatusResponse,
     PostResponse,
     SharePreviewResponse,
+    ToggleLikeRequest,
+    ToggleLikeResponse,
     UpdatePostRequest,
     UploadPhotosResponse,
     UploadPipelineJob,
@@ -49,6 +51,7 @@ from ...domain.v1.contracts import (
 )
 from ...domain.v1.graph import build_metadata_graph
 from ...models.tourstar_comment import TourstarPostComment
+from ...models.tourstar_post_like import TourstarPostLike
 from ...models.tourstar_post import TourstarPost
 from ...models.user_profile import UserProfile
 from ...domain.v1.state import store, worker
@@ -778,13 +781,18 @@ def _upload_local_image_to_s3(local_file: Path) -> str:
     return _build_s3_public_url(s3_key)
 
 
-def _to_comment_response(row: TourstarPostComment) -> CommentResponse:
+def _to_comment_response(
+    row: TourstarPostComment,
+    author_profile_image_url: str | None = None,
+) -> CommentResponse:
     return CommentResponse(
         id=str(row.id),
         post_id=str(row.post_id),
+        user_id=int(row.user_id) if row.user_id is not None else None,
         author=row.author,
         content=row.content,
         created_at=row.created_at,
+        author_profile_image_url=author_profile_image_url,
     )
 
 
@@ -792,10 +800,15 @@ def _to_post_response(
     row: TourstarPost,
     comments: list[TourstarPostComment],
     author_profile_image_url: str | None = None,
+    comment_profile_map: dict[int, str] | None = None,
+    nickname_user_map: dict[str, int] | None = None,
+    liked: bool = False,
 ) -> PostResponse:
     visibility: Literal["public", "private"] = (
         "private" if (row.visibility or "public") == "private" else "public"
     )
+    comment_profile_map = comment_profile_map or {}
+    nickname_user_map = nickname_user_map or {}
     return PostResponse(
         id=str(row.id),
         user_id=row.user_id,
@@ -810,7 +823,19 @@ def _to_post_response(
         selected_scores=row.selected_scores or None,
         created_at=row.created_at,
         updated_at=row.updated_at,
-        comments=[_to_comment_response(item) for item in comments],
+        likes=int(getattr(row, "likes", 0) or 0),
+        liked=liked,
+        comments=[
+            _to_comment_response(
+                item,
+                (
+                    comment_profile_map.get(int(item.user_id))
+                    if item.user_id is not None
+                    else comment_profile_map.get(nickname_user_map.get(item.author.strip() or "", -1))
+                ),
+            )
+            for item in comments
+        ],
     )
 
 
@@ -1780,7 +1805,10 @@ def generate_auto_comment(req: AutoCommentRequest) -> AutoCommentResponse:
 
 
 @router.get("/posts", response_model=list[PostResponse])
-async def list_posts(db: AsyncSession = Depends(get_db)) -> list[PostResponse]:
+async def list_posts(
+    viewer_user_id: int | None = Query(default=None, ge=1, description="조회자 user_id (liked 계산용)"),
+    db: AsyncSession = Depends(get_db),
+) -> list[PostResponse]:
     posts = (
         (await db.execute(select(TourstarPost).order_by(TourstarPost.created_at.desc())))
         .scalars()
@@ -1805,7 +1833,7 @@ async def list_posts(db: AsyncSession = Depends(get_db)) -> list[PostResponse]:
     for item in comments:
         comment_map.setdefault(int(item.post_id), []).append(item)
 
-    # 작성자별 프로필 이미지 조회
+    # 작성자별 프로필 이미지 조회 (게시글 헤더)
     author_user_ids = list({int(p.user_id) for p in posts if p.user_id is not None})
     profile_map: dict[int, str] = {}
     if author_user_ids:
@@ -1825,11 +1853,56 @@ async def list_posts(db: AsyncSession = Depends(get_db)) -> list[PostResponse]:
             if p.profile_image_url
         }
 
+    # 댓글 작성자 프로필 이미지 조회 (comment.user_id 기반)
+    comment_user_ids = list({int(c.user_id) for c in comments if c.user_id is not None})
+    comment_profile_map: dict[int, str] = {}
+    if comment_user_ids:
+        cprofiles = (
+            (await db.execute(select(UserProfile).where(UserProfile.user_id.in_(comment_user_ids))))
+            .scalars()
+            .all()
+        )
+        comment_profile_map = {
+            p.user_id: _build_s3_view_url(p.profile_image_url)
+            for p in cprofiles
+            if p.profile_image_url
+        }
+
+    # 닉네임 -> user_id (레거시 댓글 user_id 없을 때 fallback)
+    nickname_user_map: dict[str, int] = {}
+    for p in posts:
+        if p.user_id is None:
+            continue
+        nick = (p.author_nickname or "").strip()
+        if not nick:
+            continue
+        nickname_user_map[nick] = int(p.user_id)
+
+    # viewer 기준 liked 계산
+    liked_set: set[int] = set()
+    if viewer_user_id is not None:
+        liked_rows = (
+            (
+                await db.execute(
+                    select(TourstarPostLike.post_id).where(
+                        TourstarPostLike.user_id == int(viewer_user_id),
+                        TourstarPostLike.post_id.in_(post_ids),
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        liked_set = {int(x) for x in liked_rows}
+
     return [
         _to_post_response(
             post,
             comment_map.get(int(post.id), []),
             profile_map.get(int(post.user_id)) if post.user_id is not None else None,
+            comment_profile_map=comment_profile_map,
+            nickname_user_map=nickname_user_map,
+            liked=int(post.id) in liked_set,
         )
         for post in posts
     ]
@@ -1983,13 +2056,59 @@ async def add_post_comment(
 
     comment = TourstarPostComment(
         post_id=post_id,
+        user_id=req.user_id,
         author=req.author.strip() or "me",
         content=req.content.strip(),
     )
     db.add(comment)
     await db.flush()
     await db.refresh(comment)
-    return _to_comment_response(comment)
+    profile_url: str | None = None
+    if comment.user_id is not None:
+        profile = (
+            (await db.execute(select(UserProfile).where(UserProfile.user_id == int(comment.user_id))))
+            .scalar_one_or_none()
+        )
+        if profile is not None and profile.profile_image_url:
+            profile_url = _build_s3_view_url(profile.profile_image_url)
+    return _to_comment_response(comment, profile_url)
+
+
+@router.post("/posts/{post_id}/likes/toggle", response_model=ToggleLikeResponse)
+async def toggle_post_like(
+    post_id: int,
+    req: ToggleLikeRequest,
+    db: AsyncSession = Depends(get_db),
+) -> ToggleLikeResponse:
+    post = (await db.execute(select(TourstarPost).where(TourstarPost.id == post_id))).scalar_one_or_none()
+    if post is None:
+        raise HTTPException(status_code=404, detail=f"Post not found: {post_id}")
+
+    user_id = int(req.user_id)
+    existing = (
+        (
+            await db.execute(
+                select(TourstarPostLike).where(
+                    TourstarPostLike.post_id == int(post_id),
+                    TourstarPostLike.user_id == user_id,
+                )
+            )
+        )
+        .scalars()
+        .first()
+    )
+
+    if existing is None:
+        db.add(TourstarPostLike(post_id=int(post_id), user_id=user_id))
+        post.likes = int(getattr(post, "likes", 0) or 0) + 1
+        liked = True
+    else:
+        await db.delete(existing)
+        post.likes = max(0, int(getattr(post, "likes", 0) or 0) - 1)
+        liked = False
+
+    await db.flush()
+    return ToggleLikeResponse(post_id=str(post_id), likes=int(post.likes or 0), liked=liked)
 
 
 @router.get("/posts/{post_id}/share-preview", response_model=SharePreviewResponse)
