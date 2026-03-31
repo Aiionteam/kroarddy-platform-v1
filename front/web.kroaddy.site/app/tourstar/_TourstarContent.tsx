@@ -1364,12 +1364,34 @@ export default function TourstarContent() {
         return;
       }
       const users: UserModel[] = Array.isArray(res.data) ? res.data : (res.data ? [res.data] : []);
+      const nextFriendUserIds = new Set(users.map((u) => u.id).filter((id): id is number => id != null));
+      const nextFriendNicknames = new Set(
+        users.map((u) => (u.nickname || u.name || "").trim()).filter(Boolean),
+      );
       setFriendList(users);
-      setFriendUserIds(new Set(users.map((u) => u.id).filter((id): id is number => id != null)));
+      setFriendUserIds(nextFriendUserIds);
+
+      // 친구 목록이 로드되면 즉시 posts/detail의 isFriend를 재계산한다.
+      // (일부 브라우저/상황에서 effect 타이밍이 밀려 배지가 늦게 뜨는 문제 방지)
+      setPosts((prev) => prev.map((p) => {
+        const isOwner = computeIsOwner(p.userId ?? null, currentUserId, p.author, authorName);
+        return {
+          ...p,
+          isFriend: computeIsFriend(p.userId ?? null, p.author, isOwner, nextFriendUserIds, nextFriendNicknames),
+        };
+      }));
+      setDetailPost((prev) => {
+        if (!prev) return null;
+        const isOwner = computeIsOwner(prev.userId ?? null, currentUserId, prev.author, authorName);
+        return {
+          ...prev,
+          isFriend: computeIsFriend(prev.userId ?? null, prev.author, isOwner, nextFriendUserIds, nextFriendNicknames),
+        };
+      });
     } catch (err) {
       console.error("[tourstar] 친구 목록 조회 실패:", err);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, currentUserId, authorName]);
 
   /* 친구 목록 로드 — 초기 로드 + 탭 포커스 시 갱신 */
   React.useEffect(() => {
