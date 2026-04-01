@@ -40,7 +40,8 @@ class AuthInterceptor extends Interceptor {
 
     if (!isRefreshCall && !alreadyRetried) {
       final data = response.data;
-      if (data is Map && data["code"] == 401) {
+      // 게이트웨이 레거시: HTTP 200 + body { "code": 401 } (숫자 또는 문자열)
+      if (data is Map && _isBodyUnauthorizedCode(data["code"])) {
         try {
           final token = await _refreshAccessTokenSafe();
           final retryOptions = request.copyWith(
@@ -59,6 +60,10 @@ class AuthInterceptor extends Interceptor {
       }
     }
     handler.next(response);
+  }
+
+  static bool _isBodyUnauthorizedCode(Object? code) {
+    return code == 401 || code == "401";
   }
 
   /// HTTP 상태 401 처리 (표준 케이스)

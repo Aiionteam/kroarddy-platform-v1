@@ -103,7 +103,7 @@ class _FriendsPageState extends ConsumerState<FriendsPage> {
               );
             },
             loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           ),
 
           // ── 친구 목록 ────────────────────────────────────────────
@@ -326,7 +326,7 @@ class _Avatar extends StatelessWidget {
       child: ClipOval(
         child: imageUrl != null && imageUrl!.isNotEmpty
             ? Image.network(imageUrl!, fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Center(child: Text(initial,
+                errorBuilder: (_, _, _) => Center(child: Text(initial,
                     style: TextStyle(color: Colors.white, fontSize: size * 0.38, fontWeight: FontWeight.bold))))
             : Center(child: Text(initial,
                 style: TextStyle(color: Colors.white, fontSize: size * 0.38, fontWeight: FontWeight.bold))),

@@ -73,8 +73,8 @@ class PlannerRepository {
           "existing_routes": existingRoutes,
           "use_search": useSearch,
           // 웹과 동일: 비어 있으면 필드 생략(백엔드가 null과 동일 처리)
-          if (newsTop10 != null && newsTop10.isNotEmpty) "news_top10": newsTop10,
-          if (transportMode != null) "transport_mode": transportMode,
+          ...?((newsTop10?.isNotEmpty ?? false) ? {"news_top10": newsTop10} : null),
+          ...?((transportMode != null) ? {"transport_mode": transportMode} : null),
         },
         options: _plannerAiOptions,
       );
@@ -103,8 +103,8 @@ class PlannerRepository {
           "end_date": endDate,
           "user_id": userId,
           "use_search": useSearch,
-          if (newsTop10 != null && newsTop10.isNotEmpty) "news_top10": newsTop10,
-          if (transportMode != null) "transport_mode": transportMode,
+          ...?((newsTop10?.isNotEmpty ?? false) ? {"news_top10": newsTop10} : null),
+          ...?((transportMode != null) ? {"transport_mode": transportMode} : null),
         },
         options: _plannerAiOptions,
       );
@@ -178,7 +178,7 @@ class PlannerRepository {
   }
 
   /// DioException 응답 data에서 detail 문자열 추출
-  /// ResponseType.bytes 사용 시 에러 응답이 List<int>로 옴
+  /// ResponseType.bytes 사용 시 에러 응답이 `List<int>`로 옴
   static String _extractDetail(dynamic data) {
     try {
       if (data is Map) return data["detail"]?.toString() ?? "";

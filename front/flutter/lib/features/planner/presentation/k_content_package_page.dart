@@ -293,7 +293,7 @@ class _KContentPackagePageState extends ConsumerState<KContentPackagePage> {
                   ? DecorationImage(
                       image: NetworkImage(_heroImageUrl!),
                       fit: BoxFit.cover,
-                      onError: (_, __) {},
+                      onError: (_, _) {},
                     )
                   : null,
             ),
