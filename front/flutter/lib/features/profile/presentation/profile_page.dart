@@ -9,7 +9,6 @@ import "state/profile_state.dart";
 
 // ── 색상 상수 ─────────────────────────────────────────────────
 const _primary = Color(0xFF7C3AED);
-const _primaryLight = Color(0xFFF3E8FF);
 const _textPrimary = Color(0xFF1F2937);
 const _textSecondary = Color(0xFF6B7280);
 const _bgPage = Color(0xFFF8F7FF);

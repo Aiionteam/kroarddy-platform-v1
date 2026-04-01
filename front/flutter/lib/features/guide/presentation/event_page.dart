@@ -152,8 +152,8 @@ class EventPage extends ConsumerWidget {
       return ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: 5,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (_, __) => _FestivalSkeleton(),
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
+        itemBuilder: (_, _) => _FestivalSkeleton(),
       );
     }
     if (items.isEmpty) {
@@ -186,7 +186,7 @@ class EventPage extends ConsumerWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: items.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (_, i) => _FestivalCard(item: items[i]),
     );
   }

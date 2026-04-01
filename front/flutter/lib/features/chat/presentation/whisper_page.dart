@@ -156,7 +156,7 @@ class _WhisperPageState extends ConsumerState<WhisperPage> {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
       itemCount: items.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (_, i) {
         final msg = items[i];
         final isInbox = state.whisperTab == WhisperTab.inbox;
@@ -378,7 +378,7 @@ class _WhisperTourstarCardState extends ConsumerState<_WhisperTourstarCard> {
                   height: 100,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
                 ),
               ),
             const SizedBox(height: 6),
