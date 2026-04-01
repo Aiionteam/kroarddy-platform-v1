@@ -137,8 +137,9 @@ class FriendRepository {
       List<dynamic>? list;
       if (body is Map) {
         final data = body["data"];
-        if (data is List) list = data;
-        else if (data is Map) {
+        if (data is List) {
+          list = data;
+        } else if (data is Map) {
           final id = data["id"] ?? data["userId"];
           return (id as num?)?.toInt();
         }

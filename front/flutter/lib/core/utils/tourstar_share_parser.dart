@@ -3,8 +3,6 @@
 /// 지원 URL 형식:
 ///   - https://web.kroaddy.site/tourstar?postId=xxx
 ///   - https://web.kroaddy.site/tourstar/post/xxx
-library tourstar_share_parser;
-
 class TourstarShareParser {
   TourstarShareParser._();
 

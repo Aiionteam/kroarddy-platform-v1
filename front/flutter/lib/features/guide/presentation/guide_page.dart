@@ -8,7 +8,6 @@ import "state/guide_state.dart";
 
 // ── 색상 상수 ─────────────────────────────────────────────────
 const _primary = Color(0xFF7C3AED);
-const _primaryLight = Color(0xFFF3E8FF);
 const _indigo = Color(0xFF4F46E5);
 const _indigoLight = Color(0xFFEEF2FF);
 const _textPrimary = Color(0xFF1F2937);
@@ -187,8 +186,8 @@ class _EventTab extends ConsumerWidget {
       return ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: 5,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (_, __) => _FestivalSkeleton(),
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
+        itemBuilder: (_, _) => _FestivalSkeleton(),
       );
     }
 
@@ -223,7 +222,7 @@ class _EventTab extends ConsumerWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: items.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (_, i) => _FestivalCard(item: items[i]),
     );
   }

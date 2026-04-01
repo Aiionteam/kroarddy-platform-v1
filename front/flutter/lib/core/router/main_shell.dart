@@ -131,6 +131,8 @@ class _AppDrawer extends ConsumerWidget {
               activeIcon: Icons.chat_bubble,
               label: "단체채팅",
               path: "/chat",
+              // 하단 메뉴(/chat/friends, /chat/whisper)에서는 단체채팅이 선택되지 않게 제외
+              excludePrefixes: const ["/chat/friends", "/chat/whisper"],
               current: location,
             ),
 

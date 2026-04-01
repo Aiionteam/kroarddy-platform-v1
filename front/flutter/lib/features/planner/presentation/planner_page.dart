@@ -767,7 +767,7 @@ class _RankedCard extends StatelessWidget {
                 Image.network(
                   imgUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _PlaceholderBg(dest: dest),
+                  errorBuilder: (_, _, _) => _PlaceholderBg(dest: dest),
                 )
               else
                 _PlaceholderBg(dest: dest),
@@ -831,103 +831,6 @@ class _RankedCard extends StatelessWidget {
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Netflix 스타일 이미지 카드 ──────────────────────────────────
-class _DestCard extends StatelessWidget {
-  const _DestCard({required this.dest, required this.onTap});
-  final _Destination dest;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final imgUrl = _getImageUrl(dest.slug);
-    return GestureDetector(
-      onTap: onTap,
-      child: SizedBox(
-        width: 110,
-        height: 165,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // 배경 이미지
-              if (imgUrl != null)
-                Image.network(
-                  imgUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _PlaceholderBg(dest: dest),
-                )
-              else
-                _PlaceholderBg(dest: dest),
-
-              // 하단 그라디언트 오버레이
-              const DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: [0.4, 1.0],
-                    colors: [Colors.transparent, Color(0xCC000000)],
-                  ),
-                ),
-              ),
-
-              // 텍스트
-              Positioned(
-                left: 8,
-                right: 8,
-                bottom: 7,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      dest.name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
-                      ),
-                    ),
-                    if (dest.highlights.isNotEmpty)
-                      Text(
-                        dest.highlights.take(2).join(" · "),
-                        style: const TextStyle(
-                          color: Color(0xCCFFFFFF),
-                          fontSize: 9,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                  ],
-                ),
-              ),
-
-              // 인기 배지
-              if (dest.popular)
-                Positioned(
-                  top: 6,
-                  left: 6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade600,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                    child: const Text(
-                      "인기",
-                      style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                ),
             ],
           ),
         ),
@@ -1631,8 +1534,8 @@ class _PlannerWorkspace extends ConsumerWidget {
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: 5,
-                    separatorBuilder: (_, __) => const SizedBox(width: 10),
-                    itemBuilder: (_, __) => Container(
+                    separatorBuilder: (_, _) => const SizedBox(width: 10),
+                    itemBuilder: (_, _) => Container(
                       width: 160,
                       decoration: BoxDecoration(
                         color: Colors.grey.shade100,
@@ -1654,7 +1557,7 @@ class _PlannerWorkspace extends ConsumerWidget {
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: state.routes.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 10),
+                    separatorBuilder: (_, _) => const SizedBox(width: 10),
                     itemBuilder: (_, i) {
                       final r = state.routes[i];
                       final selected = state.selectedRouteName == r.name;
@@ -2166,7 +2069,7 @@ class _UserContentTabState extends ConsumerState<_UserContentTab> {
                       mainAxisSpacing: 10,
                     ),
                     delegate: SliverChildBuilderDelegate(
-                      (_, __) => Container(
+                      (_, _) => Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(14),
@@ -2296,7 +2199,7 @@ class _UserRouteCard extends StatelessWidget {
                   ? Image.network(
                       route.imageUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _gradientFallback(),
+                      errorBuilder: (_, _, _) => _gradientFallback(),
                     )
                   : _gradientFallback(),
               const DecoratedBox(
@@ -2447,7 +2350,7 @@ class _RouteDetailSheet extends StatelessWidget {
                               Image.network(
                                 route.imageUrl!,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
+                                errorBuilder: (_, _, _) => Container(
                                   decoration: const BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
@@ -3150,7 +3053,7 @@ class _KContentTabState extends ConsumerState<_KContentTab> {
                 ? DecorationImage(
                     image: NetworkImage(_heroImageUrl!),
                     fit: BoxFit.cover,
-                    onError: (_, __) {},
+                    onError: (_, _) {},
                   )
                 : null,
             borderRadius: BorderRadius.circular(20),
@@ -3244,7 +3147,7 @@ class _KContentRow extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: items.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            separatorBuilder: (_, _) => const SizedBox(width: 12),
             itemBuilder: (context, i) {
               final item = items[i];
               return GestureDetector(
@@ -3269,7 +3172,7 @@ class _KContentRow extends StatelessWidget {
                         ? DecorationImage(
                             image: NetworkImage(cardImageMap[item.id]!),
                             fit: BoxFit.cover,
-                            onError: (_, __) {},
+                            onError: (_, _) {},
                           )
                         : null,
                     borderRadius: BorderRadius.circular(14),
