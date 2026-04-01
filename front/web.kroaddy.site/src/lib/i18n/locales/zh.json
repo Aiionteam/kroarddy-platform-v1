@@ -23,7 +23,7 @@
   "sidebar": {
     "tourstar": "旅行之星", "planner": "旅行规划师", "schedule": "行程管理",
     "guide": "地点推荐", "groupchat": "群聊", "friends": "好友",
-    "whisper": "悄悄话", "profile": "我的信息", "logout": "退出登录"
+    "whisper": "悄悄话", "profile": "我的信息", "customer": "客服中心", "logout": "退出登录"
   },
   "options": {
     "gender":   { "남성": "男性", "여성": "女性", "기타": "其他", "무응답": "不便透露" },

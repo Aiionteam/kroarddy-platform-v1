@@ -13,6 +13,7 @@ function PlannerIcon() { return <svg width="20" height="20" viewBox="0 0 24 24" 
 function PlaceIcon()   { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2C8.686 2 6 4.686 6 8c0 4.418 6 10 6 10s6-5.582 6-10c0-3.314-2.686-6-6-6z" /><circle cx="12" cy="8" r="2.5" /></svg>; }
 function FriendsIcon() { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>; }
 function SettingsIcon(){ return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M12 1v6m0 6v6m9-9h-6m-6 0H3m16.364-6.364l-4.243 4.243M7.879 16.121l-4.243 4.243m12.728 0l-4.243-4.243M7.879 7.879L3.636 3.636" /></svg>; }
+function CustomerIcon(){ return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 3h4l1 4-2 2a12 12 0 0 0 6 6l2-2 4 1v4l-2 1C11.82 20 4 12.18 4 3l2 0z" /></svg>; }
 function LogoutIcon()  { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>; }
 function CloseIcon()   { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>; }
 
@@ -122,6 +123,18 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ onLogout, onClose }) => 
         >
           <SettingsIcon />
           <span>{t("sidebar.profile")}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate("/customer")}
+          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+            pathname.startsWith("/customer") ? "bg-purple-100 text-purple-800" : "text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <span className="shrink-0 translate-y-px">
+            <CustomerIcon />
+          </span>
+          <span>{t("sidebar.customer")}</span>
         </button>
         <button
           type="button"
