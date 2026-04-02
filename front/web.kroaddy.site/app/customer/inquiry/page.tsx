@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import { useLoginStore } from "@/store";
@@ -52,7 +52,7 @@ function formatDate(ts: number) {
   }
 }
 
-export default function InquiryPage() {
+function InquiryContent() {
   const router = useRouter();
   const { isAuthenticated, logout } = useLoginStore();
 
@@ -324,5 +324,13 @@ export default function InquiryPage() {
         )}
       </main>
     </AppLayout>
+  );
+}
+
+export default function InquiryPage() {
+  return (
+    <Suspense>
+      <InquiryContent />
+    </Suspense>
   );
 }
