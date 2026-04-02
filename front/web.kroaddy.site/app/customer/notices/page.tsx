@@ -130,9 +130,19 @@ export default function NoticesPage() {
       <main className="flex flex-1 flex-col overflow-y-auto">
         <header className="shrink-0 border-b border-gray-200 bg-white px-6 py-5">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-xl font-bold text-gray-800">공지사항</h1>
-              <p className="mt-1 text-sm text-gray-500">공지사항을 확인하세요.</p>
+            <div className="flex items-start gap-3">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="rounded-lg px-2.5 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
+                aria-label="뒤로가기"
+              >
+                ←
+              </button>
+              <div>
+                <h1 className="text-xl font-bold text-gray-800">공지사항</h1>
+                <p className="mt-1 text-sm text-gray-500">공지사항을 확인하세요.</p>
+              </div>
             </div>
             <button
               type="button"
