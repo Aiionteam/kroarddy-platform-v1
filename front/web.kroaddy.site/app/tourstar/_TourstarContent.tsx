@@ -829,12 +829,14 @@ interface DetailModalProps {
   onEdit: (post: TourPost) => void;
   onBookmark: (id: string) => void;
   onDeletePost: (postId: string) => Promise<boolean>;
+  onOpenAuthorFeed?: (userId: number | null, authorName: string) => void;
+  currentUserId?: number | null;
   ownerProfileImage?: string | null;
   ownerNickname?: string;
   authorProfileMap?: Map<string, string>;
 }
 
-function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, onEdit, onBookmark, onDeletePost, ownerProfileImage, ownerNickname, authorProfileMap }: DetailModalProps) {
+function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, onEdit, onBookmark, onDeletePost, onOpenAuthorFeed, currentUserId, ownerProfileImage, ownerNickname, authorProfileMap }: DetailModalProps) {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [commentInput, setCommentInput] = useState("");
 
@@ -881,7 +883,21 @@ function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, o
                 }
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-800">{post.author}</p>
+                {onOpenAuthorFeed && (post.isOwner || post.isFriend) ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const uid = post.userId ?? (post.isOwner ? currentUserId ?? null : null);
+                      onOpenAuthorFeed(uid, post.author);
+                      onClose();
+                    }}
+                    className="text-left text-sm font-semibold text-gray-800 hover:underline"
+                  >
+                    {post.author}
+                  </button>
+                ) : (
+                  <p className="text-sm font-semibold text-gray-800">{post.author}</p>
+                )}
                 <p className="text-[11px] text-gray-500">{post.location}</p>
               </div>
             </div>
@@ -1036,17 +1052,30 @@ function AuthorPopover({
       setOpen(false);
       return;
     }
-    // userId가 없는 레거시 게시물도 작성자 이름으로 필터링 가능하도록 null 전달
-    onViewPosts(post.userId ?? null, post.author);
+    const uid = post.userId ?? (isOwnPost ? currentUserId : null);
+    onViewPosts(uid, post.author);
     setOpen(false);
+  };
+
+  const canOpenFeedByName = isOwnPost || post.isFriend;
+
+  const onNameClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (canOpenFeedByName) {
+      const uid = post.userId ?? (isOwnPost ? currentUserId : null);
+      onViewPosts(uid, post.author);
+      setOpen(false);
+      return;
+    }
+    setOpen((v) => !v);
   };
 
   return (
     <div ref={ref} className="relative inline-flex items-center gap-1">
       <button
         type="button"
-        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
-        className="flex items-center gap-1 hover:underline focus:outline-none"
+        onClick={onNameClick}
+        className="flex min-w-0 items-center gap-1 hover:underline focus:outline-none"
       >
         <span className="truncate text-sm font-semibold text-gray-800">{post.author}</span>
         {post.isFriend && (
@@ -1328,8 +1357,8 @@ export default function TourstarContent() {
   const profileInputRef = React.useRef<HTMLInputElement>(null);
 
   const [posts, setPosts] = useState<TourPost[]>([]);
-  // 인스타그램처럼 “전체 게시물”을 기본 그리드로 보여주기
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  // 전체 피드는 리스트(인스타 피드 느낌), 특정 작성자 피드는 그리드
+  const [viewMode, setViewMode] = useState<ViewMode>("feed");
   const [filter, setFilter] = useState<FilterType>("all");
   const [sortType, setSortType] = useState<SortType>("latest");
   const [searchQuery, setSearchQuery] = useState("");
@@ -1414,11 +1443,17 @@ export default function TourstarContent() {
     [friendList],
   );
 
-  const isViewingAuthorFeed = filter === "friends" && Boolean(viewAuthorName);
+  const hasAuthorFeedOpen = Boolean(viewAuthorName.trim());
+  const isSelfAuthorFeed = useMemo(() => {
+    if (!viewAuthorName.trim()) return false;
+    if (viewAuthorId != null && currentUserId != null) return viewAuthorId === currentUserId;
+    const safe = authorName.trim();
+    return safe !== "내 여행기록" && viewAuthorName.trim() === safe;
+  }, [viewAuthorName, viewAuthorId, currentUserId, authorName]);
 
-  /* 특정 작성자 피드 진입 시 프로필 이미지 로드 (가능하면 userId로, 없으면 posts에서 폴백) */
+  /* 친구 작성자 피드: 프로필 이미지 로드 (본인 피드는 기존 profileImageUrl 사용) */
   React.useEffect(() => {
-    if (!isViewingAuthorFeed) {
+    if (!hasAuthorFeedOpen || isSelfAuthorFeed) {
       setViewAuthorProfileImageUrl(null);
       return;
     }
@@ -1437,7 +1472,7 @@ export default function TourstarContent() {
       }
     })();
     return () => { cancelled = true; };
-  }, [isViewingAuthorFeed, viewAuthorId, viewAuthorName, posts]);
+  }, [hasAuthorFeedOpen, isSelfAuthorFeed, viewAuthorId, viewAuthorName, posts]);
 
   /* 비동기 게시글 로드 완료 시점의 최신 친구/북마크/닉네임 매핑용 (늦은 응답이 빈 Set 클로저로 덮어쓰는 버그 방지) */
   const tourstarMapContextRef = useRef({
@@ -1580,19 +1615,14 @@ export default function TourstarContent() {
   const filteredPosts = useMemo(() => {
     let result = posts;
 
-    if (filter === "mine") result = result.filter((p) => p.isOwner);
+    if (viewAuthorName.trim()) {
+      result = result.filter((p) =>
+        (viewAuthorId != null && p.userId === viewAuthorId) ||
+        p.author === viewAuthorName,
+      );
+    } else if (filter === "mine") result = result.filter((p) => p.isOwner);
     else if (filter === "bookmarked") result = result.filter((p) => p.bookmarked);
-    else if (filter === "friends") {
-      if (viewAuthorName) {
-        // 특정 작성자 보기: userId로 먼저 매칭, 없으면 이름으로 매칭
-        result = result.filter((p) =>
-          (viewAuthorId != null && p.userId === viewAuthorId) ||
-          p.author === viewAuthorName,
-        );
-      } else {
-        result = result.filter((p) => p.isFriend);
-      }
-    }
+    else if (filter === "friends") result = result.filter((p) => p.isFriend);
 
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
@@ -1619,7 +1649,7 @@ export default function TourstarContent() {
       case "comments": return [...result].sort((a, b) => b.comments.length - a.comments.length);
       default: return result;
     }
-  }, [posts, filter, searchQuery, searchField, sortType]);
+  }, [posts, filter, searchQuery, searchField, sortType, viewAuthorId, viewAuthorName]);
 
   const stats = useMemo(() => ({
     total: posts.length,
@@ -1631,15 +1661,20 @@ export default function TourstarContent() {
     myLikes: posts.filter((p) => p.isOwner).reduce((acc, p) => acc + p.likes, 0),
   }), [posts]);
 
-  const viewedAuthorStats = useMemo(() => {
-    if (!isViewingAuthorFeed) return null;
+  const authorFeedProfileStats = useMemo(() => {
+    if (!viewAuthorName.trim()) return null;
     const authorPosts = posts.filter((p) =>
       (viewAuthorId != null && p.userId === viewAuthorId) || p.author === viewAuthorName,
     );
-    const totalPhotos = authorPosts.reduce((acc, p) => acc + p.photos.length, 0);
-    const totalLikes = authorPosts.reduce((acc, p) => acc + p.likes, 0);
-    return { posts: authorPosts.length, photos: totalPhotos, likes: totalLikes };
-  }, [isViewingAuthorFeed, posts, viewAuthorId, viewAuthorName]);
+    const postCount = authorPosts.length;
+    const selfScraps = posts.filter((p) => p.bookmarked).length;
+    const scrapsInAuthorPosts = authorPosts.filter((p) => p.bookmarked).length;
+    return {
+      postCount,
+      scrapCount: isSelfAuthorFeed ? selfScraps : scrapsInAuthorPosts,
+      friendCount: friendList.length,
+    };
+  }, [viewAuthorName, viewAuthorId, posts, isSelfAuthorFeed, friendList.length]);
 
   // 닉네임 → 프로필 이미지 URL 맵 (댓글 아바타 표시용)
   const authorProfileMap = useMemo(() => {
@@ -1780,10 +1815,21 @@ export default function TourstarContent() {
     catch (_) { window.prompt("아래 링크를 복사해 채팅에 공유하세요.", shareUrl); }
   };
 
-  const handleViewAuthorPosts = (userId: number | null, authorName: string) => {
+  const leaveAuthorFeed = () => {
+    setViewAuthorId(null);
+    setViewAuthorName("");
+    setViewAuthorProfileImageUrl(null);
+    setFilter("all");
+    setViewMode("feed");
+    setSearchQuery("");
+    setSearchField("all");
+    setSortType("latest");
+  };
+
+  const handleViewAuthorPosts = (userId: number | null, name: string) => {
     setViewAuthorId(userId);
-    setViewAuthorName(authorName);
-    setFilter("friends");
+    setViewAuthorName(name);
+    setFilter("all");
     setViewMode("grid");
     setSearchQuery("");
     setSearchField("all");
@@ -1811,117 +1857,99 @@ export default function TourstarContent() {
         </header>
 
         <div className="mx-auto max-w-5xl px-6 py-6 space-y-6">
-          {/* 프로필 카드 (기본: 내 프로필 / 특정 작성자 피드: 해당 유저 프로필) */}
-          {!isViewingAuthorFeed ? (
-            <div className="flex items-center gap-6 rounded-2xl bg-white border border-gray-100 p-6 shadow-sm">
-              {/* 아바타 — 클릭 시 이미지 업로드 */}
-              <input
-                ref={profileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  e.target.value = "";
-                  // 즉시 로컬 미리보기 적용
-                  const localUrl = URL.createObjectURL(file);
-                  setProfileImageUrl(localUrl);
-                  try {
-                    const s3Url = await uploadProfileImage(file, currentUserId);
-                    setProfileImageUrl(s3Url);
-                    localStorage.setItem("tourstar_profile_image", s3Url);
-                    // 내 게시물의 authorProfileImageUrl도 즉시 반영
-                    setPosts((prev) => prev.map((p) =>
-                      p.isOwner ? { ...p, authorProfileImageUrl: s3Url } : p,
-                    ));
-                  } catch (err) {
-                    console.error("[profile] S3 업로드 실패:", err);
-                    // 업로드 실패 시 로컬 미리보기 유지 (localStorage에는 저장하지 않음)
-                  }
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => profileInputRef.current?.click()}
-                title="프로필 사진 변경"
-                className="group relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-2xl font-bold text-white shadow-lg shadow-purple-200 overflow-hidden focus:outline-none"
-              >
-                {profileImageUrl ? (
-                  <img
-                    src={profileImageUrl}
-                    alt=""
-                    className="h-full w-full object-cover"
-                    onError={() => {
-                      // 만료된 presigned URL → DB에서 즉시 재조회
-                      setProfileImageUrl(null);
-                      if (currentUserId) {
-                        fetchProfileImage(currentUserId).then((url) => {
-                          if (url) {
-                            setProfileImageUrl(url);
-                            localStorage.setItem("tourstar_profile_image", url);
-                          }
-                        });
-                      }
-                    }}
-                  />
-                ) : (
-                  <span>{(authorName || "?").slice(0, 1).toUpperCase()}</span>
-                )}
-                <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
-                  </svg>
-                </span>
-              </button>
-              <div className="flex-1">
-                <h2 className="text-lg font-bold text-gray-800">{authorName}</h2>
-                <p className="mt-0.5 text-xs text-gray-400">소중한 여행의 순간들을 기록하고 공유하세요</p>
-                <div className="mt-3 flex gap-6">
-                  {[
-                    { label: "전체", value: stats.total, color: "text-gray-800" },
-                    { label: "내 게시물", value: stats.mine, color: "text-purple-600" },
-                    { label: "스크랩", value: stats.bookmarked, color: "text-amber-500" },
-                    { label: "사진", value: stats.totalPhotos, color: "text-gray-800" },
-                    { label: "받은 좋아요", value: stats.myLikes, color: "text-pink-500" },
-                    { label: "친구", value: friendList.length, color: "text-blue-500" },
-                  ].map((s) => (
-                    <div key={s.label} className="text-center">
-                      <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
-                      <p className="text-[11px] text-gray-400">{s.label}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
+          {/* 전체 피드에서는 프로필 카드 없음 — 닉네임으로 들어온 작성자 피드에서만 표시 */}
+          {hasAuthorFeedOpen && authorFeedProfileStats && (
             <div className="flex items-center gap-6 rounded-2xl bg-white border border-gray-100 p-6 shadow-sm">
               <button
                 type="button"
-                onClick={() => { setViewAuthorId(null); setViewAuthorName(""); setViewAuthorProfileImageUrl(null); }}
+                onClick={leaveAuthorFeed}
                 className="shrink-0 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-                title="뒤로"
+                title="전체 피드로"
               >
                 ← 뒤로
               </button>
-              <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-500 text-2xl font-bold text-white shadow-lg shadow-blue-100 overflow-hidden">
-                {viewAuthorProfileImageUrl ? (
-                  <img src={viewAuthorProfileImageUrl} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <span>{(viewAuthorName || "?").slice(0, 1).toUpperCase()}</span>
-                )}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-gray-800">{viewAuthorName}</h2>
-                  <span className="rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-[11px] font-semibold text-blue-700">친구</span>
+              {isSelfAuthorFeed ? (
+                <>
+                  <input
+                    ref={profileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      e.target.value = "";
+                      const localUrl = URL.createObjectURL(file);
+                      setProfileImageUrl(localUrl);
+                      try {
+                        const s3Url = await uploadProfileImage(file, currentUserId);
+                        setProfileImageUrl(s3Url);
+                        localStorage.setItem("tourstar_profile_image", s3Url);
+                        setPosts((prev) => prev.map((p) =>
+                          p.isOwner ? { ...p, authorProfileImageUrl: s3Url } : p,
+                        ));
+                      } catch (err) {
+                        console.error("[profile] S3 업로드 실패:", err);
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => profileInputRef.current?.click()}
+                    title="프로필 사진 변경"
+                    className="group relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-2xl font-bold text-white shadow-lg shadow-purple-200 overflow-hidden focus:outline-none"
+                  >
+                    {profileImageUrl ? (
+                      <img
+                        src={profileImageUrl}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        onError={() => {
+                          setProfileImageUrl(null);
+                          if (currentUserId) {
+                            fetchProfileImage(currentUserId).then((url) => {
+                              if (url) {
+                                setProfileImageUrl(url);
+                                localStorage.setItem("tourstar_profile_image", url);
+                              }
+                            });
+                          }
+                        }}
+                      />
+                    ) : (
+                      <span>{(viewAuthorName || "?").slice(0, 1).toUpperCase()}</span>
+                    )}
+                    <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+                      </svg>
+                    </span>
+                  </button>
+                </>
+              ) : (
+                <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-500 text-2xl font-bold text-white shadow-lg shadow-blue-100 overflow-hidden">
+                  {viewAuthorProfileImageUrl ? (
+                    <img src={viewAuthorProfileImageUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span>{(viewAuthorName || "?").slice(0, 1).toUpperCase()}</span>
+                  )}
                 </div>
-                <p className="mt-0.5 text-xs text-gray-400">게시물 보기</p>
-                <div className="mt-3 flex gap-8">
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-lg font-bold text-gray-800 truncate">{viewAuthorName}</h2>
+                  {!isSelfAuthorFeed && (
+                    <span className="shrink-0 rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-[11px] font-semibold text-blue-700">친구</span>
+                  )}
+                </div>
+                <p className="mt-0.5 text-xs text-gray-400">
+                  {isSelfAuthorFeed ? "소중한 여행의 순간들을 기록하고 공유하세요" : "이 사용자가 올린 게시물"}
+                </p>
+                <div className="mt-3 flex gap-10">
                   {[
-                    { label: "게시물", value: viewedAuthorStats?.posts ?? 0, color: "text-gray-800" },
-                    { label: "사진", value: viewedAuthorStats?.photos ?? 0, color: "text-gray-800" },
-                    { label: "좋아요", value: viewedAuthorStats?.likes ?? 0, color: "text-pink-500" },
+                    { label: "게시물", value: authorFeedProfileStats.postCount, color: "text-purple-600" },
+                    { label: "스크랩", value: authorFeedProfileStats.scrapCount, color: "text-amber-500" },
+                    { label: "친구", value: authorFeedProfileStats.friendCount, color: "text-blue-500" },
                   ].map((s) => (
                     <div key={s.label} className="text-center">
                       <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
@@ -1963,19 +1991,25 @@ export default function TourstarContent() {
             <div className="flex items-center gap-2 flex-wrap">
               {([
                 { id: "all", label: "전체", count: null },
-                { id: "mine", label: "내 게시물", count: stats.mine },
+                { id: "mine", label: "게시물", count: stats.mine },
                 { id: "friends", label: "친구 게시물", count: stats.friends },
                 { id: "bookmarked", label: "스크랩", count: stats.bookmarked },
               ] as const).map((tab) => (
-                <button key={tab.id} type="button" onClick={() => { setFilter(tab.id); setViewAuthorId(null); setViewAuthorName(""); }}
+                <button key={tab.id} type="button" onClick={() => {
+                  setFilter(tab.id);
+                  setViewAuthorId(null);
+                  setViewAuthorName("");
+                  setViewAuthorProfileImageUrl(null);
+                  setViewMode("feed");
+                }}
                   className={`rounded-full px-3.5 py-1.5 text-xs font-medium border transition-all ${filter === tab.id ? "border-purple-300 bg-purple-50 text-purple-700" : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"}`}>
                   {tab.label}{tab.count !== null ? ` (${tab.count})` : ""}
                 </button>
               ))}
-              {filter === "friends" && viewAuthorName && (
+              {viewAuthorName.trim() && (
                 <span className="flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2.5 py-1 text-xs font-medium text-blue-700">
                   {viewAuthorName}
-                  <button type="button" onClick={() => { setViewAuthorId(null); setViewAuthorName(""); }}
+                  <button type="button" onClick={leaveAuthorFeed}
                     className="ml-0.5 rounded-full hover:bg-blue-100 p-0.5 transition-colors">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                   </button>
@@ -2032,9 +2066,10 @@ export default function TourstarContent() {
             <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-white py-20 text-center">
               <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mb-4 text-gray-300"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
               <p className="text-sm font-medium text-gray-400">
-                {filter === "mine" ? "내가 올린 게시물이 없습니다"
+                {viewAuthorName.trim() ? `${viewAuthorName}님의 게시물이 없습니다`
+                  : filter === "mine" ? "내가 올린 게시물이 없습니다"
                   : filter === "bookmarked" ? "스크랩한 게시물이 없습니다"
-                  : filter === "friends" ? (viewAuthorName ? `${viewAuthorName}님의 게시물이 없습니다` : "친구들이 올린 게시물이 없습니다")
+                  : filter === "friends" ? "친구들이 올린 게시물이 없습니다"
                   : searchQuery ? "검색 결과가 없습니다"
                   : "아직 기록된 여행이 없습니다"}
               </p>
@@ -2076,6 +2111,8 @@ export default function TourstarContent() {
         onEdit={(p) => { setDetailPost(null); setEditTargetPost(p); }}
         onBookmark={toggleBookmark}
         onDeletePost={deletePost}
+        onOpenAuthorFeed={handleViewAuthorPosts}
+        currentUserId={currentUserId}
         ownerProfileImage={profileImageUrl}
         ownerNickname={authorName}
         authorProfileMap={authorProfileMap}

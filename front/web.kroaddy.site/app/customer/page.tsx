@@ -24,7 +24,7 @@ function EmergencyIcon() {
 const CUSTOMER_CATEGORIES = [
   { title: "문의사항", description: "계정, 기능, 오류 등 일반 문의", icon: <QuestionIcon /> },
   { title: "이용가이드", description: "서비스 사용 방법과 시작 가이드", icon: <GuideIcon /> },
-  { title: "공지 및 업데이트", description: "점검, 배포, 변경사항 안내", icon: <BellIcon /> },
+  { title: "공지사항", description: "점검, 배포, 변경사항 안내", icon: <BellIcon /> },
   { title: "결제 및 서비스 이용", description: "결제, 환불, 구독 관련 안내", icon: <CardIcon /> },
   { title: "긴급 도움 및 여행 팁", description: "긴급 상황 대응과 여행 팁", icon: <EmergencyIcon /> },
 ] as const;
@@ -41,9 +41,9 @@ const TEMP_FAQS = [
     answer: "홈에서 여행 플래너와 장소 추천을 먼저 확인한 뒤, 일정 관리 기능을 사용해 보세요.",
   },
   {
-    category: "공지 및 업데이트",
+    category: "공지사항",
     question: "업데이트 내용은 어디서 확인하나요?",
-    answer: "고객센터의 공지 및 업데이트 카테고리에서 최신 변경사항을 확인할 수 있습니다.",
+    answer: "고객센터의 공지사항 카테고리에서 최신 변경사항을 확인할 수 있습니다.",
   },
   {
     category: "결제 및 서비스 이용",
@@ -103,12 +103,17 @@ export default function CustomerPage() {
 
           <section className="mt-6">
             <h2 className="text-base font-semibold text-gray-800">카테고리</h2>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {CUSTOMER_CATEGORIES.map((category) => (
+            <div className="mt-3 grid gap-3 grid-cols-1 sm:grid-cols-2">
+              {CUSTOMER_CATEGORIES.map((category, idx) => (
                 <button
                   key={category.title}
                   type="button"
-                  className="rounded-2xl border border-gray-200 bg-white px-5 py-5 text-left shadow-sm transition hover:border-purple-300 hover:bg-purple-50"
+                  onClick={() => {
+                    if (category.title === "문의사항") router.push("/customer/inquiry");
+                    if (category.title === "공지사항") router.push("/customer/notices");
+                    if (category.title === "긴급 도움 및 여행 팁") router.push("/customer/emergency");
+                  }}
+                  className={`rounded-2xl border border-gray-200 bg-white px-5 py-5 text-left shadow-sm transition hover:border-purple-300 hover:bg-purple-50 ${idx === 0 ? "sm:col-span-2" : ""}`}
                 >
                   <div className="flex items-center gap-2 text-gray-700">
                     <span className="shrink-0">{category.icon}</span>

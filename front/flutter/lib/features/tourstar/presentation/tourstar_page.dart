@@ -56,8 +56,62 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
   String _sortBy = "latest";   // latest | likes | comments
   String _searchQuery = "";
   bool _gridView = false;
+  /// 작성자 피드 (웹과 동일: 닉네임 탭 시 해당 유저 글만)
+  int? _viewAuthorUserId;
+  String _viewAuthorName = "";
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _searchCtrl = TextEditingController();
+
+  bool get _authorFeedOpen => _viewAuthorName.isNotEmpty;
+
+  bool _postMatchesAuthor(TourstarPostRecord p) {
+    if (_viewAuthorName.isEmpty) return false;
+    if (_viewAuthorUserId != null && p.userId != null) {
+      return p.userId == _viewAuthorUserId;
+    }
+    return (p.authorNickname ?? "").trim() == _viewAuthorName;
+  }
+
+  bool _isSelfAuthorFeed(TourstarState s) {
+    if (_viewAuthorName.isEmpty) return false;
+    if (_viewAuthorUserId != null && s.myUserId != null) {
+      return _viewAuthorUserId == s.myUserId;
+    }
+    final mn = (s.myNickname ?? "").trim();
+    return mn.isNotEmpty && mn == _viewAuthorName;
+  }
+
+  void _leaveAuthorFeed() {
+    setState(() {
+      _viewAuthorUserId = null;
+      _viewAuthorName = "";
+      _filter = "all";
+      _gridView = false;
+      _searchCtrl.clear();
+      _searchQuery = "";
+    });
+  }
+
+  void _openAuthorFeed(TourstarPostRecord p, TourstarState tourState) {
+    final name = (p.authorNickname ?? "").trim();
+    if (name.isEmpty) return;
+    final isOwner = _isOwner(p, tourState);
+    final isFriend = tourState.friendNicknames.contains(name);
+    if (!isOwner && !isFriend) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("친구인 사용자만 피드를 볼 수 있습니다.")),
+      );
+      return;
+    }
+    setState(() {
+      _viewAuthorUserId = p.userId;
+      _viewAuthorName = name;
+      _filter = "all";
+      _gridView = true;
+      _searchCtrl.clear();
+      _searchQuery = "";
+    });
+  }
 
   @override
   void dispose() {
@@ -74,19 +128,23 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
   List<TourstarPostRecord> _getFiltered(TourstarState tourState) {
     final all = tourState.serverPosts;
     List<TourstarPostRecord> result;
-    switch (_filter) {
-      case "friends":
-        final nicknames = tourState.friendNicknames;
-        result = all.where((p) {
-          final nick = p.authorNickname ?? "";
-          return nick.isNotEmpty && nicknames.contains(nick);
-        }).toList();
-      case "mine":
-        result = all.where((p) => _isMyPost(p, tourState)).toList();
-      case "bookmarked":
-        result = all.where((p) => p.bookmarked).toList();
-      default:
-        result = List<TourstarPostRecord>.from(all);
+    if (_viewAuthorName.isNotEmpty) {
+      result = all.where(_postMatchesAuthor).toList();
+    } else {
+      switch (_filter) {
+        case "friends":
+          final nicknames = tourState.friendNicknames;
+          result = all.where((p) {
+            final nick = p.authorNickname ?? "";
+            return nick.isNotEmpty && nicknames.contains(nick);
+          }).toList();
+        case "mine":
+          result = all.where((p) => _isMyPost(p, tourState)).toList();
+        case "bookmarked":
+          result = all.where((p) => p.bookmarked).toList();
+        default:
+          result = List<TourstarPostRecord>.from(all);
+      }
     }
     // 검색 필터
     if (_searchQuery.isNotEmpty) {
@@ -143,6 +201,9 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
   void _openDetail(TourstarPostRecord post) {
     final tourState = ref.read(tourstarControllerProvider);
     final isOwner = _isOwner(post, tourState);
+    final nick = (post.authorNickname ?? "").trim();
+    final isFriend = nick.isNotEmpty && tourState.friendNicknames.contains(nick);
+    final canAuthorFeed = isOwner || isFriend;
     final effectiveImg = tourState.profileImageUrl ??
         tourState.serverPosts
             .where((p) => _isMyPost(p, tourState) && (p.authorProfileImageUrl ?? "").isNotEmpty)
@@ -166,6 +227,15 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
           return ok;
         },
         onEditPost: (p) => _openEdit(p),
+        onAuthorFeedTap: canAuthorFeed
+            ? () {
+                Navigator.pop(context);
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  _openAuthorFeed(post, ref.read(tourstarControllerProvider));
+                });
+              }
+            : null,
       ),
     );
   }
@@ -189,8 +259,6 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
     }
     return map;
   }
-
-  Widget _verticalDivider() => Container(width: 1, height: 28, color: const Color(0xFFF3F4F6));
 
   void _openEdit(TourstarPostRecord post) {
     showModalBottomSheet(
@@ -263,6 +331,27 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
       "friendPosts": friendPosts.length,
     };
 
+    final authorPostsForHeader =
+        _authorFeedOpen ? allPosts.where(_postMatchesAuthor).toList() : <TourstarPostRecord>[];
+    String? authorFeedAvatar;
+    if (_authorFeedOpen) {
+      if (_isSelfAuthorFeed(tourState)) {
+        authorFeedAvatar = effectiveProfileImage;
+      } else {
+        for (final p in allPosts) {
+          if (_postMatchesAuthor(p) && (p.authorProfileImageUrl ?? "").isNotEmpty) {
+            authorFeedAvatar = p.authorProfileImageUrl;
+            break;
+          }
+        }
+      }
+    }
+    final authorFeedScrapCount = _authorFeedOpen
+        ? (_isSelfAuthorFeed(tourState)
+            ? bookmarkedPosts.length
+            : authorPostsForHeader.where((p) => p.bookmarked).length)
+        : 0;
+
     return Scaffold(
       backgroundColor: _kGray100,
       body: CustomScrollView(
@@ -307,66 +396,61 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
             ),
           ),
 
-          // ── Profile / Stats ──────────────────────────────
-          SliverToBoxAdapter(
-            child: Container(
-              margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 아바타 + 이름
-                  Row(
-                    children: [
+          // ── 작성자 피드 프로필 (전체 피드에서는 숨김 · 웹과 동일) ──
+          if (_authorFeedOpen)
+            SliverToBoxAdapter(
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                padding: const EdgeInsets.fromLTRB(12, 14, 16, 14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextButton.icon(
+                      onPressed: _leaveAuthorFeed,
+                      icon: const Icon(Icons.arrow_back_ios_new, size: 14, color: _kGray700),
+                      label: const Text("뒤로", style: TextStyle(fontSize: 13, color: _kGray700)),
+                      style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4)),
+                    ),
+                    const SizedBox(width: 4),
+                    if (_isSelfAuthorFeed(tourState))
                       GestureDetector(
                         onTap: _pickAndUploadProfileImage,
                         child: Stack(
                           children: [
                             Container(
-                              width: 72,
-                              height: 72,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [_kPurple2, _kPink],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
+                              width: 64,
+                              height: 64,
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(colors: [_kPurple2, _kPink]),
                                 shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: _kPurple2.withValues(alpha: 0.25),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
                               ),
                               child: ClipOval(
-                                child: effectiveProfileImage != null
+                                child: authorFeedAvatar != null && authorFeedAvatar.isNotEmpty
                                     ? Image.network(
-                                        effectiveProfileImage,
+                                        authorFeedAvatar,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => Center(
+                                        errorBuilder: (_, _, _) => Center(
                                           child: Text(
-                                            (tourState.myNickname ?? "T").substring(0, 1).toUpperCase(),
-                                            style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                                            _viewAuthorName.isNotEmpty ? _viewAuthorName.substring(0, 1).toUpperCase() : "T",
+                                            style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                                           ),
                                         ),
                                       )
                                     : Center(
                                         child: Text(
-                                          (tourState.myNickname ?? "T").substring(0, 1).toUpperCase(),
-                                          style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                                          _viewAuthorName.isNotEmpty ? _viewAuthorName.substring(0, 1).toUpperCase() : "T",
+                                          style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                                         ),
                                       ),
                               ),
@@ -375,64 +459,89 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                               right: 0,
                               bottom: 0,
                               child: Container(
-                                width: 22,
-                                height: 22,
+                                width: 20,
+                                height: 20,
                                 decoration: BoxDecoration(
                                   color: _kPurple,
                                   shape: BoxShape.circle,
                                   border: Border.all(color: Colors.white, width: 1.5),
                                 ),
-                                child: const Icon(Icons.camera_alt, size: 12, color: Colors.white),
+                                child: const Icon(Icons.camera_alt, size: 10, color: Colors.white),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              tourState.myNickname ?? "닉네임을 불러오는 중…",
-                              style: const TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                                color: _kGray800,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              "소중한 여행의 순간들을 기록하세요 ✈️",
-                              style: TextStyle(fontSize: 12, color: _kGray400),
-                            ),
-                          ],
+                      )
+                    else
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(colors: [Color(0xFF3B82F6), _kPurple2]),
+                          shape: BoxShape.circle,
+                        ),
+                        child: ClipOval(
+                          child: authorFeedAvatar != null && authorFeedAvatar.isNotEmpty
+                              ? Image.network(authorFeedAvatar, fit: BoxFit.cover)
+                              : Center(
+                                  child: Text(
+                                    _viewAuthorName.isNotEmpty ? _viewAuthorName.substring(0, 1).toUpperCase() : "?",
+                                    style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const Divider(height: 1, color: Color(0xFFF3F4F6)),
-                  const SizedBox(height: 14),
-                  // 통계 (전체 폭으로)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _StatItem(value: "${stats['total']}", label: "전체"),
-                      _verticalDivider(),
-                      _StatItem(value: "${stats['mine']}", label: "내 게시물"),
-                      _verticalDivider(),
-                      _StatItem(value: "${stats['bookmarked']}", label: "스크랩"),
-                      _verticalDivider(),
-                      _StatItem(value: "${stats['likes']}", label: "좋아요", color: _kPink),
-                      _verticalDivider(),
-                      _StatItem(value: "${stats['friends']}", label: "친구", color: _kPurple),
-                    ],
-                  ),
-                ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  _viewAuthorName,
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _kGray800),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (!_isSelfAuthorFeed(tourState)) ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEFF6FF),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: const Color(0xFFBFDBFE)),
+                                  ),
+                                  child: const Text("친구", style: TextStyle(fontSize: 10, color: Color(0xFF1D4ED8), fontWeight: FontWeight.w600)),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _isSelfAuthorFeed(tourState)
+                                ? "소중한 여행의 순간들을 기록하세요 ✈️"
+                                : "이 사용자가 올린 게시물",
+                            style: const TextStyle(fontSize: 11, color: _kGray400),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _StatItem(value: "${authorPostsForHeader.length}", label: "게시물", color: _kPurple),
+                              _StatItem(value: "$authorFeedScrapCount", label: "스크랩", color: const Color(0xFFF59E0B)),
+                              _StatItem(value: "${stats['friends']}", label: "친구", color: const Color(0xFF3B82F6)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
 
           // ── 검색 바 ──────────────────────────────────────
           SliverToBoxAdapter(
@@ -482,14 +591,19 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                         children: [
                           for (final tab in [
                             ("all", "전체"),
-                            ("mine", "내 게시물 (${stats['mine']})"),
+                            ("mine", "게시물 (${stats['mine']})"),
                             ("friends", "친구 게시물 (${stats['friendPosts']})"),
                             ("bookmarked", "스크랩 (${stats['bookmarked']})"),
                           ])
                             Padding(
                               padding: const EdgeInsets.only(right: 8),
                               child: GestureDetector(
-                                onTap: () => setState(() => _filter = tab.$1),
+                                onTap: () => setState(() {
+                                  _filter = tab.$1;
+                                  _viewAuthorUserId = null;
+                                  _viewAuthorName = "";
+                                  _gridView = false;
+                                }),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                                   decoration: BoxDecoration(
@@ -614,10 +728,12 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                         myProfileImageUrl: effectiveProfileImage,
                         isLiked: tourState.likedPostIds.contains(p.id),
                         onTap: () => _openDetail(p),
+                        onAuthorTap: (isOwner || isFriend) ? () => _openAuthorFeed(p, tourState) : null,
                         onLike: () => ref.read(tourstarControllerProvider.notifier).toggleLike(p.id),
                         onBookmark: () => ref.read(tourstarControllerProvider.notifier).toggleBookmark(p.id),
                         onDelete: isOwner
                             ? () async {
+                                final messenger = ScaffoldMessenger.of(context);
                                 final confirmed = await showDialog<bool>(
                                   context: context,
                                   builder: (dialogContext) => AlertDialog(
@@ -635,11 +751,13 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                                     ],
                                   ),
                                 );
-                                if (confirmed == true && mounted) {
+                                if (!mounted) return;
+                                if (confirmed == true) {
                                   final ok = await ref.read(tourstarControllerProvider.notifier).deletePost(p.id);
-                                  if (!ok && mounted) {
+                                  if (!mounted) return;
+                                  if (!ok) {
                                     final msg = ref.read(tourstarControllerProvider).statusMessage;
-                                    ScaffoldMessenger.of(context).showSnackBar(
+                                    messenger.showSnackBar(
                                       SnackBar(content: Text(msg.isNotEmpty ? msg : "게시글 삭제에 실패했습니다.")),
                                     );
                                   }
@@ -876,6 +994,7 @@ class _FeedCard extends StatelessWidget {
     this.onBookmark,
     this.onDelete,
     this.onLike,
+    this.onAuthorTap,
   });
   final TourstarPostRecord post;
   final VoidCallback onTap;
@@ -886,6 +1005,8 @@ class _FeedCard extends StatelessWidget {
   final VoidCallback? onBookmark;
   final VoidCallback? onDelete;
   final VoidCallback? onLike;
+  /// 본인·친구 글: 닉네임 탭 시 작성자 피드
+  final VoidCallback? onAuthorTap;
 
   Widget _buildAvatar() {
     final imageUrl = isOwner ? myProfileImageUrl : post.authorProfileImageUrl;
@@ -899,7 +1020,7 @@ class _FeedCard extends StatelessWidget {
       ),
       child: ClipOval(
         child: imageUrl != null && imageUrl.isNotEmpty
-            ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) =>
+            ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, _, _) =>
                 Center(child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold))))
             : Center(child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold))),
       ),
@@ -942,7 +1063,7 @@ class _FeedCard extends StatelessWidget {
                             thumbUrl,
                             fit: BoxFit.cover,
                             width: double.infinity,
-                            errorBuilder: (_, __, ___) => _PhotoPlaceholder(),
+                            errorBuilder: (_, _, _) => _PhotoPlaceholder(),
                           )
                         : _PhotoPlaceholder(),
                   ),
@@ -1029,25 +1150,34 @@ class _FeedCard extends StatelessWidget {
                       _buildAvatar(),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: Row(
-                          children: [
-                            Text(
-                              post.authorNickname ?? "알 수 없음",
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _kGray700),
-                            ),
-                            if (isFriend) ...[
-                              const SizedBox(width: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                decoration: BoxDecoration(
-                                  color: _kPurpleLight,
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: const Color(0xFFD8B4FE)),
+                        child: GestureDetector(
+                          onTap: onAuthorTap ?? onTap,
+                          behavior: HitTestBehavior.opaque,
+                          child: Row(
+                            children: [
+                              Text(
+                                post.authorNickname ?? "알 수 없음",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: (isOwner || isFriend) ? _kPurple : _kGray700,
+                                  decoration: (isOwner || isFriend) ? TextDecoration.underline : TextDecoration.none,
                                 ),
-                                child: const Text("친구", style: TextStyle(fontSize: 9, color: _kPurple, fontWeight: FontWeight.w600)),
                               ),
+                              if (isFriend) ...[
+                                const SizedBox(width: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: _kPurpleLight,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: const Color(0xFFD8B4FE)),
+                                  ),
+                                  child: const Text("친구", style: TextStyle(fontSize: 9, color: _kPurple, fontWeight: FontWeight.w600)),
+                                ),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                       ),
                       // 좋아요 버튼
@@ -1131,7 +1261,7 @@ class _GridCard extends StatelessWidget {
           children: [
             thumbUrl != null
                 ? Image.network(thumbUrl, fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
+                    errorBuilder: (_, _, _) => Container(
                       decoration: const BoxDecoration(
                         gradient: LinearGradient(colors: [_kPurple2, _kPink]),
                       ),
@@ -1198,6 +1328,7 @@ class _PostDetailSheet extends ConsumerStatefulWidget {
     this.authorProfileMap = const {},
     this.onDeletePost,
     this.onEditPost,
+    this.onAuthorFeedTap,
   });
   final TourstarPostRecord post;
   final void Function(String postId, String content) onAddComment;
@@ -1207,6 +1338,7 @@ class _PostDetailSheet extends ConsumerStatefulWidget {
   final Map<String, String> authorProfileMap;
   final Future<bool> Function(String postId)? onDeletePost;
   final void Function(TourstarPostRecord post)? onEditPost;
+  final VoidCallback? onAuthorFeedTap;
 
   @override
   ConsumerState<_PostDetailSheet> createState() => _PostDetailSheetState();
@@ -1259,7 +1391,7 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
       ),
       child: ClipOval(
         child: imageUrl != null && imageUrl.isNotEmpty
-            ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) =>
+            ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, _, _) =>
                 Center(child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))))
             : Center(child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))),
       ),
@@ -1328,7 +1460,7 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                                   post.photoUrls[_photoIdx],
                                   fit: BoxFit.cover,
                                   width: double.infinity,
-                                  errorBuilder: (_, __, ___) =>
+                                  errorBuilder: (_, _, _) =>
                                       Container(
                                         decoration: const BoxDecoration(
                                           gradient: LinearGradient(
@@ -1424,7 +1556,7 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                                     final initial = (post.authorNickname ?? "?").substring(0, 1).toUpperCase();
                                     if (imgUrl != null && imgUrl.isNotEmpty) {
                                       return Image.network(imgUrl, fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => Center(child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold))));
+                                          errorBuilder: (_, _, _) => Center(child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold))));
                                     }
                                     return Center(child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)));
                                   }(),
@@ -1435,10 +1567,24 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      post.authorNickname ?? "알 수 없음",
-                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _kGray800),
-                                    ),
+                                    if (widget.onAuthorFeedTap != null)
+                                      GestureDetector(
+                                        onTap: widget.onAuthorFeedTap,
+                                        child: Text(
+                                          post.authorNickname ?? "알 수 없음",
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: _kPurple,
+                                            decoration: TextDecoration.underline,
+                                          ),
+                                        ),
+                                      )
+                                    else
+                                      Text(
+                                        post.authorNickname ?? "알 수 없음",
+                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _kGray800),
+                                      ),
                                     if (dateStr.isNotEmpty)
                                       Text(dateStr, style: const TextStyle(fontSize: 11, color: _kGray400)),
                                   ],
@@ -1455,6 +1601,8 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                                       Navigator.pop(context);
                                       widget.onEditPost?.call(post);
                                     } else if (value == "delete") {
+                                      final navigator = Navigator.of(context);
+                                      final messenger = ScaffoldMessenger.of(context);
                                       final confirmed = await showDialog<bool>(
                                         context: context,
                                         builder: (dialogContext) => AlertDialog(
@@ -1472,14 +1620,14 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                                           ],
                                         ),
                                       );
-                                      if (confirmed == true && mounted) {
+                                      if (!mounted) return;
+                                      if (confirmed == true) {
                                         final ok = await widget.onDeletePost?.call(post.id) ?? false;
-                                        if (!mounted) return;
                                         if (ok) {
-                                          Navigator.pop(context);
+                                          navigator.pop();
                                         } else {
                                           final msg = ref.read(tourstarControllerProvider).statusMessage;
-                                          ScaffoldMessenger.of(context).showSnackBar(
+                                          messenger.showSnackBar(
                                             SnackBar(content: Text(msg.isNotEmpty ? msg : "게시글 삭제에 실패했습니다.")),
                                           );
                                         }
@@ -1702,7 +1850,7 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
       return Image.network(
         resolved,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const Center(
+        errorBuilder: (_, _, _) => const Center(
           child: Icon(Icons.image_outlined, color: _kGray400),
         ),
       );
@@ -1710,7 +1858,7 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
     return Image.file(
       File(sourceImage),
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => const Center(
+      errorBuilder: (_, _, _) => const Center(
         child: Icon(Icons.image_outlined, color: _kGray400),
       ),
     );
@@ -2342,9 +2490,11 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                         onPressed: state.loading
                             ? null
                             : () async {
+                                final navigator = Navigator.of(context);
                                 final ok =
                                     await ctrl.publishPost(visibility: _visibility);
-                                if (ok && mounted) Navigator.pop(context);
+                                if (!mounted) return;
+                                if (ok) navigator.pop();
                               },
                         style: FilledButton.styleFrom(
                           backgroundColor: _kPurple,
@@ -2524,6 +2674,8 @@ class _EditPostSheetState extends ConsumerState<_EditPostSheet> {
   }
 
   Future<void> _save() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
     final title = _titleCtrl.text.trim();
     final location = _locationCtrl.text.trim();
     final comment = _commentCtrl.text.trim();
@@ -2533,7 +2685,7 @@ class _EditPostSheetState extends ConsumerState<_EditPostSheet> {
         .where((t) => t.isNotEmpty)
         .toList();
     if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("제목을 입력해 주세요.")));
+      messenger.showSnackBar(const SnackBar(content: Text("제목을 입력해 주세요.")));
       return;
     }
     setState(() => _saving = true);
@@ -2544,7 +2696,7 @@ class _EditPostSheetState extends ConsumerState<_EditPostSheet> {
         final upload = await repo.uploadPhotos(_newFiles);
         newPaths = upload.uploaded.map(_uploadedPathForPostUpdate).where((p) => p.isNotEmpty).toList();
         if (newPaths.isEmpty && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             const SnackBar(content: Text("새 사진 업로드에 실패했습니다.")),
           );
           setState(() => _saving = false);
@@ -2562,13 +2714,13 @@ class _EditPostSheetState extends ConsumerState<_EditPostSheet> {
       );
       if (!mounted) return;
       if (ok) {
-        Navigator.pop(context);
+        navigator.pop();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("수정에 실패했습니다.")));
+        messenger.showSnackBar(const SnackBar(content: Text("수정에 실패했습니다.")));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           SnackBar(content: Text("저장 중 오류: $e")),
         );
       }
@@ -2621,7 +2773,7 @@ class _EditPostSheetState extends ConsumerState<_EditPostSheet> {
                   : Image.network(
                       display,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
+                      errorBuilder: (_, _, _) => Container(
                         color: _kGray200,
                         child: const Icon(Icons.broken_image, color: _kGray400),
                       ),
@@ -2663,7 +2815,7 @@ class _EditPostSheetState extends ConsumerState<_EditPostSheet> {
               child: Image.file(
                 File(file.path),
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                errorBuilder: (_, _, _) => Container(
                   color: _kGray200,
                   child: const Icon(Icons.broken_image, color: _kGray400),
                 ),

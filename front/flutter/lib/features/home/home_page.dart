@@ -699,7 +699,7 @@ class _NewsBannerCarouselState extends State<_NewsBannerCarousel> {
                           Image.network(
                             item.thumbnail,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                            errorBuilder: (_, _, _) => const SizedBox.shrink(),
                           ),
                         // 그라디언트 오버레이
                         const DecoratedBox(

@@ -171,9 +171,9 @@ class TourstarRepository {
         "visibility": visibility,
         "tags": tags,
         "image_paths": imagePaths,
-        if (userId != null) "user_id": userId,
-        if (nick != null && nick.isNotEmpty) "author_nickname": nick,
-        if (selectedScores != null) "selected_scores": selectedScores,
+        ...?((userId != null) ? {"user_id": userId} : null),
+        ...?((nick != null && nick.isNotEmpty) ? {"author_nickname": nick} : null),
+        ...?((selectedScores != null) ? {"selected_scores": selectedScores} : null),
       },
       options: Options(receiveTimeout: const Duration(minutes: 2)),
     );
@@ -302,7 +302,11 @@ class TourstarRepository {
   }) async {
     final res = await _dio.post<Map<String, dynamic>>(
       "/v1/photo-selection/posts/$postId/comments",
-      data: {"author": author, "content": content, if (userId != null) "user_id": userId},
+      data: {
+        "author": author,
+        "content": content,
+        ...?((userId != null) ? {"user_id": userId} : null),
+      },
       options: Options(receiveTimeout: const Duration(minutes: 1)),
     );
     return TourstarComment.fromJson(res.data ?? const {});
