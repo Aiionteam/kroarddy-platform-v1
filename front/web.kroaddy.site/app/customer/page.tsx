@@ -112,6 +112,8 @@ export default function CustomerPage() {
                     if (category.title === "문의사항") router.push("/customer/inquiry");
                     if (category.title === "공지사항") router.push("/customer/notices");
                     if (category.title === "긴급 도움 및 여행 팁") router.push("/customer/emergency");
+                    if (category.title === "결제 및 서비스 이용") router.push("/customer/subscription");
+                    if (category.title === "이용가이드") router.push("/customer/guide");
                   }}
                   className={`rounded-2xl border border-gray-200 bg-white px-5 py-5 text-left shadow-sm transition hover:border-purple-300 hover:bg-purple-50 ${idx === 0 ? "sm:col-span-2" : ""}`}
                 >
