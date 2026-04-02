@@ -262,10 +262,28 @@ export default function EmergencyPage() {
       <main className="flex flex-1 flex-col overflow-y-auto">
         <header className="shrink-0 border-b border-gray-200 bg-white px-6 py-5">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-xl font-bold text-gray-800">긴급 도움 및 여행 팁</h1>
-              <p className="mt-1 text-sm text-gray-500">외국인이 국내에서 겪을 수 있는 긴급 상황을 카테고리별로 안내합니다.</p>
+            <div className="flex items-start gap-3">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="rounded-lg px-2.5 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
+                aria-label="뒤로가기"
+              >
+                ←
+              </button>
+              <div>
+                <h1 className="text-xl font-bold text-gray-800">긴급 도움 및 여행 팁</h1>
+                <p className="mt-1 text-sm text-gray-500">외국인이 국내에서 겪을 수 있는 긴급 상황을 카테고리별로 안내합니다.</p>
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={() => router.push("/customer/emergency/share")}
+              className="inline-flex items-center gap-2 rounded-full bg-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-purple-700"
+            >
+              <span className="text-base">📣</span>
+              긴급상황 공유
+            </button>
           </div>
         </header>
 
@@ -307,9 +325,8 @@ export default function EmergencyPage() {
                     <button
                       type="button"
                       onClick={() => setActiveId(c.id)}
-                      className={`flex w-full items-start gap-3 px-4 py-4 text-left transition ${
-                        activeId === c.id ? "bg-purple-50" : "hover:bg-gray-50"
-                      }`}
+                      className={`flex w-full items-start gap-3 px-4 py-4 text-left transition ${activeId === c.id ? "bg-purple-50" : "hover:bg-gray-50"
+                        }`}
                     >
                       <div className="mt-0.5 shrink-0 text-gray-800">{c.icon}</div>
                       <div className="min-w-0">
