@@ -155,18 +155,16 @@ export default function InquiryPage() {
               <button
                 type="button"
                 onClick={() => setTab("write")}
-                className={`pb-2 text-sm font-semibold ${
-                  tab === "write" ? "border-b-2 border-black text-black" : "text-gray-500"
-                }`}
+                className={`pb-2 text-sm font-semibold ${tab === "write" ? "border-b-2 border-black text-black" : "text-gray-500"
+                  }`}
               >
                 1:1 문의하기
               </button>
               <button
                 type="button"
                 onClick={() => setTab("list")}
-                className={`pb-2 text-sm font-semibold ${
-                  tab === "list" ? "border-b-2 border-black text-black" : "text-gray-500"
-                }`}
+                className={`pb-2 text-sm font-semibold ${tab === "list" ? "border-b-2 border-black text-black" : "text-gray-500"
+                  }`}
               >
                 나의 문의 내역
               </button>
@@ -304,11 +302,10 @@ export default function InquiryPage() {
                         </div>
                         <div className="shrink-0">
                           <span
-                            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                              it.status === "답변완료"
+                            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${it.status === "답변완료"
                                 ? "bg-green-100 text-green-700"
                                 : "bg-amber-100 text-amber-700"
-                            }`}
+                              }`}
                           >
                             {it.status === "답변완료" ? "답변완료" : "처리중"}
                           </span>
