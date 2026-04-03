@@ -149,6 +149,15 @@ class TourstarRepository {
         .toList();
   }
 
+  Future<TourstarPostRecord> fetchPost({required String postId, int? viewerUserId}) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      "/v1/photo-selection/posts/$postId",
+      queryParameters: viewerUserId != null ? {"viewer_user_id": viewerUserId} : null,
+      options: Options(receiveTimeout: const Duration(minutes: 1)),
+    );
+    return TourstarPostRecord.fromJson(Map<String, dynamic>.from(res.data ?? const {}));
+  }
+
   // ── 게시글 생성 (S3 업로드 + Neon 저장은 백엔드 처리) ──────
   Future<TourstarPostRecord> createPost({
     required String title,
@@ -312,17 +321,25 @@ class TourstarRepository {
     return TourstarComment.fromJson(res.data ?? const {});
   }
 
-  // ── 좋아요 토글 ─────────────────────────────────────────────
-  Future<({int likes, bool liked})> toggleLike({required String postId, required int userId}) async {
+  // ── 명예 투표 (썸업/썸다운) ─────────────────────────────────
+  Future<({int honorUp, int honorDown, int honorVote, int likes, bool liked})> voteHonor({
+    required String postId,
+    required int userId,
+    required int value,
+  }) async {
     final res = await _dio.post<Map<String, dynamic>>(
-      "/v1/photo-selection/posts/$postId/likes/toggle",
-      data: {"user_id": userId},
+      "/v1/photo-selection/posts/$postId/honor/vote",
+      data: {"user_id": userId, "value": value},
       options: Options(receiveTimeout: const Duration(minutes: 1)),
     );
     final data = res.data ?? const <String, dynamic>{};
+    final hv = (data["honor_vote"] as num?)?.toInt() ?? 0;
     return (
+      honorUp: (data["honor_up"] as num?)?.toInt() ?? 0,
+      honorDown: (data["honor_down"] as num?)?.toInt() ?? 0,
+      honorVote: hv,
       likes: (data["likes"] as num?)?.toInt() ?? 0,
-      liked: (data["liked"] == true),
+      liked: data["liked"] == true,
     );
   }
 

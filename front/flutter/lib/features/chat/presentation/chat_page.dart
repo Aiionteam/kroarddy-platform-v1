@@ -596,9 +596,7 @@ class _TourstarShareCardState extends ConsumerState<_TourstarShareCard> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onLongPress: widget.onLongPress,
-      onTap: _preview == null
-          ? null
-          : () => context.push("/tourstar?postId=${Uri.encodeComponent(widget.postId)}"),
+      onTap: () => context.push("/tourstar?postId=${Uri.encodeComponent(widget.postId)}"),
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
         child: Row(

@@ -108,6 +108,9 @@ export interface TourstarPostRecord {
   updated_at: string;
   likes?: number;
   liked?: boolean;
+  honor_up?: number;
+  honor_down?: number;
+  honor_vote?: number;
   comments: TourstarComment[];
 }
 
@@ -251,6 +254,21 @@ export async function listTourstarPosts(viewerUserId?: number | null): Promise<T
   return res.json();
 }
 
+export async function getTourstarPost(
+  postId: string,
+  viewerUserId?: number | null,
+): Promise<TourstarPostRecord> {
+  const q =
+    viewerUserId != null
+      ? `?viewer_user_id=${encodeURIComponent(String(viewerUserId))}`
+      : "";
+  const res = await fetch(toApiUrl(`/v1/photo-selection/posts/${postId}${q}`), { cache: "no-store" });
+  if (!res.ok) {
+    throw new Error(`투어스타 단일 게시물 API 오류: ${res.status}`);
+  }
+  return res.json();
+}
+
 export async function createTourstarPost(payload: {
   user_id?: number;
   author_nickname?: string;
@@ -302,6 +320,31 @@ export async function toggleTourstarLike(
   });
   if (!res.ok) {
     throw new Error(`투어스타 좋아요 API 오류: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function voteTourstarHonor(
+  postId: string,
+  userId: number,
+  value: 1 | -1,
+): Promise<{
+  post_id: string;
+  honor_up: number;
+  honor_down: number;
+  honor_vote: number;
+  likes: number;
+  liked: boolean;
+}> {
+  const res = await fetch(toApiUrl(`/v1/photo-selection/posts/${postId}/honor/vote`), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: userId, value }),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`투어스타 명예 투표 API 오류: ${res.status} ${errText}`);
   }
   return res.json();
 }

@@ -20,7 +20,7 @@ import httpx
 from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, Request, Response, UploadFile
 from PIL import ExifTags, Image
 from sqlalchemy import delete as sql_delete
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...core.config import settings
@@ -37,6 +37,8 @@ from ...domain.v1.contracts import (
     GeneratePostResponse,
     FinalizeUploadsRequest,
     FinalizeUploadsResponse,
+    HonorVoteRequest,
+    HonorVoteResponse,
     UploadProfileImageResponse,
     GpsLocationCandidate,
     JobStatusResponse,
@@ -51,7 +53,7 @@ from ...domain.v1.contracts import (
 )
 from ...domain.v1.graph import build_metadata_graph
 from ...models.tourstar_comment import TourstarPostComment
-from ...models.tourstar_post_like import TourstarPostLike
+from ...models.tourstar_post_honor_vote import TourstarPostHonorVote
 from ...models.tourstar_post import TourstarPost
 from ...models.user_profile import UserProfile
 from ...domain.v1.state import store, worker
@@ -802,13 +804,17 @@ def _to_post_response(
     author_profile_image_url: str | None = None,
     comment_profile_map: dict[int, str] | None = None,
     nickname_user_map: dict[str, int] | None = None,
-    liked: bool = False,
+    honor_vote: int = 0,
 ) -> PostResponse:
     visibility: Literal["public", "private"] = (
         "private" if (row.visibility or "public") == "private" else "public"
     )
     comment_profile_map = comment_profile_map or {}
     nickname_user_map = nickname_user_map or {}
+    honor_up = int(getattr(row, "honor_up", 0) or 0)
+    honor_down = int(getattr(row, "honor_down", 0) or 0)
+    hv = honor_vote if honor_vote in (-1, 0, 1) else 0
+    net = honor_up - honor_down
     return PostResponse(
         id=str(row.id),
         user_id=row.user_id,
@@ -823,8 +829,11 @@ def _to_post_response(
         selected_scores=row.selected_scores or None,
         created_at=row.created_at,
         updated_at=row.updated_at,
-        likes=int(getattr(row, "likes", 0) or 0),
-        liked=liked,
+        honor_up=honor_up,
+        honor_down=honor_down,
+        honor_vote=hv,
+        likes=net,
+        liked=(hv == 1),
         comments=[
             _to_comment_response(
                 item,
@@ -1878,22 +1887,21 @@ async def list_posts(
             continue
         nickname_user_map[nick] = int(p.user_id)
 
-    # viewer 기준 liked 계산
-    liked_set: set[int] = set()
-    if viewer_user_id is not None:
-        liked_rows = (
+    # viewer 기준 명예 투표 (-1 / 0 / 1)
+    honor_vote_map: dict[int, int] = {}
+    if viewer_user_id is not None and post_ids:
+        hv_rows = (
             (
                 await db.execute(
-                    select(TourstarPostLike.post_id).where(
-                        TourstarPostLike.user_id == int(viewer_user_id),
-                        TourstarPostLike.post_id.in_(post_ids),
+                    select(TourstarPostHonorVote.post_id, TourstarPostHonorVote.vote).where(
+                        TourstarPostHonorVote.user_id == int(viewer_user_id),
+                        TourstarPostHonorVote.post_id.in_(post_ids),
                     )
                 )
             )
-            .scalars()
             .all()
         )
-        liked_set = {int(x) for x in liked_rows}
+        honor_vote_map = {int(a): int(b) for a, b in hv_rows}
 
     return [
         _to_post_response(
@@ -1902,10 +1910,84 @@ async def list_posts(
             profile_map.get(int(post.user_id)) if post.user_id is not None else None,
             comment_profile_map=comment_profile_map,
             nickname_user_map=nickname_user_map,
-            liked=int(post.id) in liked_set,
+            honor_vote=honor_vote_map.get(int(post.id), 0),
         )
         for post in posts
     ]
+
+
+@router.get("/posts/{post_id}", response_model=PostResponse)
+async def get_one_post(
+    post_id: int,
+    viewer_user_id: int | None = Query(default=None, ge=1, description="조회자 user_id (명예 투표 상태)"),
+    db: AsyncSession = Depends(get_db),
+) -> PostResponse:
+    post = (await db.execute(select(TourstarPost).where(TourstarPost.id == post_id))).scalar_one_or_none()
+    if post is None:
+        raise HTTPException(status_code=404, detail=f"Post not found: {post_id}")
+
+    comments = (
+        (
+            await db.execute(
+                select(TourstarPostComment)
+                .where(TourstarPostComment.post_id == post_id)
+                .order_by(TourstarPostComment.created_at.asc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    author_profile_url: str | None = None
+    if post.user_id is not None:
+        prof = (
+            (await db.execute(select(UserProfile).where(UserProfile.user_id == int(post.user_id))))
+            .scalar_one_or_none()
+        )
+        if prof is not None and prof.profile_image_url:
+            author_profile_url = _build_s3_view_url(prof.profile_image_url)
+
+    comment_user_ids = list({int(c.user_id) for c in comments if c.user_id is not None})
+    comment_profile_map: dict[int, str] = {}
+    if comment_user_ids:
+        cprofiles = (
+            (await db.execute(select(UserProfile).where(UserProfile.user_id.in_(comment_user_ids))))
+            .scalars()
+            .all()
+        )
+        comment_profile_map = {
+            p.user_id: _build_s3_view_url(p.profile_image_url)
+            for p in cprofiles
+            if p.profile_image_url
+        }
+
+    nickname_user_map: dict[str, int] = {}
+    if post.user_id is not None:
+        nick = (post.author_nickname or "").strip()
+        if nick:
+            nickname_user_map[nick] = int(post.user_id)
+
+    honor_vote = 0
+    if viewer_user_id is not None:
+        hv = (
+            await db.execute(
+                select(TourstarPostHonorVote.vote).where(
+                    TourstarPostHonorVote.post_id == int(post_id),
+                    TourstarPostHonorVote.user_id == int(viewer_user_id),
+                )
+            )
+        ).scalar_one_or_none()
+        if hv is not None:
+            honor_vote = int(hv)
+
+    return _to_post_response(
+        post,
+        list(comments),
+        author_profile_url,
+        comment_profile_map=comment_profile_map,
+        nickname_user_map=nickname_user_map,
+        honor_vote=honor_vote,
+    )
 
 
 @router.post("/posts", response_model=PostResponse)
@@ -2074,41 +2156,130 @@ async def add_post_comment(
     return _to_comment_response(comment, profile_url)
 
 
-@router.post("/posts/{post_id}/likes/toggle", response_model=ToggleLikeResponse)
-async def toggle_post_like(
-    post_id: int,
-    req: ToggleLikeRequest,
-    db: AsyncSession = Depends(get_db),
-) -> ToggleLikeResponse:
-    post = (await db.execute(select(TourstarPost).where(TourstarPost.id == post_id))).scalar_one_or_none()
-    if post is None:
-        raise HTTPException(status_code=404, detail=f"Post not found: {post_id}")
+# 게이트웨이 UserServiceImpl / ChatRoomType.MAX_HONOR 과 동일
+_MAX_USER_HONOR = 9999
 
-    user_id = int(req.user_id)
-    existing = (
+
+async def _sync_author_global_honor(
+    db: AsyncSession,
+    author_user_id: int | None,
+    honor_delta: int,
+) -> None:
+    """투표 한 건의 변화량만큼 게시글 작성자 `users.honor` 반영 (투표자 기준 ±1 단위 누적)."""
+    if author_user_id is None or honor_delta == 0:
+        return
+    await db.execute(
+        text(
+            "UPDATE users SET honor = GREATEST(0, LEAST(:max_h, COALESCE(honor, 0) + :delta)) "
+            "WHERE id = :uid"
+        ),
+        {"max_h": _MAX_USER_HONOR, "delta": int(honor_delta), "uid": int(author_user_id)},
+    )
+
+
+async def _apply_honor_vote_click(
+    db: AsyncSession,
+    post: TourstarPost,
+    user_id: int,
+    value: Literal[1, -1],
+) -> tuple[int, int, int]:
+    """썸업/썸다운 클릭. 같은 값 재클릭 시 투표 해제. 반대 방향이면 전환. (honor_up, honor_down, honor_vote)."""
+    if post.user_id is not None and int(post.user_id) == int(user_id):
+        raise HTTPException(status_code=400, detail="본인 게시물에는 명예 투표할 수 없습니다.")
+
+    pid = int(post.id)
+    row = (
         (
             await db.execute(
-                select(TourstarPostLike).where(
-                    TourstarPostLike.post_id == int(post_id),
-                    TourstarPostLike.user_id == user_id,
+                select(TourstarPostHonorVote).where(
+                    TourstarPostHonorVote.post_id == pid,
+                    TourstarPostHonorVote.user_id == int(user_id),
                 )
             )
         )
         .scalars()
         .first()
     )
+    before_vote = 0 if row is None else int(row.vote)
 
-    if existing is None:
-        db.add(TourstarPostLike(post_id=int(post_id), user_id=user_id))
-        post.likes = int(getattr(post, "likes", 0) or 0) + 1
-        liked = True
+    up = int(getattr(post, "honor_up", 0) or 0)
+    down = int(getattr(post, "honor_down", 0) or 0)
+
+    def _sync_likes_col() -> None:
+        post.honor_up = up
+        post.honor_down = down
+        post.likes = up - down
+
+    if row is None:
+        if value == 1:
+            db.add(TourstarPostHonorVote(post_id=pid, user_id=int(user_id), vote=1))
+            up += 1
+            nv = 1
+        else:
+            db.add(TourstarPostHonorVote(post_id=pid, user_id=int(user_id), vote=-1))
+            down += 1
+            nv = -1
+        _sync_likes_col()
+        await db.flush()
+        await _sync_author_global_honor(db, post.user_id, nv - before_vote)
+        return up, down, nv
+
+    ev = int(row.vote)
+    if ev == value:
+        await db.delete(row)
+        if value == 1:
+            up = max(0, up - 1)
+        else:
+            down = max(0, down - 1)
+        nv = 0
+    elif value == 1:
+        down = max(0, down - 1)
+        up += 1
+        row.vote = 1
+        nv = 1
     else:
-        await db.delete(existing)
-        post.likes = max(0, int(getattr(post, "likes", 0) or 0) - 1)
-        liked = False
-
+        up = max(0, up - 1)
+        down += 1
+        row.vote = -1
+        nv = -1
+    _sync_likes_col()
     await db.flush()
-    return ToggleLikeResponse(post_id=str(post_id), likes=int(post.likes or 0), liked=liked)
+    await _sync_author_global_honor(db, post.user_id, nv - before_vote)
+    return up, down, nv
+
+
+@router.post("/posts/{post_id}/honor/vote", response_model=HonorVoteResponse)
+async def vote_post_honor(
+    post_id: int,
+    req: HonorVoteRequest,
+    db: AsyncSession = Depends(get_db),
+) -> HonorVoteResponse:
+    post = (await db.execute(select(TourstarPost).where(TourstarPost.id == post_id))).scalar_one_or_none()
+    if post is None:
+        raise HTTPException(status_code=404, detail=f"Post not found: {post_id}")
+    up, down, nv = await _apply_honor_vote_click(db, post, int(req.user_id), req.value)
+    return HonorVoteResponse(
+        post_id=str(post_id),
+        honor_up=up,
+        honor_down=down,
+        honor_vote=nv,
+        likes=up - down,
+        liked=(nv == 1),
+    )
+
+
+@router.post("/posts/{post_id}/likes/toggle", response_model=ToggleLikeResponse)
+async def toggle_post_like(
+    post_id: int,
+    req: ToggleLikeRequest,
+    db: AsyncSession = Depends(get_db),
+) -> ToggleLikeResponse:
+    """하위 호환: 썸업과 동일한 토글 동작(레거시 클라이언트용)."""
+    post = (await db.execute(select(TourstarPost).where(TourstarPost.id == post_id))).scalar_one_or_none()
+    if post is None:
+        raise HTTPException(status_code=404, detail=f"Post not found: {post_id}")
+    up, down, nv = await _apply_honor_vote_click(db, post, int(req.user_id), 1)
+    return ToggleLikeResponse(post_id=str(post_id), likes=up - down, liked=(nv == 1))
 
 
 @router.get("/posts/{post_id}/share-preview", response_model=SharePreviewResponse)

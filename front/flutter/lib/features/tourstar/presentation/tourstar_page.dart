@@ -53,7 +53,7 @@ class TourstarPage extends ConsumerStatefulWidget {
 
 class _TourstarPageState extends ConsumerState<TourstarPage> {
   String _filter = "all";
-  String _sortBy = "latest";   // latest | likes | comments
+  String _sortBy = "latest";   // latest | honor | comments
   String _searchQuery = "";
   bool _gridView = false;
   /// 작성자 피드 (웹과 동일: 닉네임 탭 시 해당 유저 글만)
@@ -159,7 +159,7 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
     }
     // 정렬
     switch (_sortBy) {
-      case "likes":
+      case "honor":
         result.sort((a, b) => b.likes.compareTo(a.likes));
       case "comments":
         result.sort((a, b) => b.comments.length.compareTo(a.comments.length));
@@ -176,19 +176,33 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(tourstarControllerProvider.notifier).loadPosts().then((_) {
-        if (!mounted) return;
-        final id = widget.initialPostId;
-        if (id != null && id.isNotEmpty) {
-          final post = ref
-              .read(tourstarControllerProvider)
-              .serverPosts
-              .where((p) => p.id == id)
-              .firstOrNull;
-          if (post != null) _openDetail(post);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final id = widget.initialPostId;
+      if (id != null && id.isNotEmpty) {
+        var waited = 0;
+        while (mounted && waited < 60) {
+          final st = ref.read(tourstarControllerProvider);
+          if (!st.postsLoading) break;
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+          waited++;
         }
-      });
+      }
+      if (!mounted) return;
+      if (id != null && id.isNotEmpty) {
+        final st = ref.read(tourstarControllerProvider);
+        TourstarPostRecord? post = st.serverPosts.where((p) => p.id == id).firstOrNull;
+        if (post == null) {
+          try {
+            final fetched = await ref.read(tourstarRepositoryProvider).fetchPost(
+                  postId: id,
+                  viewerUserId: st.myUserId,
+                );
+            ref.read(tourstarControllerProvider.notifier).mergeServerPost(fetched);
+            post = fetched;
+          } catch (_) {}
+        }
+        if (post != null && mounted) _openDetail(post);
+      }
     });
   }
 
@@ -651,7 +665,7 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: Row(
                 children: [
-                  for (final sort in [("latest", "최신순"), ("likes", "좋아요순"), ("comments", "댓글순")])
+                  for (final sort in [("latest", "최신순"), ("honor", "명예순"), ("comments", "댓글순")])
                     Padding(
                       padding: const EdgeInsets.only(right: 6),
                       child: GestureDetector(
@@ -726,10 +740,11 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                         isFriend: isFriend,
                         isOwner: isOwner,
                         myProfileImageUrl: effectiveProfileImage,
-                        isLiked: tourState.likedPostIds.contains(p.id),
                         onTap: () => _openDetail(p),
                         onAuthorTap: (isOwner || isFriend) ? () => _openAuthorFeed(p, tourState) : null,
-                        onLike: () => ref.read(tourstarControllerProvider.notifier).toggleLike(p.id),
+                        onHonorVote: isOwner
+                            ? null
+                            : (v) => ref.read(tourstarControllerProvider.notifier).voteHonor(p.id, v),
                         onBookmark: () => ref.read(tourstarControllerProvider.notifier).toggleBookmark(p.id),
                         onDelete: isOwner
                             ? () async {
@@ -989,22 +1004,21 @@ class _FeedCard extends StatelessWidget {
     required this.onTap,
     this.isFriend = false,
     this.isOwner = false,
-    this.isLiked = false,
     this.myProfileImageUrl,
     this.onBookmark,
     this.onDelete,
-    this.onLike,
+    this.onHonorVote,
     this.onAuthorTap,
   });
   final TourstarPostRecord post;
   final VoidCallback onTap;
   final bool isFriend;
   final bool isOwner;
-  final bool isLiked;
   final String? myProfileImageUrl;
   final VoidCallback? onBookmark;
   final VoidCallback? onDelete;
-  final VoidCallback? onLike;
+  /// 1 = 썸업, -1 = 썸다운 (본인 글이면 null)
+  final void Function(int value)? onHonorVote;
   /// 본인·친구 글: 닉네임 탭 시 작성자 피드
   final VoidCallback? onAuthorTap;
 
@@ -1180,20 +1194,37 @@ class _FeedCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      // 좋아요 버튼
-                      GestureDetector(
-                        onTap: onLike,
-                        child: Icon(
-                          isLiked ? Icons.favorite : Icons.favorite_border,
-                          size: 16,
-                          color: isLiked ? _kPink : _kGray400,
+                      if (isOwner)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: Text(
+                            "▲${post.honorUp} ▼${post.honorDown}",
+                            style: const TextStyle(fontSize: 10, color: _kGray400),
+                          ),
+                        )
+                      else if (onHonorVote != null) ...[
+                        GestureDetector(
+                          onTap: () => onHonorVote!(1),
+                          child: Icon(
+                            post.honorVote == 1 ? Icons.thumb_up : Icons.thumb_up_outlined,
+                            size: 16,
+                            color: post.honorVote == 1 ? const Color(0xFF059669) : _kGray400,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        "${post.likes}",
-                        style: TextStyle(fontSize: 11, color: isLiked ? _kPink : _kGray500),
-                      ),
+                        Text("${post.honorUp}", style: TextStyle(fontSize: 10, color: post.honorVote == 1 ? const Color(0xFF059669) : _kGray500)),
+                        const SizedBox(width: 6),
+                        GestureDetector(
+                          onTap: () => onHonorVote!(-1),
+                          child: Icon(
+                            post.honorVote == -1 ? Icons.thumb_down : Icons.thumb_down_outlined,
+                            size: 16,
+                            color: post.honorVote == -1 ? const Color(0xFFE11D48) : _kGray400,
+                          ),
+                        ),
+                        Text("${post.honorDown}", style: TextStyle(fontSize: 10, color: post.honorVote == -1 ? const Color(0xFFE11D48) : _kGray500)),
+                        const SizedBox(width: 4),
+                        Text("순${post.likes}", style: const TextStyle(fontSize: 9, color: _kGray400)),
+                      ],
                       const SizedBox(width: 8),
                       // 댓글 수
                       const Icon(Icons.chat_bubble_outline, size: 12, color: _kGray400),
