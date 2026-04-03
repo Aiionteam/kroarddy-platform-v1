@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
 import {
@@ -416,7 +417,7 @@ export default function WhisperPage() {
                         }`}
                       >
                         {sharedPostId && sharedPreview ? (
-                          <a
+                          <Link
                             href={`/tourstar?postId=${encodeURIComponent(sharedPostId)}`}
                             className={`block overflow-hidden rounded-lg border ${
                               isMe
@@ -445,7 +446,7 @@ export default function WhisperPage() {
                                 </p>
                               </div>
                             </div>
-                          </a>
+                          </Link>
                         ) : (
                           msg.message
                         )}
