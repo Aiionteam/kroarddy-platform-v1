@@ -35,7 +35,8 @@ android {
 
     // Release signing (Play Console 업로드용)
     val keystoreProperties = Properties()
-    val keystorePropertiesFile = rootProject.file("key.properties")
+    // key.properties / keystore는 flutter 프로젝트 루트(front/flutter)에 둔다
+    val keystorePropertiesFile = rootProject.file("../key.properties")
     if (keystorePropertiesFile.exists()) {
         keystoreProperties.load(FileInputStream(keystorePropertiesFile))
     }
@@ -46,7 +47,8 @@ android {
             create("release") {
                 keyAlias = keystoreProperties["keyAlias"]?.toString()
                 keyPassword = keystoreProperties["keyPassword"]?.toString()
-                storeFile = file(keystoreProperties["storeFile"]?.toString() ?: "")
+                val storePath = keystoreProperties["storeFile"]?.toString() ?: ""
+                storeFile = rootProject.file("../$storePath")
                 storePassword = keystoreProperties["storePassword"]?.toString()
             }
         }

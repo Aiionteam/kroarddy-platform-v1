@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:flutter_naver_map/flutter_naver_map.dart";
 import "package:go_router/go_router.dart";
 import "package:url_launcher/url_launcher.dart";
 import "../../../core/auth/jwt_claims.dart";
@@ -7,8 +8,6 @@ import "../../../core/router/main_shell.dart";
 import "../../auth/presentation/state/auth_controller.dart";
 import "../data/planner_models.dart";
 import "../data/planner_repository.dart";
-
-import "dart:typed_data";
 
 const _purple = Color(0xFF7C3AED);
 const _textPrimary = Color(0xFF1F2937);
@@ -915,12 +914,12 @@ class _NaverPlaceMapDialog extends StatefulWidget {
 }
 
 class _NaverPlaceMapDialogState extends State<_NaverPlaceMapDialog> {
-  Uint8List? _imageBytes;
   String _status = "loading";
   String _errorMsg = "";
   double? _resolvedLat;
   double? _resolvedLng;
-  int _zoom = 15;
+  double _zoom = 15;
+  NaverMapController? _controller;
 
   @override
   void initState() {
@@ -951,28 +950,18 @@ class _NaverPlaceMapDialogState extends State<_NaverPlaceMapDialog> {
 
     _resolvedLat = lat;
     _resolvedLng = lng;
-    await _fetchMap(lat, lng, _zoom);
-  }
-
-  Future<void> _fetchMap(double lat, double lng, int zoom) async {
-    if (!mounted) return;
-    setState(() => _status = "loading");
-    try {
-      final bytes = await widget.repo.fetchStaticMapBytes(lat: lat, lng: lng, w: 600, h: 400, zoom: zoom);
-      if (!mounted) return;
-      setState(() { _imageBytes = bytes; _status = "ok"; });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() { _status = "error"; _errorMsg = e.toString(); });
-    }
+    if (mounted) setState(() => _status = "ok");
   }
 
   void _changeZoom(int delta) {
     if (_resolvedLat == null || _resolvedLng == null) return;
-    final newZoom = (_zoom + delta).clamp(6, 19);
+    final newZoom = (_zoom + delta).clamp(6, 19).toDouble();
     if (newZoom == _zoom) return;
     _zoom = newZoom;
-    _fetchMap(_resolvedLat!, _resolvedLng!, _zoom);
+    final target = NLatLng(_resolvedLat!, _resolvedLng!);
+    _controller?.updateCamera(
+      NCameraUpdate.scrollAndZoomTo(target: target, zoom: _zoom),
+    );
   }
 
   @override
@@ -1059,7 +1048,7 @@ class _NaverPlaceMapDialogState extends State<_NaverPlaceMapDialog> {
         ),
       );
     }
-    if (_status == "error" || _imageBytes == null) {
+    if (_status == "error" || _resolvedLat == null || _resolvedLng == null) {
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -1090,11 +1079,56 @@ class _NaverPlaceMapDialogState extends State<_NaverPlaceMapDialog> {
         ],
       );
     }
-    return Image.memory(
-      _imageBytes!,
-      fit: BoxFit.cover,
-      width: double.infinity,
-      height: double.infinity,
+    final target = NLatLng(_resolvedLat!, _resolvedLng!);
+    final safePadding = MediaQuery.paddingOf(context);
+    return Stack(
+      children: [
+        NaverMap(
+          options: NaverMapViewOptions(
+            contentPadding: safePadding,
+            initialCameraPosition: NCameraPosition(target: target, zoom: _zoom),
+            indoorEnable: true,
+            locationButtonEnable: false,
+            logoClickEnable: false,
+          ),
+          onMapReady: (controller) async {
+            _controller = controller;
+            final marker = NMarker(
+              id: "place",
+              position: target,
+              caption: NOverlayCaption(text: widget.placeName),
+            );
+            await controller.addOverlay(marker);
+          },
+        ),
+        Positioned(
+          right: 12,
+          top: 12,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.92),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: const [BoxShadow(color: Color(0x22000000), blurRadius: 10, offset: Offset(0, 4))],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.add, size: 18),
+                  onPressed: () => _changeZoom(1),
+                  tooltip: "확대",
+                ),
+                const Divider(height: 1),
+                IconButton(
+                  icon: const Icon(Icons.remove, size: 18),
+                  onPressed: () => _changeZoom(-1),
+                  tooltip: "축소",
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1117,7 +1151,6 @@ class _NaverRouteMapDialog extends StatefulWidget {
 }
 
 class _NaverRouteMapDialogState extends State<_NaverRouteMapDialog> {
-  Uint8List? _imageBytes;
   String _status = "loading";
   String _errorMsg = "";
   List<({double lat, double lng, String name})> _resolvedPlaces = [];
@@ -1151,17 +1184,8 @@ class _NaverRouteMapDialogState extends State<_NaverRouteMapDialog> {
     }
     _resolvedPlaces = resolved;
 
-    // 첫 번째 장소 기준 지도 (중심점으로 사용)
-    final first = resolved.first;
-    try {
-      final bytes = await widget.repo.fetchStaticMapBytes(lat: first.lat, lng: first.lng, w: 600, h: 280, zoom: 14);
-      if (!mounted) return;
-      setState(() { _imageBytes = bytes; _status = "ok"; });
-    } catch (e) {
-      if (!mounted) return;
-      _errorMsg = e.toString();
-      setState(() => _status = "ok"); // 에러 메시지는 표시하되 목록은 보여줌
-    }
+    if (!mounted) return;
+    setState(() => _status = "ok");
   }
 
   @override
@@ -1211,11 +1235,11 @@ class _NaverRouteMapDialogState extends State<_NaverRouteMapDialog> {
                   ],
                 )),
               )
-            else if (_imageBytes != null)
+            else if (_resolvedPlaces.isNotEmpty)
               SizedBox(
                 width: double.infinity,
-                height: 220,
-                child: Image.memory(_imageBytes!, fit: BoxFit.cover, width: double.infinity),
+                height: 260,
+                child: _buildDynamicRouteMap(context),
               )
             else if (_status == "ok" && _errorMsg.isNotEmpty)
               Padding(
@@ -1286,6 +1310,61 @@ class _NaverRouteMapDialogState extends State<_NaverRouteMapDialog> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDynamicRouteMap(BuildContext context) {
+    final safePadding = MediaQuery.paddingOf(context);
+    final targets = _resolvedPlaces.map((p) => NLatLng(p.lat, p.lng)).toList();
+    final initial = targets.first;
+
+    return NaverMap(
+      options: NaverMapViewOptions(
+        contentPadding: safePadding,
+        initialCameraPosition: NCameraPosition(target: initial, zoom: 13),
+        indoorEnable: true,
+        locationButtonEnable: false,
+        logoClickEnable: false,
+      ),
+      onMapReady: (controller) async {
+        // 마커
+        final overlays = <NAddableOverlay>{};
+        for (var i = 0; i < _resolvedPlaces.length; i++) {
+          final p = _resolvedPlaces[i];
+          overlays.add(
+            NMarker(
+              id: "p$i",
+              position: NLatLng(p.lat, p.lng),
+              caption: NOverlayCaption(text: "${i + 1}. ${p.name}"),
+            ),
+          );
+        }
+
+        // 단순 폴리라인(직선 연결) – Directions 5 폴리라인은 다음 단계에서 연동 가능
+        if (targets.length >= 2) {
+          overlays.add(
+            NPolylineOverlay(
+              id: "route",
+              coords: targets,
+              color: const Color(0xFF2563EB),
+              width: 4,
+            ),
+          );
+        }
+
+        await controller.addOverlayAll(overlays);
+
+        if (targets.length >= 2) {
+          final bounds = NLatLngBounds.from(targets);
+          await controller.updateCamera(
+            NCameraUpdate.fitBounds(bounds, padding: const EdgeInsets.all(42)),
+          );
+        } else {
+          await controller.updateCamera(
+            NCameraUpdate.scrollAndZoomTo(target: targets.first, zoom: 15),
+          );
+        }
+      },
     );
   }
 }

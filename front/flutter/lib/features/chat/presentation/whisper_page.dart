@@ -340,20 +340,30 @@ class _WhisperTourstarCardState extends ConsumerState<_WhisperTourstarCard> {
     }
   }
 
+  void _openTourstar() {
+    context.push("/tourstar?postId=${Uri.encodeComponent(widget.postId)}");
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Row(children: [
-        SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: _primary)),
-        SizedBox(width: 8),
-        Text("게시글 불러오는 중...", style: TextStyle(fontSize: 12, color: _textSecondary)),
-      ]);
+      return GestureDetector(
+        onTap: _openTourstar,
+        child: const Row(children: [
+          SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: _primary)),
+          SizedBox(width: 8),
+          Text("게시글 불러오는 중...", style: TextStyle(fontSize: 12, color: _textSecondary)),
+        ]),
+      );
     }
     if (_preview == null) {
-      return const Text("게시글을 불러올 수 없습니다.", style: TextStyle(fontSize: 12, color: _textSecondary));
+      return GestureDetector(
+        onTap: _openTourstar,
+        child: const Text("게시글을 불러올 수 없습니다. (탭하면 이동)", style: TextStyle(fontSize: 12, color: _textSecondary)),
+      );
     }
     return GestureDetector(
-      onTap: () => context.push("/tourstar?postId=${Uri.encodeComponent(widget.postId)}"),
+      onTap: _openTourstar,
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(

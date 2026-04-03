@@ -50,6 +50,9 @@ class TourstarPostRecord {
     this.authorProfileImageUrl,
     this.likes = 0,
     this.liked = false,
+    this.honorUp = 0,
+    this.honorDown = 0,
+    this.honorVote = 0,
     this.bookmarked = false,
   });
 
@@ -72,11 +75,17 @@ class TourstarPostRecord {
   /// 게시글 작성자 프로필 이미지 URL (presigned)
   final String? authorProfileImageUrl;
 
-  /// 좋아요 수
+  /// 순 명예 (썸업 − 썸다운)
   final int likes;
 
-  /// 현재 사용자가 좋아요한 여부 (서버 응답 기반, 없으면 false)
+  /// 레거시: honor_vote == 1
   final bool liked;
+
+  final int honorUp;
+  final int honorDown;
+
+  /// 조회자 기준 -1 | 0 | 1
+  final int honorVote;
 
   /// 현재 사용자가 스크랩(북마크)한 여부 (클라이언트 측 관리)
   final bool bookmarked;
@@ -105,8 +114,17 @@ class TourstarPostRecord {
       updatedAt: DateTime.tryParse(json["updated_at"]?.toString() ?? ""),
       authorNickname: json["author_nickname"]?.toString(),
       authorProfileImageUrl: json["author_profile_image_url"]?.toString(),
-      likes: (json["likes"] as num?)?.toInt() ?? 0,
-      liked: json["liked"] == true,
+      honorUp: (json["honor_up"] as num?)?.toInt() ?? 0,
+      honorDown: (json["honor_down"] as num?)?.toInt() ?? 0,
+      honorVote: () {
+        final v = (json["honor_vote"] as num?)?.toInt() ?? 0;
+        if (v == 1 || v == -1) return v;
+        return 0;
+      }(),
+      likes: (json["likes"] as num?)?.toInt() ??
+          (((json["honor_up"] as num?)?.toInt() ?? 0) -
+              ((json["honor_down"] as num?)?.toInt() ?? 0)),
+      liked: json["liked"] == true || (json["honor_vote"] as num?)?.toInt() == 1,
     );
   }
 
@@ -115,6 +133,9 @@ class TourstarPostRecord {
     List<TourstarComment>? comments,
     int? likes,
     bool? liked,
+    int? honorUp,
+    int? honorDown,
+    int? honorVote,
   }) {
     return TourstarPostRecord(
       id: id,
@@ -133,6 +154,9 @@ class TourstarPostRecord {
       authorProfileImageUrl: authorProfileImageUrl,
       likes: likes ?? this.likes,
       liked: liked ?? this.liked,
+      honorUp: honorUp ?? this.honorUp,
+      honorDown: honorDown ?? this.honorDown,
+      honorVote: honorVote ?? this.honorVote,
       bookmarked: bookmarked ?? this.bookmarked,
     );
   }
