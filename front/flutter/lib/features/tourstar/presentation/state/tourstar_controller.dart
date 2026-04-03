@@ -278,7 +278,7 @@ class TourstarController extends Notifier<TourstarState> {
       final posts = await _repo.listPosts(viewerUserId: state.myUserId);
       final liked = <String>{...state.likedPostIds};
       for (final p in posts) {
-        if (p.liked) liked.add(p.id);
+        if (p.liked || p.honorVote == 1) liked.add(p.id);
       }
       state = state.copyWith(serverPosts: posts, likedPostIds: liked, postsLoading: false);
     } catch (e) {
@@ -358,14 +358,26 @@ class TourstarController extends Notifier<TourstarState> {
     state = state.copyWith(serverPosts: posts);
   }
 
-  // ── 좋아요 토글 (로컬 낙관적 업데이트) ─────────────────────
-  void toggleLike(String postId) {
-    // 서버와 동기화되는 좋아요 토글 (실패 시 메시지 표시)
+  bool _isOwnerPost(TourstarPostRecord p) {
+    if (state.myUserId != null && p.userId != null) return p.userId == state.myUserId;
+    final mn = (state.myNickname ?? "").trim();
+    if (mn.isNotEmpty && (p.authorNickname ?? "").trim() == mn) return true;
+    return false;
+  }
+
+  /// 명예 투표: [value]는 1(썸업) 또는 -1(썸다운)
+  void voteHonor(String postId, int value) {
+    if (value != 1 && value != -1) return;
     Future.microtask(() async {
       if (!await ensureIdentityForAuthoring()) return;
       final userId = state.myUserId!;
+      final target = state.serverPosts.where((p) => p.id == postId).firstOrNull;
+      if (target != null && _isOwnerPost(target)) {
+        state = state.copyWith(statusMessage: "본인 게시물에는 명예 투표를 할 수 없습니다.");
+        return;
+      }
       try {
-        final res = await _repo.toggleLike(postId: postId, userId: userId);
+        final res = await _repo.voteHonor(postId: postId, userId: userId, value: value);
         final likedIds = <String>{...state.likedPostIds};
         if (res.liked) {
           likedIds.add(postId);
@@ -374,13 +386,45 @@ class TourstarController extends Notifier<TourstarState> {
         }
         final posts = state.serverPosts.map((p) {
           if (p.id != postId) return p;
-          return p.copyWith(likes: res.likes, liked: res.liked);
+          return p.copyWith(
+            likes: res.likes,
+            liked: res.liked,
+            honorUp: res.honorUp,
+            honorDown: res.honorDown,
+            honorVote: res.honorVote,
+          );
         }).toList();
         state = state.copyWith(serverPosts: posts, likedPostIds: likedIds);
+      } on DioException catch (e) {
+        final code = e.response?.statusCode;
+        final body = e.response?.data?.toString() ?? "";
+        if (code == 400 || body.contains("본인")) {
+          state = state.copyWith(statusMessage: "본인 게시물에는 명예 투표를 할 수 없습니다.");
+          return;
+        }
+        state = state.copyWith(statusMessage: "명예 투표 오류: $e");
       } catch (e) {
-        state = state.copyWith(statusMessage: "좋아요 처리 오류: $e");
+        state = state.copyWith(statusMessage: "명예 투표 오류: $e");
       }
     });
+  }
+
+  /// 딥링크 등으로 목록에 없는 글을 합침
+  void mergeServerPost(TourstarPostRecord post) {
+    final exists = state.serverPosts.any((p) => p.id == post.id);
+    final likedIds = <String>{...state.likedPostIds};
+    if (post.liked) likedIds.add(post.id);
+    if (!exists) {
+      state = state.copyWith(
+        serverPosts: [post, ...state.serverPosts],
+        likedPostIds: likedIds,
+      );
+    } else {
+      state = state.copyWith(
+        serverPosts: state.serverPosts.map((p) => p.id == post.id ? post : p).toList(),
+        likedPostIds: likedIds,
+      );
+    }
   }
 
   // ── 서버 게시글 저장 ──────────────────────────────────────────

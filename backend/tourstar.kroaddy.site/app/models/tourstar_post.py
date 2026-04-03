@@ -37,5 +37,7 @@ class TourstarPost(Base, TimestampMixin):
         String(20), nullable=False, server_default="public"
     )
 
-    # 좋아요 수 (집계 컬럼)
+    # 레거시: 명예 순(net) = honor_up - honor_down 과 동기화 권장
     likes: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    honor_up: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    honor_down: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")

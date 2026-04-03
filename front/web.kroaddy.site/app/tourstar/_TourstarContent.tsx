@@ -19,8 +19,9 @@ import {
   listTourstarPosts,
   localArtifactPathToUrl,
   deleteTourstarPost,
-  toggleTourstarLike,
+  getTourstarPost,
   updateTourstarPost,
+  voteTourstarHonor,
   uploadProfileImage,
   fetchProfileImage,
   type TourstarPostRecord,
@@ -32,7 +33,7 @@ import {
 type Visibility = "public" | "private";
 type ViewMode = "grid" | "feed";
 type FilterType = "all" | "mine" | "bookmarked" | "friends";
-type SortType = "latest" | "likes" | "comments";
+type SortType = "latest" | "honor" | "comments";
 type SearchField = "all" | "author" | "title" | "content" | "tags" | "location";
 
 function formatRelativeTime(isoLike: string): string {
@@ -80,8 +81,12 @@ interface TourPost {
   comment: string;
   visibility: Visibility;
   photos: TourPhoto[];
+  /** 순 명예 (썸업 − 썸다운), 정렬·요약용 */
   likes: number;
   liked: boolean;
+  honorUp: number;
+  honorDown: number;
+  honorVote: -1 | 0 | 1;
   tags: string[];
   comments: TourPostComment[];
   isOwner: boolean;
@@ -187,14 +192,18 @@ function randomGradient() {
 }
 
 /* ───────────────────── 아이콘 컴포넌트들 ───────────────────── */
-function HeartIcon({ filled }: { filled: boolean }) {
-  return filled ? (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+function ThumbUpIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+      <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
     </svg>
-  ) : (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+  );
+}
+
+function ThumbDownIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+      <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17" />
     </svg>
   );
 }
@@ -215,7 +224,7 @@ function BookmarkIcon({ filled }: { filled: boolean }) {
 interface CreateModalProps {
   open: boolean;
   onClose: () => void;
-  onCreate: (post: Omit<TourPost, "id" | "author" | "likes" | "liked" | "comments" | "isOwner" | "bookmarked" | "userId" | "isFriend">) => Promise<void> | void;
+  onCreate: (post: Omit<TourPost, "id" | "author" | "likes" | "liked" | "honorUp" | "honorDown" | "honorVote" | "comments" | "isOwner" | "bookmarked" | "userId" | "isFriend">) => Promise<void> | void;
   onJobStatusChange?: (status: string) => void;
 }
 
@@ -823,7 +832,7 @@ function EditPostModal({ post, onClose, onSave, onDelete }: EditModalProps) {
 interface DetailModalProps {
   post: TourPost | null;
   onClose: () => void;
-  onToggleLike: (id: string) => void;
+  onHonorVote: (id: string, value: 1 | -1) => void;
   onAddComment: (postId: string, content: string) => Promise<void> | void;
   onShare: (postId: string) => Promise<void> | void;
   onEdit: (post: TourPost) => void;
@@ -836,7 +845,7 @@ interface DetailModalProps {
   authorProfileMap?: Map<string, string>;
 }
 
-function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, onEdit, onBookmark, onDeletePost, onOpenAuthorFeed, currentUserId, ownerProfileImage, ownerNickname, authorProfileMap }: DetailModalProps) {
+function PostDetailModal({ post, onClose, onHonorVote, onAddComment, onShare, onEdit, onBookmark, onDeletePost, onOpenAuthorFeed, currentUserId, ownerProfileImage, ownerNickname, authorProfileMap }: DetailModalProps) {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [commentInput, setCommentInput] = useState("");
 
@@ -974,11 +983,28 @@ function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, o
             </div>
           </div>
           <div className="border-t border-gray-100 px-5 py-3">
-            <div className="flex items-center gap-4">
-              <button type="button" onClick={() => onToggleLike(post.id)}
-                className={`flex items-center gap-1.5 text-sm transition-colors ${post.liked ? "text-pink-500" : "text-gray-500 hover:text-pink-500"}`}>
-                <HeartIcon filled={post.liked} /><span>{post.likes}</span>
-              </button>
+            <div className="flex items-center gap-4 flex-wrap">
+              {post.isOwner ? (
+                <span className="flex items-center gap-2 text-xs text-gray-400">
+                  <span className="text-emerald-600 font-medium">▲ {post.honorUp}</span>
+                  <span className="text-rose-500 font-medium">▼ {post.honorDown}</span>
+                  <span className="text-gray-400">(내 글은 평가 불가)</span>
+                </span>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => onHonorVote(post.id, 1)}
+                    className={`flex items-center gap-1 rounded-lg px-2 py-1 text-sm transition-colors ${post.honorVote === 1 ? "text-emerald-600 bg-emerald-50" : "text-gray-500 hover:text-emerald-600 hover:bg-gray-50"}`}
+                    title="명예 올리기">
+                    <ThumbUpIcon active={post.honorVote === 1} /><span className="text-xs font-medium">{post.honorUp}</span>
+                  </button>
+                  <button type="button" onClick={() => onHonorVote(post.id, -1)}
+                    className={`flex items-center gap-1 rounded-lg px-2 py-1 text-sm transition-colors ${post.honorVote === -1 ? "text-rose-600 bg-rose-50" : "text-gray-500 hover:text-rose-600 hover:bg-gray-50"}`}
+                    title="명예 내리기">
+                    <ThumbDownIcon active={post.honorVote === -1} /><span className="text-xs font-medium">{post.honorDown}</span>
+                  </button>
+                  <span className="text-[11px] text-gray-400 tabular-nums">순 {post.likes}</span>
+                </div>
+              )}
               <span className="text-xs text-gray-400">댓글 {post.comments.length}개</span>
               <span className="text-xs text-gray-300">사진 {post.photos.length}장</span>
               <button type="button" onClick={() => onShare(post.id)}
@@ -1125,10 +1151,10 @@ function AuthorPopover({
 }
 
 /* ───────────────────── 게시물 카드 (피드 뷰) ───────────────────── */
-function FeedCard({ post, onClick, onToggleLike, onShare, onBookmark, onEdit, onDeletePost, currentUserId, onViewAuthorPosts, ownerProfileImage }: {
+function FeedCard({ post, onClick, onHonorVote, onShare, onBookmark, onEdit, onDeletePost, currentUserId, onViewAuthorPosts, ownerProfileImage }: {
   post: TourPost;
   onClick: () => void;
-  onToggleLike: (id: string) => void;
+  onHonorVote: (id: string, value: 1 | -1) => void;
   onShare: (id: string) => void;
   onBookmark: (id: string) => void;
   onEdit: (post: TourPost) => void;
@@ -1202,12 +1228,26 @@ function FeedCard({ post, onClick, onToggleLike, onShare, onBookmark, onEdit, on
         )}
       </button>
 
-      {/* 액션 바 */}
-      <div className="flex items-center gap-1 px-3 pt-2.5">
-        <button type="button" onClick={(e) => { e.stopPropagation(); onToggleLike(post.id); }}
-          className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-sm transition-colors ${post.liked ? "text-pink-500" : "text-gray-500 hover:text-pink-500"}`}>
-          <HeartIcon filled={post.liked} /><span className="text-[12px]">{post.likes}</span>
-        </button>
+      {/* 액션 바 — 명예도 */}
+      <div className="flex items-center gap-1 px-3 pt-2.5 flex-wrap">
+        {post.isOwner ? (
+          <span className="flex items-center gap-2 text-[11px] text-gray-400 px-1">
+            <span className="text-emerald-600">▲{post.honorUp}</span>
+            <span className="text-rose-500">▼{post.honorDown}</span>
+          </span>
+        ) : (
+          <>
+            <button type="button" onClick={(e) => { e.stopPropagation(); onHonorVote(post.id, 1); }}
+              className={`flex items-center gap-0.5 rounded-full px-2 py-1 text-sm transition-colors ${post.honorVote === 1 ? "text-emerald-600 bg-emerald-50" : "text-gray-500 hover:text-emerald-600"}`}>
+              <ThumbUpIcon active={post.honorVote === 1} /><span className="text-[11px] tabular-nums">{post.honorUp}</span>
+            </button>
+            <button type="button" onClick={(e) => { e.stopPropagation(); onHonorVote(post.id, -1); }}
+              className={`flex items-center gap-0.5 rounded-full px-2 py-1 text-sm transition-colors ${post.honorVote === -1 ? "text-rose-600 bg-rose-50" : "text-gray-500 hover:text-rose-600"}`}>
+              <ThumbDownIcon active={post.honorVote === -1} /><span className="text-[11px] tabular-nums">{post.honorDown}</span>
+            </button>
+            <span className="text-[10px] text-gray-400 tabular-nums">순{post.likes}</span>
+          </>
+        )}
         <button type="button" onClick={onClick}
           className="flex items-center gap-1.5 rounded-full px-2 py-1 text-sm text-gray-500 hover:text-gray-700 transition-colors">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
@@ -1249,7 +1289,9 @@ function GridCard({ post, onClick }: { post: TourPost; onClick: () => void }) {
       </div>
       <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/0 transition-all group-hover:bg-black/40">
         <div className="flex items-center gap-3 opacity-0 transition-opacity group-hover:opacity-100">
-          <span className="flex items-center gap-1 text-sm font-medium text-white"><HeartIcon filled={true} />{post.likes}</span>
+          <span className="flex items-center gap-1.5 text-sm font-medium text-white">
+            <span>▲{post.honorUp}</span><span>▼{post.honorDown}</span>
+          </span>
           <span className="flex items-center gap-1 text-sm font-medium text-white">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /></svg>
             {post.photos.length}
@@ -1316,8 +1358,16 @@ function mapRecordToPost(
     comment: record.comment,
     visibility: record.visibility,
     photos,
-    likes: Number(record.likes ?? 0),
-    liked: Boolean(record.liked ?? false),
+    honorUp: Number(record.honor_up ?? 0),
+    honorDown: Number(record.honor_down ?? 0),
+    honorVote: ((): -1 | 0 | 1 => {
+      const v = Number(record.honor_vote ?? 0);
+      if (v === 1) return 1;
+      if (v === -1) return -1;
+      return 0;
+    })(),
+    likes: Number(record.likes ?? (Number(record.honor_up ?? 0) - Number(record.honor_down ?? 0))),
+    liked: Boolean(record.liked ?? (Number(record.honor_vote ?? 0) === 1)),
     tags: record.tags || [],
     comments: (record.comments || []).map((item) => ({
       id: item.id,
@@ -1367,6 +1417,7 @@ export default function TourstarContent() {
   const [detailPost, setDetailPost] = useState<TourPost | null>(null);
   const [editTargetPost, setEditTargetPost] = useState<TourPost | null>(null);
   const [analysisStatus, setAnalysisStatus] = useState<string>("");
+  const [authorFeedFriendSending, setAuthorFeedFriendSending] = useState(false);
 
   /* userId 추출 — sessionStorage에 로그인 시 저장된 app_user_id를 읽습니다 */
   React.useEffect(() => {
@@ -1602,14 +1653,45 @@ export default function TourstarContent() {
     }
   }, [posts, profileImageUrl]);
 
-  /* URL postId 파라미터 처리 */
+  /* URL postId 딥링크 — 목록에 없으면 단건 조회. 같은 postId로는 한 번만 자동 오픈(닫은 뒤 재오픈 방지). */
+  const lastDeepLinkPostIdOpened = useRef<string | null>(null);
   React.useEffect(() => {
     const requestedPostId = searchParams.get("postId");
-    if (!requestedPostId || posts.length === 0) return;
-    const target = posts.find((item) => item.id === requestedPostId);
-    if (!target) return;
-    setDetailPost(target);
-  }, [posts, searchParams]);
+    if (!requestedPostId) {
+      lastDeepLinkPostIdOpened.current = null;
+      return;
+    }
+    if (!isAuthenticated) return;
+    if (lastDeepLinkPostIdOpened.current === requestedPostId) return;
+
+    const run = async () => {
+      const inList = posts.find((item) => item.id === requestedPostId);
+      if (inList) {
+        setDetailPost(inList);
+        lastDeepLinkPostIdOpened.current = requestedPostId;
+        return;
+      }
+      try {
+        const row = await getTourstarPost(requestedPostId, currentUserId ?? undefined);
+        const ctx = tourstarMapContextRef.current;
+        const mapped = mapRecordToPost(
+          row,
+          ctx.authorName,
+          ctx.currentUserId,
+          ctx.bookmarkedIds,
+          ctx.friendUserIds,
+          ctx.friendNicknames,
+        );
+        setPosts((prev) => (prev.some((p) => p.id === mapped.id) ? prev : [mapped, ...prev]));
+        setDetailPost(mapped);
+        lastDeepLinkPostIdOpened.current = requestedPostId;
+      } catch (e) {
+        console.warn("[tourstar] postId 딥링크 로드 실패:", requestedPostId, e);
+      }
+    };
+
+    void run();
+  }, [posts, searchParams, isAuthenticated, currentUserId]);
 
   /* ── 필터 + 검색 + 정렬 ── */
   const filteredPosts = useMemo(() => {
@@ -1645,7 +1727,7 @@ export default function TourstarContent() {
     }
 
     switch (sortType) {
-      case "likes": return [...result].sort((a, b) => b.likes - a.likes);
+      case "honor": return [...result].sort((a, b) => b.likes - a.likes);
       case "comments": return [...result].sort((a, b) => b.comments.length - a.comments.length);
       default: return result;
     }
@@ -1676,6 +1758,12 @@ export default function TourstarContent() {
     };
   }, [viewAuthorName, viewAuthorId, posts, isSelfAuthorFeed, friendList.length]);
 
+  const viewAuthorIsFriend = useMemo(() => {
+    if (!viewAuthorName.trim()) return false;
+    if (viewAuthorId != null && friendUserIds.has(viewAuthorId)) return true;
+    return friendNicknames.has(viewAuthorName.trim());
+  }, [viewAuthorName, viewAuthorId, friendUserIds, friendNicknames]);
+
   // 닉네임 → 프로필 이미지 URL 맵 (댓글 아바타 표시용)
   const authorProfileMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -1693,18 +1781,40 @@ export default function TourstarContent() {
   }, [posts, authorName, profileImageUrl]);
 
   /* ── 핸들러 ── */
-  const toggleLike = async (id: string) => {
+  const applyHonorResponse = (id: string, res: { honor_up: number; honor_down: number; honor_vote: number; likes: number; liked: boolean }) => {
+    const hv = res.honor_vote === 1 ? 1 : res.honor_vote === -1 ? -1 : 0;
+    const patch = {
+      honorUp: res.honor_up,
+      honorDown: res.honor_down,
+      honorVote: hv as -1 | 0 | 1,
+      likes: res.likes,
+      liked: res.liked,
+    };
+    setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+    setDetailPost((prev) => (prev && prev.id === id ? { ...prev, ...patch } : prev));
+  };
+
+  const voteHonor = async (id: string, value: 1 | -1) => {
     if (!currentUserId) {
       window.alert("로그인이 필요합니다.");
       return;
     }
+    const target = posts.find((p) => p.id === id);
+    if (target?.isOwner) {
+      window.alert("본인 게시물에는 명예 투표를 할 수 없습니다.");
+      return;
+    }
     try {
-      const res = await toggleTourstarLike(id, currentUserId);
-      setPosts((prev) => prev.map((p) => p.id === id ? { ...p, liked: res.liked, likes: res.likes } : p));
-      setDetailPost((prev) => prev && prev.id === id ? { ...prev, liked: res.liked, likes: res.likes } : prev);
+      const res = await voteTourstarHonor(id, currentUserId, value);
+      applyHonorResponse(id, res);
     } catch (error) {
       console.error(error);
-      window.alert("좋아요 처리에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      const msg = error instanceof Error ? error.message : String(error);
+      if (msg.includes("400") || msg.includes("본인")) {
+        window.alert("본인 게시물에는 명예 투표를 할 수 없습니다.");
+        return;
+      }
+      window.alert("명예 투표 처리에 실패했습니다. 잠시 후 다시 시도해주세요.");
     }
   };
 
@@ -1723,7 +1833,7 @@ export default function TourstarContent() {
     setDetailPost((prev) => prev && prev.id === id ? { ...prev, bookmarked: !prev.bookmarked } : prev);
   };
 
-  const createPost = async (newPost: Omit<TourPost, "id" | "author" | "likes" | "liked" | "comments" | "isOwner" | "bookmarked" | "userId" | "isFriend">) => {
+  const createPost = async (newPost: Omit<TourPost, "id" | "author" | "likes" | "liked" | "honorUp" | "honorDown" | "honorVote" | "comments" | "isOwner" | "bookmarked" | "userId" | "isFriend">) => {
     const sourceImagePaths = newPost.photos.map((photo) => photo.sourceImagePath).filter((path): path is string => Boolean(path && path.trim()));
     const saved = await createTourstarPost({
       user_id: currentUserId ?? undefined,
@@ -1836,6 +1946,39 @@ export default function TourstarContent() {
     setSortType("latest");
   };
 
+  const sendFriendRequestToViewAuthor = async () => {
+    if (!currentUserId) {
+      window.alert("로그인이 필요합니다.");
+      return;
+    }
+    if (isSelfAuthorFeed || viewAuthorIsFriend) return;
+    const name = viewAuthorName.trim();
+    if (!name) return;
+    setAuthorFeedFriendSending(true);
+    try {
+      let targetUserId = viewAuthorId;
+      if (targetUserId == null) {
+        const found = await findUserByNickname(name);
+        if (!found?.id) {
+          window.alert(`${name}님의 계정을 찾을 수 없습니다.`);
+          return;
+        }
+        targetUserId = found.id;
+      }
+      const res = await sendFriendRequest(targetUserId);
+      if (res.code === 200) {
+        window.alert(`${name}님에게 친구 요청을 보냈습니다.`);
+      } else {
+        window.alert(res.message || "친구 요청 전송에 실패했습니다.");
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      window.alert(`친구 요청 전송에 실패했습니다.\n${msg}`);
+    } finally {
+      setAuthorFeedFriendSending(false);
+    }
+  };
+
   if (!isAuthenticated) return null;
 
   return (
@@ -1938,7 +2081,7 @@ export default function TourstarContent() {
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-lg font-bold text-gray-800 truncate">{viewAuthorName}</h2>
-                  {!isSelfAuthorFeed && (
+                  {!isSelfAuthorFeed && viewAuthorIsFriend && (
                     <span className="shrink-0 rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-[11px] font-semibold text-blue-700">친구</span>
                   )}
                 </div>
@@ -1958,6 +2101,18 @@ export default function TourstarContent() {
                   ))}
                 </div>
               </div>
+              {!isSelfAuthorFeed && currentUserId != null && (
+                <div className="ml-auto flex shrink-0 flex-col items-stretch justify-center gap-2 self-stretch min-w-[148px]">
+                  <button
+                    type="button"
+                    disabled={viewAuthorIsFriend || authorFeedFriendSending}
+                    onClick={() => void sendFriendRequestToViewAuthor()}
+                    className="rounded-xl border border-purple-200 bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 disabled:bg-gray-300 disabled:border-gray-200 disabled:from-gray-300 disabled:to-gray-300"
+                  >
+                    {viewAuthorIsFriend ? "이미 친구" : authorFeedFriendSending ? "요청 중..." : "친구 요청 보내기"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -2021,7 +2176,7 @@ export default function TourstarContent() {
               <div className="flex items-center gap-0.5 rounded-lg border border-gray-200 bg-white p-0.5">
                 {([
                   { id: "latest", label: "최신순" },
-                  { id: "likes", label: "좋아요순" },
+                  { id: "honor", label: "명예순" },
                   { id: "comments", label: "댓글순" },
                 ] as const).map((s) => (
                   <button key={s.id} type="button" onClick={() => setSortType(s.id)}
@@ -2051,7 +2206,7 @@ export default function TourstarContent() {
               <div className="grid grid-cols-1 gap-4 max-w-xl mx-auto">
                 {filteredPosts.map((post) => (
                   <FeedCard key={post.id} post={post} onClick={() => setDetailPost(post)}
-                    onToggleLike={toggleLike} onShare={sharePost}
+                    onHonorVote={voteHonor} onShare={sharePost}
                     onBookmark={toggleBookmark} onEdit={(p) => setEditTargetPost(p)} onDeletePost={deletePost}
                     currentUserId={currentUserId} onViewAuthorPosts={handleViewAuthorPosts}
                     ownerProfileImage={profileImageUrl} />
@@ -2105,7 +2260,7 @@ export default function TourstarContent() {
       <PostDetailModal
         post={detailPost}
         onClose={() => setDetailPost(null)}
-        onToggleLike={toggleLike}
+        onHonorVote={voteHonor}
         onAddComment={addComment}
         onShare={sharePost}
         onEdit={(p) => { setDetailPost(null); setEditTargetPost(p); }}
