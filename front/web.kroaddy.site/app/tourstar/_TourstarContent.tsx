@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useHydration } from "@/hooks/useHydration";
 import { useLoginStore } from "@/store";
 import { findUserById, findUserByNickname } from "@/lib/api/user";
 import { listFriends, sendFriendRequest } from "@/lib/api/friends";
@@ -1385,7 +1386,9 @@ function mapRecordToPost(
 export default function TourstarContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated, logout } = useLoginStore();
+  const isHydrated = useHydration();
+  const { isAuthenticated, logout, restoreAuthState } = useLoginStore();
+  const [tourstarAuthReady, setTourstarAuthReady] = useState(false);
 
   const [authorName, setAuthorName] = useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -1582,7 +1585,24 @@ export default function TourstarContent() {
     return () => { cancelled = true; };
   }, [isAuthenticated]);
 
-  React.useEffect(() => { if (!isAuthenticated) { router.replace("/"); } }, [isAuthenticated, router]);
+  /* 단체채팅 등에서 <a href>로 풀 리로드될 때 sessionStorage 기반 로그인을 먼저 복원한 뒤에만 비로그인 리다이렉트 (즉시 replace("/") 방지) */
+  React.useEffect(() => {
+    if (!isHydrated) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        await restoreAuthState();
+      } finally {
+        if (!cancelled) setTourstarAuthReady(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isHydrated, restoreAuthState]);
+
+  React.useEffect(() => {
+    if (!tourstarAuthReady) return;
+    if (!isAuthenticated) router.replace("/");
+  }, [tourstarAuthReady, isAuthenticated, router]);
 
   /* 게시글 목록 로드 — 응답이 늦게 올 때 친구 목록이 이미 로드된 뒤여도 stale 클로저로 배지가 지워지지 않도록 ref로 최신 값 매핑 */
   React.useEffect(() => {
@@ -1979,6 +1999,13 @@ export default function TourstarContent() {
     }
   };
 
+  if (!isHydrated || !tourstarAuthReady) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-gray-100 text-sm text-gray-500">
+        불러오는 중…
+      </div>
+    );
+  }
   if (!isAuthenticated) return null;
 
   return (
