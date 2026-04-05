@@ -574,7 +574,7 @@ export default function KContentPackagePage() {
             : packageId?.toUpperCase() === "KF_CAFE"
             ? "K-dessert and vibe-matched cafe tour"
             : packageId?.toUpperCase() === "KF_CONVENIENCE"
-            ? "품절 대란 신상부터 나만의 시크릿 레시피까지, 편의점 모디슈머가 되어보세요!"
+            ? "품절 대란 신상부터 나만의 시크릿 레시피까지"
             : "K-Content package",
         tags:
           packageId === "KF_MARKET"
