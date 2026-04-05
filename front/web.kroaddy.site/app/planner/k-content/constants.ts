@@ -25,7 +25,7 @@ export const K_CONTENT_KFOOD_FALLBACK_ITEMS: ContentRowItem[] = [
     id: "KF_CONVENIENCE",
     title: "K-편의점 꿀조합 챌린지",
     description:
-      "품절 대란 신상부터 나만의 시크릿 레시피까지, 편의점 모디슈머가 되어보세요!",
+      "품절 대란 신상부터 나만의 시크릿 레시피까지",
     imageUrl: K_CONTENT_KF_CONVENIENCE_FALLBACK_IMAGE,
     placeholderGradient: "from-lime-400 via-emerald-500 to-violet-600",
     href: "/planner/k-content/KF_CONVENIENCE",

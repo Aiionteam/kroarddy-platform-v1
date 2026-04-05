@@ -138,6 +138,7 @@ spring:
                 maxAge: 3600
   datasource:
     driver-class-name: org.postgresql.Driver
+
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
