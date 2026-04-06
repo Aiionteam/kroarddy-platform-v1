@@ -2,8 +2,8 @@
 # 실행 시 --spring.profiles.active=local 옵션 사용
 # 또는 SPRING_PROFILES_ACTIVE=local 환경 변수 설정
 #
-# Refresh Token 해시(TokenHashUtil): System.getenv("REFRESH_TOKEN_HASH_SECRET") 만 사용합니다.
-# - Docker: backend/api.kroaddy.site/.env 에 REFRESH_TOKEN_HASH_SECRET=... (루트 docker-compose의 gateway env_file)
+# Refresh Token 해시(TokenHashUtil): System.getenv("JWT_SECRET") 을 사용합니다.
+# - Docker: backend/api.kroaddy.site/.env 에 JWT_SECRET=... (루트 docker-compose의 gateway env_file)
 # - IDE에서 직접 실행 시: Run Configuration 환경 변수에 동일 키를 넣거나, 터미널에서 export 후 실행
 
 spring:
