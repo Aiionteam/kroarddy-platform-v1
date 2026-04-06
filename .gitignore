@@ -98,6 +98,7 @@ htmlcov/
 .pytest_cache/
 backend/tourstar.kroaddy.site/artifacts/
 .env*
+!backend/guide.kroaddy.site/.env.example
 
 # --- LLM finetuning (generated / large local artifacts) ---
 backend/guide.kroaddy.site/finetuning/wandb/

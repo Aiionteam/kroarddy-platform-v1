@@ -154,7 +154,7 @@ def _get_llm() -> ChatGoogleGenerativeAI:
     실제보다 낮게 적용되어 JSON이 중간에 잘리는 버그가 있음)
     """
     return ChatGoogleGenerativeAI(
-        model="gemini-3-flash-preview",
+        model=settings.gemini_model,
         temperature=0.4,
         google_api_key=settings.gemini_api_key,
     )

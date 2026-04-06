@@ -1,6 +1,10 @@
 # 로컬 개발용 프로파일
 # 실행 시 --spring.profiles.active=local 옵션 사용
 # 또는 SPRING_PROFILES_ACTIVE=local 환경 변수 설정
+#
+# Refresh Token 해시(TokenHashUtil): System.getenv("REFRESH_TOKEN_HASH_SECRET") 만 사용합니다.
+# - Docker: backend/api.kroaddy.site/.env 에 REFRESH_TOKEN_HASH_SECRET=... (루트 docker-compose의 gateway env_file)
+# - IDE에서 직접 실행 시: Run Configuration 환경 변수에 동일 키를 넣거나, 터미널에서 export 후 실행
 
 spring:
   servlet:
@@ -29,6 +33,8 @@ spring:
         enabled: true
 
 # AI 서비스 URL (로컬 개발 시)
+# 게이트웨이 라우트(Path)는 application.yaml 상속 — Guide: /api/v1/guide/**, /api/v1/place/** 등
+# Guide만 로컬 8002로 띄울 때: AI_SERVICE_GUIDE_URL=http://localhost:8002
 ai:
   service:
     rag:
