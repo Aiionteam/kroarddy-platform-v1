@@ -122,7 +122,7 @@ def _build_user_profile_block(profile: dict | None, lang: str = "Korean") -> str
 
 def _get_llm() -> ChatGoogleGenerativeAI:
     return ChatGoogleGenerativeAI(
-        model="gemini-3-flash-preview",
+        model=settings.gemini_model,
         temperature=0.4,
         google_api_key=settings.gemini_api_key,
     )

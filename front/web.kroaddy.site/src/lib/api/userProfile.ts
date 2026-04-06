@@ -41,6 +41,7 @@ export async function fetchUserProfile(userId: number): Promise<UserProfile | nu
   try {
     const res = await fetch(`${API_BASE}/api/v1/user-profile/${userId}`, {
       cache: "no-store",
+      credentials: "include",
     });
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`프로필 조회 오류: ${res.status}`);
@@ -61,6 +62,7 @@ export async function upsertUserProfile(data: {
   const res = await fetch(`${API_BASE}/api/v1/user-profile`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({
       user_id: data.userId,
       gender: data.gender ?? null,
