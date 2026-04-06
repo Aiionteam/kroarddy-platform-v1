@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets;
  * 기존 SHA-256 단순 해싱 대비 서버 Secret이 없으면 검증 자체가 불가능하므로
  * DB 유출 + 알고리즘 노출이 동시에 일어나도 토큰을 역산할 수 없습니다.
  *
- * 환경 변수 REFRESH_TOKEN_HASH_SECRET (32바이트 이상 권장)을 반드시 설정하세요.
+ * 환경 변수 JWT_SECRET (32바이트 이상 권장)을 반드시 설정하세요.
  * 설정되지 않은 경우 기동 시 IllegalStateException을 발생시킵니다.
  */
 public final class TokenHashUtil {
@@ -18,7 +18,7 @@ public final class TokenHashUtil {
     private static final String ALGORITHM = "HmacSHA256";
 
     /** 환경 변수 키 이름 */
-    private static final String SECRET_ENV = "REFRESH_TOKEN_HASH_SECRET";
+    private static final String SECRET_ENV = "JWT_SECRET";
 
     private TokenHashUtil() {}
 
