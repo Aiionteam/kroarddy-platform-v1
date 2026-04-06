@@ -1,6 +1,8 @@
+import { GUIDE_API_BASE_URL } from "@/lib/guide/constants";
+
 /**
  * Festival API - 전국문화축제표준데이터
- * Java 게이트웨이(8080) /api/v1/festivals 경유 → festival 서비스(8002) 프록시
+ * Guide 서비스 — `NEXT_PUBLIC_API_URL`+`/api/v1/festivals` (플래너와 동일한 게이트웨이 `/api/**` 규칙)
  *
  * 캐시 전략:
  *   - 메모리(Map) + sessionStorage 2-tier
@@ -9,6 +11,7 @@
  *   - 페이지 새로고침 후에도 sessionStorage에서 즉시 복원
  */
 
+/** 레거시·다른 API용 (필요 시) */
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export interface FestivalItem {
@@ -25,8 +28,9 @@ export interface FestivalItem {
   relateInfo: string;
   rdnmadr: string;
   lnmadr: string;
-  latitude: string;
-  longitude: string;
+  /** JSON에서 숫자로 오는 경우 있음 */
+  latitude: string | number;
+  longitude: string | number;
   referenceDate: string;
 }
 
@@ -141,9 +145,10 @@ export async function fetchFestivals(
   const now = new Date();
   const y = year ?? now.getFullYear();
   const m = month ?? now.getMonth() + 1;
-  const url = `${API_BASE}/api/v1/festivals?year=${y}&month=${m}`;
+  const url = `${GUIDE_API_BASE_URL}/festivals?year=${y}&month=${m}`;
 
   const res = await fetch(url, {
+    credentials: "include",
     // 브라우저 캐시 활용 (no-store 제거) + Next.js 캐시 비활성 (SSR 아니라 CSR이므로 불필요)
     next: { revalidate: 300 }, // 5분
   } as RequestInit);

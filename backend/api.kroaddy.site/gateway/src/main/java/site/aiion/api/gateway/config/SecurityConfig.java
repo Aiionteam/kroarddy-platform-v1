@@ -50,6 +50,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+            // 플래너·가이드·축제 등 REST API는 모두 /api/** 로 노출 → 동일하게 CSRF 예외 (가이드는 /api/v1/guide/** 사용)
             .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/docs/**", "/v3/api-docs/**"))
 
             .sessionManagement(session -> session
@@ -126,7 +127,8 @@ public class SecurityConfig {
             "http://localhost:3000",
             "http://127.0.0.1:3000",
             "http://localhost:8080",
-            "http://127.0.0.1:8080"
+            "http://127.0.0.1:8080",
+            "https://web.kroaddy.site"
         ));
         if (frontendUrl != null && !frontendUrl.isEmpty()) {
             origins.add(frontendUrl.trim());
