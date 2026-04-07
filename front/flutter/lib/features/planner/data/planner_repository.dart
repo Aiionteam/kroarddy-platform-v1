@@ -215,6 +215,58 @@ class PlannerRepository {
     }
   }
 
+  /// 네이버 Directions 5 프록시 — 웹 `NaverRouteMapModal`의 `fetchCarRoute`와 동일 계약.
+  /// 성공 시 `path`는 `[[lng, lat], ...]`. `fallback: true` 또는 경로 없으면 null.
+  Future<DirectionsRouteDto?> fetchDirections({
+    required double startLat,
+    required double startLng,
+    required double goalLat,
+    required double goalLng,
+    List<({double lat, double lng})> waypoints = const [],
+  }) async {
+    try {
+      final res = await _dio.post<Map<String, dynamic>>(
+        "/v1/maps/directions",
+        data: {
+          "start": {"lng": startLng, "lat": startLat},
+          "goal": {"lng": goalLng, "lat": goalLat},
+          "waypoints": waypoints
+              .map((w) => {"lng": w.lng, "lat": w.lat})
+              .toList(),
+        },
+      );
+      final data = res.data;
+      if (data == null) return null;
+      if (data["fallback"] == true) return null;
+      final raw = data["path"];
+      if (raw is! List || raw.length < 2) return null;
+
+      final path = <(double lng, double lat)>[];
+      for (final e in raw) {
+        if (e is! List || e.length < 2) continue;
+        path.add(((e[0] as num).toDouble(), (e[1] as num).toDouble()));
+      }
+      if (path.length < 2) return null;
+
+      final summary = data["summary"];
+      var distanceM = 0;
+      var durationMs = 0;
+      if (summary is Map) {
+        distanceM = (summary["distance"] as num?)?.round() ?? 0;
+        durationMs = (summary["duration"] as num?)?.round() ?? 0;
+      }
+      return DirectionsRouteDto(
+        pathLngLat: path,
+        distanceM: distanceM,
+        durationMs: durationMs,
+      );
+    } on DioException {
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> deletePlan({required int planId, required int userId}) async {
     await _dio.delete<void>(
       "/v1/planner/plans/$planId",
@@ -261,4 +313,17 @@ class PlannerRepository {
       _throwApiError(e, "리롤 API 오류");
     }
   }
+}
+
+/// `/v1/maps/directions` 성공 본문 — 좌표 쌍은 항상 (경도, 위도).
+class DirectionsRouteDto {
+  const DirectionsRouteDto({
+    required this.pathLngLat,
+    this.distanceM = 0,
+    this.durationMs = 0,
+  });
+
+  final List<(double lng, double lat)> pathLngLat;
+  final int distanceM;
+  final int durationMs;
 }
