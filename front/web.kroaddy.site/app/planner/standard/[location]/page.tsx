@@ -158,7 +158,6 @@ export default function LocationPlannerPage() {
       setScheduleError(null);
       setSavedPlanId(null);
       setScheduleLoading(true);
-      setScheduleStatus("일정 생성 준비 중…");
 
       // 로컬 캐시 히트
       const cached = readSchedule<{ schedule: ScheduleItem[]; cost_summary?: CostSummary }>(
@@ -169,12 +168,10 @@ export default function LocationPlannerPage() {
         setSchedule(cached.schedule);
         if (cached.cost_summary) setCostSummary(cached.cost_summary);
         setScheduleLoading(false);
-        setScheduleStatus("");
         return;
       }
 
       try {
-        setScheduleStatus("일정 생성 중…");
         const res = await fetchSchedule(location, route.name, {
           startDate,
           endDate,
@@ -198,7 +195,6 @@ export default function LocationPlannerPage() {
         setScheduleError(e instanceof Error ? e.message : "일정을 불러오지 못했습니다.");
       } finally {
         setScheduleLoading(false);
-        setScheduleStatus("");
       }
     },
     [location, startDate, endDate, appUserId, useSearch, transportMode, newsTop10]
