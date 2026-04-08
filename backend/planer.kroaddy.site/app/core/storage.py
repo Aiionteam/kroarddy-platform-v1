@@ -3,8 +3,8 @@ import uuid
 import logging
 import urllib.parse
 
-import boto3
-from botocore.exceptions import BotoCoreError, ClientError
+import boto3  # pyright: ignore[reportMissingImports]
+from botocore.exceptions import BotoCoreError, ClientError  # pyright: ignore[reportMissingImports]
 
 from app.core.config import settings
 
