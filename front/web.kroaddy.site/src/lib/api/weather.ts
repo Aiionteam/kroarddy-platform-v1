@@ -28,13 +28,14 @@ export interface WeatherResult {
   dates: Record<string, WeatherDay>;
 }
 
-/** time 문자열 → time_slots 키 ("09" | "12" | "15" | "18" | "21") */
+/** time 문자열 → time_slots 키 ("09" | "12" | "15" | "18" | "21").
+ * 한국어·영어 모두 지원 (기존 DB 데이터 호환). */
 const TIME_TO_SLOT: Record<string, string> = {
-  오전: "09",
-  점심: "12",
-  오후: "15",
-  저녁: "18",
-  밤: "21",
+  오전: "09",   morning:   "09",
+  점심: "12",   lunch:     "12",
+  오후: "15",   afternoon: "15",
+  저녁: "18",   evening:   "18",
+  밤:  "21",   night:     "21",
 };
 
 /**

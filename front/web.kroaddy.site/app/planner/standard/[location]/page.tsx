@@ -6,7 +6,7 @@ import { useLoginStore } from "@/store";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import {
   fetchRoutes,
-  fetchSchedule,
+  streamSchedule,
   fetchMyPlans,
   savePlan,
   type PlanRoute,
@@ -75,6 +75,7 @@ export default function LocationPlannerPage() {
   const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
   const [costSummary, setCostSummary] = useState<CostSummary | null>(null);
   const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [scheduleStatus, setScheduleStatus] = useState<string>("");
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [savedPlanId, setSavedPlanId] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -158,17 +159,27 @@ export default function LocationPlannerPage() {
       setScheduleError(null);
       setSavedPlanId(null);
       setScheduleLoading(true);
-      try {
-        const cached = readSchedule<{ schedule: ScheduleItem[]; cost_summary?: CostSummary }>(location, route.name, startDate, endDate, useSearch);
-        if (cached) {
-          console.info("[plannerCache] 일정 캐시 히트:", route.name);
-          setSchedule(cached.schedule);
-          if (cached.cost_summary) setCostSummary(cached.cost_summary);
-          setScheduleLoading(false);
-          return;
-        }
+      setScheduleStatus("일정 생성 준비 중…");
 
-        const res = await fetchSchedule(location, route.name, {
+      // 로컬 캐시 히트
+      const cached = readSchedule<{ schedule: ScheduleItem[]; cost_summary?: CostSummary }>(
+        location, route.name, startDate, endDate, useSearch
+      );
+      if (cached) {
+        console.info("[plannerCache] 일정 캐시 히트:", route.name);
+        setSchedule(cached.schedule);
+        if (cached.cost_summary) setCostSummary(cached.cost_summary);
+        setScheduleLoading(false);
+        setScheduleStatus("");
+        return;
+      }
+
+      // SSE 스트리밍
+      let finalSchedule: ScheduleItem[] = [];
+      let finalCost: CostSummary | undefined;
+
+      try {
+        const stream = streamSchedule(location, route.name, {
           startDate,
           endDate,
           userId: appUserId ?? undefined,
@@ -176,21 +187,77 @@ export default function LocationPlannerPage() {
           newsTop10: newsTop10.length > 0 ? newsTop10 : undefined,
           transportMode,
         });
-        setSchedule(res.schedule);
-        if (res.cost_summary) setCostSummary(res.cost_summary);
-        if (res.error && res.schedule.length === 0) {
-          setScheduleError(res.error);
-        } else if (res.schedule.length > 0) {
-          writeSchedule(location, route.name, startDate, endDate, useSearch, { schedule: res.schedule, cost_summary: res.cost_summary });
-          console.info("[plannerCache] 일정 캐시 저장:", route.name);
+
+        for await (const event of stream) {
+          switch (event.type) {
+            case "status":
+              setScheduleStatus(event.message);
+              break;
+
+            case "cached":
+              // 백엔드 L1/L2 캐시 히트 – 한번에 전체 수신
+              setSchedule(event.schedule);
+              finalSchedule = event.schedule;
+              if (event.cost_summary) {
+                setCostSummary(event.cost_summary);
+                finalCost = event.cost_summary;
+              }
+              setScheduleLoading(false);
+              setScheduleStatus("");
+              break;
+
+            case "day":
+              // Day 완료 즉시 UI 반영 (순서 정렬)
+              setSchedule((prev) => {
+                const merged = [...prev, ...event.items].sort(
+                  (a, b) => a.day - b.day || 0
+                );
+                finalSchedule = merged;
+                return merged;
+              });
+              setScheduleLoading(false); // 첫 Day가 도착하면 스피너 해제
+              setScheduleStatus(`Day ${event.cost?.day} 완료 · 나머지 생성 중…`);
+              break;
+
+            case "geocoded":
+              // 좌표 검증 완료본으로 교체
+              setSchedule(event.items);
+              finalSchedule = event.items;
+              setScheduleStatus("");
+              break;
+
+            case "cost_summary":
+              setCostSummary(event.data);
+              finalCost = event.data;
+              break;
+
+            case "error":
+              if (finalSchedule.length === 0) {
+                setScheduleError(event.message);
+              }
+              break;
+
+            case "done":
+              // 캐시 저장
+              if (finalSchedule.length > 0) {
+                writeSchedule(location, route.name, startDate, endDate, useSearch, {
+                  schedule: finalSchedule,
+                  cost_summary: finalCost,
+                });
+                console.info("[plannerCache] 스트리밍 일정 캐시 저장:", route.name);
+              }
+              setScheduleLoading(false);
+              setScheduleStatus("");
+              break;
+          }
         }
       } catch (e) {
         setScheduleError(e instanceof Error ? e.message : "일정을 불러오지 못했습니다.");
-      } finally {
         setScheduleLoading(false);
+        setScheduleStatus("");
       }
     },
-    [location, startDate, endDate, appUserId, useSearch, transportMode]
+    [location, startDate, endDate, appUserId, useSearch, transportMode, newsTop10]
   );
 
   const handleSavePlan = useCallback(async () => {
@@ -434,9 +501,15 @@ export default function LocationPlannerPage() {
             {scheduleLoading && (
               <div className="flex flex-1 flex-col items-center justify-center gap-3">
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-500" />
-                <p className="text-sm text-gray-500">
+                <p className="text-sm font-medium text-gray-700">
                   AI가 <b>{selectedRoute?.name}</b> 일정을 만드는 중…
                 </p>
+                {scheduleStatus && (
+                  <p className="flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs text-indigo-500">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-400" />
+                    {scheduleStatus}
+                  </p>
+                )}
                 <p className="text-xs text-gray-400">{startDate} ~ {endDate}</p>
               </div>
             )}
@@ -444,6 +517,14 @@ export default function LocationPlannerPage() {
             {scheduleError && (
               <div className="p-5">
                 <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{scheduleError}</p>
+              </div>
+            )}
+
+            {/* 일부 Day 도착, 나머지 스트리밍 중 */}
+            {!scheduleLoading && scheduleStatus && schedule.length > 0 && (
+              <div className="shrink-0 flex items-center gap-2 bg-indigo-50 px-5 py-2 text-xs text-indigo-600 border-b border-indigo-100">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-400" />
+                {scheduleStatus}
               </div>
             )}
 
