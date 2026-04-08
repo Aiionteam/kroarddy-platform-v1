@@ -22,6 +22,18 @@ import {
   type WeatherDay,
 } from "@/lib/api/weather";
 
+// ── 영어 time 값 → 한국어 정규화 (기존 DB 데이터 호환) ───────────
+const TIME_KO: Record<string, string> = {
+  morning:   "오전",
+  lunch:     "점심",
+  afternoon: "오후",
+  evening:   "저녁",
+  night:     "밤",
+};
+function normalizeTime(time: string): string {
+  return TIME_KO[time.toLowerCase()] ?? time;
+}
+
 // ── 플랜별 컬러 팔레트 ────────────────────────────────────────
 const COLORS = [
   { dot: "bg-indigo-500",  light: "bg-indigo-50",  border: "border-indigo-200", text: "text-indigo-700",  badge: "bg-indigo-100"  },
@@ -360,7 +372,7 @@ function DayPlanGroup({
                       </span>
                       {item.time && (
                         <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${c.badge} ${c.text}`}>
-                          {item.time}
+                          {normalizeTime(item.time)}
                         </span>
                       )}
                       {/* 시간대별 날씨 슬롯 */}
@@ -881,7 +893,7 @@ function PlanCard({
                             <div className="flex flex-1 items-center gap-2 min-w-0 flex-wrap">
                               {item.time && (
                                 <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${c.badge} ${c.text}`}>
-                                  {item.time}
+                                  {normalizeTime(item.time)}
                                 </span>
                               )}
                               {/* 시간대별 날씨 슬롯 */}

@@ -50,11 +50,9 @@ def _get_lang(profile: dict | None) -> str:
 
 
 def _lang_directive(lang: str) -> str:
-    """Korean이 아닌 경우 Gemini에 언어 지시 문구를 반환한다."""
-    if lang == "Korean":
-        return ""
+    """모든 언어에 대해 Gemini에 언어 지시 문구를 반환한다."""
     return (
-        f"\n⚠️ IMPORTANT: Write ALL text values (name, description, title, tips, highlights, etc.) "
+        f"\n⚠️ IMPORTANT: Write ALL text values (place, title, description, tips, highlights, day_total, etc.) "
         f"ENTIRELY in {lang}. JSON keys must stay in English.\n"
     )
 
@@ -560,7 +558,14 @@ async def _generate_single_day(
         (items_list, per_day_cost_dict)
         per_day_cost_dict: {"day": int, "total": str, "total_krw": int}
     """
-    time_labels = "morning|lunch|afternoon|evening" if lang != "Korean" else "오전|점심|오후|저녁"
+    if lang == "Korean":
+        time_labels = "오전|점심|오후|저녁"
+        first_time = "오전"
+        flow_hint = "오전→점심→오후→저녁"
+    else:
+        time_labels = "morning|lunch|afternoon|evening"
+        first_time = "morning"
+        flow_hint = "morning→lunch→afternoon→evening"
 
     # 다일 여행 시 다른 날과 다른 구역 권장
     day_zone_hint = (
@@ -578,7 +583,7 @@ async def _generate_single_day(
         f"- date field must be exactly: {date_str}\n"
         f"- day field must be exactly: {day_num}\n"
         f"- Use only real existing places within {location_name}\n"
-        f"- time must be one of: {time_labels}\n"
+        f"- time must be EXACTLY one of: {time_labels} (do NOT use any other value)\n"
         "- estimated_cost: cost in KRW (e.g. '무료', '₩3,000', '₩15,000~₩20,000')\n"
         "- address: 해당 장소의 정확한 도로명 주소\n"
         "- lat/lng: WGS84 decimal degree (approximate OK, geocoding will verify)\n"
@@ -586,12 +591,12 @@ async def _generate_single_day(
         "\n[GEOGRAPHIC EFFICIENCY – CRITICAL]\n"
         "- CLUSTER: All 4 places must be in the SAME neighborhood/district or adjacent areas.\n"
         "  Never scatter places across different parts of the city.\n"
-        "- FLOW: Order morning→lunch→afternoon→evening so each next place is geographically CLOSE.\n"
+        f"- FLOW: Order {flow_hint} so each next place is geographically CLOSE.\n"
         f"{day_zone_hint}"
         f"{lang_dir}"
         "\nRespond ONLY with valid JSON (no explanation):\n"
         f'{{"day":{day_num},"date":"{date_str}","items":['
-        f'{{"time":"morning","place":"place name","address":"도로명 주소","lat":37.5665,"lng":126.9780,'
+        f'{{"time":"{first_time}","place":"place name","address":"도로명 주소","lat":37.5665,"lng":126.9780,'
         '"title":"activity title(≤20chars)","description":"description(≤60chars)",'
         '"tips":"tip(≤30chars)","estimated_cost":"₩0"}'
         f'],"day_total":"₩0","day_total_krw":0}}'
@@ -703,7 +708,14 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
     # ── 단일 호출 폴백 (날짜 범위 없음) ─────────────────────────────────────
     num_days = _TRAVEL_DAYS_DEFAULT
     date_example = "YYYY-MM-DD"
-    time_labels = "morning|lunch|afternoon|evening" if lang != "Korean" else "오전|점심|오후|저녁"
+    if lang == "Korean":
+        time_labels = "오전|점심|오후|저녁"
+        first_time = "오전"
+        flow_hint = "오전→점심→오후→저녁"
+    else:
+        time_labels = "morning|lunch|afternoon|evening"
+        first_time = "morning"
+        flow_hint = "morning→lunch→afternoon→evening"
 
     prompt = (
         f"Destination:{location_name} | Route:{route_name}\n"
@@ -713,7 +725,7 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         f"Create a detailed travel itinerary ({num_days} days, 4 items per day).\n\n"
         "Rules:\n"
         f"- Use only real existing places/restaurants/attractions within {location_name}\n"
-        f"- time must be one of: {time_labels}\n"
+        f"- time must be EXACTLY one of: {time_labels} (do NOT use any other value)\n"
         "- estimated_cost: cost in KRW (e.g. '무료', '₩3,000', '₩15,000~₩20,000')\n"
         "- cost_summary.per_day: sum of estimated_cost for each day\n"
         "- cost_summary.trip_total: grand total\n"
@@ -721,11 +733,11 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         "- lat/lng: WGS84 decimal degree (approximate OK)\n"
         "\n[GEOGRAPHIC EFFICIENCY – CRITICAL]\n"
         "- CLUSTER: Each day's 4 places must be in the SAME neighborhood/district.\n"
-        "- FLOW: Order morning→lunch→afternoon→evening geographically close.\n"
+        f"- FLOW: Order {flow_hint} geographically close.\n"
         "- MULTI-DAY: Assign DIFFERENT districts to different days.\n"
         f"{lang_dir}"
         "\nRespond ONLY with valid JSON (no explanation):\n"
-        f'{{"schedule":[{{"day":1,"date":"{date_example}","time":"morning","place":"place name",'
+        f'{{"schedule":[{{"day":1,"date":"{date_example}","time":"{first_time}","place":"place name",'
         '"address":"도로명 주소","lat":37.5665,"lng":126.9780,'
         '"title":"activity title(≤20chars)","description":"description(≤60chars)",'
         '"tips":"tip(≤30chars)","estimated_cost":"₩0"}}],'
