@@ -279,6 +279,22 @@ export async function* streamSchedule(
     }
   );
 
+  // 구버전 planer / 미배포: 스트림 엔드포인트가 없으면 일반 일정 API로 동일 결과 제공
+  if (res.status === 404) {
+    const data = await fetchSchedule(location, routeName, opts);
+    if (data.error && (!data.schedule || data.schedule.length === 0)) {
+      yield { type: "error" as const, message: data.error };
+    } else {
+      yield {
+        type: "cached" as const,
+        schedule: data.schedule,
+        cost_summary: data.cost_summary ?? null,
+      };
+    }
+    yield { type: "done" as const };
+    return;
+  }
+
   if (!res.ok) await throwApiError(res, "스트리밍 일정 API 오류");
   if (!res.body) throw new Error("스트리밍 응답 body가 없습니다.");
 
