@@ -1,19 +1,35 @@
 """Standard 플래너 API 라우터 – 루트 추천 / 일정 생성 / 플랜 관리."""
 import asyncio
 import hashlib
+import json
 import logging
 import time
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select, delete
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
 from app.agent.standard.graph import routes_graph, schedule_graph
-from app.agent.standard.nodes import _is_daily_quota, _geocode_item, modify_schedule, reroll_single_item
+from app.agent.standard.nodes import (
+    _is_daily_quota,
+    _geocode_item,
+    _get_lang,
+    _lang_directive,
+    _build_festival_block,
+    _build_transport_block,
+    _generate_single_day,
+    _build_date_list,
+    _optimize_day_order,
+    modify_schedule,
+    reroll_single_item,
+)
+from app.services.news_client import build_news_block_for_prompt
+from app.services.weather_client import build_weather_block_for_prompt
 from app.core.config import settings
 from app.core.database.session import get_db
 from app.models.travel_plan import TravelPlan
@@ -485,6 +501,183 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
             "cost_summary": result.get("cost_summary"),
             "error": result.get("error"),
         }
+
+
+@router.post(
+    "/{location}/schedule/stream",
+    summary="SSE 스트리밍 일정 생성 – Day별 생성 즉시 전송",
+)
+async def stream_schedule(
+    location: str,
+    req: ScheduleRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """일정을 Day별로 병렬 생성하고, 완료된 Day부터 즉시 SSE로 전송합니다.
+
+    이벤트 타입:
+    - status   : {"type":"status","message":"..."}
+    - day      : {"type":"day","items":[...],"cost":{...}}
+    - geocoded : {"type":"geocoded","items":[...]}
+    - cost_summary: {"type":"cost_summary","data":{...}}
+    - error    : {"type":"error","message":"..."}
+    - done     : {"type":"done"}
+    - cached   : {"type":"cached","schedule":[...],"cost_summary":{...}}
+    """
+    location_name = SLUG_TO_NAME.get(location, location)
+    user_profile = await fetch_user_profile(req.user_id)
+    nationality = (user_profile or {}).get("nationality", "")
+    lang_code = nationality[:3].lower() if nationality else "ko"
+    search_tag = "s1" if req.use_search else "s0"
+    transport_tag = req.transport_mode or "any"
+    sched_key = (
+        f"{location}:{req.route_name}:{req.start_date}:{req.end_date}"
+        f":{lang_code}:{search_tag}:{transport_tag}"
+    )
+
+    def _sse(obj: dict) -> str:
+        return f"data: {json.dumps(obj, ensure_ascii=False)}\n\n"
+
+    async def generate():
+        # ── L1 캐시 히트 ────────────────────────────────────────────
+        cached_sched = _schedule_cache.get(sched_key)
+        if cached_sched and time.time() - cached_sched[1] < _SCHEDULE_TTL:
+            items, cost = cached_sched
+            yield _sse({"type": "cached", "schedule": items, "cost_summary": cost})
+            yield _sse({"type": "done"})
+            return
+
+        # ── L2 DB 캐시 히트 ─────────────────────────────────────────
+        db_schedule = await _get_schedule_from_db(sched_key, db)
+        if db_schedule:
+            _schedule_cache[sched_key] = (db_schedule, time.time())
+            yield _sse({"type": "cached", "schedule": db_schedule, "cost_summary": None})
+            yield _sse({"type": "done"})
+            return
+
+        # ── 행사·뉴스·날씨 병렬 수집 ────────────────────────────────
+        yield _sse({"type": "status", "message": "행사·날씨 정보 수집 중…"})
+        _has_client_news = bool(req.news_top10)
+        try:
+            festivals, news_top10, weather_forecast = await asyncio.gather(
+                fetch_festivals_for_period(location, location_name, req.start_date, req.end_date),
+                asyncio.sleep(0) if _has_client_news else fetch_news_top10(req.start_date, req.end_date),
+                fetch_weather_for_planner(location_name, None, req.start_date, req.end_date),
+            )
+        except Exception as e:
+            yield _sse({"type": "error", "message": f"사전 데이터 수집 실패: {e}"})
+            yield _sse({"type": "done"})
+            return
+        if _has_client_news:
+            news_top10 = req.news_top10  # type: ignore[assignment]
+
+        # ── 날짜 목록 ────────────────────────────────────────────────
+        date_list = _build_date_list(req.start_date, req.end_date)
+        if not date_list:
+            yield _sse({"type": "error", "message": "날짜 정보가 필요합니다."})
+            yield _sse({"type": "done"})
+            return
+
+        # ── LLM 프롬프트 블록 ────────────────────────────────────────
+        lang = _get_lang(user_profile)
+        lang_dir = _lang_directive(lang)
+        news_block = build_news_block_for_prompt(news_top10 or [], location_name, for_k_content=False)
+        weather_block = build_weather_block_for_prompt(weather_forecast or {}, req.start_date, req.end_date)
+        transport_block = _build_transport_block(req.transport_mode or "")
+        festival_block = _build_festival_block(festivals or [])
+
+        num_days = len(date_list)
+        common_kwargs = dict(
+            num_days=num_days,
+            location_name=location_name,
+            route_name=req.route_name,
+            lang=lang,
+            lang_dir=lang_dir,
+            festival_block=festival_block,
+            weather_block=weather_block,
+            transport_block=transport_block,
+            news_block=news_block,
+            use_search=req.use_search,
+        )
+
+        # ── Day별 병렬 생성 → 완료된 Day 즉시 스트리밍 ───────────────
+        yield _sse({"type": "status", "message": f"AI가 {num_days}일 일정 생성 중…"})
+
+        futures = {
+            asyncio.ensure_future(
+                _generate_single_day(day_num=i + 1, date_str=date_str, **common_kwargs)
+            ): i + 1
+            for i, date_str in enumerate(date_list)
+        }
+
+        all_items: list[dict] = []
+        per_day_costs: list[dict] = []
+        pending = set(futures.keys())
+
+        while pending:
+            done_set, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+            for fut in done_set:
+                try:
+                    items, per_day_cost = fut.result()
+                    all_items.extend(items)
+                    per_day_costs.append(per_day_cost)
+                    yield _sse({
+                        "type": "day",
+                        "items": items,
+                        "cost": per_day_cost,
+                    })
+                except Exception as e:
+                    logger.error("스트리밍 Day 생성 실패: %s", e)
+                    yield _sse({"type": "error", "message": str(e)})
+
+        if not all_items:
+            yield _sse({"type": "done"})
+            return
+
+        # ── 좌표 검증 + 경로 최적화 ─────────────────────────────────
+        yield _sse({"type": "status", "message": "좌표 검증 중…"})
+        try:
+            geocoded = list(await asyncio.gather(*[_geocode_item(item) for item in all_items]))
+        except Exception as e:
+            logger.warning("지오코딩 실패(스트리밍), 원본 유지: %s", e)
+            geocoded = all_items
+
+        # 일별 Nearest-Neighbor 경로 최적화
+        days_map: dict[int, list] = {}
+        for item in geocoded:
+            days_map.setdefault(item.get("day", 1), []).append(item)
+        optimized: list[dict] = []
+        for day_num in sorted(days_map.keys()):
+            optimized.extend(_optimize_day_order(days_map[day_num]))
+
+        yield _sse({"type": "geocoded", "items": optimized})
+
+        # ── 비용 요약 ────────────────────────────────────────────────
+        per_day_costs.sort(key=lambda x: x.get("day", 0))
+        total_krw = sum(c.get("total_krw", 0) for c in per_day_costs)
+        cost_summary = {
+            "per_day": [{"day": c["day"], "total": c["total"]} for c in per_day_costs],
+            "trip_total": f"₩{total_krw:,}" if total_krw else "N/A",
+        }
+        yield _sse({"type": "cost_summary", "data": cost_summary})
+
+        # ── 캐시 저장 ────────────────────────────────────────────────
+        _schedule_cache[sched_key] = (optimized, time.time())
+        try:
+            await _save_schedule_to_db(sched_key, location_name, req.route_name, optimized, db)
+        except Exception as e:
+            logger.warning("스트리밍 일정 DB캐시 저장 실패(무시): %s", e)
+
+        yield _sse({"type": "done"})
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # nginx 버퍼링 비활성화
+        },
+    )
 
 
 @router.post("/plans", summary="여행 플랜 저장")

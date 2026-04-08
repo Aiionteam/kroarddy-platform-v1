@@ -230,3 +230,83 @@ export async function fetchSchedule(
   if (!res.ok) await throwApiError(res, "일정 API 오류");
   return res.json();
 }
+
+// ── SSE 스트리밍 일정 생성 ────────────────────────────────────────
+
+export type ScheduleStreamEvent =
+  | { type: "status"; message: string }
+  | { type: "day"; items: ScheduleItem[]; cost: { day: number; total: string; total_krw: number } }
+  | { type: "geocoded"; items: ScheduleItem[] }
+  | { type: "cost_summary"; data: CostSummary }
+  | { type: "cached"; schedule: ScheduleItem[]; cost_summary: CostSummary | null }
+  | { type: "error"; message: string }
+  | { type: "done" };
+
+/**
+ * SSE 스트리밍으로 일정 생성 – Day별 완료 즉시 이벤트 전달.
+ *
+ * 이벤트 순서:
+ *   status → (day × N, 순서 비보장) → status → geocoded → cost_summary → done
+ *   캐시 히트 시: cached → done
+ */
+export async function* streamSchedule(
+  location: string,
+  routeName: string,
+  opts?: {
+    startDate?: string;
+    endDate?: string;
+    userId?: number;
+    useSearch?: boolean;
+    newsTop10?: object[];
+    transportMode?: "car" | "transit" | "walk";
+  }
+): AsyncGenerator<ScheduleStreamEvent> {
+  const res = await fetch(
+    `${API_BASE}/api/v1/planner/${location}/schedule/stream`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        route_name: routeName,
+        start_date: opts?.startDate ?? null,
+        end_date: opts?.endDate ?? null,
+        user_id: opts?.userId ?? null,
+        use_search: opts?.useSearch ?? false,
+        news_top10: opts?.newsTop10 ?? null,
+        transport_mode: opts?.transportMode ?? null,
+      }),
+      cache: "no-store",
+    }
+  );
+
+  if (!res.ok) await throwApiError(res, "스트리밍 일정 API 오류");
+  if (!res.body) throw new Error("스트리밍 응답 body가 없습니다.");
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      // SSE는 "\n\n"으로 이벤트 구분
+      const parts = buffer.split("\n\n");
+      buffer = parts.pop() ?? "";
+
+      for (const part of parts) {
+        const line = part.trim();
+        if (!line.startsWith("data: ")) continue;
+        try {
+          yield JSON.parse(line.slice(6)) as ScheduleStreamEvent;
+        } catch {
+          // 파싱 실패 이벤트 무시
+        }
+      }
+    }
+  } finally {
+    reader.cancel();
+  }
+}
