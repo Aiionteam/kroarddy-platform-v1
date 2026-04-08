@@ -6,10 +6,10 @@ import random
 import re
 from datetime import datetime, timedelta
 from math import atan2, cos, radians, sin, sqrt
-from typing import Any
+from typing import Any, TypedDict
 
 from langchain_core.messages import HumanMessage
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_genai import ChatGoogleGenerativeAI  # pyright: ignore[reportMissingImports]
 
 from app.agent.standard.state import PlannerState
 from app.core.config import settings
@@ -361,7 +361,7 @@ def _build_user_profile_block(profile: dict | None, lang: str = "Korean") -> str
 
     notes: list[str] = []
     if dietary in ("채식", "비건", "Vegetarian", "Vegan"):
-        notes.append(f"- Food routes: focus on vegetarian/vegan-friendly markets and streets.")
+        notes.append("- Food routes: focus on vegetarian/vegan-friendly markets and streets.")
     if dietary in ("할랄", "Halal"):
         notes.append("- Food routes: focus on halal-certified or Muslim-friendly restaurants.")
     if religion in ("이슬람", "Muslim"):
@@ -515,6 +515,21 @@ def _build_date_list(start_date: str | None, end_date: str | None) -> list[str]:
         return []
 
 
+class _SingleDayCommonKwargs(TypedDict):
+    """_generate_single_day에 공통으로 넘기는 키워드 인자."""
+
+    num_days: int
+    location_name: str
+    route_name: str
+    lang: str
+    lang_dir: str
+    festival_block: str
+    weather_block: str
+    transport_block: str
+    news_block: str
+    use_search: bool
+
+
 def _build_festival_block(festivals: list) -> str:
     """행사 목록 → 프롬프트 블록."""
     if not festivals:
@@ -652,58 +667,58 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
             location_name, route_name, num_days, use_search,
         )
 
-        common_kwargs = dict(
-            num_days=num_days,
-            location_name=location_name,
-            route_name=route_name,
-            lang=lang,
-            lang_dir=lang_dir,
-            festival_block=festival_block,
-            weather_block=weather_block,
-            transport_block=transport_block,
-            news_block=news_block,
-            use_search=use_search,
-        )
+        common_kwargs: _SingleDayCommonKwargs = {
+            "num_days": num_days,
+            "location_name": location_name,
+            "route_name": route_name,
+            "lang": lang,
+            "lang_dir": lang_dir,
+            "festival_block": festival_block,
+            "weather_block": weather_block,
+            "transport_block": transport_block,
+            "news_block": news_block,
+            "use_search": use_search,
+        }
         tasks = [
             _generate_single_day(day_num=i + 1, date_str=date_str, **common_kwargs)
             for i, date_str in enumerate(date_list)
         ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        schedule: list[dict[str, Any]] = []
-        per_day_costs: list[dict] = []
+        merged_schedule: list[dict[str, Any]] = []
+        per_day_costs: list[dict[str, Any]] = []
         errors: list[str] = []
         total_krw = 0
 
-        for result in results:
-            if isinstance(result, Exception):
-                logger.error("일정 병렬 생성 일부 실패: %s", result)
-                errors.append(str(result))
-            else:
-                items, per_day_cost = result
-                schedule.extend(items)
+        for raw in results:
+            if isinstance(raw, tuple) and len(raw) == 2:
+                items, per_day_cost = raw[0], raw[1]
+                merged_schedule.extend(items)
                 per_day_costs.append(per_day_cost)
-                total_krw += per_day_cost.get("total_krw", 0)
+                total_krw += int(per_day_cost.get("total_krw") or 0)
+            else:
+                logger.error("일정 병렬 생성 일부 실패: %s", raw)
+                errors.append(str(raw) if isinstance(raw, BaseException) else repr(raw))
 
-        if errors and not schedule:
+        if errors and not merged_schedule:
             return {**state, "schedule": [], "cost_summary": None, "error": "; ".join(errors)}
 
         # 일자 순 정렬
-        schedule.sort(key=lambda x: (x.get("day", 0),))
-        per_day_costs.sort(key=lambda x: x["day"])
+        merged_schedule.sort(key=lambda x: (x.get("day", 0),))
+        per_day_costs.sort(key=lambda x: int(x.get("day", 0)))
 
         trip_total_str = f"₩{total_krw:,}" if total_krw else "N/A"
-        cost_summary = {
+        merged_cost_summary: dict[str, Any] = {
             "per_day": [{"day": c["day"], "total": c["total"]} for c in per_day_costs],
             "trip_total": trip_total_str,
         }
 
         logger.info(
             "일정 병렬 생성 완료: %d개 항목 (%s / %s), 총경비=%s%s",
-            len(schedule), location_name, route_name, trip_total_str,
+            len(merged_schedule), location_name, route_name, trip_total_str,
             f" | 부분 실패 {len(errors)}건" if errors else "",
         )
-        return {**state, "schedule": schedule, "cost_summary": cost_summary, "error": None}
+        return {**state, "schedule": merged_schedule, "cost_summary": merged_cost_summary, "error": None}
 
     # ── 단일 호출 폴백 (날짜 범위 없음) ─────────────────────────────────────
     num_days = _TRAVEL_DAYS_DEFAULT
@@ -749,14 +764,16 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
     try:
         response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=use_search)
         data = _parse_json(response)
-        schedule = data.get("schedule", [])
-        cost_summary = data.get("cost_summary")
+        fb_schedule = data.get("schedule") or []
+        if not isinstance(fb_schedule, list):
+            fb_schedule = []
+        fb_cost_summary = data.get("cost_summary")
         logger.info(
             "일정 생성 완료: %s개 항목 (%s / %s), 총경비=%s",
-            len(schedule), location_name, route_name,
-            (cost_summary or {}).get("trip_total", "N/A"),
+            len(fb_schedule), location_name, route_name,
+            (fb_cost_summary or {}).get("trip_total", "N/A") if isinstance(fb_cost_summary, dict) else "N/A",
         )
-        return {**state, "schedule": schedule, "cost_summary": cost_summary, "error": None}
+        return {**state, "schedule": fb_schedule, "cost_summary": fb_cost_summary, "error": None}
     except Exception as e:
         logger.exception("일정 생성 실패: %s", e)
         return {**state, "schedule": [], "cost_summary": None, "error": str(e)}
