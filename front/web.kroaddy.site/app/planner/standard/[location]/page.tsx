@@ -6,6 +6,7 @@ import { useLoginStore } from "@/store";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import {
   fetchRoutes,
+  fetchSchedule,
   streamSchedule,
   fetchMyPlans,
   savePlan,
@@ -174,28 +175,49 @@ export default function LocationPlannerPage() {
         return;
       }
 
-      // SSE 스트리밍
+      // SSE 스트리밍 (404 시 기존 fetchSchedule로 자동 폴백)
       let finalSchedule: ScheduleItem[] = [];
       let finalCost: CostSummary | undefined;
 
+      const scheduleOpts = {
+        startDate,
+        endDate,
+        userId: appUserId ?? undefined,
+        useSearch,
+        newsTop10: newsTop10.length > 0 ? newsTop10 : undefined,
+        transportMode,
+      };
+
+      const runFallback = async () => {
+        console.info("[planner] /schedule/stream 미배포 → fetchSchedule 폴백");
+        setScheduleStatus("일정 생성 중…");
+        const res = await fetchSchedule(location, route.name, scheduleOpts);
+        setSchedule(res.schedule);
+        if (res.cost_summary) setCostSummary(res.cost_summary);
+        if (res.error && res.schedule.length === 0) {
+          setScheduleError(res.error);
+        } else if (res.schedule.length > 0) {
+          writeSchedule(location, route.name, startDate, endDate, useSearch, {
+            schedule: res.schedule,
+            cost_summary: res.cost_summary,
+          });
+        }
+        setScheduleLoading(false);
+        setScheduleStatus("");
+      };
+
       try {
-        const stream = streamSchedule(location, route.name, {
-          startDate,
-          endDate,
-          userId: appUserId ?? undefined,
-          useSearch,
-          newsTop10: newsTop10.length > 0 ? newsTop10 : undefined,
-          transportMode,
-        });
+        const stream = streamSchedule(location, route.name, scheduleOpts);
+        let streamStarted = false;
 
         for await (const event of stream) {
+          streamStarted = true;
           switch (event.type) {
             case "status":
               setScheduleStatus(event.message);
               break;
 
             case "cached":
-              // 백엔드 L1/L2 캐시 히트 – 한번에 전체 수신
               setSchedule(event.schedule);
               finalSchedule = event.schedule;
               if (event.cost_summary) {
@@ -207,7 +229,6 @@ export default function LocationPlannerPage() {
               break;
 
             case "day":
-              // Day 완료 즉시 UI 반영 (순서 정렬)
               setSchedule((prev) => {
                 const merged = [...prev, ...event.items].sort(
                   (a, b) => a.day - b.day || 0
@@ -215,12 +236,11 @@ export default function LocationPlannerPage() {
                 finalSchedule = merged;
                 return merged;
               });
-              setScheduleLoading(false); // 첫 Day가 도착하면 스피너 해제
+              setScheduleLoading(false);
               setScheduleStatus(`Day ${event.cost?.day} 완료 · 나머지 생성 중…`);
               break;
 
             case "geocoded":
-              // 좌표 검증 완료본으로 교체
               setSchedule(event.items);
               finalSchedule = event.items;
               setScheduleStatus("");
@@ -238,7 +258,6 @@ export default function LocationPlannerPage() {
               break;
 
             case "done":
-              // 캐시 저장
               if (finalSchedule.length > 0) {
                 writeSchedule(location, route.name, startDate, endDate, useSearch, {
                   schedule: finalSchedule,
@@ -251,10 +270,27 @@ export default function LocationPlannerPage() {
               break;
           }
         }
+
+        // 스트림이 아무 이벤트도 없이 끝난 경우 (서버 미배포 등)
+        if (!streamStarted) {
+          await runFallback();
+        }
       } catch (e) {
-        setScheduleError(e instanceof Error ? e.message : "일정을 불러오지 못했습니다.");
-        setScheduleLoading(false);
-        setScheduleStatus("");
+        const msg = e instanceof Error ? e.message : "";
+        // 404 = 스트리밍 엔드포인트 미배포 → 폴백
+        if (msg.includes("404") || msg.includes("Not Found")) {
+          try {
+            await runFallback();
+          } catch (fe) {
+            setScheduleError(fe instanceof Error ? fe.message : "일정을 불러오지 못했습니다.");
+            setScheduleLoading(false);
+            setScheduleStatus("");
+          }
+        } else {
+          setScheduleError(msg || "일정을 불러오지 못했습니다.");
+          setScheduleLoading(false);
+          setScheduleStatus("");
+        }
       }
     },
     [location, startDate, endDate, appUserId, useSearch, transportMode, newsTop10]
