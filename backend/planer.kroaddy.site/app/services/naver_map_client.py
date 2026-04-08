@@ -31,9 +31,26 @@ _NAVER_HEADERS = {
     "Accept": "application/json",
 }
 
+# ── 공유 httpx 클라이언트 (Connection Pool 재사용, TCP handshake 1회) ──────────
+# 매 geocode 호출마다 새 클라이언트를 생성하면 12개 요청 × TCP handshake 오버헤드 발생.
+# 모듈 레벨 싱글턴으로 연결 풀을 유지해 geocoding 배치 처리 속도를 크게 단축한다.
+_naver_client = httpx.AsyncClient(
+    timeout=httpx.Timeout(connect=3.0, read=5.0, write=3.0, pool=1.0),
+    limits=httpx.Limits(max_connections=30, max_keepalive_connections=10, keepalive_expiry=20),
+)
+
+
+async def close_naver_client() -> None:
+    """앱 종료 시 공유 클라이언트를 정상 종료한다 (main.py lifespan에서 호출)."""
+    if not _naver_client.is_closed:
+        await _naver_client.aclose()
+
 
 async def geocode(query: str) -> dict | None:
     """장소명/주소를 좌표(경도 x, 위도 y)로 변환.
+
+    공유 httpx 클라이언트를 사용해 Connection Pool을 재활용한다.
+    병렬 호출 시 TCP 핸드셰이크를 1회만 수행하므로 배치 geocoding이 빠르다.
 
     Returns:
         {"x": "127.xxx", "y": "37.xxx", "address": "...", "road_address": "..."} or None
@@ -42,31 +59,30 @@ async def geocode(query: str) -> dict | None:
         logger.warning("네이버 Maps API 키가 설정되지 않았습니다.")
         return None
 
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        try:
-            resp = await client.get(
-                _GEOCODE_URL,
-                params={"query": query, "count": 1},
-                headers=_NAVER_HEADERS,
-            )
-            resp.raise_for_status()
-            data = resp.json()
+    try:
+        resp = await _naver_client.get(
+            _GEOCODE_URL,
+            params={"query": query, "count": 1},
+            headers=_NAVER_HEADERS,
+        )
+        resp.raise_for_status()
+        data = resp.json()
 
-            addresses = data.get("addresses", [])
-            if not addresses:
-                logger.info("Geocoding 결과 없음: %s", query)
-                return None
-
-            addr = addresses[0]
-            return {
-                "x": addr.get("x", ""),
-                "y": addr.get("y", ""),
-                "address": addr.get("jibunAddress", ""),
-                "road_address": addr.get("roadAddress", ""),
-            }
-        except Exception as e:
-            logger.error("Geocoding 오류 (query=%s): %s", query, e)
+        addresses = data.get("addresses", [])
+        if not addresses:
+            logger.info("Geocoding 결과 없음: %s", query)
             return None
+
+        addr = addresses[0]
+        return {
+            "x": addr.get("x", ""),
+            "y": addr.get("y", ""),
+            "address": addr.get("jibunAddress", ""),
+            "road_address": addr.get("roadAddress", ""),
+        }
+    except Exception as e:
+        logger.error("Geocoding 오류 (query=%s): %s", query, e)
+        return None
 
 
 async def fetch_static_map(
@@ -102,23 +118,22 @@ async def fetch_static_map(
         "X-NCP-APIGW-API-KEY-ID": settings.naver_map_client_id,
     }
 
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        try:
-            resp = await client.get(_STATIC_MAP_URL, params=params)
-            resp.raise_for_status()
-            return resp.content
-        except httpx.HTTPStatusError as e:
-            logger.error(
-                "Static Map HTTP 오류 %d (lat=%s, lng=%s): %s",
-                e.response.status_code,
-                lat,
-                lng,
-                e.response.text[:300],
-            )
-            return None
-        except Exception as e:
-            logger.error("Static Map 오류 (lat=%s, lng=%s): %s", lat, lng, e)
-            return None
+    try:
+        resp = await _naver_client.get(_STATIC_MAP_URL, params=params)
+        resp.raise_for_status()
+        return resp.content
+    except httpx.HTTPStatusError as e:
+        logger.error(
+            "Static Map HTTP 오류 %d (lat=%s, lng=%s): %s",
+            e.response.status_code,
+            lat,
+            lng,
+            e.response.text[:300],
+        )
+        return None
+    except Exception as e:
+        logger.error("Static Map 오류 (lat=%s, lng=%s): %s", lat, lng, e)
+        return None
 
 
 async def keyword_search(query: str) -> dict | None:
@@ -138,41 +153,40 @@ async def keyword_search(query: str) -> dict | None:
         "X-Naver-Client-Secret": settings.naver_search_client_secret,
     }
 
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        try:
-            resp = await client.get(
-                _SEARCH_LOCAL_URL,
-                params={"query": query, "display": 1},
-                headers=headers,
-            )
-            resp.raise_for_status()
-            data = resp.json()
+    try:
+        resp = await _naver_client.get(
+            _SEARCH_LOCAL_URL,
+            params={"query": query, "display": 1},
+            headers=headers,
+        )
+        resp.raise_for_status()
+        data = resp.json()
 
-            items = data.get("items", [])
-            if not items:
-                logger.info("지역 검색 결과 없음: %s", query)
-                return None
-
-            item = items[0]
-            # mapx/mapy 는 WGS84 × 1e7 (도 단위 * 10,000,000)
-            lng = int(item["mapx"]) / 1e7
-            lat = int(item["mapy"]) / 1e7
-
-            # HTML 태그 제거 (e.g. <b>군산</b>근대역사박물관)
-            name = re.sub(r"<[^>]+>", "", item.get("title", query))
-            link = item.get("link") or ""
-
-            return {
-                "x": str(lng),
-                "y": str(lat),
-                "name": name,
-                "address": item.get("roadAddress") or item.get("address", ""),
-                "link": link,
-                "place_id": extract_naver_place_id_from_link(link),
-            }
-        except Exception as e:
-            logger.error("지역 검색 오류 (query=%s): %s", query, e)
+        items = data.get("items", [])
+        if not items:
+            logger.info("지역 검색 결과 없음: %s", query)
             return None
+
+        item = items[0]
+        # mapx/mapy 는 WGS84 × 1e7 (도 단위 * 10,000,000)
+        lng = int(item["mapx"]) / 1e7
+        lat = int(item["mapy"]) / 1e7
+
+        # HTML 태그 제거 (e.g. <b>군산</b>근대역사박물관)
+        name = re.sub(r"<[^>]+>", "", item.get("title", query))
+        link = item.get("link") or ""
+
+        return {
+            "x": str(lng),
+            "y": str(lat),
+            "name": name,
+            "address": item.get("roadAddress") or item.get("address", ""),
+            "link": link,
+            "place_id": extract_naver_place_id_from_link(link),
+        }
+    except Exception as e:
+        logger.error("지역 검색 오류 (query=%s): %s", query, e)
+        return None
 
 
 async def get_directions(
@@ -203,31 +217,30 @@ async def get_directions(
         # Directions 5 최대 5개 경유지 제한
         params["waypoints"] = "|".join(f"{lng},{lat}" for lng, lat in waypoints[:5])
 
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        try:
-            resp = await client.get(_DIRECTIONS_URL, params=params, headers=_NAVER_HEADERS)
-            resp.raise_for_status()
-            data = resp.json()
+    try:
+        resp = await _naver_client.get(_DIRECTIONS_URL, params=params, headers=_NAVER_HEADERS)
+        resp.raise_for_status()
+        data = resp.json()
 
-            if data.get("code") != 0:
-                logger.warning("Directions 결과 없음: code=%s, message=%s", data.get("code"), data.get("message"))
-                return None
-
-            routes = data.get("route", {})
-            for key in ("traoptimal", "trafast", "tracomfort", "traavoidtoll"):
-                route_list = routes.get(key)
-                if route_list:
-                    r = route_list[0]
-                    summary = r.get("summary", {})
-                    return {
-                        "path": r.get("path", []),
-                        "summary": {
-                            "distance": summary.get("distance", 0),  # 미터
-                            "duration": summary.get("duration", 0),  # 밀리초
-                        },
-                    }
-
+        if data.get("code") != 0:
+            logger.warning("Directions 결과 없음: code=%s, message=%s", data.get("code"), data.get("message"))
             return None
-        except Exception as e:
-            logger.error("Directions 오류: %s", e)
-            return None
+
+        routes = data.get("route", {})
+        for key in ("traoptimal", "trafast", "tracomfort", "traavoidtoll"):
+            route_list = routes.get(key)
+            if route_list:
+                r = route_list[0]
+                summary = r.get("summary", {})
+                return {
+                    "path": r.get("path", []),
+                    "summary": {
+                        "distance": summary.get("distance", 0),  # 미터
+                        "duration": summary.get("duration", 0),  # 밀리초
+                    },
+                }
+
+        return None
+    except Exception as e:
+        logger.error("Directions 오류: %s", e)
+        return None
