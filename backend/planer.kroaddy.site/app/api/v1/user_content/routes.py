@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database.session import get_db
 from app.core.nsfw_filter import check_nsfw_async
-from app.core.storage import generate_presigned_upload_url
+from app.core.storage import generate_presigned_upload_url, generate_presigned_get_url
 from app.models.user_content_like import UserContentLike
 from app.models.user_content_route import UserContentRoute
 from .schemas import (
@@ -89,6 +89,11 @@ async def _ai_polish(req: PolishRequest) -> dict:
 
 
 def _row_to_card(row: UserContentRoute, *, liked_by_me: bool = False) -> dict:
+    # DB에 저장된 image_url이 presigned PUT URL이거나 공개 접근이 막힌 URL일 수 있으므로
+    # 항상 신선한 presigned GET URL로 변환해서 반환합니다.
+    safe_image_url = (
+        generate_presigned_get_url(row.image_url) if row.image_url else None
+    )
     return {
         "id": row.id,
         "user_id": row.user_id,
@@ -98,7 +103,7 @@ def _row_to_card(row: UserContentRoute, *, liked_by_me: bool = False) -> dict:
         "description": row.description,
         "route_items": row.route_items or [],
         "tags": row.tags or [],
-        "image_url": row.image_url,
+        "image_url": safe_image_url,
         "likes": row.likes,
         "liked_by_me": liked_by_me,
         "created_at": row.created_at.isoformat(),
