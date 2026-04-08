@@ -58,16 +58,23 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* 로그인 마스코트: 구름처럼 천천히 위아래 */
 @keyframes kroaddy-float {
   0%,
   100% {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-3px);
+    transform: translateY(-10px);
   }
 }
 
 .animate-kroaddy-float {
-  animation: kroaddy-float 3.2s ease-in-out infinite;
+  animation: kroaddy-float 3.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-kroaddy-float {
+    animation: none;
+  }
 }
