@@ -81,8 +81,8 @@ _schedule_lock: asyncio.Lock = asyncio.Lock()
 _SCHEDULE_TTL = 7200
 
 # ─── L2 DB 캐시 TTL ─────────────────────────────────────────────
-_ROUTES_DB_TTL_DAYS = 7
-_SCHEDULE_DB_TTL_DAYS = 30
+_ROUTES_DB_TTL_DAYS = 5    # 루트: 5일 (장소/행사 변동 반영)
+_SCHEDULE_DB_TTL_DAYS = 5  # 일정: 5일 (루트와 동일 주기)
 
 
 def _now_utc() -> datetime:
@@ -102,11 +102,26 @@ async def _get_routes_from_db(cache_key: str, db: AsyncSession) -> list | None:
     return row.routes
 
 
-async def _save_routes_to_db(cache_key: str, location: str, routes: list, db: AsyncSession) -> None:
+async def _save_routes_to_db(
+    cache_key: str,
+    location: str,
+    routes: list,
+    db: AsyncSession,
+    *,
+    lang_code: str | None = None,
+    nationality: str | None = None,
+) -> None:
     expires_at = _now_utc() + timedelta(days=_ROUTES_DB_TTL_DAYS)
     stmt = (
         pg_insert(RouteCache)
-        .values(cache_key=cache_key, location=location, routes=routes, expires_at=expires_at)
+        .values(
+            cache_key=cache_key,
+            location=location,
+            lang_code=lang_code,
+            nationality=nationality,
+            routes=routes,
+            expires_at=expires_at,
+        )
         .on_conflict_do_update(
             index_elements=["cache_key"],
             set_={"routes": routes, "expires_at": expires_at},
@@ -129,7 +144,14 @@ async def _get_schedule_from_db(cache_key: str, db: AsyncSession) -> list | None
 
 
 async def _save_schedule_to_db(
-    cache_key: str, location: str, route_name: str, schedule: list, db: AsyncSession
+    cache_key: str,
+    location: str,
+    route_name: str,
+    schedule: list,
+    db: AsyncSession,
+    *,
+    lang_code: str | None = None,
+    nationality: str | None = None,
 ) -> None:
     expires_at = _now_utc() + timedelta(days=_SCHEDULE_DB_TTL_DAYS)
     stmt = (
@@ -138,6 +160,8 @@ async def _save_schedule_to_db(
             cache_key=cache_key,
             location=location,
             route_name=route_name,
+            lang_code=lang_code,
+            nationality=nationality,
             schedule=schedule,
             expires_at=expires_at,
         )
@@ -323,47 +347,57 @@ def _plan_to_dict(plan: TravelPlan) -> dict:
     }
 
 
-@router.post("/{location}/routes", summary="여행 루트 7개 AI 추천 (행사/먹거리/명소/럭셔리/가성비/가족/커플)")
+@router.post("/{location}/routes", summary="여행 루트 7개 AI 추천 (행사/먹거리/명소/럭셔리/가성비|가족/커플)")
 async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depends(get_db)):
     location_name = SLUG_TO_NAME.get(location, location)
     existing_routes: list[str] = req.existing_routes or []
     eh = _existing_hash(existing_routes)
     search_tag = "s1" if req.use_search else "s0"
     transport_tag = req.transport_mode or "any"
-    # 언어별 캐시 분리를 위해 user_profile 조회 후 cache_key 확정 (아래 lock 블록에서 재정의)
-    _preliminary_key = f"{location}:{req.start_date}:{req.end_date}:{eh}:{search_tag}:{transport_tag}"
 
-    cached = _routes_cache.get(_preliminary_key)
+    # ── user_profile을 먼저 조회해야 lang_code가 확정되고
+    #    캐시 키를 올바르게 만들 수 있다.
+    #    _preliminary_key(lang 없음)로 먼저 읽고 cache_key(lang 있음)로 저장하는
+    #    구조는 키 불일치로 캐시 히트가 영원히 발생하지 않고
+    #    다른 국적 사용자에게 잘못된 언어의 루트를 반환하는 버그가 있다.
+    user_profile = await fetch_user_profile(req.user_id)
+    nationality = (user_profile or {}).get("nationality", "")
+    lang_code = nationality[:3].lower() if nationality else "ko"
+    cache_key = f"{location}:{req.start_date}:{req.end_date}:{eh}:{lang_code}:{search_tag}:{transport_tag}"
+
+    cached = _routes_cache.get(cache_key)
     if cached and time.time() - cached[1] < _ROUTES_TTL:
-        logger.info("루트 L1캐시 히트: %s", _preliminary_key)
+        logger.info("루트 L1캐시 히트: %s (lang=%s)", cache_key, lang_code)
         return {"location": location, "location_name": location_name, "routes": cached[0]}
 
     async with _routes_lock:
-        cached = _routes_cache.get(_preliminary_key)
+        cached = _routes_cache.get(cache_key)
         if cached and time.time() - cached[1] < _ROUTES_TTL:
-            logger.info("루트 L1캐시 히트(lock 내부): %s", _preliminary_key)
+            logger.info("루트 L1캐시 히트(lock 내부): %s", cache_key)
             return {"location": location, "location_name": location_name, "routes": cached[0]}
+
+        # DB 캐시도 lang 포함된 cache_key로 조회
+        db_routes = await _get_routes_from_db(cache_key, db)
+        if db_routes:
+            _routes_cache[cache_key] = (db_routes, time.time())
+            logger.info("루트 L2(DB)캐시 히트: %s (%d건)", cache_key, len(db_routes))
+            return {"location": location, "location_name": location_name, "routes": db_routes}
 
         # 뉴스 Top10: 프론트에서 이미 가져온 데이터가 있으면 재사용 (API 호출 절약)
         _has_client_news = bool(req.news_top10)
-        festivals, user_profile, news_top10, weather_forecast = await asyncio.gather(
+        festivals, news_top10, weather_forecast = await asyncio.gather(
             fetch_festivals_for_period(location, location_name, req.start_date, req.end_date),
-            fetch_user_profile(req.user_id),
             asyncio.sleep(0) if _has_client_news else fetch_news_top10(req.start_date, req.end_date),
             fetch_weather_for_planner(location_name, None, req.start_date, req.end_date),
         )
         if _has_client_news:
             news_top10 = req.news_top10  # type: ignore[assignment]
 
-        nationality = (user_profile or {}).get("nationality", "")
-        lang_code = nationality[:3].lower() if nationality else "ko"  # 캐시 키용 짧은 식별자
-        cache_key = f"{location}:{req.start_date}:{req.end_date}:{eh}:{lang_code}:{search_tag}:{transport_tag}"
-
         logger.info(
-            "행사 연동: location=%s, 건수=%d | 뉴스 Top10: %d건(%s) | 유저 프로필: %s (국적=%s) | 기존 제외=%d건 | 날씨=%s | 이동수단=%s",
+            "행사 연동: location=%s, 건수=%d | 뉴스 Top10: %d건(%s) | 유저 프로필: %s (국적=%s, lang=%s) | 기존 제외=%d건 | 날씨=%s | 이동수단=%s",
             location, len(festivals), len(news_top10 or []),
             "client" if _has_client_news else "fetched",
-            bool(user_profile), nationality, len(existing_routes),
+            bool(user_profile), nationality, lang_code, len(existing_routes),
             "available" if (weather_forecast or {}).get("available") else "unavailable",
             transport_tag,
         )
@@ -395,10 +429,13 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
         routes = result["routes"]
         _routes_cache[cache_key] = (routes, time.time())
         try:
-            await _save_routes_to_db(cache_key, location_name, routes, db)
+            await _save_routes_to_db(
+                cache_key, location_name, routes, db,
+                lang_code=lang_code, nationality=nationality,
+            )
         except Exception as e:
             logger.warning("루트 DB캐시 저장 실패 (무시): %s", e)
-        logger.info("루트 캐시 저장(L1+L2): %s (%d건)", cache_key, len(routes))
+        logger.info("루트 캐시 저장(L1+L2): %s (%d건, lang=%s)", cache_key, len(routes), lang_code)
         return {"location": location, "location_name": location_name, "routes": routes}
 
 
@@ -488,10 +525,13 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
         if schedule:
             _schedule_cache[sched_key] = (schedule, time.time())
             try:
-                await _save_schedule_to_db(sched_key, location_name, req.route_name, schedule, db)
+                await _save_schedule_to_db(
+                    sched_key, location_name, req.route_name, schedule, db,
+                    lang_code=lang_code, nationality=nationality,
+                )
             except Exception as e:
                 logger.warning("일정 DB캐시 저장 실패 (무시): %s", e)
-            logger.info("일정 캐시 저장(L1+L2): %s (%d항목)", sched_key, len(schedule))
+            logger.info("일정 캐시 저장(L1+L2): %s (%d항목, lang=%s)", sched_key, len(schedule), lang_code)
 
         return {
             "location": location,
@@ -599,10 +639,13 @@ async def stream_schedule(
             use_search=req.use_search,
         )
 
-        # ── Day별 병렬 생성 → 완료된 Day 즉시 스트리밍 ───────────────
+        # ── Day별 병렬 생성 → 완료된 Day 즉시 스트리밍 + 즉시 Geocoding 시작 ──
+        # Day N이 완료되는 즉시 해당 Day의 geocoding을 비동기로 시작한다.
+        # Day N+1, N+2 LLM 응답 대기 시간과 geocoding이 겹쳐(overlap)
+        # 전체 지연 시간이 max(LLM_day) + geocode_per_day 수준으로 단축된다.
         yield _sse({"type": "status", "message": f"AI가 {num_days}일 일정 생성 중…"})
 
-        futures = {
+        llm_futures = {
             asyncio.ensure_future(
                 _generate_single_day(day_num=i + 1, date_str=date_str, **common_kwargs)
             ): i + 1
@@ -611,7 +654,10 @@ async def stream_schedule(
 
         all_items: list[dict] = []
         per_day_costs: list[dict] = []
-        pending = set(futures.keys())
+        # (순서 인덱스, geocode Future) 쌍 – 나중에 순서대로 수집
+        geocode_futures: list[tuple[int, "asyncio.Future[list[dict]]"]] = []
+        pending = set(llm_futures.keys())
+        item_offset = 0  # geocode 결과와 all_items 항목을 연결하는 오프셋
 
         while pending:
             done_set, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
@@ -625,6 +671,12 @@ async def stream_schedule(
                         "items": items,
                         "cost": per_day_cost,
                     })
+                    # Day LLM 완료 즉시 해당 Day의 geocoding 시작
+                    geo_fut = asyncio.ensure_future(
+                        asyncio.gather(*[_geocode_item(it) for it in items], return_exceptions=True)
+                    )
+                    geocode_futures.append((item_offset, geo_fut))
+                    item_offset += len(items)
                 except Exception as e:
                     logger.error("스트리밍 Day 생성 실패: %s", e)
                     yield _sse({"type": "error", "message": str(e)})
@@ -633,13 +685,19 @@ async def stream_schedule(
             yield _sse({"type": "done"})
             return
 
-        # ── 좌표 검증 + 경로 최적화 ─────────────────────────────────
+        # ── 좌표 검증 결과 수집 + 경로 최적화 ───────────────────────
+        # 이미 대부분의 geocoding이 백그라운드에서 완료됐을 가능성이 높음
         yield _sse({"type": "status", "message": "좌표 검증 중…"})
+        geocoded = list(all_items)  # 원본 복사 (실패 시 fallback)
         try:
-            geocoded = list(await asyncio.gather(*[_geocode_item(item) for item in all_items]))
+            for offset, geo_fut in geocode_futures:
+                results = await geo_fut
+                for i, res in enumerate(results):
+                    if isinstance(res, dict):
+                        geocoded[offset + i] = res
+                    # 예외이면 원본 유지 (이미 복사됨)
         except Exception as e:
-            logger.warning("지오코딩 실패(스트리밍), 원본 유지: %s", e)
-            geocoded = all_items
+            logger.warning("지오코딩 결과 수집 실패(스트리밍), 원본 유지: %s", e)
 
         # 일별 Nearest-Neighbor 경로 최적화
         days_map: dict[int, list] = {}
@@ -663,7 +721,10 @@ async def stream_schedule(
         # ── 캐시 저장 ────────────────────────────────────────────────
         _schedule_cache[sched_key] = (optimized, time.time())
         try:
-            await _save_schedule_to_db(sched_key, location_name, req.route_name, optimized, db)
+            await _save_schedule_to_db(
+                sched_key, location_name, req.route_name, optimized, db,
+                lang_code=lang_code, nationality=nationality,
+            )
         except Exception as e:
             logger.warning("스트리밍 일정 DB캐시 저장 실패(무시): %s", e)
 

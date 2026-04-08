@@ -26,6 +26,16 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+_weather_client = httpx.AsyncClient(
+    timeout=httpx.Timeout(connect=3.0, read=6.0, write=3.0, pool=1.0),
+    limits=httpx.Limits(max_connections=10, max_keepalive_connections=5, keepalive_expiry=30),
+)
+
+
+async def close_weather_client() -> None:
+    if not _weather_client.is_closed:
+        await _weather_client.aclose()
+
 _OWM_FORECAST_URL = "https://api.openweathermap.org/data/2.5/forecast"
 _OWM_GEO_URL = "https://api.openweathermap.org/geo/1.0/direct"
 
@@ -68,17 +78,16 @@ async def fetch_coords_for_location(location_name: str) -> tuple[float, float] |
     )
 
     try:
-        async with httpx.AsyncClient(timeout=8.0) as client:
-            for q in queries:
-                r = await client.get(
-                    _OWM_GEO_URL,
-                    params={"q": q, "limit": 1, "appid": key},
-                )
-                r.raise_for_status()
-                data = r.json()
-                if data:
-                    logger.debug("OWM Geocoding 성공: %s → (%.4f, %.4f)", q, data[0]["lat"], data[0]["lon"])
-                    return float(data[0]["lat"]), float(data[0]["lon"])
+        for q in queries:
+            r = await _weather_client.get(
+                _OWM_GEO_URL,
+                params={"q": q, "limit": 1, "appid": key},
+            )
+            r.raise_for_status()
+            data = r.json()
+            if data:
+                logger.debug("OWM Geocoding 성공: %s → (%.4f, %.4f)", q, data[0]["lat"], data[0]["lon"])
+                return float(data[0]["lat"]), float(data[0]["lon"])
         logger.info("OWM Geocoding: 모든 쿼리에서 결과 없음 (%s)", queries)
     except Exception as e:
         logger.warning("OWM Geocoding 실패 (%s): %s", location_name, e)
@@ -139,13 +148,12 @@ async def fetch_weather_forecast(
             pass
 
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            r = await client.get(
-                _OWM_FORECAST_URL,
-                params={"lat": lat, "lon": lon, "appid": key, "units": "metric", "lang": "kr", "cnt": 40},
-            )
-            r.raise_for_status()
-            data = r.json()
+        r = await _weather_client.get(
+            _OWM_FORECAST_URL,
+            params={"lat": lat, "lon": lon, "appid": key, "units": "metric", "lang": "kr", "cnt": 40},
+        )
+        r.raise_for_status()
+        data = r.json()
     except Exception as e:
         logger.warning("OWM 예보 API 실패: %s", e)
         return {"available": False, "reason": str(e), "dates": {}}

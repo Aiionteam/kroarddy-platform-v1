@@ -50,10 +50,20 @@ def _get_lang(profile: dict | None) -> str:
 
 
 def _lang_directive(lang: str) -> str:
-    """모든 언어에 대해 Gemini에 언어 지시 문구를 반환한다."""
+    """모든 언어에 대해 Gemini에 언어 지시 문구를 반환한다.
+
+    Korean도 명시적으로 지시해야 한다. 지시가 없으면 모델이
+    romanized 영어(예: 'gwangalli')를 섞어 사용하는 문제가 발생한다.
+    """
+    if lang == "Korean":
+        return (
+            "\n⚠️ 중요(CRITICAL): name, description, highlights 등 "
+            "모든 텍스트 값을 반드시 한국어로 작성하세요. "
+            "장소명은 절대 로마자(예: 'gwangalli') 사용 금지. JSON 키는 영어 유지.\n"
+        )
     return (
-        f"\n⚠️ IMPORTANT: Write ALL text values (place, title, description, tips, highlights, day_total, etc.) "
-        f"ENTIRELY in {lang}. JSON keys must stay in English.\n"
+        f"\n⚠️ IMPORTANT: Write ALL text values (name, description, highlights, etc.) "
+        f"ENTIRELY in {lang}. NEVER use Korean characters. JSON keys must stay in English.\n"
     )
 
 # 일일 쿼터 초과 식별자 (재시도해도 무의미) — 여러 패턴 지원
@@ -70,6 +80,12 @@ _DAILY_QUOTA_MARKERS = (
 # asyncio Semaphore는 non-blocking – 대기 요청은 이벤트 루프 차단 없이 yield됨
 _GEMINI_SEMAPHORE = asyncio.Semaphore(20)
 _SEMAPHORE_WAIT_TIMEOUT = 30  # 초 – 실제 서비스에서 30초 대기도 허용
+
+# ── LLM 싱글턴 (매 호출마다 객체 생성 방지) ──────────────────────────────────
+# ChatGoogleGenerativeAI 초기화는 무겁진 않지만, 3일 × Day 병렬 생성 시
+# 3개의 인스턴스를 동시에 생성하는 오버헤드를 제거한다.
+_llm_instance: "ChatGoogleGenerativeAI | None" = None
+_llm_search_instance: "ChatGoogleGenerativeAI | None" = None
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -147,30 +163,38 @@ def _total_route_km(items: list[dict[str, Any]]) -> float:
 
 
 def _get_llm() -> ChatGoogleGenerativeAI:
-    """Gemini LLM 인스턴스 반환. max_output_tokens는 설정하지 않음.
-    (langchain-google-genai 4.x에서 max_output_tokens 파라미터가
-    실제보다 낮게 적용되어 JSON이 중간에 잘리는 버그가 있음)
+    """Gemini LLM 싱글턴 반환.
+
+    max_output_tokens를 설정하지 않는다:
+    langchain-google-genai 4.x에서 max_output_tokens가 실제보다 낮게 적용되어
+    JSON이 중간에 잘리는 버그가 있음.
     """
-    return ChatGoogleGenerativeAI(
-        model=settings.gemini_model,
-        temperature=0.4,
-        google_api_key=settings.gemini_api_key,
-    )
+    global _llm_instance
+    if _llm_instance is None:
+        _llm_instance = ChatGoogleGenerativeAI(
+            model=settings.gemini_model,
+            temperature=0.4,
+            google_api_key=settings.gemini_api_key,
+        )
+    return _llm_instance
 
 
 def _get_llm_with_search():
-    """Google Search grounding이 활성화된 Gemini LLM.
+    """Google Search grounding이 활성화된 Gemini LLM 싱글턴.
 
     Gemini가 영화 상영 여부·신규 오픈·실시간 행사 등을 스스로 검색해
     정확한 정보를 바탕으로 일정을 생성·수정한다.
     fallback(OpenAI)은 grounding 미지원이므로 일반 LLM으로 대체한다.
     """
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-3-flash-preview",
-        temperature=0.4,
-        google_api_key=settings.gemini_api_key,
-    )
-    return llm.bind_tools([{"google_search": {}}])
+    global _llm_search_instance
+    if _llm_search_instance is None:
+        base = ChatGoogleGenerativeAI(
+            model="gemini-3-flash-preview",
+            temperature=0.4,
+            google_api_key=settings.gemini_api_key,
+        )
+        _llm_search_instance = base.bind_tools([{"google_search": {}}])
+    return _llm_search_instance
 
 
 def _get_fallback_llm():
@@ -465,24 +489,59 @@ async def generate_routes(state: PlannerState) -> PlannerState:
     else:
         exclude_block = ""
 
+    # 언어별 테마 라벨 (JSON 스키마에 들어가는 theme 열거값)
+    if lang == "Korean":
+        themes_desc = (
+            f"1.{festival_theme_desc.split(':',1)[-1].strip()}\n"
+            "2.먹거리:재래시장·먹자골목·특산물 중심\n"
+            "3.명소:대표관광지·문화재·자연경관\n"
+            "4.럭셔리:고급숙소·파인다이닝·스파·전용투어\n"
+            "5.가성비:무료명소·저렴먹거리·대중교통 중심\n"
+            "6.가족:키즈체험·동물원·놀이공원·자연탐방(유아·초등 기준)\n"
+            "7.커플:야경·사진스팟·감성카페·데이트코스\n"
+        )
+        schema_example = (
+            '{"routes":[{"name":"루트명(≤15자)","theme":"행사|먹거리|명소|럭셔리|가성비|가족|커플",'
+            '"description":"설명(≤40자)","highlights":["장소1","장소2","장소3"]}]}'
+        )
+        constraint_line = (
+            f"⚠️ 지역 제한(CRITICAL): highlights의 모든 장소는 반드시 '{location_name}' 지역 내에 "
+            f"실제 존재해야 합니다. 이름이 비슷해도 다른 도시·지역 장소는 절대 포함 금지."
+        )
+        themes_intro = "아래 7가지 테마의 루트를 각 1개씩 순서대로 작성하세요:"
+        highlights_rule = f"highlights는 {location_name} 내 실존 장소·거리·행사만 사용."
+    else:
+        fest_raw = festival_theme_desc.split(":", 1)[-1].strip()
+        themes_desc = (
+            f"1.event: {fest_raw}\n"
+            "2.food: local markets, street food, regional specialties\n"
+            "3.attractions: top landmarks, cultural heritage, nature\n"
+            "4.luxury: upscale hotels, fine dining, spa, private tours\n"
+            "5.budget: free attractions, affordable food, public transit\n"
+            "6.family: kids activities, zoo, amusement park, nature trails\n"
+            "7.couple: night views, photo spots, cafes, date courses\n"
+        )
+        schema_example = (
+            '{"routes":[{"name":"route name(≤15chars)","theme":"event|food|attractions|luxury|budget|family|couple",'
+            '"description":"description(≤40chars)","highlights":["place1","place2","place3"]}]}'
+        )
+        constraint_line = (
+            f"⚠️ GEOGRAPHIC CONSTRAINT (CRITICAL): ALL highlights must be real places physically located within "
+            f"'{location_name}'. Never use places from other cities even if names are similar."
+        )
+        themes_intro = "Generate exactly 7 routes (one per theme, in order):"
+        highlights_rule = f"Use only real existing places in {location_name} for highlights."
+
     prompt = (
-        f"여행지:{location_name} | {period_clause.strip()}\n"
-        f"⚠️ 지역 제한(CRITICAL): highlights의 모든 장소는 반드시 '{location_name}' 지역 내에 "
-        f"실제 존재해야 합니다. 이름이 비슷해도 다른 도시·지역 장소는 절대 포함 금지.\n\n"
+        f"Destination:{location_name} | {period_clause.strip()}\n"
+        f"{constraint_line}\n\n"
         f"{user_block}{exclude_block}{festival_block}{weather_block}{transport_block}{news_block}"
-        "아래 7가지 테마의 루트를 각 1개씩 순서대로 작성하세요:\n"
-        f"1.{festival_theme_desc.split(':',1)[-1].strip()}\n"
-        "2.먹거리:재래시장·먹자골목·특산물 중심\n"
-        "3.명소:대표관광지·문화재·자연경관\n"
-        "4.럭셔리:고급숙소·파인다이닝·스파·전용투어\n"
-        "5.가성비:무료명소·저렴먹거리·대중교통 중심\n"
-        "6.가족:키즈체험·동물원·놀이공원·자연탐방(유아·초등 기준)\n"
-        "7.커플:야경·사진스팟·감성카페·데이트코스\n\n"
-        f"highlights는 {location_name} 내 실존 장소·거리·행사만 사용.\n"
+        f"{themes_intro}\n"
+        f"{themes_desc}\n"
+        f"{highlights_rule}\n"
         f"{lang_dir}"
         "\nRespond ONLY with valid JSON (no explanation):\n"
-        '{"routes":[{"name":"name(≤15chars)","theme":"행사|먹거리|명소|럭셔리|가성비|가족|커플",'
-        '"description":"description(≤40chars)","highlights":["place1","place2","place3"]}]}'
+        f"{schema_example}"
     )
 
     use_search: bool = state.get("use_search", False)
@@ -610,11 +669,19 @@ async def _generate_single_day(
         f"{day_zone_hint}"
         f"{lang_dir}"
         "\nRespond ONLY with valid JSON (no explanation):\n"
-        f'{{"day":{day_num},"date":"{date_str}","items":['
-        f'{{"time":"{first_time}","place":"place name","address":"도로명 주소","lat":37.5665,"lng":126.9780,'
-        '"title":"activity title(≤20chars)","description":"description(≤60chars)",'
-        '"tips":"tip(≤30chars)","estimated_cost":"₩0"}'
-        f'],"day_total":"₩0","day_total_krw":0}}'
+        + (
+            f'{{"day":{day_num},"date":"{date_str}","items":['
+            f'{{"time":"{first_time}","place":"장소명","address":"도로명 주소","lat":37.5665,"lng":126.9780,'
+            '"title":"활동명(≤20자)","description":"설명(≤60자)",'
+            '"tips":"팁(≤30자)","estimated_cost":"₩0"}'
+            f'],"day_total":"₩0","day_total_krw":0}}'
+            if lang == "Korean" else
+            f'{{"day":{day_num},"date":"{date_str}","items":['
+            f'{{"time":"{first_time}","place":"place name","address":"street address","lat":37.5665,"lng":126.9780,'
+            '"title":"activity title(≤20chars)","description":"description(≤60chars)",'
+            '"tips":"tip(≤30chars)","estimated_cost":"₩0"}'
+            f'],"day_total":"₩0","day_total_krw":0}}'
+        )
     )
 
     llm = _get_llm_with_search() if use_search else _get_llm()
@@ -732,6 +799,23 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         first_time = "morning"
         flow_hint = "morning→lunch→afternoon→evening"
 
+    if lang == "Korean":
+        fb_schema = (
+            f'{{"schedule":[{{"day":1,"date":"{date_example}","time":"{first_time}",'
+            '"place":"장소명","address":"도로명 주소","lat":37.5665,"lng":126.9780,'
+            '"title":"활동명(≤20자)","description":"설명(≤60자)",'
+            '"tips":"팁(≤30자)","estimated_cost":"₩0"}}],'
+            '"cost_summary":{{"per_day":[{{"day":1,"total":"₩0"}}],"trip_total":"₩0"}}}}'
+        )
+    else:
+        fb_schema = (
+            f'{{"schedule":[{{"day":1,"date":"{date_example}","time":"{first_time}",'
+            '"place":"place name","address":"street address","lat":37.5665,"lng":126.9780,'
+            '"title":"activity title(≤20chars)","description":"description(≤60chars)",'
+            '"tips":"tip(≤30chars)","estimated_cost":"₩0"}}],'
+            '"cost_summary":{{"per_day":[{{"day":1,"total":"₩0"}}],"trip_total":"₩0"}}}}'
+        )
+
     prompt = (
         f"Destination:{location_name} | Route:{route_name}\n"
         f"⚠️ GEOGRAPHIC CONSTRAINT (CRITICAL): ALL places must be physically located within "
@@ -744,7 +828,7 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         "- estimated_cost: cost in KRW (e.g. '무료', '₩3,000', '₩15,000~₩20,000')\n"
         "- cost_summary.per_day: sum of estimated_cost for each day\n"
         "- cost_summary.trip_total: grand total\n"
-        "- address: 해당 장소의 정확한 도로명 주소\n"
+        "- address: exact street address\n"
         "- lat/lng: WGS84 decimal degree (approximate OK)\n"
         "\n[GEOGRAPHIC EFFICIENCY – CRITICAL]\n"
         "- CLUSTER: Each day's 4 places must be in the SAME neighborhood/district.\n"
@@ -752,11 +836,7 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         "- MULTI-DAY: Assign DIFFERENT districts to different days.\n"
         f"{lang_dir}"
         "\nRespond ONLY with valid JSON (no explanation):\n"
-        f'{{"schedule":[{{"day":1,"date":"{date_example}","time":"{first_time}","place":"place name",'
-        '"address":"도로명 주소","lat":37.5665,"lng":126.9780,'
-        '"title":"activity title(≤20chars)","description":"description(≤60chars)",'
-        '"tips":"tip(≤30chars)","estimated_cost":"₩0"}}],'
-        '"cost_summary":{{"per_day":[{{"day":1,"total":"₩0"}}],"trip_total":"₩0"}}}}'
+        f"{fb_schema}"
     )
 
     llm = _get_llm_with_search() if use_search else _get_llm()
