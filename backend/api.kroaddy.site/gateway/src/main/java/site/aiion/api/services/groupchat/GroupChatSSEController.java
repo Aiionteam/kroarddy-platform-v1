@@ -94,14 +94,8 @@ public class GroupChatSSEController {
         }
         final String roomTypeNorm = room.name();
 
-        String allowOrigin = System.getenv("FRONTEND_URL");
-        if (allowOrigin == null || allowOrigin.isEmpty()) {
-            allowOrigin = "http://localhost:3000";
-        }
-        response.setHeader("Access-Control-Allow-Origin", allowOrigin.trim().replaceFirst("/$", ""));
-        response.setHeader("Access-Control-Allow-Credentials", "true");
-        response.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-        response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, Cache-Control");
+        // CORS는 SecurityConfig.corsConfigurationSource()에서 일괄 처리.
+        // 수동 Access-Control-Allow-Origin 설정은 Spring Security 설정을 덮어써서 CORS 오류를 유발하므로 제거.
         response.setHeader("Cache-Control", "no-cache, no-transform");
         response.setHeader("Connection", "keep-alive");
         response.setHeader("X-Accel-Buffering", "no");
