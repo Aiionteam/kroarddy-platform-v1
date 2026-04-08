@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 const WEB_URL = process.env.NEXT_PUBLIC_WEB_URL ?? "https://web.kroaddy.site";
 
@@ -96,13 +97,14 @@ function Navbar() {
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* 로고 */}
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-600 to-violet-700 flex items-center justify-center text-white text-sm font-bold shadow-md">
-            ★
-          </div>
-          <span className="text-xl font-bold text-gray-900">
-            K<span className="text-purple-600">roaddy</span>
-          </span>
+        <div className="flex items-center">
+          <Image
+            src="/image/titile.png"
+            alt="Kroaddy"
+            width={180}
+            height={50}
+            priority
+          />
         </div>
 
         {/* 데스크톱 내비 */}
