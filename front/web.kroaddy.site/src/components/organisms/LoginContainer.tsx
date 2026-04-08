@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { Button } from "../atoms/Button";
 import { GoogleLoginButton } from "../molecules/GoogleLoginButton";
 import { KakaoLoginButton } from "../molecules/KakaoLoginButton";
@@ -11,26 +12,36 @@ export const LoginContainer: React.FC = () => {
   const { handleGoogleLogin, handleKakaoLogin, handleNaverLogin, handleGuestLogin } = useLoginStore();
 
   return (
-    <div className="w-full max-w-[360px]">
+    <div className="w-full max-w-[400px]">
       {/* 로고 영역 */}
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-600/40 mb-5">
-          <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
-          </svg>
+        <div className="inline-flex items-center justify-center mb-0 animate-kroaddy-float">
+          <Image
+            src="/logo/logo_no_background.png"
+            alt=""
+            width={220}
+            height={220}
+            className="h-32 w-32 object-contain sm:h-40 sm:w-40"
+            priority
+          />
         </div>
-        <h1 className="text-[2.25rem] font-bold tracking-tight text-white mb-1.5">
-          Kroaddy
-        </h1>
-        <p className="text-sm text-white/45 tracking-wide">
+        <div className="flex justify-center -mt-1 mb-1.5">
+          <Image
+            src="/logo/no_logo.png"
+            alt="Kroaddy"
+            width={360}
+            height={80}
+            className="max-w-[min(100%,20rem)] object-contain h-14 w-auto sm:h-16 sm:max-w-[22rem]"
+            priority
+          />
+        </div>
+        <p className="text-sm text-gray-500 tracking-wide">
           AI와 함께하는 스마트 여행 플래너
         </p>
       </div>
 
-      {/* 로그인 카드 */}
-      <div className="bg-white/[0.07] backdrop-blur-2xl rounded-3xl border border-white/[0.12] p-6 shadow-2xl shadow-black/40">
-        <p className="text-[11px] font-semibold tracking-[0.15em] text-white/30 uppercase text-center mb-5">
+      <div className="p-0">
+        <p className="text-[11px] font-semibold tracking-[0.15em] text-gray-500 uppercase text-center mb-5">
           소셜 계정으로 시작하기
         </p>
 
@@ -41,9 +52,9 @@ export const LoginContainer: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3 my-5">
-          <div className="flex-1 h-px bg-white/[0.08]" />
-          <span className="text-[11px] text-white/25">또는</span>
-          <div className="flex-1 h-px bg-white/[0.08]" />
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="text-[11px] text-gray-400">또는</span>
+          <div className="flex-1 h-px bg-gray-200" />
         </div>
 
         <Button type="button" variant="outline" onClick={handleGuestLogin}>
@@ -51,7 +62,7 @@ export const LoginContainer: React.FC = () => {
         </Button>
       </div>
 
-      <p className="text-center text-[11px] text-white/20 mt-6 leading-relaxed">
+      <p className="text-center text-[11px] text-gray-400 mt-6 leading-relaxed">
         로그인하면 서비스 이용약관 및<br />개인정보처리방침에 동의하는 것으로 간주합니다.
       </p>
     </div>

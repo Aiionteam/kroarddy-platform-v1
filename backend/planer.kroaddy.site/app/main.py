@@ -18,6 +18,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1 import v1_router
+from app.services.naver_map_client import close_naver_client
+from app.services.news_client import close_news_client
+from app.services.weather_client import close_weather_client
+from app.services.user_info_client import close_user_info_client
 
 logging.basicConfig(
     level=logging.INFO,
@@ -31,7 +35,11 @@ logger = logging.getLogger(__name__)
 async def lifespan(app_: FastAPI):
     logger.info("Tour Planner API starting (port %s)", os.getenv("PORT", "8003"))
     yield
-    logger.info("Tour Planner API shutting down")
+    logger.info("Tour Planner API shutting down – closing shared HTTP clients")
+    await close_naver_client()
+    await close_news_client()
+    await close_weather_client()
+    await close_user_info_client()
 
 
 app = FastAPI(
