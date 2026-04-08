@@ -13,9 +13,9 @@ export const metadata: Metadata = {
     "Kroaddy는 AI가 당신의 취향을 분석해 최적의 여행 루트와 일정을 설계해주는 개인화 여행 플래너 앱입니다.",
   keywords: ["여행", "AI 여행", "여행 플래너", "크로디", "Kroaddy"],
   icons: {
-    icon: "/image/logo_no_background.png?v=2",
-    shortcut: "/image/logo_no_background.png?v=2",
-    apple: "/image/logo_no_background.png?v=2",
+    icon: "/image/logo_no_background.png",
+    shortcut: "/image/logo_no_background.png",
+    apple: "/image/logo_no_background.png",
   },
 };
 
