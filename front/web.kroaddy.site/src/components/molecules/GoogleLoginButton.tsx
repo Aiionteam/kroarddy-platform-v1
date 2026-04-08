@@ -7,6 +7,6 @@ import { Icon } from "../atoms/Icon";
 export const GoogleLoginButton: React.FC<{ onClick: () => void }> = ({ onClick }) => (
   <Button variant="google" onClick={onClick}>
     <Icon name="google" size={20} />
-    <span>Continue with Google</span>
+    <span>구글로 시작하기</span>
   </Button>
 );
