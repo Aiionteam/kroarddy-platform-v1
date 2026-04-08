@@ -2,6 +2,7 @@
 
 import "@/lib/i18n/config";
 import React, { useState, useCallback, useEffect } from "react";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { AppSidebar } from "./AppSidebar";
 import { useTokenRefresher } from "@/hooks/useTokenRefresher";
@@ -84,9 +85,13 @@ export function AppLayout({ onLogout, children, mobileTitle }: AppLayoutProps) {
           >
             <HamburgerIcon />
           </button>
-          <span className="text-base font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            {mobileTitle ?? "Kroaddy"}
-          </span>
+          <Image
+            src="/logo/titile.png"
+            alt={mobileTitle ?? "Kroaddy"}
+            width={110}
+            height={34}
+            priority
+          />
         </header>
 
         {/* 페이지 콘텐츠: 모바일에서 스크롤 허용, 데스크톱에서 overflow-hidden 유지 */}

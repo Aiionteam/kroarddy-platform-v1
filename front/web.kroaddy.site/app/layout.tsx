@@ -16,6 +16,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Kroaddy",
   description: "Kroaddy - AI 여행 플래너",
+  icons: {
+    icon: "/logo/logo_no_background.png",
+    shortcut: "/logo/logo_no_background.png",
+    apple: "/logo/logo_no_background.png",
+  },
 };
 
 export const viewport: Viewport = {
