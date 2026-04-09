@@ -26,6 +26,7 @@ from app.agent.standard.state import PlannerState
 from app.core.config import settings
 from app.core.database.session import _get_async_session_factory
 from app.services.festival_client import fetch_festivals_for_period_with_db_cache
+from app.services.kakao_map_client import kakao_keyword_search
 from app.services.naver_map_client import geocode, keyword_search, reverse_geocode
 from app.services.naver_place_hours import enrich_schedule_items_with_hours
 from app.services.news_client import build_news_block_for_prompt, fetch_news_top10
@@ -597,91 +598,95 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         return {**state, "schedule": [], "cost_summary": None, "error": str(e)}
 
 
-async def _geocode_item(item: dict[str, Any], location_name: str = "") -> dict[str, Any]:
-    """네이버로 좌표·주소를 보강하고, 가능하면 ‘실제 등록된 장소’인지 검증한다.
+def _is_valid_korea_coord(lat: float, lng: float) -> bool:
+    """WGS84 좌표가 대한민국 영토(본토+독도) 범위 내인지 확인."""
+    return 33.0 <= lat <= 43.0 and 124.0 <= lng <= 132.0
 
-    1. Geocoding API: 도로명 주소 → 장소명 순 (공식 주소 DB)
-    2. LLM이 넣은 WGS84(lat/lng)가 있으면 **역지오코딩**으로 도로명 주소를 맞춘다
-       (텍스트 검색이 실패해도 좌표만 맞으면 지도·경로에 사용 가능).
-    3. 지역 검색 API: 「장소명 + 여행지」→ 장소명만 (네이버 장소/상호 인덱스)
 
-    끝까지 매칭되지 않으면 ``naver_verified=False`` (LLM이 넣은 lat/lng 유지).
+async def _geocode_item(
+    item: dict[str, Any],
+    location_name: str = "",
+    dest_lat: float | None = None,
+    dest_lng: float | None = None,
+) -> dict[str, Any]:
+    """장소 좌표·주소를 신뢰할 수 있는 소스 순서로 보강한다.
+
+    우선순위:
+    1. 카카오 키워드 검색 (POI DB) – 장소명 → 좌표, 가장 정확
+    2. 네이버 주소 지오코딩 (주소 DB) – 도로명 주소 → 좌표
+    3. LLM 좌표 – 한국 영역 + 목적지 80km 이내인 경우만 채택
+    4. 전부 실패 → lat/lng=None, naver_verified=False
     """
     place = (item.get("place") or "").strip()
-    # 비한국어 일정에서 LLM이 지오코딩용으로 제공하는 한국어 장소명
     place_ko = (item.get("place_ko") or "").strip()
     address = (item.get("address") or "").strip()
     region = (location_name or "").strip()
     llm_coords = _parse_item_wgs84(item)
+    search_name = place_ko or place
 
-    # 1단계: 한국어 주소/장소명으로 지오코딩 (place_ko 우선 → address → place 순)
-    # 비한국어 place명("Musée des Pétroglyphes...")은 Naver에서 검색 안 되므로 place_ko를 먼저 사용
-    geocode_candidates = [x for x in [address, place_ko, place] if x]
-    for q in geocode_candidates:
-        result = await geocode(q)
-        if result:
-            logger.info("지오코딩 성공: %s → (%.5f, %.5f)", q, float(result["y"]), float(result["x"]))
-            return {
-                **item,
-                "lat": float(result["y"]),
-                "lng": float(result["x"]),
-                "address": result.get("road_address") or result.get("address") or item.get("address", ""),
-                "naver_verified": True,
-                "naver_source": "geocode",
-            }
-
-    # 2단계: 장소 검색 API (place_ko 우선) - geocoding보다 place DB 커버리지 넓음
-    search_place = place_ko or place
-    if search_place:
-        local_queries = [f"{search_place} {region}", search_place] if region else [search_place]
-        for q in local_queries:
-            ks = await keyword_search(q)
-            if not ks:
+    # 1단계: 카카오 키워드 검색 (POI DB) ─────────────────────────────────────────
+    if search_name:
+        for q in ([f"{region} {search_name}".strip(), search_name] if region else [search_name]):
+            kr = await kakao_keyword_search(q)
+            if not kr:
                 continue
-            logger.info("장소검색 성공: %s → (%.5f, %.5f)", q, float(ks["y"]), float(ks["x"]))
-            out: dict[str, Any] = {
-                **item,
-                "lat": float(ks["y"]),
-                "lng": float(ks["x"]),
-                "address": ks.get("address") or item.get("address", ""),
-                "naver_verified": True,
-                "naver_source": "local_search",
-            }
-            if ks.get("name"):
-                out["naver_place_name"] = ks["name"]
-            if ks.get("place_id"):
-                out["naver_place_id"] = ks["place_id"]
-            return out
-
-    # 3단계: 텍스트 검색 전부 실패 → LLM 좌표로 역지오코딩
-    # 주의: 역지오코딩은 좌표를 주소로 바꿀 뿐 장소가 맞는지 보장하지 않음
-    # place_ko가 있다면 LLM 좌표 신뢰도가 상대적으로 낮으므로 경고 로그
-    if llm_coords:
-        lat, lng = llm_coords
-        if place_ko:
-            logger.warning(
-                "장소 '%s'(%s) 검색 실패 – LLM 좌표(%.5f,%.5f) 사용 중, 좌표 정확도 낮을 수 있음",
-                place_ko, place, lat, lng,
-            )
-        rev = await reverse_geocode(lng, lat)
-        if rev:
-            road = (rev.get("road_address") or "").strip()
-            addr_one = (rev.get("address") or "").strip()
-            merged_addr = road or addr_one or item.get("address", "")
+            lat, lng = float(kr["y"]), float(kr["x"])
+            logger.info("카카오 검색 성공: %s → (%.5f, %.5f) [%s]", q, lat, lng, kr.get("name", ""))
             return {
                 **item,
                 "lat": lat,
                 "lng": lng,
-                "address": merged_addr,
-                "naver_verified": False,   # 역지오코딩은 장소 일치 보장 안 됨
-                "naver_source": "reverse_geocode_fallback",
+                "address": kr.get("road_address") or kr.get("address") or item.get("address", ""),
+                "naver_verified": True,
+                "naver_source": "kakao_keyword",
+                "kakao_place_name": kr.get("name", ""),
+                "kakao_place_url": kr.get("place_url", ""),
             }
 
-    return {
-        **item,
-        "naver_verified": False,
-        "naver_source": "llm_coord_only" if llm_coords else "none",
-    }
+    # 2단계: 네이버 주소 지오코딩 (주소 DB) ──────────────────────────────────────
+    for q in [x for x in [address, place_ko, place] if x]:
+        result = await geocode(q)
+        if result:
+            lat, lng = float(result["y"]), float(result["x"])
+            logger.info("네이버 지오코딩 성공: %s → (%.5f, %.5f)", q, lat, lng)
+            return {
+                **item,
+                "lat": lat,
+                "lng": lng,
+                "address": result.get("road_address") or result.get("address") or item.get("address", ""),
+                "naver_verified": True,
+                "naver_source": "naver_geocode",
+            }
+
+    # 3단계: LLM 좌표 유효성 검증 후 채택 ────────────────────────────────────────
+    if llm_coords:
+        lat, lng = llm_coords
+        valid = _is_valid_korea_coord(lat, lng)
+        if valid and dest_lat is not None and dest_lng is not None:
+            from app.agent.standard.nodes_common import _haversine_km
+            dist_km = _haversine_km(lat, lng, dest_lat, dest_lng)
+            if dist_km > 80.0:
+                logger.warning("LLM 좌표(%.5f,%.5f) 목적지에서 %.1fkm 초과 – 폐기", lat, lng, dist_km)
+                valid = False
+        elif not valid:
+            logger.warning("LLM 좌표(%.5f,%.5f) 한국 영역 밖 – 폐기", lat, lng)
+
+        if valid:
+            rev = await reverse_geocode(lng, lat)
+            merged_addr = (rev.get("road_address") or rev.get("address") or "").strip() if rev else ""
+            logger.warning("'%s' 검색 실패 – LLM 좌표 사용(검증 통과, 정확도 낮을 수 있음)", search_name or place)
+            return {
+                **item,
+                "lat": lat,
+                "lng": lng,
+                "address": merged_addr or item.get("address", ""),
+                "naver_verified": False,
+                "naver_source": "llm_coord_validated",
+            }
+
+    # 4단계: 좌표 확보 완전 실패 ─────────────────────────────────────────────────
+    logger.error("좌표 확보 실패: place='%s' / place_ko='%s' / address='%s'", place, place_ko, address)
+    return {**item, "lat": None, "lng": None, "naver_verified": False, "naver_source": "none"}
 
 
 async def geocode_schedule(state: PlannerState) -> PlannerState:
@@ -689,7 +694,14 @@ async def geocode_schedule(state: PlannerState) -> PlannerState:
     if not schedule:
         return state
     loc = str(state.get("location_name") or state.get("location") or "").strip()
-    geocoded = list(await asyncio.gather(*[_geocode_item(item, loc) for item in schedule]))
+    # 목적지 좌표 사전 조회 (LLM 좌표 근접성 검증용)
+    dest_coord = await geocode(loc) if loc else None
+    dest_lat = float(dest_coord["y"]) if dest_coord else None
+    dest_lng = float(dest_coord["x"]) if dest_coord else None
+    geocoded = list(await asyncio.gather(*[
+        _geocode_item(item, loc, dest_lat=dest_lat, dest_lng=dest_lng)
+        for item in schedule
+    ]))
     days_map: dict[int, list[dict[str, Any]]] = {}
     for item in geocoded:
         d = item.get("day", 1)
