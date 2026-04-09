@@ -154,85 +154,6 @@ async def _generate_single_day(
     return items, per_day_cost
 
 
-async def _generate_two_days(
-    *,
-    day_pairs: list[tuple[int, str]],
-    num_days: int,
-    location_name: str,
-    route_name: str,
-    lang: str,
-    lang_dir: str,
-    user_block: str,
-    festival_block: str,
-    weather_block: str,
-    transport_block: str,
-    news_block: str,
-    exclude_places: list[str] | None = None,
-) -> list[tuple[list[dict[str, Any]], dict]]:
-    """2일치를 한 번의 LLM 호출로 생성해 호출 수를 절반으로 줄인다."""
-    t0 = perf_counter()
-    if lang == "Korean":
-        time_labels = "오전|점심|오후|저녁"
-        first_time = "오전"
-        flow_hint = "오전→점심→오후→저녁"
-    else:
-        time_labels = "morning|lunch|afternoon|evening"
-        first_time = "morning"
-        flow_hint = "morning→lunch→afternoon→evening"
-
-    days_desc = " & ".join(f"Day{d}({ds})" for d, ds in day_pairs)
-
-    if exclude_places:
-        excl_str = ", ".join(f'"{p}"' for p in exclude_places[:30])
-        if lang == "Korean":
-            excl_block = f"⛔ 다른 날 이미 포함된 장소 (절대 반복 금지): {excl_str}\n"
-        else:
-            excl_block = f"⛔ Already used in other days (NEVER repeat): {excl_str}\n"
-    else:
-        excl_block = ""
-
-    if lang == "Korean":
-        item_tpl = '"place":"장소명","address":"도로명주소","lat":37.5665,"lng":126.9780,"title":"활동명","description":"설명","tips":"팁","estimated_cost":"₩0"'
-    else:
-        item_tpl = '"place":"name","address":"street addr","lat":37.5665,"lng":126.9780,"title":"activity","description":"desc","tips":"tip","estimated_cost":"₩0"'
-    schema_days = ",".join(
-        f'{{"day":{d},"date":"{ds}","items":[{{"time":"{first_time}",{item_tpl}}}],"day_total":"₩0","day_total_krw":0}}'
-        for d, ds in day_pairs
-    )
-    schema = '{"days":[' + schema_days + "]}"
-
-    prompt = (
-        f"Destination:{location_name} | Route:{route_name} | {days_desc}\n"
-        f"⚠️ ALL places must be within '{location_name}'. Total days={num_days}.\n"
-        f"{excl_block}\n"
-        f"{user_block}{festival_block}{weather_block}{transport_block}{news_block}"
-        f"Create 4 schedule items per day for {days_desc}. "
-        f"time∈[{time_labels}]. Each day MUST use a COMPLETELY DIFFERENT district – "
-        "NO place may appear in more than one day. "
-        f"CLUSTER each day's items in same area. Order: {flow_hint}. "
-        "estimated_cost in KRW. address: exact street addr. lat/lng: WGS84.\n"
-        f"{lang_dir}"
-        "\nRespond ONLY with valid JSON:\n"
-        f"{schema}"
-    )
-    llm = _get_llm_with_search()
-    response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=True)
-    data = _parse_json(response)
-
-    raw_days: list[dict[str, Any]] = data.get("days", [])
-    results: list[tuple[list[dict[str, Any]], dict]] = []
-    for i, (day_num, date_str) in enumerate(day_pairs):
-        day_data = raw_days[i] if i < len(raw_days) else {}
-        raw_items = day_data.get("items", [])
-        day_total_str = day_data.get("day_total", "₩0")
-        day_total_krw = int(day_data.get("day_total_krw", 0) or 0)
-        items = [{"day": day_num, "date": date_str, **{k: v for k, v in it.items() if k not in ("day", "date")}} for it in raw_items]
-        results.append((items, {"day": day_num, "total": day_total_str, "total_krw": day_total_krw}))
-
-    logger.info("일정 2일묶음 생성 완료: %s (%s / %.2fs)", days_desc, location_name, perf_counter() - t0)
-    return results
-
-
 async def _fix_duplicate_days(
     schedule: list[dict[str, Any]],
     per_day_costs: list[dict[str, Any]],
@@ -316,27 +237,15 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
             "weather_block": weather_block, "transport_block": transport_block, "news_block": news_block,
         }
 
-        # 3일 이상이면 2일씩 묶어 LLM 호출 수를 절반으로 줄인다.
-        if num_days >= 3:
-            pairs: list[list[tuple[int, str]]] = []
-            for i in range(0, len(date_list), 2):
-                pair = [(i + 1, date_list[i])]
-                if i + 1 < len(date_list):
-                    pair.append((i + 2, date_list[i + 1]))
-                pairs.append(pair)
-            batch_tasks = [_generate_two_days(day_pairs=p, **common_kwargs) for p in pairs]
-            batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)
-            # flatten: each batch result is list[tuple[items, cost]]
-            flat_results: list[tuple[list[dict[str, Any]], dict] | BaseException] = []
-            for br in batch_results:
-                if isinstance(br, BaseException):
-                    flat_results.append(br)
-                else:
-                    flat_results.extend(br)  # type: ignore[arg-type]
-            results = flat_results  # type: ignore[assignment]
-        else:
-            tasks = [_generate_single_day(day_num=i + 1, date_str=date_str, **common_kwargs) for i, date_str in enumerate(date_list)]
-            results = await asyncio.gather(*tasks, return_exceptions=True)  # type: ignore[assignment]
+        # 일(Day)별로 독립적으로 LLM 호출해 전부 병렬 실행한다.
+        # - 1일 여행: LLM 1회 호출
+        # - 3일 여행: LLM 3회 동시 호출 → 총 대기 시간 = max(day1, day2, day3)
+        # 2일씩 묶는 방식은 출력 토큰이 2배로 늘어 응답이 오히려 느려지므로 제거했다.
+        tasks = [
+            _generate_single_day(day_num=i + 1, date_str=date_str, **common_kwargs)
+            for i, date_str in enumerate(date_list)
+        ]
+        results = await asyncio.gather(*tasks, return_exceptions=True)  # type: ignore[assignment]
 
         merged_schedule: list[dict[str, Any]] = []
         per_day_costs: list[dict[str, Any]] = []
