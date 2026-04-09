@@ -47,6 +47,7 @@ dependencies:
   geolocator: ^13.0.4
   flutter_markdown: ^0.7.7+1
   google_fonts: ^6.3.3
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:

@@ -6,6 +6,7 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "../../../../core/auth/service/auth_service.dart";
 import "../../../../core/auth/token_store.dart";
 import "../../../../core/network/api_client.dart";
+import "../../../../core/preferences/onboarding_prefs.dart";
 import "../../data/auth_repository.dart";
 import "auth_state.dart";
 
@@ -112,6 +113,7 @@ class AuthController extends Notifier<AuthState> {
 
   Future<void> logout() async {
     await _repo.logout();
+    await OnboardingPrefs.clearSkipped();
     state = state.copyWith(
       message: "로그아웃 완료",
       clearToken: true,

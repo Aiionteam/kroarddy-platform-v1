@@ -36,7 +36,8 @@
     "not_found": {
       "message": "We couldn't find the page you requested.",
       "back_home": "Go back home"
-    }
+    },
+    "unknown_error": "unknown error"
   },
   "onboarding": {
     "title": "旅行偏好设置",
@@ -69,7 +70,24 @@
       "google_auth_url_fail": "无法获取 Google 登录链接。",
       "google_auth_url_missing": "未收到 Google 登录链接。",
       "refresh_token_invalid": "Refresh token 已过期或无效，请重新登录。"
-    }
+    },
+    "back_to_login": "로그인 페이지로 돌아가기",
+    "guest_browse": "게스트로 둘러보기",
+    "login_failed": "로그인 실패",
+    "login_failed_with_detail": "알 수 없는 오류",
+    "login_google": "Continue with Google",
+    "login_kakao": "카카오로 시작하기",
+    "login_naver": "네이버로 시작하기",
+    "login_success": "로그인 성공!",
+    "login_terms_notice": "로그인하면 서비스 이용약관 및 개인정보처리방침에 동의하는 것으로 간주합니다.",
+    "oauth_processing": "로그인 처리 중...",
+    "or": "또는",
+    "popup_blocked": "팝업이 차단되었습니다.",
+    "popup_unblock": "팝업 차단을 해제해 주세요.",
+    "provider_login_failed": "{{provider}} 로그인에 실패했습니다.",
+    "redirecting_home": "홈으로 이동 중...",
+    "social_login_heading": "소셜 계정으로 시작하기",
+    "tagline": "AI와 함께하는 스마트 여행 플래너"
   },
   "weather": {
     "reason": {
@@ -240,286 +258,286 @@
       "highlight2": "Hannam-dong"
     },
     "goyang": {
-      "name": "Goyang"
+      "name": "高阳"
     },
     "paju": {
-      "name": "Paju",
+      "name": "坡州",
       "highlight1": "Heyri Art Village",
       "highlight2": "Imjingak"
     },
     "gimpo": {
-      "name": "Gimpo"
+      "name": "金浦"
     },
     "uijeongbu": {
-      "name": "Uijeongbu"
+      "name": "议政府"
     },
     "namyangju": {
-      "name": "Namyangju",
+      "name": "南杨州",
       "highlight1": "Dumulmeori",
       "highlight2": "Dasan-gil"
     },
     "guri": {
-      "name": "Guri"
+      "name": "九里"
     },
     "gapyeong": {
-      "name": "Gapyeong",
+      "name": "加平",
       "highlight1": "Nami Island",
       "highlight2": "Jara Island"
     },
     "yangpyeong": {
-      "name": "Yangpyeong",
+      "name": "杨平",
       "highlight1": "Dumulmeori",
       "highlight2": "Yongmunsan"
     },
     "pocheon": {
-      "name": "Pocheon",
+      "name": "抱川",
       "highlight1": "Sanjeong Lake",
       "highlight2": "Herb Island"
     },
     "yangju": {
-      "name": "Yangju"
+      "name": "杨州"
     },
     "dongducheon": {
-      "name": "Dongducheon"
+      "name": "东豆川"
     },
     "suwon": {
-      "name": "Suwon",
+      "name": "水原",
       "highlight1": "Hwaseong Haenggung",
       "highlight2": "Haengnidan-gil"
     },
     "hwaseong": {
-      "name": "Hwaseong"
+      "name": "华城"
     },
     "ansan": {
-      "name": "Ansan"
+      "name": "安山"
     },
     "siheung": {
-      "name": "Siheung"
+      "name": "始兴"
     },
     "anyang": {
-      "name": "Anyang"
+      "name": "安养"
     },
     "gunpo": {
-      "name": "Gunpo"
+      "name": "军浦"
     },
     "pyeongtaek": {
-      "name": "Pyeongtaek"
+      "name": "平泽"
     },
     "yongin": {
-      "name": "Yongin",
+      "name": "龙仁",
       "highlight1": "Everland",
       "highlight2": "Korean Folk Village"
     },
     "seongnam": {
-      "name": "Seongnam"
+      "name": "城南"
     },
     "hanam": {
-      "name": "Hanam"
+      "name": "河南"
     },
     "icheon": {
-      "name": "Icheon",
+      "name": "利川",
       "highlight1": "Ceramics Village",
       "highlight2": "Icheon Rice"
     },
     "yeoju": {
-      "name": "Yeoju"
+      "name": "骊州"
     },
     "anseong": {
-      "name": "Anseong"
+      "name": "安城"
     },
     "osan": {
-      "name": "Osan"
+      "name": "乌山"
     },
     "uiwang": {
-      "name": "Uiwang"
+      "name": "义王"
     },
     "gwacheon": {
-      "name": "Gwacheon"
+      "name": "果川"
     },
     "bucheon": {
-      "name": "Bucheon"
+      "name": "富川"
     },
     "gwangmyeong": {
-      "name": "Gwangmyeong"
+      "name": "光明"
     },
     "chuncheon": {
-      "name": "Chuncheon",
+      "name": "春川",
       "highlight1": "Nami Island",
       "highlight2": "Dakgalbi Alley"
     },
     "wonju": {
-      "name": "Wonju",
+      "name": "原州",
       "highlight1": "Museum SAN",
       "highlight2": "Sogeumsan Suspension Bridge"
     },
     "pyeongchang": {
-      "name": "Pyeongchang",
+      "name": "平昌",
       "highlight1": "Daegwallyeong Sheep Ranch",
       "highlight2": "Odaesan"
     },
     "yeongwol": {
-      "name": "Yeongwol"
+      "name": "宁越"
     },
     "hoengseong": {
-      "name": "Hoengseong"
+      "name": "横城"
     },
     "jeongseon": {
-      "name": "Jeongseon"
+      "name": "旌善"
     },
     "inje": {
-      "name": "Inje"
+      "name": "麟蹄"
     },
     "taebaek": {
-      "name": "Taebaek"
+      "name": "太白"
     },
     "gangneung": {
-      "name": "Gangneung",
+      "name": "江陵",
       "highlight1": "Gyeongpo Pavilion",
       "highlight2": "Anmok Coffee Street"
     },
     "sokcho": {
-      "name": "Sokcho",
+      "name": "束草",
       "highlight1": "Seoraksan",
       "highlight2": "Central Market"
     },
     "yangyang": {
-      "name": "Yangyang",
+      "name": "襄阳",
       "highlight1": "Surfyy Beach",
       "highlight2": "Naksansa"
     },
     "donghae": {
-      "name": "Donghae"
+      "name": "东海"
     },
     "samcheok": {
-      "name": "Samcheok"
+      "name": "三陟"
     },
     "goseong-gw": {
-      "name": "Goseong"
+      "name": "高城"
     },
     "cheongju": {
-      "name": "Cheongju"
+      "name": "清州"
     },
     "chungju": {
-      "name": "Chungju"
+      "name": "忠州"
     },
     "jecheon": {
-      "name": "Jecheon",
+      "name": "堤川",
       "highlight1": "Cheongpung Lake",
       "highlight2": "Uirimji"
     },
     "danyang": {
-      "name": "Danyang",
+      "name": "丹阳",
       "highlight1": "Danyang Palgyeong",
       "highlight2": "Dodamsambong"
     },
     "gongju": {
-      "name": "Gongju",
+      "name": "公州",
       "highlight1": "Gongsanseong Fortress",
       "highlight2": "Tomb of King Muryeong"
     },
     "buyeo": {
-      "name": "Buyeo",
+      "name": "扶余",
       "highlight1": "Busosanseong Fortress",
       "highlight2": "Baekje Cultural Land"
     },
     "asan": {
-      "name": "Asan"
+      "name": "牙山"
     },
     "cheonan": {
-      "name": "Cheonan"
+      "name": "天安"
     },
     "nonsan": {
-      "name": "Nonsan"
+      "name": "论山"
     },
     "boryeong": {
-      "name": "Boryeong",
+      "name": "保宁",
       "highlight1": "Mud Festival",
       "highlight2": "Daecheon Beach"
     },
     "taean": {
-      "name": "Taean",
+      "name": "泰安",
       "highlight1": "Anmyeondo",
       "highlight2": "Kkotji Beach"
     },
     "seosan": {
-      "name": "Seosan"
+      "name": "瑞山"
     },
     "dangjin": {
-      "name": "Dangjin"
+      "name": "唐津"
     },
     "jeonju": {
-      "name": "Jeonju",
+      "name": "全州",
       "highlight1": "Hanok Village",
       "highlight2": "Makgeolli Alley"
     },
     "gunsan": {
-      "name": "Gunsan",
+      "name": "群山",
       "highlight1": "Modern History Street",
       "highlight2": "Lee Seongdang"
     },
     "iksan": {
-      "name": "Iksan"
+      "name": "益山"
     },
     "gochang": {
-      "name": "Gochang"
+      "name": "高敞"
     },
     "jeongeup": {
-      "name": "Jeongeup"
+      "name": "井邑"
     },
     "namwon": {
-      "name": "Namwon"
+      "name": "南原"
     },
     "gimje": {
-      "name": "Gimje"
+      "name": "金堤"
     },
     "yeosu": {
-      "name": "Yeosu",
+      "name": "丽水",
       "highlight1": "Maritime Cable Car",
       "highlight2": "Odongdo"
     },
     "suncheon": {
-      "name": "Suncheon",
+      "name": "顺天",
       "highlight1": "Suncheon Bay National Garden",
       "highlight2": "Naganeupseong Folk Village"
     },
     "mokpo": {
-      "name": "Mokpo",
+      "name": "木浦",
       "highlight1": "Maritime Cable Car",
       "highlight2": "Yudalsan"
     },
     "wando": {
-      "name": "Wando"
+      "name": "莞岛"
     },
     "gangjin": {
-      "name": "Gangjin"
+      "name": "康津"
     },
     "yeonggwang": {
-      "name": "Yeonggwang"
+      "name": "灵光"
     },
     "haenam": {
-      "name": "Haenam"
+      "name": "海南"
     },
     "goheung": {
-      "name": "Goheung"
+      "name": "高兴"
     },
     "yeongam": {
-      "name": "Yeongam"
+      "name": "灵岩"
     },
     "damyang": {
-      "name": "Damyang",
+      "name": "潭阳",
       "highlight1": "Juknokwon",
       "highlight2": "Metasequoia Road"
     },
     "gwangyang": {
-      "name": "Gwangyang"
+      "name": "光阳"
     },
     "boseong": {
-      "name": "Boseong",
+      "name": "宝城",
       "highlight1": "Green Tea Fields",
       "highlight2": "Yulpo Beach"
     },
     "naju": {
-      "name": "Naju"
+      "name": "罗州"
     },
     "haeundae": {
       "name": "Haeundae",
@@ -609,12 +627,12 @@
       "name": "Bangudae"
     },
     "gyeongju": {
-      "name": "Gyeongju",
+      "name": "庆州",
       "highlight1": "Hwangnidan-gil",
       "highlight2": "Bulguksa"
     },
     "andong": {
-      "name": "Andong",
+      "name": "安东",
       "highlight1": "Hahoe Village",
       "highlight2": "Dosanseowon"
     },
@@ -625,7 +643,7 @@
       "name": "Mungyeong"
     },
     "pohang": {
-      "name": "Pohang",
+      "name": "浦项",
       "highlight1": "Homigot",
       "highlight2": "Space Walk"
     },
@@ -656,12 +674,12 @@
       "name": "Gyeongsan"
     },
     "tongyeong": {
-      "name": "Tongyeong",
+      "name": "统营",
       "highlight1": "Luge",
       "highlight2": "Dongpirang Village"
     },
     "geoje": {
-      "name": "Geoje",
+      "name": "巨济",
       "highlight1": "Windy Hill",
       "highlight2": "Oedo"
     },
@@ -674,12 +692,12 @@
       "name": "Goseong"
     },
     "jinju": {
-      "name": "Jinju",
+      "name": "晋州",
       "highlight1": "Lantern Festival",
       "highlight2": "Jinjuseong Fortress"
     },
     "changwon": {
-      "name": "Changwon"
+      "name": "昌原"
     },
     "hapcheon": {
       "name": "Hapcheon"
@@ -714,72 +732,72 @@
       "name": "Uiryeong"
     },
     "jeju": {
-      "name": "Jeju City",
+      "name": "济州",
       "highlight1": "Hallasan",
       "highlight2": "Seongsan Ilchulbong"
     },
     "seogwipo": {
-      "name": "Seogwipo",
+      "name": "西归浦",
       "highlight1": "Cheonjiyeon Falls",
       "highlight2": "Olle Trail"
     }
   },
   "planner.region": {
     "seoul-areas": {
-      "label": "Seoul",
-      "subLabel": "Key areas by district"
+      "label": "首尔",
+      "subLabel": "按区域划分的核心地点"
     },
     "gyeonggi-north": {
-      "label": "Northern Gyeonggi",
-      "subLabel": "Goyang, Paju, Uijeongbu, Namyangju, etc."
+      "label": "京畿北部",
+      "subLabel": "高阳、坡州、议政府、南杨州等"
     },
     "gyeonggi-south": {
-      "label": "Southern Gyeonggi",
-      "subLabel": "Suwon, Yongin, Seongnam, Pyeongtaek, etc."
+      "label": "京畿南部",
+      "subLabel": "水原、龙仁、城南、平泽等"
     },
     "gangwon": {
-      "label": "Gangwon-do",
-      "subLabel": "Gangwon Special Self-Governing Province"
+      "label": "江原特别自治道",
+      "subLabel": "江原特别自治道"
     },
     "chungbuk": {
-      "label": "Chungcheongbuk-do",
-      "subLabel": "Cheongju, Chungju, Jecheon, Danyang"
+      "label": "忠清北道",
+      "subLabel": "清州、忠州、堤川、丹阳"
     },
     "chungnam": {
-      "label": "Chungcheongnam-do",
-      "subLabel": "Gongju, Buyeo, Boryeong, Taean, etc."
+      "label": "忠清南道",
+      "subLabel": "公州、扶余、保宁、泰安等"
     },
     "jeonbuk": {
-      "label": "Jeonbuk",
-      "subLabel": "Jeonbuk Special Self-Governing Province"
+      "label": "全北特别自治道",
+      "subLabel": "全北特别自治道"
     },
     "jeonnam": {
-      "label": "Jeollanam-do",
-      "subLabel": "Yeosu, Suncheon, Mokpo, Damyang, etc."
+      "label": "全罗南道",
+      "subLabel": "丽水、顺天、木浦、潭阳等"
     },
     "busan": {
-      "label": "Busan",
-      "subLabel": "Busan Metropolitan City"
+      "label": "釜山",
+      "subLabel": "釜山广域市"
     },
     "daegu": {
-      "label": "Daegu",
-      "subLabel": "Daegu Metropolitan City"
+      "label": "大邱",
+      "subLabel": "大邱广域市"
     },
     "ulsan": {
-      "label": "Ulsan",
-      "subLabel": "Ulsan Metropolitan City"
+      "label": "蔚山",
+      "subLabel": "蔚山广域市"
     },
     "gyeongbuk": {
-      "label": "Gyeongsangbuk-do",
-      "subLabel": "Gyeongju, Pohang, Andong, etc."
+      "label": "庆尚北道",
+      "subLabel": "庆州、浦项、安东等"
     },
     "gyeongnam": {
-      "label": "Gyeongsangnam-do",
-      "subLabel": "Tongyeong, Geoje, Jinju, Changwon, etc."
+      "label": "庆尚南道",
+      "subLabel": "统营、巨济、晋州、昌原等"
     },
     "jeju": {
-      "label": "Jeju-do",
-      "subLabel": "Jeju Special Self-Governing Province"
+      "label": "济州特别自治道",
+      "subLabel": "济州特别自治道"
     }
   },
   "home": {
@@ -1742,7 +1760,70 @@
       "empty.convenience_guide": "在顶部标签选择模式，输入关键词后生成",
       "empty.default_guide": "点击顶部 ✨ 生成行程按钮",
       "shopping_list_title": "购物清单",
-      "cooking_steps_title": "制作步骤"
+      "cooking_steps_title": "制作步骤",
+      "brand": {
+        "emart24": "이마트24",
+        "seveneleven": "세븐일레븐"
+      },
+      "cooking": {
+        "1": "재료를 모두 준비하고 전자레인지 가능한 용기에 담기",
+        "2": "소스/토핑을 섞어 1분 30초 조리하기",
+        "3": "취향에 맞게 토핑 추가 후 인증샷 남기기"
+      },
+      "empty": {
+        "cafe_guide": "왼쪽에서 감성/카페명을 정하고 [AI 일정 생성하기]를 눌러주세요",
+        "convenience_guide": "상단 탭에서 모드를 고른 뒤 키워드를 입력해 생성하세요",
+        "default_guide": "상단의 ✨ 일정 생성 버튼을 눌러주세요",
+        "market_guide": "왼쪽에서 시장을 고르고 [이 시장 먹방 일정 생성하기] 또는 상단 ✨ 일정 생성을 눌러주세요",
+        "pick_date": "날짜 선택 후 일정을 생성하세요",
+        "pick_market": "시장을 선택한 뒤 일정을 생성하세요",
+        "pick_tab_condition": "탭별 조건을 선택하고 생성하세요",
+        "pick_vibe_or_cafe": "감성(Vibe) 또는 카페 이름을 선택하세요"
+      },
+      "kroaddy_pick": "Kroaddy PICK",
+      "meta": {
+        "kf_cafe": {
+          "tags": "카페, 디저트, 편집샵, 감성투어",
+          "title_ko": "K-디저트 & 카페 감성 투어"
+        },
+        "kf_convenience": {
+          "tags": "편의점, 꿀조합, 모디슈머, 챌린지",
+          "title_ko": "K-편의점 꿀조합 챌린지"
+        },
+        "kf_market": {
+          "tags": "전통시장, 먹거리, 로컬푸드",
+          "title_ko": "전국 전통시장 먹거리 탐방"
+        }
+      },
+      "region_tab": {
+        "all": "전체",
+        "gangwon": "강원",
+        "gyeongsang": "경상",
+        "jeju": "제주",
+        "jeonla": "전라",
+        "seoul": "서울"
+      },
+      "shopping": {
+        "ramen": "컵라면",
+        "sparkling_water": "탄산수",
+        "string_cheese": "스트링 치즈",
+        "tuna_kimbap": "참치마요 삼각김밥"
+      },
+      "trending_card": {
+        "1": {
+          "title": "연세우유 크림빵"
+        },
+        "2": {
+          "title": "제로콜라 얼음컵 하이볼"
+        },
+        "default_title": "AI 추천 유행템",
+        "tag": {
+          "new": "#신상",
+          "repurchase": "#재구매",
+          "review": "#리뷰폭발",
+          "soldout": "#품절주의"
+        }
+      }
     },
     "usercontent": {
       "title": "用户内容",
@@ -2031,6 +2112,218 @@
         "highlight1": "圣水咖啡街",
         "highlight2": "汉南洞画廊"
       },
+      "goyang": {
+        "name": "高阳"
+      },
+      "paju": {
+        "name": "坡州"
+      },
+      "gimpo": {
+        "name": "金浦"
+      },
+      "uijeongbu": {
+        "name": "议政府"
+      },
+      "namyangju": {
+        "name": "南杨州"
+      },
+      "guri": {
+        "name": "九里"
+      },
+      "gapyeong": {
+        "name": "加平"
+      },
+      "yangpyeong": {
+        "name": "杨平"
+      },
+      "pocheon": {
+        "name": "抱川"
+      },
+      "yangju": {
+        "name": "杨州"
+      },
+      "dongducheon": {
+        "name": "东豆川"
+      },
+      "suwon": {
+        "name": "水原"
+      },
+      "hwaseong": {
+        "name": "华城"
+      },
+      "ansan": {
+        "name": "安山"
+      },
+      "siheung": {
+        "name": "始兴"
+      },
+      "anyang": {
+        "name": "安养"
+      },
+      "gunpo": {
+        "name": "军浦"
+      },
+      "pyeongtaek": {
+        "name": "平泽"
+      },
+      "yongin": {
+        "name": "龙仁"
+      },
+      "seongnam": {
+        "name": "城南"
+      },
+      "hanam": {
+        "name": "河南"
+      },
+      "icheon": {
+        "name": "利川"
+      },
+      "yeoju": {
+        "name": "骊州"
+      },
+      "anseong": {
+        "name": "安城"
+      },
+      "osan": {
+        "name": "乌山"
+      },
+      "uiwang": {
+        "name": "义王"
+      },
+      "gwacheon": {
+        "name": "果川"
+      },
+      "bucheon": {
+        "name": "富川"
+      },
+      "gwangmyeong": {
+        "name": "光明"
+      },
+      "chuncheon": {
+        "name": "春川"
+      },
+      "wonju": {
+        "name": "原州"
+      },
+      "pyeongchang": {
+        "name": "平昌"
+      },
+      "yeongwol": {
+        "name": "宁越"
+      },
+      "hoengseong": {
+        "name": "横城"
+      },
+      "jeongseon": {
+        "name": "旌善"
+      },
+      "inje": {
+        "name": "麟蹄"
+      },
+      "taebaek": {
+        "name": "太白"
+      },
+      "gangneung": {
+        "name": "江陵",
+        "highlight1": "镜浦台",
+        "highlight2": "安木咖啡街",
+        "highlight3": "乌竹轩"
+      },
+      "sokcho": {
+        "name": "束草"
+      },
+      "yangyang": {
+        "name": "襄阳"
+      },
+      "donghae": {
+        "name": "东海"
+      },
+      "samcheok": {
+        "name": "三陟"
+      },
+      "goseong-gw": {
+        "name": "高城"
+      },
+      "cheongju": {
+        "name": "清州"
+      },
+      "chungju": {
+        "name": "忠州"
+      },
+      "jecheon": {
+        "name": "堤川"
+      },
+      "danyang": {
+        "name": "丹阳"
+      },
+      "gongju": {
+        "name": "公州"
+      },
+      "buyeo": {
+        "name": "扶余"
+      },
+      "boryeong": {
+        "name": "保宁"
+      },
+      "taean": {
+        "name": "泰安"
+      },
+      "jeonju": {
+        "name": "全州",
+        "highlight1": "韩屋村",
+        "highlight2": "马格利酒胡同"
+      },
+      "gunsan": {
+        "name": "群山"
+      },
+      "namwon": {
+        "name": "南原"
+      },
+      "yeosu": {
+        "name": "丽水"
+      },
+      "suncheon": {
+        "name": "顺天"
+      },
+      "mokpo": {
+        "name": "木浦"
+      },
+      "damyang": {
+        "name": "潭阳"
+      },
+      "gyeongju": {
+        "name": "庆州",
+        "highlight1": "皇理团路",
+        "highlight2": "瞻星台",
+        "highlight3": "佛国寺"
+      },
+      "andong": {
+        "name": "安东"
+      },
+      "pohang": {
+        "name": "浦项"
+      },
+      "tongyeong": {
+        "name": "统营"
+      },
+      "geoje": {
+        "name": "巨济"
+      },
+      "jinju": {
+        "name": "晋州"
+      },
+      "changwon": {
+        "name": "昌原"
+      },
+      "jeju": {
+        "name": "济州市",
+        "highlight1": "汉拿山",
+        "highlight2": "城山日出峰",
+        "highlight3": "挟才海滩"
+      },
+      "seogwipo": {
+        "name": "西归浦"
+      },
       "hongdae": {
         "name": "弘大·麻浦",
         "highlight1": "弘大俱乐部街",
@@ -2161,29 +2454,137 @@
         "highlight1": "盘龟台岩刻画",
         "highlight2": "漆溪亭"
       },
-      "jeju": {
-        "name": "济州市",
-        "highlight1": "汉拿山",
-        "highlight2": "城山日出峰",
-        "highlight3": "挟才海滩"
+      "asan": {
+        "name": "牙山"
       },
-      "gyeongju": {
-        "name": "庆州",
-        "highlight1": "皇理团路",
-        "highlight2": "瞻星台",
-        "highlight3": "佛国寺"
+      "cheonan": {
+        "name": "天安"
       },
-      "gangneung": {
-        "name": "江陵",
-        "highlight1": "镜浦台",
-        "highlight2": "安木咖啡街",
-        "highlight3": "乌竹轩"
+      "nonsan": {
+        "name": "论山"
       },
-      "jeonju": {
-        "name": "全州",
-        "highlight1": "韩屋村",
-        "highlight2": "马格利酒胡同"
+      "seosan": {
+        "name": "瑞山"
+      },
+      "dangjin": {
+        "name": "唐津"
+      },
+      "iksan": {
+        "name": "益山"
+      },
+      "gochang": {
+        "name": "高敞"
+      },
+      "jeongeup": {
+        "name": "井邑"
+      },
+      "gimje": {
+        "name": "金堤"
+      },
+      "wando": {
+        "name": "莞岛"
+      },
+      "gangjin": {
+        "name": "康津"
+      },
+      "yeonggwang": {
+        "name": "灵光"
+      },
+      "haenam": {
+        "name": "海南"
+      },
+      "goheung": {
+        "name": "高兴"
+      },
+      "yeongam": {
+        "name": "灵岩"
+      },
+      "gwangyang": {
+        "name": "光阳"
+      },
+      "boseong": {
+        "name": "宝城"
+      },
+      "naju": {
+        "name": "罗州"
+      },
+      "yeongju": {
+        "name": "荣州"
+      },
+      "mungyeong": {
+        "name": "闻庆"
+      },
+      "yeongdeok": {
+        "name": "盈德"
+      },
+      "uljin": {
+        "name": "蔚珍"
+      },
+      "dokdo": {
+        "name": "独岛·郁陵岛"
+      },
+      "gumi": {
+        "name": "龟尾"
+      },
+      "gimcheon": {
+        "name": "金泉"
+      },
+      "yeongcheon": {
+        "name": "永川"
+      },
+      "sangju": {
+        "name": "尚州"
+      },
+      "gyeongsan": {
+        "name": "庆山"
+      },
+      "namhae": {
+        "name": "南海"
+      },
+      "goseong-gn": {
+        "name": "固城"
+      },
+      "hapcheon": {
+        "name": "陕川"
+      },
+      "miryang": {
+        "name": "密阳"
+      },
+      "hamyang": {
+        "name": "咸阳"
+      },
+      "sancheong": {
+        "name": "山清"
+      },
+      "hadong": {
+        "name": "河东"
+      },
+      "geochang": {
+        "name": "居昌"
+      },
+      "gimhae": {
+        "name": "金海"
+      },
+      "yangsan": {
+        "name": "梁山"
+      },
+      "changnyeong": {
+        "name": "昌宁"
+      },
+      "uiryeong": {
+        "name": "宜宁"
       }
+    },
+    "api": {
+      "ai_busy": "AI 서버가 바쁩니다. 잠시 후 다시 시도해 주세요.",
+      "ai_rate_limited": "AI 사용량이 초과됐습니다. 잠시 후 다시 시도해 주세요.",
+      "modify_error": "일정 수정 API 오류",
+      "plan_delete_error": "플랜 삭제 API 오류",
+      "plan_list_error": "플랜 목록 API 오류",
+      "reroll_error": "리롤 API 오류",
+      "route_error": "루트 API 오류",
+      "save_error": "저장 API 오류",
+      "schedule_error": "일정 API 오류"
     }
   },
   "guide": {
@@ -2583,7 +2984,9 @@
       "friend_request_failed": "Failed to send friend request.",
       "friend_request_failed_with_detail": "Failed to send friend request.\n{{detail}}",
       "friends_only": "Friends only.",
-      "no_photo_for_period": "No photos found for the selected period.\n(No metadata: {{unknownCount}}, excluded: {{excludedCount}})"
+      "no_photo_for_period": "No photos found for the selected period.\n(No metadata: {{unknownCount}}, excluded: {{excludedCount}})",
+      "partial_upload_failed": "{{count}}장의 사진 업로드에 실패했습니다. 성공한 사진만 저장됩니다.",
+      "upload_failed_count": "사진 업로드에 실패했습니다. ({{count}}장 실패)"
     },
     "confirm": {
       "delete_post": "删除此帖子？该操作不可撤销。"
@@ -2635,7 +3038,22 @@
     "view_posts": "查看帖子",
     "cancel_bookmark": "取消收藏",
     "my_post": "我的帖子",
-    "change_profile_photo": "更换头像"
+    "change_profile_photo": "更换头像",
+    "api": {
+      "auto_comment_error": "투어스타 자동 코멘트 API 오류",
+      "create_comment_error": "투어스타 댓글 저장 API 오류",
+      "create_post_error": "투어스타 게시물 저장 API 오류",
+      "delete_post_error": "투어스타 게시물 삭제 API 오류",
+      "finalize_upload_error": "사진 S3 업로드 사전 처리 실패",
+      "generate_post_error": "투어스타 게시글 생성 API 오류",
+      "job_status_error": "투어스타 작업 조회 API 오류",
+      "like_toggle_error": "투어스타 좋아요 API 오류",
+      "list_posts_error": "투어스타 게시물 조회 API 오류",
+      "profile_upload_error": "프로필 사진 업로드 실패",
+      "share_preview_error": "투어스타 공유 미리보기 API 오류",
+      "update_post_error": "투어스타 게시물 수정 API 오류",
+      "upload_error": "투어스타 업로드 API 오류"
+    }
   },
   "calendar": {
     "weekday": {
@@ -2724,6 +3142,38 @@
       "malaysia": "马来西亚",
       "india": "印度",
       "other": "其他"
+    }
+  },
+  "api": {
+    "backend_not_connected": "백엔드가 연결되지 않았습니다. 배포 후에는 Vercel 환경 변수에 NEXT_PUBLIC_API_URL 을 설정하세요.",
+    "server_unreachable": "서버에 연결할 수 없습니다. 네트워크와 백엔드 실행 여부를 확인해 주세요.",
+    "timeout": "요청 시간이 초과되었습니다."
+  },
+  "festival": {
+    "api": {
+      "error": "행사 API 오류"
+    }
+  },
+  "news": {
+    "api": {
+      "error": "뉴스 API 오류"
+    }
+  },
+  "usercontent": {
+    "api": {
+      "ai_polish_error": "AI 폴리시 오류",
+      "delete_error": "삭제 오류",
+      "feed_load_error": "피드 로드 오류",
+      "like_error": "좋아요 오류",
+      "s3_upload_error": "S3 업로드 실패",
+      "save_error": "저장 오류",
+      "validate_image_error": "이미지 검증 오류"
+    }
+  },
+  "userprofile": {
+    "api": {
+      "fetch_error": "프로필 조회 오류",
+      "save_error": "프로필 저장 오류"
     }
   }
 }

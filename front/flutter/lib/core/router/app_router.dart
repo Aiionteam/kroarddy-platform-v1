@@ -17,6 +17,7 @@ import "../../features/planner/presentation/schedule_page.dart";
 import "../../features/profile/presentation/onboarding_page.dart";
 import "../../features/profile/presentation/profile_page.dart";
 import "../../features/tourstar/presentation/tourstar_page.dart";
+import "../auth/post_auth_route.dart";
 import "../theme/kroaddy_colors.dart";
 import "main_shell.dart";
 import "shell_back_handler.dart";
@@ -130,11 +131,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
   );
 
-  ref.listen(
+  ref.listen<String?>(
     authControllerProvider.select((s) => s.accessToken),
     (previous, next) {
       if (next != null && next.isNotEmpty) {
-        router.go("/home");
+        Future.microtask(() async {
+          final route = await resolvePostLoginRoute(ref);
+          router.go(route);
+        });
+        return;
+      }
+      if (next == null || next.isEmpty) {
+        final path = router.state.uri.path;
+        if (path != "/login") {
+          router.go("/login");
+        }
       }
     },
   );

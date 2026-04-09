@@ -5,9 +5,13 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 import "package:url_launcher/url_launcher.dart";
 
+import "../../core/auth/jwt_claims.dart";
+import "../../core/network/api_client.dart";
+import "../../core/preferences/onboarding_prefs.dart";
 import "../../core/router/main_shell.dart";
 import "../../core/theme/kroaddy_colors.dart";
 import "../../core/widgets/kroaddy_cloud_tile.dart";
+import "../profile/data/profile_repository.dart";
 import "state/news_context.dart";
 
 const _primary = KroaddyColors.primary;
@@ -127,13 +131,50 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   bool _rebateOpen = false;
+  bool _profileGateDone = false;
+  bool _showOnboardingBanner = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(newsContextProvider.notifier).loadTop10();
+      _runOnboardingGate();
     });
+  }
+
+  /// 웹 `home/page.tsx` — 프로필 미완성 시 온보딩으로 보내거나, 스킵한 경우 배너만 표시
+  Future<void> _runOnboardingGate() async {
+    final token = await ref.read(tokenStoreProvider).readAccessToken();
+    if (!mounted) return;
+    if (token == null || token.isEmpty) {
+      setState(() => _profileGateDone = true);
+      return;
+    }
+    final appUserId = getAppUserIdFromToken(token);
+    if (appUserId == null) {
+      setState(() => _profileGateDone = true);
+      return;
+    }
+    try {
+      final profile = await ref.read(profileRepositoryProvider).fetchTravelProfile(appUserId);
+      final skipped = await OnboardingPrefs.isSkipped();
+      if (!mounted) return;
+      if (profile == null || !profile.isComplete) {
+        if (skipped) {
+          setState(() {
+            _showOnboardingBanner = true;
+            _profileGateDone = true;
+          });
+        } else {
+          context.go("/profile/onboarding");
+        }
+        return;
+      }
+      setState(() => _profileGateDone = true);
+    } catch (_) {
+      if (mounted) setState(() => _profileGateDone = true);
+    }
   }
 
   @override
@@ -161,6 +202,54 @@ class _HomePageState extends ConsumerState<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (_profileGateDone && _showOnboardingBanner)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                child: Material(
+                  color: _primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(16),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () => context.go("/profile/onboarding"),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: _primary.withValues(alpha: 0.25)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              "✨ 여행 프로필을 완성하면 맞춤 추천을 받을 수 있어요",
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: _textPrimary,
+                                height: 1.35,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton(
+                            onPressed: () => setState(() => _showOnboardingBanner = false),
+                            child: const Text("닫기", style: TextStyle(fontSize: 12)),
+                          ),
+                          FilledButton(
+                            onPressed: () => context.go("/profile/onboarding"),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: _primary,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            ),
+                            child: const Text("설정하기", style: TextStyle(fontSize: 12)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             // ══════════════════════════════════════════════════
             // 1. 뉴스 배너 캐러셀
             // ══════════════════════════════════════════════════

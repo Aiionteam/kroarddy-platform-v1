@@ -105,6 +105,8 @@ Tourstar는 별도 FastAPI 앱 안에서 LangGraph와 비전 스택을 결합해
 
 게이트웨이 라우트와 패키지 구조는 md/api-kroaddy-site.md, 플래너 상세는 md/planer-kroaddy-site.md를 기준으로 참고하면 됩니다. 전체 의존성과 내부 URL은 루트 docker-compose.yaml을 기준으로 정리했고, 핵심 디렉터리는 backend/api.kroaddy.site/gateway, backend/planer.kroaddy.site, front/web.kroaddy.site로 잡았습니다.
 
+Flutter 모바일 앱(`front/flutter`)의 전체 아키텍처·라우팅·기능별 API 매핑은 md/flutter-kroaddy-app.md 및 md/flutter-kroaddy-*.md 시리즈를 참고하면 됩니다.
+
 11. 전체 아키텍처
 
 아래 도식 역시 고정폭 글꼴에서 보았을 때 가장 안정적으로 정렬되었습니다.
