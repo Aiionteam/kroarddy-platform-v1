@@ -2225,6 +2225,383 @@
         "name": "Jeonju",
         "highlight1": "Hanok Village",
         "highlight2": "Makgeolli Alley"
+      },
+      "goyang": {
+        "name": "Goyang"
+      },
+      "paju": {
+        "name": "Paju",
+        "highlight1": "Heyri Art Village",
+        "highlight2": "Imjingak"
+      },
+      "gimpo": {
+        "name": "Gimpo"
+      },
+      "uijeongbu": {
+        "name": "Uijeongbu"
+      },
+      "namyangju": {
+        "name": "Namyangju",
+        "highlight1": "Dumulmeori",
+        "highlight2": "Dasan-gil"
+      },
+      "guri": {
+        "name": "Guri"
+      },
+      "gapyeong": {
+        "name": "Gapyeong",
+        "highlight1": "Nami Island",
+        "highlight2": "Jara Island"
+      },
+      "yangpyeong": {
+        "name": "Yangpyeong",
+        "highlight1": "Dumulmeori",
+        "highlight2": "Yongmunsan"
+      },
+      "pocheon": {
+        "name": "Pocheon",
+        "highlight1": "Sanjeong Lake",
+        "highlight2": "Herb Island"
+      },
+      "yangju": {
+        "name": "Yangju"
+      },
+      "dongducheon": {
+        "name": "Dongducheon"
+      },
+      "suwon": {
+        "name": "Suwon",
+        "highlight1": "Hwaseong Haenggung",
+        "highlight2": "Haengnidan-gil"
+      },
+      "hwaseong": {
+        "name": "Hwaseong"
+      },
+      "ansan": {
+        "name": "Ansan"
+      },
+      "siheung": {
+        "name": "Siheung"
+      },
+      "anyang": {
+        "name": "Anyang"
+      },
+      "gunpo": {
+        "name": "Gunpo"
+      },
+      "pyeongtaek": {
+        "name": "Pyeongtaek"
+      },
+      "yongin": {
+        "name": "Yongin",
+        "highlight1": "Everland",
+        "highlight2": "Korean Folk Village"
+      },
+      "seongnam": {
+        "name": "Seongnam"
+      },
+      "hanam": {
+        "name": "Hanam"
+      },
+      "icheon": {
+        "name": "Icheon",
+        "highlight1": "Ceramics Village",
+        "highlight2": "Icheon Rice"
+      },
+      "yeoju": {
+        "name": "Yeoju"
+      },
+      "anseong": {
+        "name": "Anseong"
+      },
+      "osan": {
+        "name": "Osan"
+      },
+      "uiwang": {
+        "name": "Uiwang"
+      },
+      "gwacheon": {
+        "name": "Gwacheon"
+      },
+      "bucheon": {
+        "name": "Bucheon"
+      },
+      "gwangmyeong": {
+        "name": "Gwangmyeong"
+      },
+      "chuncheon": {
+        "name": "Chuncheon",
+        "highlight1": "Nami Island",
+        "highlight2": "Dakgalbi Alley"
+      },
+      "wonju": {
+        "name": "Wonju",
+        "highlight1": "Museum SAN",
+        "highlight2": "Sogeumsan Suspension Bridge"
+      },
+      "pyeongchang": {
+        "name": "Pyeongchang",
+        "highlight1": "Daegwallyeong Sheep Ranch",
+        "highlight2": "Odaesan"
+      },
+      "yeongwol": {
+        "name": "Yeongwol"
+      },
+      "hoengseong": {
+        "name": "Hoengseong"
+      },
+      "jeongseon": {
+        "name": "Jeongseon"
+      },
+      "inje": {
+        "name": "Inje"
+      },
+      "taebaek": {
+        "name": "Taebaek"
+      },
+      "sokcho": {
+        "name": "Sokcho",
+        "highlight1": "Seoraksan",
+        "highlight2": "Central Market"
+      },
+      "yangyang": {
+        "name": "Yangyang",
+        "highlight1": "Surfyy Beach",
+        "highlight2": "Naksansa"
+      },
+      "donghae": {
+        "name": "Donghae"
+      },
+      "samcheok": {
+        "name": "Samcheok"
+      },
+      "goseong-gw": {
+        "name": "Goseong"
+      },
+      "cheongju": {
+        "name": "Cheongju"
+      },
+      "chungju": {
+        "name": "Chungju"
+      },
+      "jecheon": {
+        "name": "Jecheon",
+        "highlight1": "Cheongpung Lake",
+        "highlight2": "Uirimji"
+      },
+      "danyang": {
+        "name": "Danyang",
+        "highlight1": "Danyang Palgyeong",
+        "highlight2": "Dodamsambong"
+      },
+      "gongju": {
+        "name": "Gongju",
+        "highlight1": "Gongsanseong Fortress",
+        "highlight2": "Tomb of King Muryeong"
+      },
+      "buyeo": {
+        "name": "Buyeo",
+        "highlight1": "Busosanseong Fortress",
+        "highlight2": "Baekje Cultural Land"
+      },
+      "asan": {
+        "name": "Asan"
+      },
+      "cheonan": {
+        "name": "Cheonan"
+      },
+      "nonsan": {
+        "name": "Nonsan"
+      },
+      "boryeong": {
+        "name": "Boryeong",
+        "highlight1": "Mud Festival",
+        "highlight2": "Daecheon Beach"
+      },
+      "taean": {
+        "name": "Taean",
+        "highlight1": "Anmyeondo",
+        "highlight2": "Kkotji Beach"
+      },
+      "seosan": {
+        "name": "Seosan"
+      },
+      "dangjin": {
+        "name": "Dangjin"
+      },
+      "gunsan": {
+        "name": "Gunsan",
+        "highlight1": "Modern History Street",
+        "highlight2": "Lee Seongdang"
+      },
+      "iksan": {
+        "name": "Iksan"
+      },
+      "gochang": {
+        "name": "Gochang"
+      },
+      "jeongeup": {
+        "name": "Jeongeup"
+      },
+      "namwon": {
+        "name": "Namwon"
+      },
+      "gimje": {
+        "name": "Gimje"
+      },
+      "yeosu": {
+        "name": "Yeosu",
+        "highlight1": "Maritime Cable Car",
+        "highlight2": "Odongdo"
+      },
+      "suncheon": {
+        "name": "Suncheon",
+        "highlight1": "Suncheon Bay National Garden",
+        "highlight2": "Naganeupseong Folk Village"
+      },
+      "mokpo": {
+        "name": "Mokpo",
+        "highlight1": "Maritime Cable Car",
+        "highlight2": "Yudalsan"
+      },
+      "wando": {
+        "name": "Wando"
+      },
+      "gangjin": {
+        "name": "Gangjin"
+      },
+      "yeonggwang": {
+        "name": "Yeonggwang"
+      },
+      "haenam": {
+        "name": "Haenam"
+      },
+      "goheung": {
+        "name": "Goheung"
+      },
+      "yeongam": {
+        "name": "Yeongam"
+      },
+      "damyang": {
+        "name": "Damyang",
+        "highlight1": "Juknokwon",
+        "highlight2": "Metasequoia Road"
+      },
+      "gwangyang": {
+        "name": "Gwangyang"
+      },
+      "boseong": {
+        "name": "Boseong",
+        "highlight1": "Green Tea Fields",
+        "highlight2": "Yulpo Beach"
+      },
+      "naju": {
+        "name": "Naju"
+      },
+      "andong": {
+        "name": "Andong",
+        "highlight1": "Hahoe Village",
+        "highlight2": "Dosanseowon"
+      },
+      "yeongju": {
+        "name": "Yeongju"
+      },
+      "mungyeong": {
+        "name": "Mungyeong"
+      },
+      "pohang": {
+        "name": "Pohang",
+        "highlight1": "Homigot",
+        "highlight2": "Space Walk"
+      },
+      "yeongdeok": {
+        "name": "Yeongdeok"
+      },
+      "uljin": {
+        "name": "Uljin"
+      },
+      "dokdo": {
+        "name": "Dokdo & Ulleungdo",
+        "highlight1": "Dokdo",
+        "highlight2": "Ulleungdo"
+      },
+      "gumi": {
+        "name": "Gumi"
+      },
+      "gimcheon": {
+        "name": "Gimcheon"
+      },
+      "yeongcheon": {
+        "name": "Yeongcheon"
+      },
+      "sangju": {
+        "name": "Sangju"
+      },
+      "gyeongsan": {
+        "name": "Gyeongsan"
+      },
+      "tongyeong": {
+        "name": "Tongyeong",
+        "highlight1": "Luge",
+        "highlight2": "Dongpirang Village"
+      },
+      "geoje": {
+        "name": "Geoje",
+        "highlight1": "Windy Hill",
+        "highlight2": "Oedo"
+      },
+      "namhae": {
+        "name": "Namhae",
+        "highlight1": "German Village",
+        "highlight2": "Darangyi Village"
+      },
+      "goseong-gn": {
+        "name": "Goseong"
+      },
+      "jinju": {
+        "name": "Jinju",
+        "highlight1": "Lantern Festival",
+        "highlight2": "Jinjuseong Fortress"
+      },
+      "changwon": {
+        "name": "Changwon"
+      },
+      "hapcheon": {
+        "name": "Hapcheon"
+      },
+      "miryang": {
+        "name": "Miryang"
+      },
+      "hamyang": {
+        "name": "Hamyang"
+      },
+      "sancheong": {
+        "name": "Sancheong"
+      },
+      "hadong": {
+        "name": "Hadong",
+        "highlight1": "Hwagae Market",
+        "highlight2": "Ssanggyesa"
+      },
+      "geochang": {
+        "name": "Geochang"
+      },
+      "gimhae": {
+        "name": "Gimhae"
+      },
+      "yangsan": {
+        "name": "Yangsan"
+      },
+      "changnyeong": {
+        "name": "Changnyeong"
+      },
+      "uiryeong": {
+        "name": "Uiryeong"
+      },
+      "seogwipo": {
+        "name": "Seogwipo",
+        "highlight1": "Cheonjiyeon Falls",
+        "highlight2": "Olle Trail"
       }
     },
     "api": {

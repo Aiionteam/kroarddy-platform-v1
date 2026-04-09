@@ -1976,8 +1976,8 @@
     },
     "region": {
       "seoul-areas": {
-        "label": "Seoul",
-        "subLabel": "Khu vực nổi bật theo quận"
+        "label": "X?-un",
+        "subLabel": "Khu v?c n?i b?t theo qu?n"
       },
       "gyeonggi-north": {
         "label": "Bắc Gyeonggi",
@@ -2080,54 +2080,54 @@
         "highlight2": "Vườn thực vật quốc gia"
       },
       "jongno": {
-        "name": "Jongno · Gwanghwamun",
-        "highlight1": "Gyeongbokgung",
-        "highlight2": "Nhà Xanh",
-        "highlight3": "Insadong"
+        "name": "Jong-no ? Gwanghwa-mun",
+        "highlight1": "Cung Gyeongbokgung",
+        "highlight2": "Nh? Xanh",
+        "highlight3": "Insa-dong"
       },
       "myeongdong": {
-        "name": "Myeongdong · Euljiro",
-        "highlight1": "Nhà thờ Myeongdong",
-        "highlight2": "Hẻm Euljiro"
+        "name": "Myeong-dong ? Eulji-ro",
+        "highlight1": "Nh? th? Myeongdong",
+        "highlight2": "H?m Eulji-ro"
       },
       "yongsan": {
-        "name": "Yongsan · Itaewon",
-        "highlight1": "Bảo tàng quốc gia Hàn Quốc",
+        "name": "Yong-san ? Itaewon",
+        "highlight1": "B?o t?ng Qu?c gia H?n Qu?c",
         "highlight2": "Itaewon"
       },
       "gangnam": {
-        "name": "Gangnam · Seocho",
+        "name": "Gang-nam ? Seocho",
         "highlight1": "COEX",
         "highlight2": "Apgujeong Rodeo",
-        "highlight3": "Công viên Dosan"
+        "highlight3": "C?ng vi?n Dosan"
       },
       "jamsil": {
-        "name": "Jamsil · Songpa",
+        "name": "Jam-sil ? Songpa",
         "highlight1": "Lotte World",
-        "highlight2": "Công viên Olympic",
-        "highlight3": "Hồ Seokchon"
+        "highlight2": "C?ng vi?n Olympic",
+        "highlight3": "H? Seokchon"
       },
       "seongsu": {
-        "name": "Seongsu · Hannam",
-        "highlight1": "Phố cà phê Seongsu",
-        "highlight2": "Phòng trưng bày Hannam-dong"
+        "name": "Seong-su ? Hannam",
+        "highlight1": "Ph? cafe Seongsu",
+        "highlight2": "Ph?ng tr?ng b?y Hannam-dong"
       },
       "hongdae": {
-        "name": "Hongdae · Mapo",
-        "highlight1": "Câu lạc bộ Hongdae",
+        "name": "Hong-dae ? Mapo",
+        "highlight1": "C?u l?c b? Hongdae",
         "highlight2": "Yeonnam-dong",
-        "highlight3": "Rừng đường sắt Gyeongui"
+        "highlight3": "R?ng tuy?n Gyeongui"
       },
       "bukchon": {
-        "name": "Bukchon · Samcheong",
-        "highlight1": "Làng hanok Bukchon",
-        "highlight2": "Cà phê Samcheong-dong"
+        "name": "Buk-chon ? Samcheong",
+        "highlight1": "L?ng Hanok Bukchon",
+        "highlight2": "Qu?n cafe Samcheong-dong"
       },
       "nowon": {
-        "name": "Nowon · Dobong",
-        "highlight1": "Núi Surak",
-        "highlight2": "Núi Dobong",
-        "highlight3": "Núi Bulam"
+        "name": "No-won ? Dobong",
+        "highlight1": "Suraksan",
+        "highlight2": "Dobongsan",
+        "highlight3": "Bulamsan"
       },
       "haeundae": {
         "name": "Haeundae",
