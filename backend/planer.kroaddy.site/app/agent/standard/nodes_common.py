@@ -134,7 +134,7 @@ def _get_llm_with_search():
     global _llm_search_instance
     if _llm_search_instance is None:
         base = ChatGoogleGenerativeAI(
-            model="gemini-3-flash",
+            model="gemini-2.0-flash",
             temperature=0.4,
             google_api_key=settings.gemini_api_key,
         )
@@ -153,7 +153,7 @@ def _get_llm_search_context():
     global _llm_search_ctx_instance
     if _llm_search_ctx_instance is None:
         base = ChatGoogleGenerativeAI(
-            model="gemini-3-flash",
+            model="gemini-2.0-flash",
             temperature=0.2,          # 낮은 temperature → 군더더기 없는 사실 나열
             max_output_tokens=600,    # 검색 요약은 짧을수록 빠름
             google_api_key=settings.gemini_api_key,
