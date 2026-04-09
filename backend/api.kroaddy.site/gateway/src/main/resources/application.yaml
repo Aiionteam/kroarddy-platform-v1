@@ -17,7 +17,7 @@ spring:
   http:
     client:
       connect-timeout: 10s       # 연결 타임아웃 10초
-      read-timeout: 180s         # 응답 타임아웃 180초 (Gemini/GPT fallback 대응)
+      read-timeout: 300s         # 응답 타임아웃 300초 (기본)
   servlet:
     multipart:
       max-file-size: -1      # 파일 크기 제한 없음 (tourstar 대용량 사진 업로드)
@@ -64,6 +64,9 @@ spring:
             uri: ${AI_SERVICE_GUIDE_URL:${AI_SERVICE_FESTIVAL_URL:http://guide:8002}}
             predicates:
               - Path=/api/v1/festivals,/api/v1/festivals/**,/api/v1/guide,/api/v1/guide/**,/api/v1/place,/api/v1/place/**
+            metadata:
+              response-timeout: 600000   # 600초 – guide/ask LLM 처리 대기
+              connect-timeout: 10000
             filters:
               - RemoveResponseHeader=Access-Control-Allow-Origin
               - RemoveResponseHeader=Access-Control-Allow-Methods
