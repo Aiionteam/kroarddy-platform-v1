@@ -1,6 +1,8 @@
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
+import "../../../core/theme/kroaddy_colors.dart";
+import "../../../core/theme/kroaddy_radii.dart";
 import "state/auth_controller.dart";
 
 class LoginPage extends ConsumerWidget {
@@ -12,91 +14,60 @@ class LoginPage extends ConsumerWidget {
     final controller = ref.read(authControllerProvider.notifier);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F7FF),
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 48),
-              // ── Logo ──
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF9333EA), Color(0xFFEC4899)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF9333EA).withValues(alpha: 0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: const Center(
-                  child: Text(
-                    "K",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+              const SizedBox(height: 36),
+              Image.asset(
+                "assets/branding/kroaddy_logo_white.png",
+                width: 260,
+                fit: BoxFit.contain,
               ),
-              const SizedBox(height: 24),
-              const Text(
-                "Kroaddy",
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1F2937),
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                "여행을 더 특별하게 기록하세요",
-                style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
-              ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 28),
+
               // ── Status / Loading ──
               if (state.loading)
                 const Padding(
-                  padding: EdgeInsets.only(bottom: 20),
+                  padding: EdgeInsets.only(bottom: 18),
                   child: LinearProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF9333EA)),
-                    backgroundColor: Color(0xFFF3E8FF),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      KroaddyColors.primary,
+                    ),
+                    backgroundColor: KroaddyColors.brandWash,
                     minHeight: 3,
                   ),
                 ),
               if (state.message.isNotEmpty && !state.loading)
                 Container(
                   width: double.infinity,
-                  margin: const EdgeInsets.only(bottom: 20),
+                  margin: const EdgeInsets.only(bottom: 16),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF3E8FF),
-                    borderRadius: BorderRadius.circular(12),
+                    color: KroaddyColors.selectionWash,
+                    borderRadius: BorderRadius.circular(KroaddyRadii.md),
+                    border: Border.all(
+                      color: KroaddyColors.primary.withValues(alpha: 0.10),
+                    ),
                   ),
                   child: Text(
                     state.message,
                     style: const TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF7C3AED),
+                      color: KroaddyColors.primary,
+                      fontWeight: FontWeight.w600,
                     ),
                     textAlign: TextAlign.center,
                   ),
                 ),
-              // ── Login Buttons ──
+
+              // ── Login Buttons (Cloud) ──
               _OAuthButton(
                 label: "카카오로 로그인",
                 icon: Icons.chat_bubble_rounded,
@@ -112,8 +83,7 @@ class LoginPage extends ConsumerWidget {
                 backgroundColor: const Color(0xFF03C75A),
                 textColor: Colors.white,
                 iconColor: Colors.white,
-                onTap:
-                    state.loading ? null : () => controller.signIn("naver"),
+                onTap: state.loading ? null : () => controller.signIn("naver"),
               ),
               const SizedBox(height: 12),
               _OAuthButton(
@@ -123,10 +93,10 @@ class LoginPage extends ConsumerWidget {
                 textColor: const Color(0xFF1F2937),
                 iconColor: const Color(0xFF4285F4),
                 border: Border.all(color: const Color(0xFFE5E7EB)),
-                onTap:
-                    state.loading ? null : () => controller.signIn("google"),
+                onTap: state.loading ? null : () => controller.signIn("google"),
               ),
-              const SizedBox(height: 48),
+
+              const SizedBox(height: 28),
               Text(
                 "로그인 시 서비스 이용약관 및 개인정보처리방침에\n동의하는 것으로 간주됩니다.",
                 textAlign: TextAlign.center,
@@ -136,7 +106,7 @@ class LoginPage extends ConsumerWidget {
                   height: 1.6,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
             ],
           ),
         ),
@@ -174,7 +144,7 @@ class _OAuthButton extends StatelessWidget {
           height: 54,
           decoration: BoxDecoration(
             color: backgroundColor,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(KroaddyRadii.md),
             border: border,
             boxShadow: [
               BoxShadow(
@@ -193,7 +163,7 @@ class _OAuthButton extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontSize: 15,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: textColor,
                 ),
               ),

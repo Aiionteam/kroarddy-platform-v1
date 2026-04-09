@@ -9,8 +9,10 @@ import "../../tourstar/data/tourstar_repository.dart";
 import "state/chat_controller.dart";
 import "state/chat_state.dart";
 
-const _primary = Color(0xFF7C3AED);
-const _primaryLight = Color(0xFFF3E8FF);
+import "../../../core/theme/kroaddy_colors.dart";
+
+const _primary = KroaddyColors.primary;
+const _primaryLight = KroaddyColors.brandWash;
 const _textPrimary = Color(0xFF1F2937);
 const _textSecondary = Color(0xFF6B7280);
 const _bgPage = Color(0xFFF8F7FF);
@@ -49,7 +51,7 @@ class _WhisperPageState extends ConsumerState<WhisperPage> {
           onPressed: () => mainScaffoldKey.currentState?.openDrawer(),
         ),
         title: const Text(
-          "귓속말",
+          "개인톡",
           style: TextStyle(color: _textPrimary, fontWeight: FontWeight.bold, fontSize: 18),
         ),
       ),
@@ -65,7 +67,7 @@ class _WhisperPageState extends ConsumerState<WhisperPage> {
                   children: [
                     Expanded(
                       child: _WhisperTabItem(
-                        label: "받은 귓속말",
+                        label: "받은 메시지",
                         count: state.inbox.length,
                         selected: state.whisperTab == WhisperTab.inbox,
                         onTap: () => ctrl.setWhisperTab(WhisperTab.inbox),
@@ -74,7 +76,7 @@ class _WhisperPageState extends ConsumerState<WhisperPage> {
                     const SizedBox(width: 4),
                     Expanded(
                       child: _WhisperTabItem(
-                        label: "보낸 귓속말",
+                        label: "보낸 메시지",
                         count: state.sent.length,
                         selected: state.whisperTab == WhisperTab.sent,
                         onTap: () => ctrl.setWhisperTab(WhisperTab.sent),
@@ -146,7 +148,7 @@ class _WhisperPageState extends ConsumerState<WhisperPage> {
             const Text("📭", style: TextStyle(fontSize: 48)),
             const SizedBox(height: 12),
             Text(
-              state.whisperTab == WhisperTab.inbox ? "받은 귓속말이 없습니다." : "보낸 귓속말이 없습니다.",
+              state.whisperTab == WhisperTab.inbox ? "받은 메시지가 없습니다." : "보낸 메시지가 없습니다.",
               style: const TextStyle(fontSize: 14, color: _textSecondary),
             ),
           ],
@@ -268,7 +270,7 @@ class _ComposeOverlay extends StatelessWidget {
                   children: [
                     const Icon(Icons.mail, size: 20, color: _primary),
                     const SizedBox(width: 8),
-                    const Expanded(child: Text("새 귓속말 보내기", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary))),
+                    const Expanded(child: Text("새 개인톡 보내기", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary))),
                     IconButton(onPressed: onClose, icon: const Icon(Icons.close, size: 18, color: _textSecondary), padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 24, minHeight: 24)),
                   ],
                 ),
@@ -278,7 +280,7 @@ class _ComposeOverlay extends StatelessWidget {
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     labelText: "받는 사람 ID",
-                    hintText: "채팅에서 메시지를 길게 눌러 귓속말",
+                    hintText: "채팅에서 메시지를 길게 눌러 개인톡",
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   ),
@@ -311,7 +313,7 @@ class _ComposeOverlay extends StatelessWidget {
   }
 }
 
-// ── 귓속말 내 투어스타 공유 카드 ──────────────────────────────
+// ── 개인톡 내 여행피드 공유 카드 ──────────────────────────────
 class _WhisperTourstarCard extends ConsumerStatefulWidget {
   const _WhisperTourstarCard({required this.postId});
   final String postId;
@@ -377,7 +379,7 @@ class _WhisperTourstarCardState extends ConsumerState<_WhisperTourstarCard> {
             Row(children: [
               const Icon(Icons.photo_camera_outlined, size: 13, color: _primary),
               const SizedBox(width: 4),
-              const Text("투어스타 게시글", style: TextStyle(fontSize: 10, color: _primary, fontWeight: FontWeight.w600)),
+              const Text("여행피드 게시글", style: TextStyle(fontSize: 10, color: _primary, fontWeight: FontWeight.w600)),
             ]),
             const SizedBox(height: 6),
             if (_preview!.thumbnailUrl.isNotEmpty)

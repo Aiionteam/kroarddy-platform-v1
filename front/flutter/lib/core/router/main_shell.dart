@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
+import "../theme/kroaddy_colors.dart";
 import "../../features/auth/presentation/state/auth_controller.dart";
 
 final mainScaffoldKey = GlobalKey<ScaffoldState>();
@@ -44,36 +45,10 @@ class _AppDrawer extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
                 child: Row(
                   children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF9333EA), Color(0xFFEC4899)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          "K",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      "Kroaddy",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF7C3AED),
-                      ),
+                    Image.asset(
+                      "assets/branding/kroaddy_logo_white.png",
+                      height: 44,
+                      fit: BoxFit.contain,
                     ),
                   ],
                 ),
@@ -98,61 +73,54 @@ class _AppDrawer extends ConsumerWidget {
 
             // ── 메인 메뉴 항목 ───────────────────────────────────
             _DrawerItem(
-              icon: Icons.auto_awesome_outlined,
-              activeIcon: Icons.auto_awesome,
-              label: "투어스타",
+              label: "장소탐색",
+              path: "/guide",
+              current: location,
+              leadingAsset: "icons/sidebar/jangso.png",
+            ),
+            _DrawerItem(
+              label: "여행피드",
               path: "/tourstar",
               current: location,
+              leadingAsset: "icons/sidebar/feed.png",
             ),
             _DrawerItem(
-              icon: Icons.calendar_today_outlined,
-              activeIcon: Icons.calendar_today,
-              label: "일정관리",
-              path: "/planner/schedule",
-              current: location,
-            ),
-            _DrawerItem(
-              icon: Icons.map_outlined,
-              activeIcon: Icons.map,
               label: "여행플래너",
               path: "/planner",
               excludePrefixes: const ["/planner/schedule"],
               current: location,
+              leadingAsset: "icons/sidebar/planner.png",
             ),
             _DrawerItem(
-              icon: Icons.place_outlined,
-              activeIcon: Icons.place,
-              label: "장소 추천",
-              path: "/guide",
+              label: "마이플랜",
+              path: "/planner/schedule",
               current: location,
+              leadingAsset: "icons/sidebar/myplan.png",
             ),
             _DrawerItem(
-              icon: Icons.chat_bubble_outline,
-              activeIcon: Icons.chat_bubble,
-              label: "단체채팅",
+              label: "그룹톡",
               path: "/chat",
-              // 하단 메뉴(/chat/friends, /chat/whisper)에서는 단체채팅이 선택되지 않게 제외
+              // 하단 메뉴(/chat/friends, /chat/whisper)에서는 그룹톡이 선택되지 않게 제외
               excludePrefixes: const ["/chat/friends", "/chat/whisper"],
               current: location,
+              leadingAsset: "icons/sidebar/grouptalk.png",
+            ),
+            _DrawerItem(
+              label: "개인톡",
+              path: "/chat/whisper",
+              current: location,
+              leadingAsset: "icons/sidebar/talk.png",
             ),
 
             const Spacer(),
             const Divider(height: 1),
             const SizedBox(height: 4),
-
             // ── 하단 메뉴 ────────────────────────────────────────
             _DrawerItem(
               icon: Icons.people_outline,
               activeIcon: Icons.people,
               label: "친구목록",
               path: "/chat/friends",
-              current: location,
-            ),
-            _DrawerItem(
-              icon: Icons.mail_outline,
-              activeIcon: Icons.mail,
-              label: "귓속말",
-              path: "/chat/whisper",
               current: location,
             ),
             _DrawerItem(
@@ -192,16 +160,21 @@ class _AppDrawer extends ConsumerWidget {
 
 class _DrawerItem extends StatelessWidget {
   const _DrawerItem({
-    required this.icon,
-    required this.activeIcon,
     required this.label,
     required this.path,
     required this.current,
+    this.icon,
+    this.activeIcon,
+    this.leadingAsset,
     this.excludePrefixes = const [],
-  });
+  }) : assert(
+          leadingAsset != null || (icon != null && activeIcon != null),
+          "Drawer item needs leadingAsset or both icon and activeIcon",
+        );
 
-  final IconData icon;
-  final IconData activeIcon;
+  final IconData? icon;
+  final IconData? activeIcon;
+  final String? leadingAsset;
   final String label;
   final String path;
   final String current;
@@ -212,26 +185,46 @@ class _DrawerItem extends StatelessWidget {
     return current == path || current.startsWith("$path/");
   }
 
+  Widget _leading() {
+    final activeColor = KroaddyColors.primary;
+    final inactiveColor = const Color(0xFF6B7280);
+    if (leadingAsset != null) {
+      return ColorFiltered(
+        colorFilter: ColorFilter.mode(
+          _isActive ? activeColor : inactiveColor,
+          BlendMode.srcIn,
+        ),
+        child: Image.asset(
+          leadingAsset!,
+          width: 22,
+          height: 22,
+          fit: BoxFit.contain,
+        ),
+      );
+    }
+    return Icon(
+      _isActive ? activeIcon! : icon!,
+      color: _isActive ? activeColor : inactiveColor,
+      size: 22,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       decoration: BoxDecoration(
-        color: _isActive ? const Color(0xFFF3E8FF) : Colors.transparent,
+        color: _isActive ? KroaddyColors.brandWash : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
       ),
       child: ListTile(
-        leading: Icon(
-          _isActive ? activeIcon : icon,
-          color: _isActive ? const Color(0xFF7C3AED) : const Color(0xFF6B7280),
-          size: 22,
-        ),
+        leading: _leading(),
         title: Text(
           label,
           style: TextStyle(
             fontSize: 14,
             fontWeight: _isActive ? FontWeight.w600 : FontWeight.w500,
-            color: _isActive ? const Color(0xFF7C3AED) : const Color(0xFF374151),
+            color: _isActive ? KroaddyColors.primary : const Color(0xFF374151),
           ),
         ),
         onTap: () {

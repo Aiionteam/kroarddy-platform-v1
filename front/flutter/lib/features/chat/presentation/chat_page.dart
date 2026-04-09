@@ -3,6 +3,7 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
 import "../../../core/router/main_shell.dart";
+import "../../../core/theme/kroaddy_colors.dart";
 import "../../../core/utils/tourstar_share_parser.dart";
 import "../../tourstar/data/tourstar_models.dart";
 import "../../tourstar/data/tourstar_repository.dart";
@@ -11,12 +12,12 @@ import "state/chat_controller.dart";
 import "state/chat_state.dart";
 
 // ── 색상 상수 ─────────────────────────────────────────────────
-const _primary = Color(0xFF7C3AED);
-const _primaryLight = Color(0xFFF3E8FF);
+const _primary = KroaddyColors.primary;
+const _primaryLight = KroaddyColors.brandWash;
 const _textPrimary = Color(0xFF1F2937);
 const _textSecondary = Color(0xFF6B7280);
 const _bgPage = Color(0xFFF8F7FF);
-const _myBubble = Color(0xFF7C3AED);
+const _myBubble = KroaddyColors.primary;
 const _otherBubble = Color(0xFFF3F4F6);
 
 // ── 등급 색상 맵 ──────────────────────────────────────────────
@@ -55,6 +56,20 @@ String _tierLabel(String roomType) {
   }
 }
 
+// ── 등급 배지 PNG (실버 / 골드 / 플래티넘 / 다이아) ─────────────
+String _tierBadgeAsset(String? roomType) {
+  switch ((roomType ?? "SILVER").toUpperCase()) {
+    case "GOLD":
+      return "icons/chat_icon/gold-Photoroom.png";
+    case "PLATINUM":
+      return "icons/chat_icon/platinum-Photoroom.png";
+    case "DIAMOND":
+      return "icons/chat_icon/dia-Photoroom.png";
+    default:
+      return "icons/chat_icon/silver-Photoroom.png";
+  }
+}
+
 // ── 진입점 ─────────────────────────────────────────────────────
 class ChatPage extends ConsumerWidget {
   const ChatPage({super.key});
@@ -71,7 +86,7 @@ class ChatPage extends ConsumerWidget {
           onPressed: () => mainScaffoldKey.currentState?.openDrawer(),
         ),
         title: const Text(
-          "단체채팅",
+          "그룹톡",
           style: TextStyle(color: _textPrimary, fontWeight: FontWeight.bold, fontSize: 18),
         ),
       ),
@@ -81,7 +96,7 @@ class ChatPage extends ConsumerWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 단체채팅 탭
+// 그룹톡 탭
 // ═══════════════════════════════════════════════════════════════
 class _GroupChatTab extends ConsumerStatefulWidget {
   const _GroupChatTab();
@@ -148,7 +163,7 @@ class _GroupChatTabState extends ConsumerState<_GroupChatTab> {
             child: Row(
               children: [
                 const Text(
-                  "단체채팅방",
+                  "그룹톡 방",
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _textPrimary),
                 ),
                 const Spacer(),
@@ -221,13 +236,11 @@ class _GroupChatTabState extends ConsumerState<_GroupChatTab> {
         ),
         title: Row(
           children: [
-            Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                color: _tierColor(state.selectedRoomType),
-                shape: BoxShape.circle,
-              ),
+            Image.asset(
+              _tierBadgeAsset(state.selectedRoomType),
+              width: 26,
+              height: 26,
+              fit: BoxFit.contain,
             ),
             const SizedBox(width: 8),
             Text(
@@ -333,7 +346,7 @@ class _GroupChatTabState extends ConsumerState<_GroupChatTab> {
             ],
           ),
 
-          // 귓속말 다이얼로그
+          // 개인톡 다이얼로그
           if (_showWhisperDialog)
             _WhisperOverlay(
               targetName: _whisperTargetName ?? "",
@@ -387,18 +400,12 @@ class _RoomCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
+          SizedBox(
             width: 44,
             height: 44,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                room.label.substring(0, 1),
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
-              ),
+            child: Image.asset(
+              _tierBadgeAsset(room.roomType),
+              fit: BoxFit.contain,
             ),
           ),
           const SizedBox(width: 12),
@@ -418,20 +425,35 @@ class _RoomCard extends StatelessWidget {
               ],
             ),
           ),
-          FilledButton(
-            onPressed: room.accessible ? onEnter : null,
-            style: FilledButton.styleFrom(
-              backgroundColor: room.accessible ? color : Colors.grey.shade200,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
-            child: Text(
-              room.accessible ? "입장" : "명예도 부족",
-              style: TextStyle(
-                fontSize: 12,
-                color: room.accessible ? Colors.white : _textSecondary,
+          if (room.accessible)
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onEnter,
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  child: Image.asset(
+                    "icons/hwasalpyo.png",
+                    width: 40,
+                    height: 40,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            )
+          else
+            FilledButton(
+              onPressed: null,
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.grey.shade200,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              child: Text(
+                "명예도 부족",
+                style: TextStyle(fontSize: 12, color: _textSecondary),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -553,7 +575,7 @@ class _ChatBubble extends StatelessWidget {
   }
 }
 
-// ── 투어스타 공유 카드 ─────────────────────────────────────────
+// ── 여행피드 공유 카드 ─────────────────────────────────────────
 class _TourstarShareCard extends ConsumerStatefulWidget {
   const _TourstarShareCard({
     required this.postId,
@@ -656,7 +678,7 @@ class _TourstarShareCardState extends ConsumerState<_TourstarShareCard> {
                                   Row(children: [
                                     const Icon(Icons.photo_camera_outlined, size: 14, color: _primary),
                                     const SizedBox(width: 4),
-                                    const Text("투어스타 게시글", style: TextStyle(fontSize: 10, color: _primary, fontWeight: FontWeight.w600)),
+                                    const Text("여행피드 게시글", style: TextStyle(fontSize: 10, color: _primary, fontWeight: FontWeight.w600)),
                                   ]),
                                   const SizedBox(height: 6),
                                   if (_preview!.thumbnailUrl.isNotEmpty)
@@ -764,7 +786,7 @@ class _WhisperOverlayState extends State<_WhisperOverlay> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        "${widget.targetName}에게 귓속말",
+                        "${widget.targetName}에게 개인톡",
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
@@ -786,7 +808,7 @@ class _WhisperOverlayState extends State<_WhisperOverlay> {
                   controller: _ctrl,
                   maxLines: 3,
                   decoration: InputDecoration(
-                    hintText: "귓속말 내용을 입력하세요",
+                    hintText: "메시지를 입력하세요",
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   ),
@@ -805,7 +827,7 @@ class _WhisperOverlayState extends State<_WhisperOverlay> {
                             setState(() => _sending = false);
                           },
                     style: FilledButton.styleFrom(backgroundColor: _primary),
-                    child: Text(_sending ? "전송 중..." : "귓속말 보내기"),
+                    child: Text(_sending ? "전송 중..." : "개인톡 보내기"),
                   ),
                 ),
               ],
@@ -818,7 +840,7 @@ class _WhisperOverlayState extends State<_WhisperOverlay> {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 귓속말 탭
+// 개인톡 탭
 // ═══════════════════════════════════════════════════════════════
 class _WhisperTab extends ConsumerStatefulWidget {
   const _WhisperTab();
@@ -858,7 +880,7 @@ class _WhisperTabState extends ConsumerState<_WhisperTab> {
                   children: [
                     Expanded(
                       child: _WhisperTabItem(
-                        label: "받은 귓속말",
+                        label: "받은 메시지",
                         count: state.inbox.length,
                         selected: state.whisperTab == WhisperTab.inbox,
                         onTap: () => ctrl.setWhisperTab(WhisperTab.inbox),
@@ -867,7 +889,7 @@ class _WhisperTabState extends ConsumerState<_WhisperTab> {
                     const SizedBox(width: 4),
                     Expanded(
                       child: _WhisperTabItem(
-                        label: "보낸 귓속말",
+                        label: "보낸 메시지",
                         count: state.sent.length,
                         selected: state.whisperTab == WhisperTab.sent,
                         onTap: () => ctrl.setWhisperTab(WhisperTab.sent),
@@ -944,7 +966,7 @@ class _WhisperTabState extends ConsumerState<_WhisperTab> {
             const Text("📭", style: TextStyle(fontSize: 48)),
             const SizedBox(height: 12),
             Text(
-              state.whisperTab == WhisperTab.inbox ? "받은 귓속말이 없습니다." : "보낸 귓속말이 없습니다.",
+              state.whisperTab == WhisperTab.inbox ? "받은 메시지가 없습니다." : "보낸 메시지가 없습니다.",
               style: const TextStyle(fontSize: 14, color: _textSecondary),
             ),
           ],
@@ -1116,7 +1138,7 @@ class _ComposeOverlay extends StatelessWidget {
                     const SizedBox(width: 8),
                     const Expanded(
                       child: Text(
-                        "새 귓속말 보내기",
+                        "새 개인톡 보내기",
                         style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
                       ),
                     ),
@@ -1134,7 +1156,7 @@ class _ComposeOverlay extends StatelessWidget {
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     labelText: "받는 사람 ID",
-                    hintText: "채팅에서 메시지를 길게 눌러 귓속말",
+                    hintText: "채팅에서 메시지를 길게 눌러 개인톡",
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   ),

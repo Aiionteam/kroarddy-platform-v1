@@ -6,9 +6,11 @@ import "package:go_router/go_router.dart";
 import "package:url_launcher/url_launcher.dart";
 
 import "../../core/router/main_shell.dart";
+import "../../core/theme/kroaddy_colors.dart";
+import "../../core/widgets/kroaddy_cloud_tile.dart";
 import "state/news_context.dart";
 
-const _primary = Color(0xFF7C3AED);
+const _primary = KroaddyColors.primary;
 const _textPrimary = Color(0xFF1F2937);
 const _textSecondary = Color(0xFF6B7280);
 const _bgPage = Color(0xFFF8F7FF);
@@ -27,7 +29,7 @@ Map<String, dynamic> _getCatStyle(String cat) =>
 
 // ── 카드 그라데이션 (뉴스 썸네일 없을 때) ─────────────────────────
 const _cardGradients = [
-  [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+  [KroaddyColors.accent, KroaddyColors.primary],
   [Color(0xFFEC4899), Color(0xFFDB2777)],
   [Color(0xFF0EA5E9), Color(0xFF2563EB)],
   [Color(0xFFF59E0B), Color(0xFFEA580C)],
@@ -39,32 +41,38 @@ const _cardGradients = [
   [Color(0xFF84CC16), Color(0xFF16A34A)],
 ];
 
-// ── 바로가기 6개 ───────────────────────────────────────────────
+// ── 바로가기 (장소탐색 → 여행피드 → 여행플래너 → 마이플랜) ───────
 const _shortcuts = [
-  {"label": "여행 플래너", "emoji": "🗺️", "path": "/planner"},
-  {"label": "K-콘텐츠", "emoji": "🎵", "path": "/planner/k-content"},
-  {"label": "일정 관리", "emoji": "📅", "path": "/planner/schedule"},
-  {"label": "장소 추천", "emoji": "📍", "path": "/planner/standard"},
-  {"label": "유저 루트", "emoji": "👥", "path": "/planner/user-content"},
-  {"label": "단체 채팅", "emoji": "💬", "path": "/group-chat"},
+  {"label": "장소탐색", "asset": "icons/sidebar/jangso.png", "path": "/guide"},
+  {"label": "여행피드", "asset": "icons/sidebar/feed.png", "path": "/tourstar"},
+  {"label": "여행플래너", "asset": "icons/sidebar/planner.png", "path": "/planner"},
+  {"label": "마이플랜", "asset": "icons/sidebar/myplan.png", "path": "/planner/schedule"},
 ];
 
 // ── K-콘텐츠 테마 ─────────────────────────────────────────────
-const _kThemes = [
-  {"label": "K-POP", "emoji": "🎤", "color": Color(0xFFfff1f2), "border": Color(0xFFfecdd3), "text": Color(0xFFbe123c)},
-  {"label": "K-DRAMA", "emoji": "🎬", "color": Color(0xFFfaf5ff), "border": Color(0xFFe9d5ff), "text": Color(0xFF7e22ce)},
-  {"label": "K-FOOD", "emoji": "🍜", "color": Color(0xFFfffbeb), "border": Color(0xFFfde68a), "text": Color(0xFF92400e)},
-  {"label": "K-BEAUTY", "emoji": "💄", "color": Color(0xFFfdf2f8), "border": Color(0xFFfbcfe8), "text": Color(0xFF9d174d)},
-];
+const _kThemeTileHeight = 86.0;
 
-// ── 인기 여행지 ───────────────────────────────────────────────
-const _popularDests = [
-  {"name": "서울", "slug": "seoul", "emoji": "🏙️", "colors": [Color(0xFF6366F1), Color(0xFF8B5CF6)]},
-  {"name": "부산", "slug": "busan", "emoji": "🌊", "colors": [Color(0xFF22D3EE), Color(0xFF2563EB)]},
-  {"name": "제주", "slug": "jeju", "emoji": "🌿", "colors": [Color(0xFF10B981), Color(0xFF0D9488)]},
-  {"name": "경주", "slug": "gyeongju", "emoji": "🏯", "colors": [Color(0xFFF59E0B), Color(0xFFEA580C)]},
-  {"name": "강릉", "slug": "gangneung", "emoji": "🌅", "colors": [Color(0xFFF43F5E), Color(0xFFEC4899)]},
-  {"name": "전주", "slug": "jeonju", "emoji": "🎎", "colors": [Color(0xFFEAB308), Color(0xFFF59E0B)]},
+const _kThemes = [
+  {
+    "label": "K-POP",
+    "asset": "icons/home_icon/kpop.png",
+    "text": Color(0xFFbe123c),
+  },
+  {
+    "label": "K-DRAMA",
+    "asset": "icons/home_icon/kdrama.png",
+    "text": Color(0xFF7e22ce),
+  },
+  {
+    "label": "K-FOOD",
+    "asset": "icons/home_icon/kfood.png",
+    "text": Color(0xFF92400e),
+  },
+  {
+    "label": "K-BEAUTY",
+    "asset": "icons/home_icon/kbeuaty.png",
+    "text": Color(0xFF9d174d),
+  },
 ];
 
 // ── 시골 환급 지역 ─────────────────────────────────────────────
@@ -135,6 +143,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     return Scaffold(
       backgroundColor: _bgPage,
       appBar: AppBar(
+        centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
         surfaceTintColor: Colors.white,
@@ -142,9 +151,10 @@ class _HomePageState extends ConsumerState<HomePage> {
           icon: const Icon(Icons.menu, color: _textPrimary),
           onPressed: () => mainScaffoldKey.currentState?.openDrawer(),
         ),
-        title: const Text(
-          "Kroaddy",
-          style: TextStyle(color: _primary, fontWeight: FontWeight.bold, fontSize: 20),
+        title: Image.asset(
+          "assets/branding/kroaddy_logo_white.png",
+          height: 56,
+          fit: BoxFit.contain,
         ),
       ),
       body: SingleChildScrollView(
@@ -208,49 +218,49 @@ class _HomePageState extends ConsumerState<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ══════════════════════════════════════════
-                  // 2. 바로가기 6개
+                  // 2. 바로가기 (장소탐색 · 여행피드 · 여행플래너 · 마이플랜)
                   // ══════════════════════════════════════════
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: _shortcuts.map((s) {
+                    children: _shortcuts.asMap().entries.map((e) {
+                      final i = e.key;
+                      final s = e.value;
                       final path = s["path"] as String;
-                      return GestureDetector(
-                        onTap: () {
-                          if (path == "/group-chat") {
-                            context.push("/chat");
-                          } else if (path == "/planner/standard") {
-                            context.push("/planner");
-                          } else {
-                            context.go(path);
-                          }
-                        },
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(14),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.06),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
+                      final asset = s["asset"] as String;
+                      return Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: GestureDetector(
+                            onTap: () => context.go(path),
+                            child: Column(
+                              children: [
+                                KroaddyCloudTileClip(
+                                  width: 48,
+                                  height: 48,
+                                  phase: i * 0.9,
+                                  child: ColoredBox(
+                                    color: Colors.white,
+                                    child: Center(
+                                      child: Image.asset(
+                                        asset,
+                                        width: 26,
+                                        height: 26,
+                                        fit: BoxFit.contain,
+                                      ),
+                                    ),
                                   ),
-                                ],
-                              ),
-                              child: Center(
-                                child: Text(s["emoji"] as String, style: const TextStyle(fontSize: 22)),
-                              ),
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  s["label"] as String,
+                                  style: const TextStyle(fontSize: 10, color: _textSecondary, fontWeight: FontWeight.w500),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 5),
-                            Text(
-                              s["label"] as String,
-                              style: const TextStyle(fontSize: 10, color: _textSecondary, fontWeight: FontWeight.w500),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+                          ),
                         ),
                       );
                     }).toList(),
@@ -429,107 +439,68 @@ class _HomePageState extends ConsumerState<HomePage> {
                   // 3. K-콘텐츠 테마
                   // ══════════════════════════════════════════
                   _SectionHeader(
-                    title: "🎭 K-콘텐츠 테마 여행",
+                    leading: Image.asset(
+                      "icons/home_icon/kcontents.png",
+                      width: 22,
+                      height: 22,
+                      fit: BoxFit.contain,
+                    ),
+                    title: "K-콘텐츠 테마 여행",
                     actionLabel: "전체 보기",
                     onAction: () => context.push("/planner/k-content"),
                   ),
                   const SizedBox(height: 10),
                   Row(
-                    children: _kThemes.map((t) {
+                    children: _kThemes.asMap().entries.map((entry) {
+                      final ti = entry.key;
+                      final t = entry.value;
                       return Expanded(
                         child: GestureDetector(
                           onTap: () => context.push("/planner/k-content"),
-                          child: Container(
-                            margin: EdgeInsets.only(
-                              right: _kThemes.indexOf(t) < _kThemes.length - 1 ? 6 : 0,
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              right: ti < _kThemes.length - 1 ? 6 : 0,
                             ),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            decoration: BoxDecoration(
-                              color: t["color"] as Color,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: t["border"] as Color),
-                            ),
-                            child: Column(
-                              children: [
-                                Text(t["emoji"] as String, style: const TextStyle(fontSize: 22)),
-                                const SizedBox(height: 4),
-                                Text(
-                                  t["label"] as String,
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: t["text"] as Color,
+                            child: LayoutBuilder(
+                              builder: (context, c) {
+                                return KroaddyCloudTileClip(
+                                  width: c.maxWidth,
+                                  height: _kThemeTileHeight,
+                                  phase: ti * 1.15,
+                                  shadowOpacity: 0.05,
+                                  shadowBlur: 6,
+                                  child: ColoredBox(
+                                    color: Colors.white,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Image.asset(
+                                            t["asset"] as String,
+                                            height: 26,
+                                            fit: BoxFit.contain,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            t["label"] as String,
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: t["text"] as Color,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                );
+                              },
                             ),
                           ),
                         ),
                       );
                     }).toList(),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // ══════════════════════════════════════════
-                  // 4. 인기 여행지
-                  // ══════════════════════════════════════════
-                  _SectionHeader(
-                    title: "📍 인기 여행지",
-                    actionLabel: "더 보기",
-                    onAction: () => context.push("/planner"),
-                  ),
-                  const SizedBox(height: 10),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                      childAspectRatio: 1.15,
-                    ),
-                    itemCount: _popularDests.length,
-                    itemBuilder: (_, i) {
-                      final dest = _popularDests[i];
-                      final colors = dest["colors"] as List<Color>;
-                      return GestureDetector(
-                        onTap: () => context.push("/planner"),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: colors,
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: colors[0].withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(dest["emoji"] as String, style: const TextStyle(fontSize: 28)),
-                              const SizedBox(height: 4),
-                              Text(
-                                dest["name"] as String,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  shadows: [Shadow(color: Colors.black38, blurRadius: 4)],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
                   ),
 
                   const SizedBox(height: 32),
@@ -590,7 +561,14 @@ class _HomePageState extends ConsumerState<HomePage> {
 
 // ── 섹션 헤더 ───────────────────────────────────────────────────
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, this.actionLabel, this.onAction});
+  const _SectionHeader({
+    this.leading,
+    required this.title,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final Widget? leading;
   final String title;
   final String? actionLabel;
   final VoidCallback? onAction;
@@ -599,8 +577,24 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _textPrimary)),
+        Expanded(
+          child: Row(
+            children: [
+              if (leading != null) ...[
+                leading!,
+                const SizedBox(width: 8),
+              ],
+              Flexible(
+                child: Text(
+                  title,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _textPrimary),
+                ),
+              ),
+            ],
+          ),
+        ),
         if (actionLabel != null && onAction != null)
           GestureDetector(
             onTap: onAction,

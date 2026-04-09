@@ -9,9 +9,7 @@ import "../../features/auth/presentation/state/auth_controller.dart";
 import "../../features/chat/presentation/chat_page.dart";
 import "../../features/chat/presentation/friends_page.dart";
 import "../../features/chat/presentation/whisper_page.dart";
-import "../../features/guide/presentation/event_page.dart";
-import "../../features/guide/presentation/guide_landing_page.dart";
-import "../../features/guide/presentation/restaurant_page.dart";
+import "../../features/guide/presentation/guide_explore_page.dart";
 import "../../features/home/home_page.dart";
 import "../../features/planner/presentation/planner_page.dart";
 import "../../features/planner/presentation/k_content_package_page.dart";
@@ -19,6 +17,7 @@ import "../../features/planner/presentation/schedule_page.dart";
 import "../../features/profile/presentation/onboarding_page.dart";
 import "../../features/profile/presentation/profile_page.dart";
 import "../../features/tourstar/presentation/tourstar_page.dart";
+import "../theme/kroaddy_colors.dart";
 import "main_shell.dart";
 import "shell_back_handler.dart";
 
@@ -31,7 +30,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
     errorBuilder: (context, state) => const Scaffold(
       backgroundColor: Color(0xFFF8F7FF),
-      body: Center(child: CircularProgressIndicator(color: Color(0xFF7C3AED))),
+      body: Center(child: CircularProgressIndicator(color: KroaddyColors.primary)),
     ),
     routes: [
       GoRoute(
@@ -96,15 +95,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: "/guide",
-            builder: (context, state) => const GuideLandingPage(),
+            builder: (context, state) => const GuideExplorePage(),
           ),
           GoRoute(
             path: "/guide/event",
-            builder: (context, state) => const EventPage(),
+            redirect: (context, state) => "/guide",
           ),
           GoRoute(
             path: "/guide/restaurant",
-            builder: (context, state) => const RestaurantPage(),
+            redirect: (context, state) => "/guide",
           ),
           GoRoute(
             path: "/chat",

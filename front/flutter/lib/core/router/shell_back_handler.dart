@@ -19,7 +19,7 @@ String? shellBackTarget(String path) {
   if (path == "/guide/event" || path == "/guide/restaurant") {
     return "/guide";
   }
-  // 친구목록·귓속말은 `push` 스택 또는 이전 화면으로 돌아가야 하므로 여기서 /chat으로 고정하지 않음.
+  // 친구목록·개인톡은 `push` 스택 또는 이전 화면으로 돌아가야 하므로 여기서 /chat으로 고정하지 않음.
   if (path == "/profile/onboarding") {
     return "/profile";
   }

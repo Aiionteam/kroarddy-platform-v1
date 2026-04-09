@@ -3,12 +3,13 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
 import "../../../core/router/main_shell.dart";
+import "../../../core/theme/kroaddy_colors.dart";
 import "../data/profile_models.dart";
 import "state/profile_controller.dart";
 import "state/profile_state.dart";
 
 // ── 색상 상수 ─────────────────────────────────────────────────
-const _primary = Color(0xFF7C3AED);
+const _primary = KroaddyColors.primary;
 const _textPrimary = Color(0xFF1F2937);
 const _textSecondary = Color(0xFF6B7280);
 const _bgPage = Color(0xFFF8F7FF);
