@@ -44,12 +44,17 @@ public class JwtTokenProvider {
     public String generateAccessToken(String userId, String provider, Map<String, Object> additionalClaims) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + accessTokenExpiration);
-        
-        return Jwts.builder()
+        // OAuth extractUserInfo 등에 "sub"(제3자 계정 식별자)가 있으면,
+        // .claims()가 나중에 호출될 때 JWT 표준 sub를 덮어쓸 수 있음 → 내부 userId가 무효화됨.
+        // 반드시 추가 클레임을 먼저 넣고, 마지막에 subject로 내부 사용자 ID를 고정한다.
+        var builder = Jwts.builder();
+        if (additionalClaims != null && !additionalClaims.isEmpty()) {
+            builder.claims(additionalClaims);
+        }
+        return builder
                 .subject(userId)
                 .claim("provider", provider)
                 .claim("type", "access")
-                .claims(additionalClaims)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(getSigningKey())

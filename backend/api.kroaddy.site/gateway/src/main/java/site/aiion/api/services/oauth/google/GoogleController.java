@@ -95,7 +95,7 @@ public class GoogleController {
         String state = URLEncoder.encode(frontend_url, StandardCharsets.UTF_8) + "|" + csrfToken;
         
         String authUrl = String.format(
-            "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=%s&redirect_uri=%s&scope=openid%%20profile%%20email&state=%s",
+            "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=%s&redirect_uri=%s&scope=openid%%20profile%%20email&prompt=select_account&state=%s",
             clientId,
             URLEncoder.encode(redirectUri, StandardCharsets.UTF_8),
             URLEncoder.encode(state, StandardCharsets.UTF_8)

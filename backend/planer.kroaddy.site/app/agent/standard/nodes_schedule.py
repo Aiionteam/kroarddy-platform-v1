@@ -10,9 +10,11 @@ from langchain_core.messages import HumanMessage
 from app.agent.standard.nodes_common import (
     _build_transport_block,
     _build_user_profile_block,
+    _extract_text_from_response,
     _format_festival_date,
     _get_lang,
     _get_llm,
+    _get_llm_search_context,
     _get_llm_with_search,
     _invoke,
     _lang_directive,
@@ -30,6 +32,84 @@ from app.services.weather_client import build_weather_block_for_prompt
 logger = logging.getLogger(__name__)
 
 _TRAVEL_DAYS_DEFAULT = 2
+# 웹 검색 선행 단계 응답 길이 상한 (토큰·지연 절약)
+_WEB_CONTEXT_MAX_CHARS = 2000
+# 선행 검색만 1분 미만으로 제한 (초과 시 빈 맥락으로 일정 생성 계속)
+_WEB_GATHER_TIMEOUT_SEC = 55.0
+
+
+def _format_web_search_block(raw: str, lang: str) -> str:
+    """선행 웹 검색 텍스트를 Day 생성 프롬프트에 넣을 블록으로 감싼다."""
+    t = (raw or "").strip()
+    if not t:
+        return ""
+    if lang == "Korean":
+        return "【웹 검색으로 확보한 최신 맥락 (일정에 우선 반영)】\n" + t + "\n\n"
+    return "【Fresh context from web search (prioritize in the itinerary)】\n" + t + "\n\n"
+
+
+async def _gather_web_search_context(
+    *,
+    location_name: str,
+    route_name: str,
+    start_date: str | None,
+    end_date: str | None,
+    lang: str,
+) -> str:
+    """Google Search grounding으로 여행지·기간·루트에 맞는 최신 맥락을 **한 번만** 수집한다.
+
+    일정은 이후 단계에서 일반 Gemini만 사용하므로, Day별로 검색 도구를 반복 호출하지 않는다.
+    """
+    date_clause = ""
+    if start_date and end_date:
+        date_clause = f"여행 기간: {start_date} ~ {end_date}.\n" if lang == "Korean" else f"Trip dates: {start_date} ~ {end_date}.\n"
+
+    if lang == "Korean":
+        task = (
+            f"목적지: {location_name}\n"
+            f"선택 루트/테마: {route_name}\n"
+            f"{date_clause}"
+            "Google 검색으로, 위 조건에 맞는 **실제 존재하는** 식당·카페·명소·이벤트·"
+            "최근 오픈·휴업·축제 등 검증 가능한 최신 정보를 조사하세요.\n"
+            "불릿 목록으로만 간결히 정리하세요. JSON 금지. 한국어. 약 1200자 이내.\n"
+            "출력은 본문만 (제목 없이)."
+        )
+    else:
+        task = (
+            f"Destination: {location_name}\n"
+            f"Route theme: {route_name}\n"
+            f"{date_clause}"
+            "Use Google Search to find verifiable, current places and events "
+            f"relevant to this trip within {location_name}. Bullet points only, no JSON, "
+            f"~1200 chars max, in {lang}."
+        )
+
+    # max_output_tokens=600 전용 LLM 사용 → GoogleSearchAPIWrapper(k=5)와 동일한 효과
+    # 검색 결과를 짧게 요약하므로 생성 토큰이 줄어 응답 시간이 단축된다.
+    llm = _get_llm_search_context()
+    t0 = perf_counter()
+    try:
+        response = await asyncio.wait_for(
+            _invoke(llm, [HumanMessage(content=task)], plain_fallback=True),
+            timeout=_WEB_GATHER_TIMEOUT_SEC,
+        )
+    except asyncio.TimeoutError:
+        logger.warning(
+            "웹 맥락 수집 타임아웃(%.0fs) – 맥락 없이 일정 생성 진행",
+            _WEB_GATHER_TIMEOUT_SEC,
+        )
+        return ""
+    except Exception as e:
+        logger.warning("웹 맥락 수집 실패: %s", e)
+        return ""
+
+    text = _extract_text_from_response(response).strip()
+    logger.info("웹 맥락 수집 완료: %d자 (%.2fs)", len(text), perf_counter() - t0)
+    if not text:
+        return ""
+    if len(text) > _WEB_CONTEXT_MAX_CHARS:
+        text = text[:_WEB_CONTEXT_MAX_CHARS] + "\n…(생략)"
+    return text
 
 
 def _build_date_list(start_date: str | None, end_date: str | None) -> list[str]:
@@ -78,7 +158,8 @@ class _SingleDayCommonKwargs(TypedDict):
     weather_block: str
     transport_block: str
     news_block: str
-    use_search: bool  # True일 때만 Google Search grounding (느림)
+    # use_search=True 이면 generate_schedule에서 선행 웹검색 후 채움 (Day 호출에는 검색 LLM 미사용)
+    web_search_block: str
 
 
 async def _generate_single_day(
@@ -95,7 +176,7 @@ async def _generate_single_day(
     weather_block: str,
     transport_block: str,
     news_block: str,
-    use_search: bool = False,
+    web_search_block: str = "",
     exclude_places: list[str] | None = None,
 ) -> tuple[list[dict[str, Any]], dict]:
     t0 = perf_counter()
@@ -137,6 +218,7 @@ async def _generate_single_day(
         f"Destination:{location_name} | Route:{route_name} | Day:{day_num} ({date_str})\n"
         f"⚠️ ALL places must be within '{location_name}'.\n"
         f"{excl_block}\n"
+        f"{web_search_block}"
         f"{user_block}{festival_block}{weather_block}{transport_block}{news_block}"
         f"Create 4 schedule items. time∈[{time_labels}]. "
         f"CLUSTER in same district. Order: {flow_hint}. "
@@ -145,13 +227,9 @@ async def _generate_single_day(
         "\nRespond ONLY with valid JSON:\n"
         f"{schema}"
     )
-    # 기본: 일반 Gemini (빠름). use_search=True일 때만 Google Search grounding(추가 지연).
-    if use_search:
-        llm = _get_llm_with_search()
-        response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=True)
-    else:
-        llm = _get_llm()
-        response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=False)
+    # 웹 검색은 상위 단계에서 1회만 수행. 여기서는 일반 Gemini만 사용.
+    llm = _get_llm()
+    response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=False)
     data = _parse_json(response)
     raw_items = data.get("items", [])
     day_total_str = data.get("day_total", "₩0")
@@ -238,13 +316,25 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
     festival_block = _build_festival_block(festivals, lang=lang)
     date_list = _build_date_list(start_date, end_date)
 
+    # Google 웹 검색은 Day 생성 **이전에 1회만** (정확도 우선, Day별 검색 도구 반복 없음)
+    web_search_block = ""
+    if use_search:
+        raw_ctx = await _gather_web_search_context(
+            location_name=location_name,
+            route_name=route_name,
+            start_date=start_date,
+            end_date=end_date,
+            lang=lang,
+        )
+        web_search_block = _format_web_search_block(raw_ctx, lang)
+
     if date_list:
         num_days = len(date_list)
         common_kwargs: _SingleDayCommonKwargs = {
             "num_days": num_days, "location_name": location_name, "route_name": route_name,
             "lang": lang, "lang_dir": lang_dir, "user_block": user_block, "festival_block": festival_block,
             "weather_block": weather_block, "transport_block": transport_block, "news_block": news_block,
-            "use_search": use_search,
+            "web_search_block": web_search_block,
         }
 
         # 일(Day)별로 독립적으로 LLM 호출해 전부 병렬 실행한다.
@@ -322,6 +412,7 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         f"Destination:{location_name} | Route:{route_name}\n"
         f"⚠️ GEOGRAPHIC CONSTRAINT (CRITICAL): ALL places must be physically located within '{location_name}'. "
         "Never use places from other cities or regions, even if names are similar.\n\n"
+        f"{web_search_block}"
         f"{user_block}{festival_block}{weather_block}{transport_block}{news_block}"
         f"Create a detailed travel itinerary ({num_days} days, 4 items per day).\n\n"
         "Rules:\n"
@@ -339,12 +430,8 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         f"{lang_dir}\nRespond ONLY with valid JSON (no explanation):\n{fb_schema}"
     )
     try:
-        if use_search:
-            llm = _get_llm_with_search()
-            response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=True)
-        else:
-            llm = _get_llm()
-            response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=False)
+        llm = _get_llm()
+        response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=False)
         data = _parse_json(response)
         fb_schedule = data.get("schedule") or []
         if not isinstance(fb_schedule, list):

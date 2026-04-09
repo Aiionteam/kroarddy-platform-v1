@@ -28,6 +28,8 @@ from app.agent.standard.nodes_common import (
 from app.agent.standard.nodes_schedule import (
     _build_date_list,
     _build_festival_block,
+    _format_web_search_block,
+    _gather_web_search_context,
     _generate_single_day,
     _geocode_item,
 )
@@ -642,6 +644,19 @@ async def stream_schedule(
         transport_block = _build_transport_block(req.transport_mode or "")
         festival_block = _build_festival_block(festivals or [], lang=lang)
 
+        # 선행 웹 검색 1회(옵션) → Day별로는 일반 Gemini만 사용 (nodes_schedule과 동일)
+        web_search_block = ""
+        if req.use_search:
+            yield _sse({"type": "status", "message": "웹에서 최신 정보 수집 중…"})
+            raw_ctx = await _gather_web_search_context(
+                location_name=location_name,
+                route_name=req.route_name,
+                start_date=req.start_date,
+                end_date=req.end_date,
+                lang=lang,
+            )
+            web_search_block = _format_web_search_block(raw_ctx, lang)
+
         num_days = len(date_list)
         common_kwargs = dict(
             num_days=num_days,
@@ -654,7 +669,7 @@ async def stream_schedule(
             weather_block=weather_block,
             transport_block=transport_block,
             news_block=news_block,
-            use_search=req.use_search,
+            web_search_block=web_search_block,
         )
 
         # ── Day별 병렬 생성 → 완료된 Day 즉시 스트리밍 + 즉시 Geocoding 시작 ──
