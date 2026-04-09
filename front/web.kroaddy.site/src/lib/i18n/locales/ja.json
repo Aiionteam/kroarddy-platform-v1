@@ -36,7 +36,8 @@
     "not_found": {
       "message": "We couldn't find the page you requested.",
       "back_home": "Go back home"
-    }
+    },
+    "unknown_error": "unknown error"
   },
   "onboarding": {
     "title": "旅行の好みを設定",
@@ -69,7 +70,24 @@
       "google_auth_url_fail": "GoogleログインURLの取得に失敗しました。",
       "google_auth_url_missing": "GoogleログインURLを受け取れませんでした。",
       "refresh_token_invalid": "Refresh Tokenの有効期限切れ、または無効です。再ログインしてください。"
-    }
+    },
+    "back_to_login": "로그인 페이지로 돌아가기",
+    "guest_browse": "게스트로 둘러보기",
+    "login_failed": "로그인 실패",
+    "login_failed_with_detail": "알 수 없는 오류",
+    "login_google": "Continue with Google",
+    "login_kakao": "카카오로 시작하기",
+    "login_naver": "네이버로 시작하기",
+    "login_success": "로그인 성공!",
+    "login_terms_notice": "로그인하면 서비스 이용약관 및 개인정보처리방침에 동의하는 것으로 간주합니다.",
+    "oauth_processing": "로그인 처리 중...",
+    "or": "또는",
+    "popup_blocked": "팝업이 차단되었습니다.",
+    "popup_unblock": "팝업 차단을 해제해 주세요.",
+    "provider_login_failed": "{{provider}} 로그인에 실패했습니다.",
+    "redirecting_home": "홈으로 이동 중...",
+    "social_login_heading": "소셜 계정으로 시작하기",
+    "tagline": "AI와 함께하는 스마트 여행 플래너"
   },
   "weather": {
     "reason": {
@@ -1742,7 +1760,70 @@
       "empty.convenience_guide": "上部タブでモードを選びキーワードを入力して生成してください",
       "empty.default_guide": "上部の✨行程生成ボタンを押してください",
       "shopping_list_title": "買い物リスト",
-      "cooking_steps_title": "調理手順"
+      "cooking_steps_title": "調理手順",
+      "brand": {
+        "emart24": "이마트24",
+        "seveneleven": "세븐일레븐"
+      },
+      "cooking": {
+        "1": "재료를 모두 준비하고 전자레인지 가능한 용기에 담기",
+        "2": "소스/토핑을 섞어 1분 30초 조리하기",
+        "3": "취향에 맞게 토핑 추가 후 인증샷 남기기"
+      },
+      "empty": {
+        "cafe_guide": "왼쪽에서 감성/카페명을 정하고 [AI 일정 생성하기]를 눌러주세요",
+        "convenience_guide": "상단 탭에서 모드를 고른 뒤 키워드를 입력해 생성하세요",
+        "default_guide": "상단의 ✨ 일정 생성 버튼을 눌러주세요",
+        "market_guide": "왼쪽에서 시장을 고르고 [이 시장 먹방 일정 생성하기] 또는 상단 ✨ 일정 생성을 눌러주세요",
+        "pick_date": "날짜 선택 후 일정을 생성하세요",
+        "pick_market": "시장을 선택한 뒤 일정을 생성하세요",
+        "pick_tab_condition": "탭별 조건을 선택하고 생성하세요",
+        "pick_vibe_or_cafe": "감성(Vibe) 또는 카페 이름을 선택하세요"
+      },
+      "kroaddy_pick": "Kroaddy PICK",
+      "meta": {
+        "kf_cafe": {
+          "tags": "카페, 디저트, 편집샵, 감성투어",
+          "title_ko": "K-디저트 & 카페 감성 투어"
+        },
+        "kf_convenience": {
+          "tags": "편의점, 꿀조합, 모디슈머, 챌린지",
+          "title_ko": "K-편의점 꿀조합 챌린지"
+        },
+        "kf_market": {
+          "tags": "전통시장, 먹거리, 로컬푸드",
+          "title_ko": "전국 전통시장 먹거리 탐방"
+        }
+      },
+      "region_tab": {
+        "all": "전체",
+        "gangwon": "강원",
+        "gyeongsang": "경상",
+        "jeju": "제주",
+        "jeonla": "전라",
+        "seoul": "서울"
+      },
+      "shopping": {
+        "ramen": "컵라면",
+        "sparkling_water": "탄산수",
+        "string_cheese": "스트링 치즈",
+        "tuna_kimbap": "참치마요 삼각김밥"
+      },
+      "trending_card": {
+        "1": {
+          "title": "연세우유 크림빵"
+        },
+        "2": {
+          "title": "제로콜라 얼음컵 하이볼"
+        },
+        "default_title": "AI 추천 유행템",
+        "tag": {
+          "new": "#신상",
+          "repurchase": "#재구매",
+          "review": "#리뷰폭발",
+          "soldout": "#품절주의"
+        }
+      }
     },
     "usercontent": {
       "title": "ユーザーコンテンツ",
@@ -1899,32 +1980,32 @@
         "subLabel": "エリア別の代表エリア"
       },
       "gyeonggi-north": {
-        "label": "京畿北部",
-        "subLabel": "高陽・坡州・議政府・南楊州など"
+        "label": "キョンギ北部",
+        "subLabel": "コヤン・パジュ・ウィジョンブ・ナミャンジュなど"
       },
       "gyeonggi-south": {
-        "label": "京畿南部",
-        "subLabel": "水原・龍仁・城南・平沢など"
+        "label": "キョンギ南部",
+        "subLabel": "スウォン・ヨンイン・ソンナム・ピョンテクなど"
       },
       "gangwon": {
-        "label": "江原道",
-        "subLabel": "江原特別自治道"
+        "label": "カンウォン道",
+        "subLabel": "カンウォン特別自治道"
       },
       "chungbuk": {
-        "label": "忠清北道",
-        "subLabel": "淸州・忠州・堤川・丹陽"
+        "label": "チュンチョンブク道",
+        "subLabel": "チョンジュ・チュンジュ・チェチョン・タニャン"
       },
       "chungnam": {
-        "label": "忠清南道",
-        "subLabel": "公州・扶余・保寧・泰安など"
+        "label": "チュンチョンナム道",
+        "subLabel": "コンジュ・プヨ・ボリョン・テアンなど"
       },
       "jeonbuk": {
-        "label": "全北",
-        "subLabel": "全北特別自治道"
+        "label": "チョンブク特別自治道",
+        "subLabel": "チョンブク特別自治道"
       },
       "jeonnam": {
-        "label": "全羅南道",
-        "subLabel": "麗水・順天・木浦・潭陽など"
+        "label": "チョルラナム道",
+        "subLabel": "ヨス・スンチョン・モッポ・タミャンなど"
       },
       "busan": {
         "label": "プサン",
@@ -1939,16 +2020,16 @@
         "subLabel": "ウルサン広域市"
       },
       "gyeongbuk": {
-        "label": "慶尚北道",
-        "subLabel": "慶州・浦項・安東など"
+        "label": "キョンサンブク道",
+        "subLabel": "キョンジュ・ポハン・アンドンなど"
       },
       "gyeongnam": {
-        "label": "慶尚南道",
-        "subLabel": "統営・巨済・晋州・昌原など"
+        "label": "キョンサンナム道",
+        "subLabel": "トンヨン・コジェ・チンジュ・チャンウォンなど"
       },
       "jeju": {
-        "label": "済州島",
-        "subLabel": "済州特別自治道"
+        "label": "チェジュ特別自治道",
+        "subLabel": "チェジュ特別自治道"
       }
     },
     "dest": {
@@ -2032,216 +2113,216 @@
         "highlight2": "ハンナム洞ギャラリー"
       },
       "goyang": {
-        "name": "高陽"
+        "name": "コヤン"
       },
       "paju": {
-        "name": "坡州"
+        "name": "パジュ"
       },
       "gimpo": {
-        "name": "金浦"
+        "name": "キンポ"
       },
       "uijeongbu": {
-        "name": "議政府"
+        "name": "ウィジョンブ"
       },
       "namyangju": {
-        "name": "南楊州"
+        "name": "ナミャンジュ"
       },
       "guri": {
-        "name": "九里"
+        "name": "クリ"
       },
       "gapyeong": {
-        "name": "加平"
+        "name": "カピョン"
       },
       "yangpyeong": {
-        "name": "楊平"
+        "name": "ヤンピョン"
       },
       "pocheon": {
-        "name": "抱川"
+        "name": "ポチョン"
       },
       "yangju": {
-        "name": "楊州"
+        "name": "ヤンジュ"
       },
       "dongducheon": {
-        "name": "東豆川"
+        "name": "トンドゥチョン"
       },
       "suwon": {
-        "name": "水原"
+        "name": "スウォン"
       },
       "hwaseong": {
-        "name": "華城"
+        "name": "ファソン"
       },
       "ansan": {
-        "name": "安山"
+        "name": "アンサン"
       },
       "siheung": {
-        "name": "始興"
+        "name": "シフン"
       },
       "anyang": {
-        "name": "安養"
+        "name": "アニャン"
       },
       "gunpo": {
-        "name": "軍浦"
+        "name": "クンポ"
       },
       "pyeongtaek": {
-        "name": "平沢"
+        "name": "ピョンテク"
       },
       "yongin": {
-        "name": "龍仁"
+        "name": "ヨンイン"
       },
       "seongnam": {
-        "name": "城南"
+        "name": "ソンナム"
       },
       "hanam": {
-        "name": "河南"
+        "name": "ハナム"
       },
       "icheon": {
-        "name": "利川"
+        "name": "イチョン"
       },
       "yeoju": {
-        "name": "驪州"
+        "name": "ヨジュ"
       },
       "anseong": {
-        "name": "安城"
+        "name": "アンソン"
       },
       "osan": {
-        "name": "烏山"
+        "name": "オサン"
       },
       "uiwang": {
-        "name": "義王"
+        "name": "ウィワン"
       },
       "gwacheon": {
-        "name": "果川"
+        "name": "クァチョン"
       },
       "bucheon": {
-        "name": "富川"
+        "name": "プチョン"
       },
       "gwangmyeong": {
-        "name": "光明"
+        "name": "クァンミョン"
       },
       "chuncheon": {
-        "name": "春川"
+        "name": "チュンチョン"
       },
       "wonju": {
-        "name": "原州"
+        "name": "ウォンジュ"
       },
       "pyeongchang": {
-        "name": "平昌"
+        "name": "ピョンチャン"
       },
       "yeongwol": {
-        "name": "寧越"
+        "name": "ヨンウォル"
       },
       "hoengseong": {
-        "name": "横城"
+        "name": "フェンソン"
       },
       "jeongseon": {
-        "name": "旌善"
+        "name": "チョンソン"
       },
       "inje": {
-        "name": "麟蹄"
+        "name": "インジェ"
       },
       "taebaek": {
-        "name": "太白"
+        "name": "テベク"
       },
       "gangneung": {
-        "name": "江陵",
+        "name": "カンヌン",
         "highlight1": "鏡浦台",
         "highlight2": "安木コーヒー通り",
         "highlight3": "烏竹軒"
       },
       "sokcho": {
-        "name": "束草"
+        "name": "ソクチョ"
       },
       "yangyang": {
-        "name": "襄陽"
+        "name": "ヤンヤン"
       },
       "donghae": {
-        "name": "東海"
+        "name": "トンヘ"
       },
       "samcheok": {
-        "name": "三陟"
+        "name": "サムチョク"
       },
       "goseong-gw": {
-        "name": "高城"
+        "name": "コソン"
       },
       "cheongju": {
-        "name": "清州"
+        "name": "チョンジュ"
       },
       "chungju": {
-        "name": "忠州"
+        "name": "チュンジュ"
       },
       "jecheon": {
-        "name": "堤川"
+        "name": "チェチョン"
       },
       "danyang": {
-        "name": "丹陽"
+        "name": "タニャン"
       },
       "gongju": {
-        "name": "公州"
+        "name": "コンジュ"
       },
       "buyeo": {
-        "name": "扶余"
+        "name": "プヨ"
       },
       "boryeong": {
-        "name": "保寧"
+        "name": "ポリョン"
       },
       "taean": {
-        "name": "泰安"
+        "name": "テアン"
       },
       "jeonju": {
-        "name": "全州",
+        "name": "チョンジュ",
         "highlight1": "韓屋村",
         "highlight2": "マッコルリ路地"
       },
       "gunsan": {
-        "name": "群山"
+        "name": "クンサン"
       },
       "namwon": {
-        "name": "南原"
+        "name": "ナムウォン"
       },
       "yeosu": {
-        "name": "麗水"
+        "name": "ヨス"
       },
       "suncheon": {
-        "name": "順天"
+        "name": "スンチョン"
       },
       "mokpo": {
-        "name": "木浦"
+        "name": "モクポ"
       },
       "damyang": {
-        "name": "潭陽"
+        "name": "タミャン"
       },
       "gyeongju": {
-        "name": "慶州",
+        "name": "キョンジュ",
         "highlight1": "ファンリダンギル",
         "highlight2": "瞻星台",
         "highlight3": "仏国寺"
       },
       "andong": {
-        "name": "安東"
+        "name": "アンドン"
       },
       "pohang": {
-        "name": "浦項"
+        "name": "ポハン"
       },
       "tongyeong": {
-        "name": "統営"
+        "name": "トンヨン"
       },
       "geoje": {
-        "name": "巨済"
+        "name": "コジェ"
       },
       "jinju": {
-        "name": "晋州"
+        "name": "チンジュ"
       },
       "changwon": {
-        "name": "昌原"
+        "name": "チャンウォン"
       },
       "jeju": {
-        "name": "済州市",
+        "name": "チェジュ",
         "highlight1": "漢拏山",
         "highlight2": "城山日出峰",
         "highlight3": "ヒョプチェビーチ"
       },
       "seogwipo": {
-        "name": "西帰浦"
+        "name": "ソギポ"
       },
       "hongdae": {
         "name": "ホンデ・マポ",
@@ -2374,125 +2455,136 @@
         "highlight2": "チプチョンジョン"
       },
       "asan": {
-        "name": "牙山"
+        "name": "アサン"
       },
       "cheonan": {
-        "name": "天安"
+        "name": "チョナン"
       },
       "nonsan": {
-        "name": "論山"
+        "name": "ノンサン"
       },
       "seosan": {
-        "name": "瑞山"
+        "name": "ソサン"
       },
       "dangjin": {
-        "name": "唐津"
+        "name": "タンジン"
       },
       "iksan": {
-        "name": "益山"
+        "name": "イクサン"
       },
       "gochang": {
-        "name": "高敞"
+        "name": "コチャン"
       },
       "jeongeup": {
-        "name": "井邑"
+        "name": "チョンウプ"
       },
       "gimje": {
-        "name": "金堤"
+        "name": "キムジェ"
       },
       "wando": {
-        "name": "莞島"
+        "name": "ワンド"
       },
       "gangjin": {
-        "name": "康津"
+        "name": "カンジン"
       },
       "yeonggwang": {
-        "name": "霊光"
+        "name": "ヨングァン"
       },
       "haenam": {
-        "name": "海南"
+        "name": "ヘナム"
       },
       "goheung": {
-        "name": "高興"
+        "name": "コフン"
       },
       "yeongam": {
-        "name": "霊岩"
+        "name": "ヨンアム"
       },
       "gwangyang": {
-        "name": "光陽"
+        "name": "クァンヤン"
       },
       "boseong": {
-        "name": "宝城"
+        "name": "ポソン"
       },
       "naju": {
-        "name": "羅州"
+        "name": "ナジュ"
       },
       "yeongju": {
-        "name": "栄州"
+        "name": "ヨンジュ"
       },
       "mungyeong": {
-        "name": "聞慶"
+        "name": "ムンギョン"
       },
       "yeongdeok": {
-        "name": "盈徳"
+        "name": "ヨンドク"
       },
       "uljin": {
-        "name": "蔚珍"
+        "name": "ウルジン"
       },
       "dokdo": {
-        "name": "独島・鬱陵島"
+        "name": "トクト・ウルルンド"
       },
       "gumi": {
-        "name": "亀尾"
+        "name": "クミ"
       },
       "gimcheon": {
-        "name": "金泉"
+        "name": "キムチョン"
       },
       "yeongcheon": {
-        "name": "永川"
+        "name": "ヨンチョン"
       },
       "sangju": {
-        "name": "尚州"
+        "name": "サンジュ"
       },
       "gyeongsan": {
-        "name": "慶山"
+        "name": "キョンサン"
       },
       "namhae": {
-        "name": "南海"
+        "name": "ナメ"
       },
       "goseong-gn": {
-        "name": "固城"
+        "name": "コソン"
       },
       "hapcheon": {
-        "name": "陜川"
+        "name": "ハプチョン"
       },
       "miryang": {
-        "name": "密陽"
+        "name": "ミリャン"
       },
       "hamyang": {
-        "name": "咸陽"
+        "name": "ハミャン"
       },
       "sancheong": {
-        "name": "山清"
+        "name": "サンチョン"
       },
       "hadong": {
-        "name": "河東"
+        "name": "ハドン"
       },
       "geochang": {
-        "name": "居昌"
+        "name": "コチャン"
       },
       "gimhae": {
-        "name": "金海"
+        "name": "キメ"
       },
       "yangsan": {
-        "name": "梁山"
+        "name": "ヤンサン"
       },
       "changnyeong": {
-        "name": "昌寧"
+        "name": "チャンニョン"
       },
       "uiryeong": {
-        "name": "宜寧"
+        "name": "ウィリョン"
       }
+    },
+    "api": {
+      "ai_busy": "AI 서버가 바쁩니다. 잠시 후 다시 시도해 주세요.",
+      "ai_rate_limited": "AI 사용량이 초과됐습니다. 잠시 후 다시 시도해 주세요.",
+      "modify_error": "일정 수정 API 오류",
+      "plan_delete_error": "플랜 삭제 API 오류",
+      "plan_list_error": "플랜 목록 API 오류",
+      "reroll_error": "리롤 API 오류",
+      "route_error": "루트 API 오류",
+      "save_error": "저장 API 오류",
+      "schedule_error": "일정 API 오류"
     }
   },
   "guide": {
@@ -2892,7 +2984,9 @@
       "friend_request_failed": "Failed to send friend request.",
       "friend_request_failed_with_detail": "Failed to send friend request.\n{{detail}}",
       "friends_only": "Friends only.",
-      "no_photo_for_period": "No photos found for the selected period.\n(No metadata: {{unknownCount}}, excluded: {{excludedCount}})"
+      "no_photo_for_period": "No photos found for the selected period.\n(No metadata: {{unknownCount}}, excluded: {{excludedCount}})",
+      "partial_upload_failed": "{{count}}장의 사진 업로드에 실패했습니다. 성공한 사진만 저장됩니다.",
+      "upload_failed_count": "사진 업로드에 실패했습니다. ({{count}}장 실패)"
     },
     "confirm": {
       "delete_post": "この投稿を削除しますか？元に戻せません。"
@@ -2944,7 +3038,22 @@
     "view_posts": "投稿を見る",
     "cancel_bookmark": "保存を解除",
     "my_post": "自分の投稿",
-    "change_profile_photo": "プロフィール写真を変更"
+    "change_profile_photo": "プロフィール写真を変更",
+    "api": {
+      "auto_comment_error": "투어스타 자동 코멘트 API 오류",
+      "create_comment_error": "투어스타 댓글 저장 API 오류",
+      "create_post_error": "투어스타 게시물 저장 API 오류",
+      "delete_post_error": "투어스타 게시물 삭제 API 오류",
+      "finalize_upload_error": "사진 S3 업로드 사전 처리 실패",
+      "generate_post_error": "투어스타 게시글 생성 API 오류",
+      "job_status_error": "투어스타 작업 조회 API 오류",
+      "like_toggle_error": "투어스타 좋아요 API 오류",
+      "list_posts_error": "투어스타 게시물 조회 API 오류",
+      "profile_upload_error": "프로필 사진 업로드 실패",
+      "share_preview_error": "투어스타 공유 미리보기 API 오류",
+      "update_post_error": "투어스타 게시물 수정 API 오류",
+      "upload_error": "투어스타 업로드 API 오류"
+    }
   },
   "calendar": {
     "weekday": {
@@ -3033,6 +3142,38 @@
       "malaysia": "マレーシア",
       "india": "インド",
       "other": "その他"
+    }
+  },
+  "api": {
+    "backend_not_connected": "백엔드가 연결되지 않았습니다. 배포 후에는 Vercel 환경 변수에 NEXT_PUBLIC_API_URL 을 설정하세요.",
+    "server_unreachable": "서버에 연결할 수 없습니다. 네트워크와 백엔드 실행 여부를 확인해 주세요.",
+    "timeout": "요청 시간이 초과되었습니다."
+  },
+  "festival": {
+    "api": {
+      "error": "행사 API 오류"
+    }
+  },
+  "news": {
+    "api": {
+      "error": "뉴스 API 오류"
+    }
+  },
+  "usercontent": {
+    "api": {
+      "ai_polish_error": "AI 폴리시 오류",
+      "delete_error": "삭제 오류",
+      "feed_load_error": "피드 로드 오류",
+      "like_error": "좋아요 오류",
+      "s3_upload_error": "S3 업로드 실패",
+      "save_error": "저장 오류",
+      "validate_image_error": "이미지 검증 오류"
+    }
+  },
+  "userprofile": {
+    "api": {
+      "fetch_error": "프로필 조회 오류",
+      "save_error": "프로필 저장 오류"
     }
   }
 }

@@ -28,6 +28,9 @@ const IMAGE_MAP: Record<string, string> = {
   "taebaek":     "/image/gangwon/taebaek/Type1_태백산 국립공원_IR 스튜디오_Q0FNra.jpg",
   "wonju":       "/image/gangwon/wonju/Type1_소금산 그랜드밸리_한국관광공사 김지호_dM8UJb.jpg",
   "yangyang":    "/image/gangwon/yangyang/Type1_죽도해수욕장_강원지사 모먼트스튜디오_6sqmqa.jpg",
+  // 원본 파일 미보유 slug의 전용 매핑(엑박 방지)
+  "yeongwol":    "/image/gangwon/jeongseon/Type1_짚와이어_정선_마이픽쳐스_ERexBa.jpg",
+  "hoengseong":  "/image/gangwon/pyeongchang/Type1_눈내리는대관령_김은도_uB2dHW.jpg",
 
   // ── 경상 ─────────────────────────────────────────────────────
   "andong":      "/image/gyeongsang/andong/Type1_안동하회마을_오세근_pWkI2a.jpg",
@@ -49,6 +52,11 @@ const IMAGE_MAP: Record<string, string> = {
   "yangsan":     "/image/gyeongsang/yangsan/Type1_양산 통도사_한국관광공사 김지호_MQ7kgt.jpg",
   "yeongcheon":  "/image/gyeongsang/yeongcheon/Type1_보현산댐 별빛 전망대_두드림_Q6etEA.jpg",
   "yeongju":     "/image/gyeongsang/yeongju/Type1_영주 무섬마을_앙지뉴 필름_vTpnWV.jpg",
+  // 원본 파일 미보유 slug의 전용 매핑(엑박 방지)
+  "yeongdeok":   "/image/gyeongsang/yeongju/Type1_영주 무섬마을_앙지뉴 필름_vTpnWV.jpg",
+  "uljin":       "/image/gyeongsang/yeongcheon/Type1_보현산댐 별빛 전망대_두드림_Q6etEA.jpg",
+  "dokdo":       "/image/gyeongsang/andong/Type1_안동하회마을_오세근_pWkI2a.jpg",
+  "geochang":    "/image/gyeongsang/miryang/Type1_위양지의 아침_심재국_guBaVa.jpg",
 
   // ── 제주 ─────────────────────────────────────────────────────
   "jeju":        "/image/jejudo/jeju/Type1_The One Summer_이경재_ciTm3a.jpg",
@@ -69,6 +77,13 @@ const IMAGE_MAP: Record<string, string> = {
   "suncheon":    "/image/jeolla/suncheon/Type1_순천만_조성근_Nvklka.jpg",
   "wando":       "/image/jeolla/wando/Type1_완도몽돌해변_한국관광공사-박동철_fQShYa.jpg",
   "yeosu":       "/image/jeolla/yeosu/Type1_여수 해상케이블카_한국관광공사 이범수_sGE6Va.jpg",
+  // 원본 파일 미보유 slug의 전용 매핑(엑박 방지)
+  "gochang":     "/image/jeolla/jeonju/Type1_전주비빔밥_한국관광공사 김지호_hEM1aa.jpg",
+  "gangjin":     "/image/jeolla/boseong/Type1_보성녹차밭_박아순_IlUkfa.jpg",
+  "yeonggwang":  "/image/jeolla/damyang/Type1_죽녹원 _한국관광공사 김지호_OxycYa.jpg",
+  "haenam":      "/image/jeolla/mokpo/Type1_목포 해상케이블카_디엔에이스튜디오_9zjmje.jpg",
+  "goheung":     "/image/jeolla/yeosu/Type1_여수 해상케이블카_한국관광공사 이범수_sGE6Va.jpg",
+  "yeongam":     "/image/jeolla/naju/Type1_금성관_황성훈_bjuQZ2.jpg",
 
   // ── 광역시 ───────────────────────────────────────────────────
   "busan":        "/image/metropolitan-cities/busan/Type1_더베이101_한국관광공사 김지호_VZJFQa.jpg",
@@ -168,9 +183,7 @@ const ALIAS: Record<string, string> = {
   "changnyeong":   "jinju",
   "uiryeong":      "jinju",
   // 경북 세부
-  "yeongdeok":     "pohang",
-  "uljin":         "pohang",
-  "dokdo":         "pohang",
+  // 전라 남부 일부 군 단위
   // 경기 남부 세부
   "gwacheon":      "anyang",
   "uiwang":        "anyang",
