@@ -10,6 +10,7 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 ARTICLE_TTL_HOURS = 48
+NON_TOP_RETENTION_HOURS = 24
 
 
 def _conn():
@@ -182,6 +183,24 @@ def cleanup_expired() -> int:
     with _conn() as c:
         with c.cursor() as cur:
             cur.execute("DELETE FROM news_articles WHERE expires_at < %s", (now,))
+            deleted = cur.rowcount
+        c.commit()
+    return deleted
+
+
+def cleanup_non_top_old(retention_hours: int = NON_TOP_RETENTION_HOURS) -> int:
+    """비Top10 기사 중 오래된 데이터 정리.
+
+    홈에서 Top10만 주로 사용하므로, 비Top10은 짧게 보관해 저장소 증가를 억제한다.
+    """
+    threshold = datetime.now(timezone.utc) - timedelta(hours=retention_hours)
+    with _conn() as c:
+        with c.cursor() as cur:
+            cur.execute(
+                """DELETE FROM news_articles
+                   WHERE is_top10=FALSE AND created_at < %s""",
+                (threshold,),
+            )
             deleted = cur.rowcount
         c.commit()
     return deleted

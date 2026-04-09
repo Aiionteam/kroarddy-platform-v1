@@ -3,6 +3,7 @@ import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
+from functools import partial
 
 import uvicorn
 from fastapi import FastAPI
@@ -29,12 +30,10 @@ async def _collect_and_analyze() -> None:
     loop = asyncio.get_event_loop()
     total_new = 0
     try:
-        items = await loop.run_in_executor(None, lambda: _fetch_category_sync("culture"))
+        items = await loop.run_in_executor(None, partial(_fetch_category_sync, "culture"))
         # 썸네일 없는 기사 og:image 보충 (최대 5개 동시)
         items = await enrich_og_images(items, max_concurrent=5)
-        inserted = await loop.run_in_executor(
-            None, lambda it=items: db.upsert_articles(it, "culture")
-        )
+        inserted = await loop.run_in_executor(None, partial(db.upsert_articles, items, "culture"))
         total_new += inserted
     except Exception as e:
         logger.warning("RSS 수집 실패: %s", e)
@@ -47,6 +46,19 @@ async def _collect_and_analyze() -> None:
             await run_pipeline()
         except Exception as e:
             logger.error("GPT 파이프라인 오류: %s", e)
+
+    # 신규 기사 유무와 무관하게 저장소 정리 수행 (무한 누적 방지)
+    try:
+        loop = asyncio.get_event_loop()
+        expired_deleted = await loop.run_in_executor(None, db.cleanup_expired)
+        non_top_deleted = await loop.run_in_executor(None, db.cleanup_non_top_old)
+        if expired_deleted or non_top_deleted:
+            logger.info(
+                "뉴스 정리 완료: expired=%d, non_top_old=%d",
+                expired_deleted, non_top_deleted,
+            )
+    except Exception as e:
+        logger.warning("뉴스 정리 실패(무시): %s", e)
 
 
 async def _enrich_existing_thumbnails() -> None:

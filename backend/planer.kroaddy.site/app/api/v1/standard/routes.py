@@ -15,19 +15,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
 from app.agent.standard.graph import routes_graph, schedule_graph
-from app.agent.standard.nodes import (
-    _is_daily_quota,
-    _geocode_item,
-    _get_lang,
-    _lang_directive,
-    _build_user_profile_block,
-    _build_festival_block,
+from app.agent.standard.nodes_common import (
     _build_transport_block,
-    _generate_single_day,
-    _build_date_list,
+    _build_user_profile_block,
+    _get_lang,
+    _is_daily_quota,
+    _lang_directive,
     _optimize_day_order,
     modify_schedule,
     reroll_single_item,
+)
+from app.agent.standard.nodes_schedule import (
+    _build_date_list,
+    _build_festival_block,
+    _generate_single_day,
+    _geocode_item,
 )
 from app.services.news_client import build_news_block_for_prompt
 from app.services.weather_client import build_weather_block_for_prompt
@@ -35,7 +37,7 @@ from app.core.config import settings
 from app.core.database.session import get_db
 from app.models.travel_plan import TravelPlan
 from app.models.plan_cache import RouteCache, ScheduleCache
-from app.services.festival_client import fetch_festivals_for_period
+from app.services.festival_client import fetch_festivals_for_period_with_db_cache
 from app.services.news_client import fetch_news_top10
 from app.services.naver_place_hours import enrich_schedule_items_with_hours
 from app.services.user_info_client import fetch_user_profile
@@ -356,14 +358,11 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
     # 루트 생성은 기본 Gemini 고정이므로 search_tag 불필요 → 캐시 키 단순화
     transport_tag = req.transport_mode or "any"
 
-    # ── user_profile을 먼저 조회해야 lang_code가 확정되고
-    #    캐시 키를 올바르게 만들 수 있다.
-    #    _preliminary_key(lang 없음)로 먼저 읽고 cache_key(lang 있음)로 저장하는
-    #    구조는 키 불일치로 캐시 히트가 영원히 발생하지 않고
-    #    다른 국적 사용자에게 잘못된 언어의 루트를 반환하는 버그가 있다.
-    user_profile = await fetch_user_profile(req.user_id)
-    nationality = (user_profile or {}).get("nationality", "")
-    lang_code = nationality[:3].lower() if nationality else "ko"
+    # 루트 생성은 프로필 개인화를 사용하지 않으므로 user_profile 조회를 생략한다.
+    # lang_code는 루트 캐시 키/메타 호환을 위해 고정값을 사용한다.
+    user_profile = None
+    nationality = None
+    lang_code = "ko"
     cache_key = f"{location}:{req.start_date}:{req.end_date}:{eh}:{lang_code}:{transport_tag}"
 
     cached = _routes_cache.get(cache_key)
@@ -384,19 +383,32 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
             logger.info("루트 L2(DB)캐시 히트: %s (%d건)", cache_key, len(db_routes))
             return {"location": location, "location_name": location_name, "routes": db_routes}
 
-        # 루트 생성: 행사 정보만 조회 (뉴스·날씨는 프롬프트에 포함하지 않으므로 건너뜀 → 속도 개선)
-        festivals = await fetch_festivals_for_period(location, location_name, req.start_date, req.end_date)
+        # 루트 생성: 행사 + 뉴스 반영 (프로필 개인화는 제외)
+        _has_client_news_r = bool(req.news_top10)
+        festivals, news_top10 = await asyncio.gather(
+            fetch_festivals_for_period_with_db_cache(
+                db,
+                location=location,
+                location_name=location_name,
+                start_date=req.start_date,
+                end_date=req.end_date,
+            ),
+            asyncio.sleep(0) if _has_client_news_r else fetch_news_top10(req.start_date, req.end_date),
+        )
+        if _has_client_news_r:
+            news_top10 = req.news_top10  # type: ignore[assignment]
 
         logger.info(
-            "루트 생성 연동: location=%s, 행사=%d건 | 유저 프로필: %s (국적=%s, lang=%s) | 기존 제외=%d건 | 이동수단=%s",
+            "루트 생성 연동: location=%s, 행사=%d건, 뉴스Top10=%d건(%s) | lang=%s | 기존 제외=%d건 | 이동수단=%s",
             location, len(festivals),
-            bool(user_profile), nationality, lang_code, len(existing_routes),
+            len(news_top10 or []), "client" if _has_client_news_r else "fetched", lang_code, len(existing_routes),
             transport_tag,
         )
 
         state = {
             **_base_state(location, req.start_date, req.end_date),
             "festivals": festivals,
+            "news_top10": news_top10,
             "user_profile": user_profile,
             "existing_routes": existing_routes,
             "transport_mode": req.transport_mode,
@@ -479,7 +491,13 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
         # 뉴스 Top10: 프론트에서 이미 가져온 데이터가 있으면 재사용
         _has_client_news_s = bool(req.news_top10)
         festivals, news_top10, weather_forecast_s = await asyncio.gather(
-            fetch_festivals_for_period(location, location_name, req.start_date, req.end_date),
+            fetch_festivals_for_period_with_db_cache(
+                db,
+                location=location,
+                location_name=location_name,
+                start_date=req.start_date,
+                end_date=req.end_date,
+            ),
             asyncio.sleep(0) if _has_client_news_s else fetch_news_top10(req.start_date, req.end_date),
             fetch_weather_for_planner(location_name, None, req.start_date, req.end_date),
         )
@@ -587,7 +605,13 @@ async def stream_schedule(
         _has_client_news = bool(req.news_top10)
         try:
             festivals, news_top10, weather_forecast = await asyncio.gather(
-                fetch_festivals_for_period(location, location_name, req.start_date, req.end_date),
+                fetch_festivals_for_period_with_db_cache(
+                    db,
+                    location=location,
+                    location_name=location_name,
+                    start_date=req.start_date,
+                    end_date=req.end_date,
+                ),
                 asyncio.sleep(0) if _has_client_news else fetch_news_top10(req.start_date, req.end_date),
                 fetch_weather_for_planner(location_name, None, req.start_date, req.end_date),
             )
@@ -736,7 +760,18 @@ async def save_plan(req: SavePlanRequest, db: AsyncSession = Depends(get_db)):
     schedule = req.schedule
     if settings.naver_place_hours_enabled and schedule:
         try:
-            schedule = await enrich_schedule_items_with_hours(schedule)
+            # 저장 시 전체 재크롤링은 지연이 크다.
+            # 생성 단계에서 이미 business_hours가 붙은 항목은 유지하고,
+            # 비어있는 항목만 최소 보강한다.
+            need_enrich_idx = [
+                i for i, item in enumerate(schedule)
+                if not str(item.get("business_hours") or "").strip()
+            ]
+            if need_enrich_idx:
+                subset = [schedule[i] for i in need_enrich_idx]
+                enriched_subset = await enrich_schedule_items_with_hours(subset)
+                for idx, enriched in zip(need_enrich_idx, enriched_subset):
+                    schedule[idx] = enriched
         except Exception as e:
             logger.warning("저장 전 영업시간 보강 실패(무시): %s", e)
 

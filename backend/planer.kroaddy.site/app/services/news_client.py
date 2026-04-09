@@ -64,13 +64,13 @@ def build_news_block_for_prompt(
     *,
     for_k_content: bool = False,
     lang: str = "Korean",
-    max_items: int = 3,
+    max_items: int = 10,
 ) -> str:
     """뉴스 Top10 → 프롬프트 삽입용 텍스트 블록 생성.
 
     for_k_content=True이면 날짜가 여행 기간 내인 항목 강조 + 지시어 강화.
     lang에 따라 헤더/푸터 언어를 분기한다.
-    max_items: 프롬프트에 포함할 최대 뉴스 수 (기본 3).
+    max_items: 프롬프트에 포함할 최대 뉴스 수 (기본 10, Top10 전체).
     """
     if not news_top10:
         return ""
