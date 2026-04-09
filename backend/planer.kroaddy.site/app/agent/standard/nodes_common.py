@@ -45,7 +45,6 @@ _SEMAPHORE_WAIT_TIMEOUT = 10
 _llm_instance: "ChatGoogleGenerativeAI | None" = None
 _llm_search_instance: "ChatGoogleGenerativeAI | None" = None
 _llm_search_ctx_instance: "ChatGoogleGenerativeAI | None" = None
-# 503 UNAVAILABLE 시 즉시 대체할 안정적인 stable 모델
 _llm_fallback_instance: "ChatGoogleGenerativeAI | None" = None
 
 # 단일 LLM 호출 타임아웃 – SDK 내부 재시도가 수분씩 대기하는 것을 방지
@@ -126,6 +125,7 @@ def _get_llm() -> ChatGoogleGenerativeAI:
             model=settings.gemini_model,
             temperature=0.4,
             google_api_key=settings.gemini_api_key,
+            max_retries=0,  # SDK 내부 재시도 비활성화 → 503 즉시 예외 → 우리 재시도 로직 사용
         )
     return _llm_instance
 
@@ -134,9 +134,10 @@ def _get_llm_with_search():
     global _llm_search_instance
     if _llm_search_instance is None:
         base = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
+            model=settings.gemini_model,
             temperature=0.4,
             google_api_key=settings.gemini_api_key,
+            max_retries=0,
         )
         _llm_search_instance = base.bind_tools([{"google_search": {}}])
     return _llm_search_instance
@@ -153,27 +154,26 @@ def _get_llm_search_context():
     global _llm_search_ctx_instance
     if _llm_search_ctx_instance is None:
         base = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
-            temperature=0.2,          # 낮은 temperature → 군더더기 없는 사실 나열
-            max_output_tokens=600,    # 검색 요약은 짧을수록 빠름
+            model=settings.gemini_model,
+            temperature=0.2,
+            max_output_tokens=600,
             google_api_key=settings.gemini_api_key,
+            max_retries=0,
         )
         _llm_search_ctx_instance = base.bind_tools([{"google_search": {}}])
     return _llm_search_ctx_instance
 
 
-def _get_llm_fallback() -> ChatGoogleGenerativeAI:
-    """503 UNAVAILABLE / 타임아웃 시 즉시 대체할 경량 fallback 모델.
 
-    메인 모델이 과부하일 때 SDK가 수분간 재시도하는 것을 방지한다.
-    gemini-2.5-flash-lite는 더 가볍고 빠른 GA 모델이다.
-    """
+def _get_llm_fallback() -> ChatGoogleGenerativeAI:
+    """2.5-flash 503 소진 또는 404 시 즉시 대체 – gemini-2.0-flash."""
     global _llm_fallback_instance
     if _llm_fallback_instance is None:
         _llm_fallback_instance = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash-lite",
+            model="gemini-2.0-flash",
             temperature=0.4,
             google_api_key=settings.gemini_api_key,
+            max_retries=0,
         )
     return _llm_fallback_instance
 
@@ -197,19 +197,32 @@ async def _invoke(llm: Any, messages: list, *, max_retries: int = 1, plain_fallb
         _GEMINI_SEMAPHORE.release()
 
 
+_503_RETRY_WAIT_SEC: float = 3.0   # 503 재시도 간격(초)
+_503_MAX_RETRIES: int = 3          # 503 최대 재시도 횟수
+
+
 async def _invoke_inner(llm: Any, messages: list, *, max_retries: int, plain_fallback: bool) -> Any:
-    for attempt in range(max_retries + 1):
+    """503/타임아웃 재시도는 _503_MAX_RETRIES로, 429 재시도는 max_retries로 독립 관리."""
+    unavailable_count = 0  # 503 / timeout 전용 카운터
+    rate_limit_attempt = 0  # 429 전용 카운터
+
+    while True:
         try:
-            # SDK 내부 재시도가 수분씩 블로킹하는 것을 방지하기 위해 타임아웃을 건다.
             return await asyncio.wait_for(
                 llm.ainvoke(messages),
                 timeout=_INVOKE_TIMEOUT_SEC,
             )
         except asyncio.TimeoutError:
-            logger.warning(
-                "Gemini 응답 타임아웃(%.0fs) – stable 모델로 즉시 폴백 (시도 %d/%d)",
-                _INVOKE_TIMEOUT_SEC, attempt + 1, max_retries + 1,
-            )
+            if unavailable_count < _503_MAX_RETRIES:
+                unavailable_count += 1
+                logger.warning(
+                    "Gemini 응답 타임아웃(%.0fs) – %d초 후 재시도 (%d/%d)",
+                    _INVOKE_TIMEOUT_SEC, _503_RETRY_WAIT_SEC,
+                    unavailable_count, _503_MAX_RETRIES,
+                )
+                await asyncio.sleep(_503_RETRY_WAIT_SEC)
+                continue
+            logger.warning("Gemini 타임아웃 재시도(%d) 소진 → lite 모델로 폴백", _503_MAX_RETRIES)
             return await asyncio.wait_for(
                 _get_llm_fallback().ainvoke(messages),
                 timeout=_INVOKE_TIMEOUT_SEC,
@@ -224,26 +237,50 @@ async def _invoke_inner(llm: Any, messages: list, *, max_retries: int, plain_fal
             if _is_daily_quota(e):
                 raise
 
-            # 503 UNAVAILABLE: SDK가 내부적으로 긴 재시도를 하므로 즉시 stable 모델로 전환
-            if any(m in msg for m in _UNAVAILABLE_MARKERS):
-                        logger.warning("Gemini 503 UNAVAILABLE → fallback 모델(gemini-2.5-flash-lite)로 즉시 폴백")
+            # 404 NOT_FOUND: 재시도 무의미 → 즉시 fallback
+            if "NOT_FOUND" in msg:
+                logger.warning("Gemini 404 NOT_FOUND → 즉시 fallback 모델로 전환")
                 try:
                     return await asyncio.wait_for(
                         _get_llm_fallback().ainvoke(messages),
                         timeout=_INVOKE_TIMEOUT_SEC,
                     )
                 except Exception as fb_err:
-                    logger.error("Fallback 모델도 실패: %s", fb_err)
+                    logger.error("fallback 모델도 실패: %s", fb_err)
+                    raise
+
+            # 503 UNAVAILABLE: 독립 카운터로 재시도 후 소진 시 fallback
+            if any(m in msg for m in _UNAVAILABLE_MARKERS):
+                if unavailable_count < _503_MAX_RETRIES:
+                    unavailable_count += 1
+                    logger.warning(
+                        "Gemini 503/NOT_FOUND – %d초 후 재시도 (%d/%d)",
+                        _503_RETRY_WAIT_SEC, unavailable_count, _503_MAX_RETRIES,
+                    )
+                    await asyncio.sleep(_503_RETRY_WAIT_SEC)
+                    continue
+                logger.warning("Gemini 503 재시도(%d) 소진 → fallback 모델로 폴백", _503_MAX_RETRIES)
+                try:
+                    return await asyncio.wait_for(
+                        _get_llm_fallback().ainvoke(messages),
+                        timeout=_INVOKE_TIMEOUT_SEC,
+                    )
+                except Exception as fb_err:
+                    logger.error("fallback 모델도 실패: %s", fb_err)
                     raise
 
             if "429" in msg or "RESOURCE_EXHAUSTED" in msg:
                 if plain_fallback:
                     logger.warning("Gemini grounding 429 → 일반 LLM 즉시 폴백 (재시도 없음)")
                     return await _get_llm().ainvoke(messages)
-                if attempt < max_retries:
-                    base = 2 * (2 ** attempt)
+                if rate_limit_attempt < max_retries:
+                    rate_limit_attempt += 1
+                    base = 2 * (2 ** rate_limit_attempt)
                     wait = base + random.uniform(0, base * 0.5)
-                    logger.warning("Gemini 429 일시 제한 – %.1f초 대기 후 재시도 (%d/%d)", wait, attempt + 1, max_retries)
+                    logger.warning(
+                        "Gemini 429 일시 제한 – %.1f초 대기 후 재시도 (%d/%d)",
+                        wait, rate_limit_attempt, max_retries,
+                    )
                     await asyncio.sleep(wait)
                     continue
             raise

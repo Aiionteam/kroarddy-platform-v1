@@ -19,11 +19,10 @@ def extract_naver_place_id_from_link(link: str | None) -> str | None:
     m = _NAVER_PLACE_ID_RE.search(link)
     return m.group(1) if m else None
 
-_GEOCODE_URL    = "https://maps.apigw.ntruss.com/map-geocode/v2/geocode"
-_STATIC_MAP_URL = "https://maps.apigw.ntruss.com/map-static/v2/raster-cors"
-_DIRECTIONS_URL = "https://maps.apigw.ntruss.com/map-direction/v1/driving"
-# 네이버 지역 검색 API (장소명 → 좌표, developers.naver.com)
-_SEARCH_LOCAL_URL = "https://openapi.naver.com/v1/search/local.json"
+_GEOCODE_URL         = "https://maps.apigw.ntruss.com/map-geocode/v2/geocode"
+_REVERSE_GEOCODE_URL = "https://maps.apigw.ntruss.com/map-reversegeocode/v2/gc"
+_STATIC_MAP_URL      = "https://maps.apigw.ntruss.com/map-static/v2/raster-cors"
+_DIRECTIONS_URL      = "https://maps.apigw.ntruss.com/map-direction/v1/driving"
 
 _NAVER_HEADERS = {
     "x-ncp-apigw-api-key-id": settings.naver_map_client_id,
@@ -85,6 +84,85 @@ async def geocode(query: str) -> dict | None:
         return None
 
 
+def _format_roadaddr_from_reverse_block(res: dict) -> str:
+    """역지오코딩 JSON의 roadaddr 블록에서 도로명 주소 한 줄로 조합."""
+    region = res.get("region") or {}
+    parts: list[str] = []
+    for key in ("area1", "area2", "area3", "area4"):
+        nm = (region.get(key) or {}).get("name") or ""
+        nm = str(nm).strip()
+        if nm:
+            parts.append(nm)
+    land = res.get("land") or {}
+    road_name = str(land.get("name") or "").strip()
+    n1 = str(land.get("number1") or "").strip()
+    n2 = str(land.get("number2") or "").strip()
+    if road_name:
+        tail = road_name
+        if n1:
+            tail += " " + n1
+        if n2:
+            tail += "-" + n2
+        parts.append(tail)
+    return " ".join(parts).strip()
+
+
+async def reverse_geocode(lng: float, lat: float) -> dict | None:
+    """WGS84 경위도 → 도로명/지번 주소 (LLM이 넣은 좌표 검증·주소 보강용).
+
+    Returns:
+        {"x","y","road_address","address"} — address는 지번 우선 없으면 도로명
+    """
+    if not settings.naver_map_client_id or not settings.naver_map_client_secret:
+        logger.warning("네이버 Maps API 키가 설정되지 않았습니다.")
+        return None
+
+    params = {
+        "request": "coordsToaddr",
+        "coords": f"{lng},{lat}",
+        "sourcecrs": "epsg:4326",
+        "orders": "roadaddr,addr",
+        "output": "json",
+    }
+    try:
+        resp = await _naver_client.get(
+            _REVERSE_GEOCODE_URL,
+            params=params,
+            headers=_NAVER_HEADERS,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception as e:
+        logger.error("역지오코딩 오류 (lng=%s lat=%s): %s", lng, lat, e)
+        return None
+
+    st = data.get("status") or {}
+    if st.get("code") not in (0, 3):
+        logger.info("역지오코딩 비정상 status: %s", st)
+        return None
+    results = data.get("results") or []
+    road_txt = ""
+    jibun_txt = ""
+    for block in results:
+        name = block.get("name")
+        if name == "roadaddr" and not road_txt:
+            road_txt = _format_roadaddr_from_reverse_block(block)
+        elif name == "addr" and not jibun_txt:
+            jibun_txt = _format_roadaddr_from_reverse_block(block)
+
+    if not road_txt and not jibun_txt:
+        logger.info("역지오코딩 결과 없음: lng=%s lat=%s", lng, lat)
+        return None
+
+    out_addr = road_txt or jibun_txt
+    return {
+        "x": str(lng),
+        "y": str(lat),
+        "road_address": road_txt or "",
+        "address": out_addr,
+    }
+
+
 async def fetch_static_map(
     lat: float,
     lng: float,
@@ -137,56 +215,27 @@ async def fetch_static_map(
 
 
 async def keyword_search(query: str) -> dict | None:
-    """네이버 지역 검색 API로 장소명 → 좌표 변환 (developers.naver.com).
+    """장소명으로 좌표 변환 – 네이버 Maps Geocoding API 사용 (Maps API 키 재활용).
 
-    주소 기반 Geocoding API와 달리 장소명·상호명으로 검색 가능.
+    기존 Naver Search API(developers.naver.com) 대신 이미 설정된 NCP Maps API 키를
+    사용하므로 별도 Search API 키가 불필요하다.
 
     Returns:
-        {"x": lng, "y": lat, "name": "...", "address": "..."} or None
+        {"x": lng_str, "y": lat_str, "name": "...", "address": "..."} or None
     """
-    if not settings.naver_search_client_id or not settings.naver_search_client_secret:
-        logger.warning("네이버 Search API 키가 설정되지 않았습니다.")
+    result = await geocode(query)
+    if not result:
+        logger.info("장소명 검색 결과 없음: %s", query)
         return None
 
-    headers = {
-        "X-Naver-Client-Id": settings.naver_search_client_id,
-        "X-Naver-Client-Secret": settings.naver_search_client_secret,
+    return {
+        "x": result["x"],
+        "y": result["y"],
+        "name": query,
+        "address": result.get("road_address") or result.get("address", ""),
+        "link": "",
+        "place_id": None,
     }
-
-    try:
-        resp = await _naver_client.get(
-            _SEARCH_LOCAL_URL,
-            params={"query": query, "display": 1},
-            headers=headers,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-
-        items = data.get("items", [])
-        if not items:
-            logger.info("지역 검색 결과 없음: %s", query)
-            return None
-
-        item = items[0]
-        # mapx/mapy 는 WGS84 × 1e7 (도 단위 * 10,000,000)
-        lng = int(item["mapx"]) / 1e7
-        lat = int(item["mapy"]) / 1e7
-
-        # HTML 태그 제거 (e.g. <b>군산</b>근대역사박물관)
-        name = re.sub(r"<[^>]+>", "", item.get("title", query))
-        link = item.get("link") or ""
-
-        return {
-            "x": str(lng),
-            "y": str(lat),
-            "name": name,
-            "address": item.get("roadAddress") or item.get("address", ""),
-            "link": link,
-            "place_id": extract_naver_place_id_from_link(link),
-        }
-    except Exception as e:
-        logger.error("지역 검색 오류 (query=%s): %s", query, e)
-        return None
 
 
 async def get_directions(
