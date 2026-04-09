@@ -1,5 +1,6 @@
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
+import "../../../../core/preferences/onboarding_prefs.dart";
 import "../../data/profile_models.dart";
 import "../../data/profile_repository.dart";
 import "profile_state.dart";
@@ -106,6 +107,7 @@ class ProfileController extends Notifier<ProfileState> {
     state = state.copyWith(saving: true, message: "여행 프로필 저장 중...");
     try {
       await _repo.upsertTravelProfile(appUserId: appUserId, form: state.form);
+      await OnboardingPrefs.clearSkipped();
       state = state.copyWith(saving: false, message: "여행 프로필 저장 완료");
     } catch (e) {
       state = state.copyWith(saving: false, message: "여행 프로필 저장 실패: $e");

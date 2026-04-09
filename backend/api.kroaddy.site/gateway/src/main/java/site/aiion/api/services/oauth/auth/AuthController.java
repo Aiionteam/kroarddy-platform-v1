@@ -204,6 +204,8 @@ public class AuthController {
             Map<String, Object> successResponse = new HashMap<>();
             successResponse.put("success", true);
             successResponse.put("access_token", newAccessToken);
+            // 모바일 앱은 HttpOnly 쿠키를 쓰지 않으므로 RTR 이후 새 Refresh Token을 body로 내려 저장해야 함
+            successResponse.put("refresh_token", newRefreshToken);
             successResponse.put("token_type", "Bearer");
             successResponse.put("expires_in", 900);
 

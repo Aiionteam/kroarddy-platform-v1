@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
+import "../../../core/preferences/onboarding_prefs.dart";
 import "../data/profile_models.dart";
 import "../data/profile_repository.dart";
 
@@ -68,7 +69,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                         ? null
                         : () {
                             if (step == 0) {
-                              context.pop();
+                              if (context.canPop()) {
+                                context.pop();
+                              } else {
+                                context.go("/profile");
+                              }
                             } else {
                               setState(() => step -= 1);
                             }
@@ -78,6 +83,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
+                  flex: 2,
                   child: FilledButton(
                     onPressed: loading
                         ? null
@@ -96,8 +102,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                                 appUserId: ids.$2,
                                 form: form,
                               );
+                              await OnboardingPrefs.clearSkipped();
                               if (!context.mounted) return;
-                              context.go("/profile");
+                              context.go("/home");
                             } catch (e) {
                               setState(() {
                                 loading = false;
@@ -109,6 +116,19 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 8),
+            Center(
+              child: TextButton(
+                onPressed: loading
+                    ? null
+                    : () async {
+                        await OnboardingPrefs.setSkipped(true);
+                        if (!context.mounted) return;
+                        context.go("/home");
+                      },
+                child: const Text("나중에 할게요"),
+              ),
             ),
           ],
         ),

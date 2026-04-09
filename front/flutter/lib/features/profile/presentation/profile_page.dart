@@ -3,6 +3,7 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
 import "../../../core/router/main_shell.dart";
+import "../../auth/presentation/state/auth_controller.dart";
 import "../../../core/theme/kroaddy_colors.dart";
 import "../data/profile_models.dart";
 import "state/profile_controller.dart";
@@ -56,8 +57,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           );
           if (next.contains("계정 정보 저장")) setState(() => _accountSaved = true);
           if (next.contains("여행 프로필 저장")) setState(() => _profileSaved = true);
-          if (next.contains("계정 탈퇴")) {
-            context.go("/login");
+          if (next.contains("계정 탈퇴 완료")) {
+            Future.microtask(() async {
+              await ref.read(authControllerProvider.notifier).logout();
+              if (context.mounted) context.go("/login");
+            });
           }
         }
       },
