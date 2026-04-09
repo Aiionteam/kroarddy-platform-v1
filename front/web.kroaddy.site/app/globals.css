@@ -1,5 +1,6 @@
 @import "tailwindcss";
-@plugin "@tailwindcss/typography";
+/* Turbopack resolves @plugin from this file's dir (app/); use path to project node_modules */
+@plugin "../node_modules/@tailwindcss/typography";
 
 /* 가로 스크롤 컨테이너에서 스크롤바 숨김 */
 .hide-scrollbar::-webkit-scrollbar { display: none; }

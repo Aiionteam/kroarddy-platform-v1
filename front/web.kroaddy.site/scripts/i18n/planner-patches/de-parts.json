@@ -1,0 +1,171 @@
+{
+  "top": {
+    "title": "K-Content-Planer",
+    "subtitle": "Entdecke Korea durch K-Pop, Dramas, Essen und Beauty",
+    "hero_title": "K-Content-Planer",
+    "hero_subtitle": "Entdecke Korea durch K-Pop, Dramas, Essen und Beauty",
+    "hero_cta": "KI-Route erstellen",
+    "back": "Zurück zum Planer",
+    "row_kpop": "K-POP",
+    "row_kdrama": "K-Drama / Film",
+    "row_kfood": "K-Food",
+    "row_kbeauty": "K-Beauty",
+    "sample_itinerary": "Beispiel-Reiseplan",
+    "search_bar": "Suche",
+    "quick_selection": "Schnellauswahl",
+    "vibe_grid": "Stimmung wählen",
+    "date": "Datum",
+    "generating": "Wird erstellt…",
+    "generate": "✨ Plan erstellen",
+    "ai_recommended": "KI-empfohlener Plan",
+    "region_select": "Region wählen",
+    "traditional_market": "Traditioneller Markt",
+    "market_generate": "Essensplan für diesen Markt erstellen",
+    "cafe_question": "Welche Stimmung passt heute zu dir?",
+    "cafe_hint": "Wähle eine Stimmung oder gib einen Café-Namen ein, um einen KI-Kurs zu erstellen.",
+    "cafe_placeholder": "Café-Namen eingeben (z. B. Seongsu Tongue Planet)",
+    "cafe_generate": "KI-Plan erstellen",
+    "trending_items": "Trend-Artikel",
+    "my_recipe": "Mein Combo-Rezept",
+    "convenience_q": "Was ist gerade am schwersten im Supermarkt zu bekommen?",
+    "trending_placeholder": "z. B. Yonsei Milk Cream Bread",
+    "recipe_q": "Welche Geschmackskombination möchtest du testen?",
+    "extra_keywords": "Zusätzliche Stichwörter",
+    "recipe_placeholder": "z. B. scharfe Challenge, süß-salziges Dessert",
+    "recipe_generate": "KI-Combo-Rezept erstellen",
+    "set_date_and_generate": "Daten festlegen und\nPlan erstellen",
+    "start_generate": "✨ Planerstellung starten",
+    "making_schedule": "Die KI erstellt den Plan für <b>{{title}}</b>…",
+    "recommended_schedule_title": "{{title}} — Empfohlener Plan",
+    "save_plan": "💾 Plan speichern",
+    "total_cost": "Geschätzte Gesamtkosten",
+    "cost_per_day": "Tag {{day}} {{total}}",
+    "no_schedule": "Kein Plan erstellt. Bitte erneut versuchen.",
+    "saved_goto_schedule": "Gespeichert · Zum Kalender",
+    "find_nearby_store": "Verkaufsstellen in der Nähe finden",
+    "recipe_hashtags": "#modisumer #supermarktchallenge #airezept",
+    "description_fallback": "Ein empfohlener Ort in {{place}}.",
+    "challenge_location": "Challenge-Ort",
+    "challenge_location_desc": "Bester Challenge-Spot der KI (innerhalb 100 km) — Bankzone vor dem Seoul-Wald, Seongsu",
+    "subtotal": "Zwischensumme {{total}}",
+    "schedule_item_default": "Plan",
+    "schedule_load_fail": "Plan konnte nicht geladen werden.",
+    "save_fail": "Speichern fehlgeschlagen.",
+    "cafe_place_hint": "Café-/Ortshinweis",
+    "convenience_trending": "Trend-Artikel im Supermarkt",
+    "recipe_title_with_vibe": "{{vibe}} Challenge 2026 Version",
+    "recipe_title_default": "Mark-Set 2026 Version",
+    "region_tab.all": "Alle",
+    "region_tab.seoul": "Seoul",
+    "region_tab.gangwon": "Gangwon",
+    "region_tab.jeonla": "Jeolla",
+    "region_tab.gyeongsang": "Gyeongsang",
+    "region_tab.jeju": "Jeju",
+    "cafe_vibe.industrial_raw.label": "Industrial/Roh",
+    "cafe_vibe.industrial_raw.description": "Cooler Beton- und Stahl-Look.",
+    "cafe_vibe.traditional_zen.label": "Traditionell/Zen",
+    "cafe_vibe.traditional_zen.description": "Ruhe mit Hanok und Holz.",
+    "cafe_vibe.nature_botanical.label": "Natur/Botanik",
+    "cafe_vibe.nature_botanical.description": "Grün und Sonnenlicht.",
+    "cafe_vibe.retro_newtro.label": "Retro/Newtro",
+    "cafe_vibe.retro_newtro.description": "Nostalgie und Vintage-Gassen.",
+    "cafe_vibe.modern_minimal.label": "Modern/Minimal",
+    "cafe_vibe.modern_minimal.description": "Raffinierte monochrome Ästhetik.",
+    "brand.seveneleven": "7-Eleven",
+    "brand.emart24": "emart24",
+    "recipe_vibe.spicy_fire.label": "Feurig scharf",
+    "recipe_vibe.spicy_fire.description": "Scharfe Challenge zum Abschalten.",
+    "recipe_vibe.sweet_salty.label": "Süß-salzig Klassiker",
+    "recipe_vibe.sweet_salty.description": "Ausgewogene Süße und Salzigkeit.",
+    "recipe_vibe.diet_healthy.label": "Supermarkt-Diät",
+    "recipe_vibe.diet_healthy.description": "Leicht aber sättigend.",
+    "recipe_vibe.night_snack.label": "Spätsnack",
+    "recipe_vibe.night_snack.description": "Kleiner Freuden-Snack.",
+    "recipe_vibe.hangover.label": "Kater-Combo",
+    "recipe_vibe.hangover.description": "Speziell für den Morgen danach.",
+    "recipe_vibe.luxury_meal.label": "Premium-Mahlzeit mit gutem Preis",
+    "recipe_vibe.luxury_meal.description": "Premium-Essen aus dem Supermarkt.",
+    "shopping.ramen": "Cup-Ramen",
+    "shopping.tuna_kimbap": "Thunfisch-Mayo-Dreieck-Kimbap",
+    "shopping.string_cheese": "String-Käse",
+    "shopping.sparkling_water": "Sprudelwasser",
+    "cooking.1": "Alle Zutaten vorbereiten und in mikrowellengeeignete Schale geben.",
+    "cooking.2": "Soße/Toppings mischen, 1:30 min erhitzen.",
+    "cooking.3": "Toppings nach Geschmack, Foto machen.",
+    "trending_card.1.title": "Yonsei Milk Cream Bread",
+    "trending_card.2.title": "Zero Cola Ice-cup Highball",
+    "trending_card.default_title": "KI-gewählter Trend-Artikel",
+    "trending_card.tag.new": "#neu",
+    "trending_card.tag.soldout": "#ausverkauft",
+    "trending_card.tag.review": "#hype",
+    "trending_card.tag.repurchase": "#nachkauf",
+    "meta.kf_market.title_ko": "Landesweite traditionelle Markt-Kulinarik-Tour",
+    "meta.kf_cafe.title_ko": "K-Dessert- und Café-Vibe-Tour",
+    "meta.kf_convenience.title_ko": "K-Supermarkt-Combo-Challenge",
+    "meta.kf_market.tags": "traditioneller Markt, Essen, lokal",
+    "meta.kf_cafe.tags": "Café, Dessert, Concept Store",
+    "meta.kf_convenience.tags": "Supermarkt, Combos, Modisumer",
+    "empty.pick_market": "Markt wählen, dann Plan erstellen",
+    "empty.pick_vibe_or_cafe": "Stimmung oder Café-Namen wählen",
+    "empty.pick_tab_condition": "Tab-Bedingungen wählen und erstellen",
+    "empty.pick_date": "Datum wählen und Plan erstellen",
+    "empty.market_guide": "Links Markt wählen, [Markt-Essensplan] oder oben ✨ drücken",
+    "empty.cafe_guide": "Links Stimmung/Café wählen, [KI-Plan] drücken",
+    "empty.convenience_guide": "Oben Modus-Tab wählen, Stichwörter eingeben",
+    "empty.default_guide": "Oben ✨ Plan erstellen drücken",
+    "shopping_list_title": "Einkaufsliste",
+    "cooking_steps_title": "Zubereitung"
+  },
+  "market": {
+    "SEOUL": {
+      "0": { "name": "Gwangjang-Markt", "description": "Mekka für Yukhoe und Bindaetteok." },
+      "1": { "name": "Mangwon-Markt", "description": "Trendmarkt bei der jungen Generation." },
+      "2": { "name": "Tongin-Markt", "description": "Berühmtes Münz-Bento-Erlebnis." }
+    },
+    "GANGWON": {
+      "0": { "name": "Yeongwol Jungang-Markt", "description": "Buchweizen-Jeon und Nudeln." },
+      "1": { "name": "Sokcho Touristen- und Fischmarkt", "description": "Dakgangjeong und Meeresfrüchte-Snacks." }
+    },
+    "JEONLA": {
+      "0": { "name": "Jeonju Nambu-Markt", "description": "Heimat von Blutwurst und Bohnensprossensuppe." },
+      "1": { "name": "Gwangju 1913 Songjeong Bahnhof-Markt", "description": "Retro-Newtro-Atmosphäre." }
+    },
+    "GYEONGSANG": {
+      "0": { "name": "Busan Gukje-Markt", "description": "Film-Erinnerungen und Bibim-Dangmyeon." },
+      "1": { "name": "Daegu Seomun-Markt", "description": "Größe und Geschmack eines Top-3-Marktes." }
+    },
+    "JEJU": {
+      "0": { "name": "Jeju Dongmun-Markt", "description": "Insel-Aromen: Omegi-Reiskuchen und schwarzes Schwein-Gangjeong." }
+    }
+  },
+  "fallback": {
+    "kfood": {
+      "KF_MARKET": {
+        "title": "Landesweite traditionelle Markt-Kulinarik-Tour",
+        "description": "Warme lokale Aromen und Energie in ganz Korea."
+      },
+      "KF_CAFE": {
+        "title": "K-Dessert- und Café-Vibe-Tour",
+        "description": "Emotionale Route zwischen Cafés und Concept Stores."
+      },
+      "KF_CONVENIENCE": {
+        "title": "K-Supermarkt-Combo-Challenge",
+        "description": "Von ausverkauften Neuheiten bis Geheimrezepten — werde Modisumer!"
+      }
+    },
+    "kbeauty": {
+      "KBEAUTY_01": {
+        "title": "Olive Young Flagship",
+        "description": "Skincare- und Make-up-Trends an einem Ort vergleichen."
+      },
+      "KBEAUTY_02": {
+        "title": "Myeongdong Beauty Street",
+        "description": "Bestseller rund um große Road-Shop-Bereiche."
+      },
+      "KBEAUTY_03": {
+        "title": "Skincare-Erlebnis-Shop",
+        "description": "Individuelle Pflege und Beauty-Programme nach Hautanalyse."
+      }
+    }
+  }
+}

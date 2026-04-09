@@ -4,6 +4,8 @@ import React, { useCallback, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { AnimatePresence, motion } from "framer-motion";
 import { Bot, ChevronDown, ChevronUp, MessageSquareText, Send, User } from "lucide-react";
+import "@/lib/i18n/config";
+import { useTranslation } from "react-i18next";
 import { guideDebug } from "@/lib/guide/guideDebug";
 import { GuideKroaddySearchingChatRow } from "@/components/guide/GuideKroaddySearching";
 
@@ -63,10 +65,12 @@ export function ChatDrawer({
   onChange,
   onSend,
   messages,
-  placeholder = "장소에 대해 물어보세요…",
+  placeholder,
   disabled = false,
   assistantLoading = false,
 }: ChatDrawerProps) {
+  const { t } = useTranslation();
+  const ph = placeholder ?? t("guide.chat.placeholder", { defaultValue: "Ask about a place…" });
   const lastEnterRef = useRef(0);
   const [panelOpen, setPanelOpen] = useState(true);
 
@@ -131,7 +135,9 @@ export function ChatDrawer({
                             <Bot className="h-3.5 w-3.5 shrink-0 text-sky-600" aria-hidden />
                           )}
                           <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                            {m.role === "user" ? "나" : "Kroaddy"}
+                            {m.role === "user"
+                              ? t("guide.chat.role_user", { defaultValue: "You" })
+                              : t("guide.chat.role_bot", { defaultValue: "Kroaddy" })}
                           </span>
                         </div>
                         {m.role === "user" ? (
@@ -160,8 +166,8 @@ export function ChatDrawer({
                 <motion.button
                   type="button"
                   onClick={() => setPanelOpen(false)}
-                  title="채팅 접기"
-                  aria-label="채팅 접기"
+                  title={t("guide.chat.collapse", { defaultValue: "Collapse chat" })}
+                  aria-label={t("guide.chat.collapse", { defaultValue: "Collapse chat" })}
                   aria-expanded={true}
                   whileTap={{ scale: 0.95 }}
                   transition={{ type: "spring", stiffness: 520, damping: 28 }}
@@ -174,11 +180,11 @@ export function ChatDrawer({
                   value={value}
                   onChange={(e) => onChange(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={placeholder}
+                  placeholder={ph}
                   disabled={disabled}
                   className="min-w-0 flex-1 bg-transparent py-1 text-sm font-medium text-slate-800 placeholder:font-medium placeholder:text-slate-400 focus:outline-none disabled:opacity-45"
                   autoComplete="off"
-                  aria-label="AI 가이드 질문 입력"
+                  aria-label={t("guide.chat.input_aria", { defaultValue: "AI guide question" })}
                 />
                 <motion.button
                   type="button"
@@ -186,17 +192,17 @@ export function ChatDrawer({
                   disabled={disabled || !value.trim()}
                   title={
                     disabled
-                      ? "응답 처리 중입니다. 잠시만 기다려 주세요."
+                      ? t("guide.chat.send_wait", { defaultValue: "Please wait for the response." })
                       : !value.trim()
-                        ? "질문을 입력해 주세요."
-                        : "질문 보내기"
+                        ? t("guide.chat.send_empty", { defaultValue: "Enter a question." })
+                        : t("guide.chat.send", { defaultValue: "Send" })
                   }
                   aria-label={
                     disabled
-                      ? "응답 처리 중"
+                      ? t("guide.chat.send_aria_busy", { defaultValue: "Processing" })
                       : !value.trim()
-                        ? "질문을 입력해 주세요"
-                        : "질문 보내기"
+                        ? t("guide.chat.send_aria_empty", { defaultValue: "Enter a question" })
+                        : t("guide.chat.send_aria", { defaultValue: "Send question" })
                   }
                   whileTap={disabled || !value.trim() ? undefined : { scale: 0.95 }}
                   transition={{ type: "spring", stiffness: 520, damping: 28 }}
@@ -215,14 +221,14 @@ export function ChatDrawer({
               exit={{ opacity: 0, y: 8 }}
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
               onClick={() => setPanelOpen(true)}
-              title="채팅 열기"
-              aria-label="채팅 열기"
+              title={t("guide.chat.open", { defaultValue: "Open chat" })}
+              aria-label={t("guide.chat.open", { defaultValue: "Open chat" })}
               aria-expanded={false}
               whileTap={{ scale: 0.98 }}
               className="flex w-full items-center justify-center gap-2 rounded-md border border-gray-100 bg-white/90 py-3.5 pl-4 pr-5 text-sm font-bold text-slate-700 shadow-md backdrop-blur-xl transition hover:bg-sky-50/90 hover:text-sky-800"
             >
               <MessageSquareText className="h-5 w-5 shrink-0 text-sky-600" strokeWidth={2} aria-hidden />
-              <span>채팅 열기</span>
+              <span>{t("guide.chat.open", { defaultValue: "Open chat" })}</span>
               <ChevronUp className="h-4 w-4 shrink-0 text-slate-400" strokeWidth={2} aria-hidden />
             </motion.button>
           )}

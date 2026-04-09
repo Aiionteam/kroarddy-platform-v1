@@ -1,0 +1,199 @@
+{
+  "title": "K-Content Planner",
+  "subtitle": "Explore Korea through K-Pop, dramas, food, and beauty",
+  "hero_title": "K-Content Planner",
+  "hero_subtitle": "Explore Korea through K-Pop, dramas, food, and beauty",
+  "hero_cta": "Generate AI Route",
+  "back": "Back to planner",
+  "row_kpop": "K-Pop",
+  "row_kdrama": "K-Drama / Movie",
+  "row_kfood": "K-Food",
+  "row_kbeauty": "K-Beauty",
+  "sample_itinerary": "Sample itinerary",
+  "search_bar": "Search",
+  "quick_selection": "Quick selection",
+  "vibe_grid": "Vibe selection",
+  "date": "Date",
+  "generating": "Generating…",
+  "generate": "✨ Generate schedule",
+  "ai_recommended": "AI recommended schedule",
+  "region_select": "Select region",
+  "traditional_market": "Traditional market",
+  "market_generate": "Generate this market food itinerary",
+  "cafe_question": "What vibe fits your day today?",
+  "cafe_hint": "Choose a vibe or enter a cafe name to generate an AI course.",
+  "cafe_placeholder": "Type a cafe name directly (e.g. Seongsu Tongue Planet)",
+  "cafe_generate": "Generate AI itinerary",
+  "trending_items": "Trending items now",
+  "my_recipe": "My combo recipe",
+  "convenience_q": "What is hardest to get at convenience stores now?",
+  "trending_placeholder": "e.g. Yonsei Milk Cream Bread",
+  "recipe_q": "What flavor combo do you want to try?",
+  "extra_keywords": "Extra keywords",
+  "recipe_placeholder": "e.g. Spicy challenge, sweet-salty dessert",
+  "recipe_generate": "Generate AI combo recipe",
+  "set_date_and_generate": "Set your dates and generate an itinerary",
+  "start_generate": "✨ Start itinerary generation",
+  "making_schedule": "AI is creating a <b>{{title}}</b> itinerary…",
+  "recommended_schedule_title": "{{title}} — Recommended itinerary",
+  "save_plan": "💾 Save itinerary",
+  "total_cost": "Estimated total cost",
+  "cost_per_day": "Day {{day}} {{total}}",
+  "no_schedule": "No itinerary was generated. Please try again.",
+  "saved_goto_schedule": "Saved · Go to schedule",
+  "find_nearby_store": "Find nearby places selling this",
+  "recipe_hashtags": "#modisumer #conveniencechallenge #AIrecipe",
+  "description_fallback": "A recommended spot to enjoy at {{place}}.",
+  "challenge_location": "Challenge Location",
+  "challenge_location_desc": "AI-picked best challenge spot (within 100km) — bench zone in front of Seoul Forest, Seongsu",
+  "subtotal": "Subtotal {{total}}",
+  "schedule_item_default": "Schedule",
+  "schedule_load_fail": "Failed to load schedule.",
+  "save_fail": "Failed to save.",
+  "cafe_place_hint": "Cafe/place hint",
+  "convenience_trending": "Convenience trending items",
+  "recipe_title_with_vibe": "{{vibe}} Challenge 2026 Ver.",
+  "recipe_title_default": "Mark set 2026 Ver.",
+  "region_tab.all": "All",
+  "region_tab.seoul": "Seoul",
+  "region_tab.gangwon": "Gangwon",
+  "region_tab.jeonla": "Jeolla",
+  "region_tab.gyeongsang": "Gyeongsang",
+  "region_tab.jeju": "Jeju",
+  "cafe_vibe.industrial_raw.label": "Industrial/Raw",
+  "cafe_vibe.industrial_raw.description": "A hip vibe of rough concrete and steel.",
+  "cafe_vibe.traditional_zen.label": "Traditional/Zen",
+  "cafe_vibe.traditional_zen.description": "A calm break with hanok and wood textures.",
+  "cafe_vibe.nature_botanical.label": "Nature/Botanical",
+  "cafe_vibe.nature_botanical.description": "A space filled with greenery and sunlight.",
+  "cafe_vibe.retro_newtro.label": "Retro/Newtro",
+  "cafe_vibe.retro_newtro.description": "Reply-style nostalgia and vintage alley tour.",
+  "cafe_vibe.modern_minimal.label": "Modern/Minimal",
+  "cafe_vibe.modern_minimal.description": "Refined monochrome and modern aesthetics.",
+  "brand.seveneleven": "7-Eleven",
+  "brand.emart24": "emart24",
+  "market": {
+    "SEOUL": {
+      "0": {
+        "name": "Gwangjang Market",
+        "description": "The mecca of yukhoe and bindaetteok."
+      },
+      "1": {
+        "name": "Mangwon Market",
+        "description": "A trendy market loved by the MZ generation."
+      },
+      "2": {
+        "name": "Tongin Market",
+        "description": "A place to enjoy the famous yeopjeon lunchbox experience."
+      }
+    },
+    "GANGWON": {
+      "0": {
+        "name": "Yeongwol Jungang Market",
+        "description": "Home of buckwheat jeonbyeong and olchaengi noodles."
+      },
+      "1": {
+        "name": "Sokcho Tourist & Fishery Market",
+        "description": "A paradise of dakgangjeong and seafood street food."
+      }
+    },
+    "JEONLA": {
+      "0": {
+        "name": "Jeonju Nambu Market",
+        "description": "The birthplace of blood sausage and bean sprout soup."
+      },
+      "1": {
+        "name": "Gwangju 1913 Songjeong Station Market",
+        "description": "A market full of retro-newtro vibes."
+      }
+    },
+    "GYEONGSANG": {
+      "0": {
+        "name": "Busan Gukje Market",
+        "description": "Movie-scene memories and bibim dangmyeon."
+      },
+      "1": {
+        "name": "Daegu Seomun Market",
+        "description": "Huge scale and flavors of one of Korea's top 3 markets."
+      }
+    },
+    "JEJU": {
+      "0": {
+        "name": "Jeju Dongmun Market",
+        "description": "Island flavors with omegi rice cakes and black pork gangjeong."
+      }
+    }
+  },
+  "fallback": {
+    "kfood": {
+      "KF_MARKET": {
+        "title": "Nationwide Traditional Market Food Tour",
+        "description": "A market conquest tour packed with warm local flavors and energy across Korea."
+      },
+      "KF_CAFE": {
+        "title": "K-Dessert & Cafe Vibe Tour",
+        "description": "An emotional route connecting cafes and select shops that match your taste."
+      },
+      "KF_CONVENIENCE": {
+        "title": "K-Convenience Store Combo Challenge",
+        "description": "From sold-out new items to secret recipes, become a true convenience-store modisumer!"
+      }
+    },
+    "kbeauty": {
+      "KBEAUTY_01": {
+        "title": "Olive Young Flagship",
+        "description": "Compare and shop skincare and makeup trends in one place."
+      },
+      "KBEAUTY_02": {
+        "title": "Myeongdong Beauty Street",
+        "description": "Quickly explore bestsellers around major beauty road shops."
+      },
+      "KBEAUTY_03": {
+        "title": "Skincare Experience Shop",
+        "description": "Customized care and hands-on beauty programs based on skin diagnosis."
+      }
+    }
+  },
+  "recipe_vibe.spicy_fire.label": "Fiery spice",
+  "recipe_vibe.spicy_fire.description": "A spicy challenge to blow off stress.",
+  "recipe_vibe.sweet_salty.label": "Sweet & salty classic",
+  "recipe_vibe.sweet_salty.description": "Balanced sweetness and savoriness.",
+  "recipe_vibe.diet_healthy.label": "Convenience diet",
+  "recipe_vibe.diet_healthy.description": "Light but satisfying healthy combo.",
+  "recipe_vibe.night_snack.label": "Late-night snack",
+  "recipe_vibe.night_snack.description": "Small-joy night snack recipe.",
+  "recipe_vibe.hangover.label": "Hangover combo",
+  "recipe_vibe.hangover.description": "A combo specialized for hangover care.",
+  "recipe_vibe.luxury_meal.label": "Value premium meal",
+  "recipe_vibe.luxury_meal.description": "A premium convenience-store meal.",
+  "shopping.ramen": "Cup ramen",
+  "shopping.tuna_kimbap": "Tuna mayo triangle kimbap",
+  "shopping.string_cheese": "String cheese",
+  "shopping.sparkling_water": "Sparkling water",
+  "cooking.1": "Prepare all ingredients and put them in a microwave-safe container.",
+  "cooking.2": "Mix sauce/toppings and cook for 1 minute 30 seconds.",
+  "cooking.3": "Add toppings to taste and take a verification photo.",
+  "trending_card.1.title": "Yonsei Milk Cream Bread",
+  "trending_card.2.title": "Zero Cola Ice-cup Highball",
+  "trending_card.default_title": "AI-picked trending item",
+  "trending_card.tag.new": "#new",
+  "trending_card.tag.soldout": "#soldout-alert",
+  "trending_card.tag.review": "#review-buzz",
+  "trending_card.tag.repurchase": "#repurchase",
+  "meta.kf_market.title_ko": "Nationwide traditional market food tour",
+  "meta.kf_cafe.title_ko": "K-dessert & cafe vibe tour",
+  "meta.kf_convenience.title_ko": "K-convenience combo challenge",
+  "meta.kf_market.tags": "traditional market, food, local food",
+  "meta.kf_cafe.tags": "cafe, dessert, select shop, vibe tour",
+  "meta.kf_convenience.tags": "convenience store, combos, modisumer, challenge",
+  "empty.pick_market": "Pick a market and then generate a schedule.",
+  "empty.pick_vibe_or_cafe": "Choose a vibe or enter a cafe name.",
+  "empty.pick_tab_condition": "Select tab conditions and generate.",
+  "empty.pick_date": "Pick dates and generate a schedule.",
+  "empty.market_guide": "Choose a market on the left, then click [Generate market food schedule] or top ✨ Generate.",
+  "empty.cafe_guide": "Choose vibe/cafe on the left, then click [Generate AI schedule].",
+  "empty.convenience_guide": "Choose a mode tab on top, enter keywords, and generate.",
+  "empty.default_guide": "Click the top ✨ Generate schedule button.",
+  "shopping_list_title": "Shopping List",
+  "cooking_steps_title": "Cooking Steps"
+}

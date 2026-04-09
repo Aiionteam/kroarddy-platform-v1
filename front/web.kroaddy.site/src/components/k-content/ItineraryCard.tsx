@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import "@/lib/i18n/config";
+import { useTranslation } from "react-i18next";
 
 export type ItineraryCardItem = {
   time?: string;
@@ -27,6 +29,7 @@ export type ItineraryCardProps = {
     place: string;
     source?: "db" | "external";
     lang: "ko" | "en";
+    fallbackDescription?: string;
   }) => string;
   localizeTip: (raw: string | undefined, lang: "ko" | "en") => string;
 };
@@ -42,6 +45,7 @@ export function ItineraryCard({
   getLocalizedDescription,
   localizeTip,
 }: ItineraryCardProps) {
+  const { t } = useTranslation();
   const isKfCafe = isKfCafePackage(packageId);
   const descriptionText = getLocalizedDescription({
     description:
@@ -52,6 +56,10 @@ export function ItineraryCard({
     place: item.place || item.title,
     source: item.source,
     lang,
+    fallbackDescription: t("planner.kcontent.description_fallback", {
+      place: item.place || item.title,
+      defaultValue: "{{place}}에서 즐길 수 있는 추천 스팟입니다.",
+    }),
   });
   const tipText = localizeTip(item.tips, lang);
 
@@ -68,7 +76,7 @@ export function ItineraryCard({
           {item.source === "db" && (
             <span className="relative inline-flex shrink-0 items-center group">
               <span className="ml-2 animate-kroaddy-float text-[10px] font-semibold text-indigo-700">
-                Kroaddy PICK
+                {t("planner.kcontent.kroaddy_pick", { defaultValue: "Kroaddy PICK" })}
               </span>
             </span>
           )}

@@ -1,0 +1,210 @@
+{
+  "subscription": {
+    "title_mobile": "Đăng ký",
+    "title": "Dịch vụ đăng ký",
+    "subtitle": "Sau thời gian dùng thử miễn phí, hãy chọn gói phù hợp.",
+    "safety": "Thanh toán an toàn · Hủy bất cứ lúc nào",
+    "free": {
+      "kicker": "Bắt đầu miễn phí hôm nay",
+      "note": "Sau 7 ngày miễn phí, hệ thống tự chuyển sang gói đã chọn."
+    },
+    "plan_monthly": {
+      "title": "Gói tháng",
+      "badge": "Cơ bản",
+      "price": "₩5.900 / tháng",
+      "note": "Thanh toán theo tháng",
+      "features": {
+        "1": "Tóm tắt gợi ý từ chuyên gia",
+        "2": "Ưu tiên trả lời hỗ trợ/hướng dẫn",
+        "3": "Bao gồm cập nhật tính năng mới nhất"
+      }
+    },
+    "plan_yearly": {
+      "title": "Gói năm",
+      "badge": "Đề xuất",
+      "price": "₩46.800 / năm",
+      "note": "Thanh toán theo năm",
+      "oldPrice": "Tương đương khoảng ₩7.000/tháng",
+      "features": {
+        "1": "Gồm toàn bộ quyền lợi gói tháng",
+        "2": "Giảm giá cho cả năm",
+        "3": "Hỗ trợ ưu tiên và ổn định hơn"
+      }
+    },
+    "cta_monthly": "Bắt đầu gói tháng",
+    "cta_yearly": "Bắt đầu gói năm",
+    "selected": {
+      "title": "Gói đã chọn",
+      "compare": "So sánh: ",
+      "includes": "Quyền lợi gồm"
+    },
+    "agree": {
+      "service_title": "Đồng ý điều khoản sử dụng",
+      "service_desc": "Bắt buộc để thanh toán và dùng đăng ký.",
+      "billing_title": "Đồng ý thông báo thanh toán",
+      "billing_desc": "Thông tin về chuyển đổi tự động và chu kỳ thanh toán."
+    },
+    "demo_alert": "(Giao diện demo) API thanh toán thật sẽ tích hợp sau.",
+    "demo_note": "Đây là màn hình demo. Thanh toán/chuyển đổi thật ở môi trường production."
+  },
+  "emergency": {
+    "title_mobile": "Trợ giúp khẩn cấp",
+    "title": "Trợ giúp khẩn cấp và mẹo du lịch",
+    "subtitle": "Hướng dẫn theo từng loại tình huống khẩn cấp người nước ngoài có thể gặp tại Hàn Quốc.",
+    "share_button": "Chia sẻ tình huống khẩn cấp",
+    "consulate": {
+      "title": "Đại sứ quán / Lãnh sự quán",
+      "nationality": "Quốc tịch",
+      "find_contact": "Tìm liên hệ lãnh sự",
+      "callcenter": "Tổng đài lãnh sự 24h 02-3210-0404",
+      "unknown_nationality": "Chưa rõ"
+    },
+    "categories": {
+      "title": "Danh mục khẩn cấp",
+      "selected": "Đang chọn",
+      "view": "Xem",
+      "items": {
+        "passport": {
+          "title": "Hộ chiếu / visa và lưu trú",
+          "short": "Mất hộ chiếu hoặc cần hỗ trợ visa, lưu trú",
+          "steps": {
+            "1": "Nếu được, giữ bản sao/ảnh và xác nhận mất với chỗ ở/cảnh sát.",
+            "2": "Liên hệ đại sứ quán/lãnh sự để làm lại hoặc giấy tạm.",
+            "3": "Chuẩn bị số hồ sơ cảnh sát nếu cần."
+          }
+        },
+        "lost": {
+          "title": "Báo mất / trộm cắp",
+          "short": "Mất ví, điện thoại hoặc đồ quan trọng",
+          "steps": {
+            "1": "Nếu nghi điện thoại/tài khoản bị chiếm, dừng xác thực và đổi mật khẩu ngay.",
+            "2": "Trình báo tại đồn/cửa hàng đồ thất lạc và lấy số hồ sơ.",
+            "3": "Nếu mất kèm hộ chiếu/thẻ, liên hệ khẩn lãnh sự."
+          }
+        },
+        "safety": {
+          "title": "Tội phạm / bạo lực / đe dọa an toàn",
+          "short": "Lừa đảo, hành hung, đe dọa hoặc nguy hiểm xung quanh",
+          "steps": {
+            "1": "Di chuyển đến nơi an toàn và nhờ người xung quanh giúp.",
+            "2": "Nếu bị thương gọi 119 (cấp cứu) hoặc 112 (cảnh sát).",
+            "3": "Ghi lại thời gian/địa điểm và giữ chứng cứ (ảnh, tin nhắn)."
+          }
+        },
+        "medical": {
+          "title": "Cấp cứu y tế / tai nạn",
+          "short": "Ốm đột ngột hoặc chấn thương do tai nạn",
+          "steps": {
+            "1": "Gọi 119 hoặc 112 tùy tình huống và sơ cứu.",
+            "2": "Bệnh viện cần thông dịch, nhờ hỗ trợ từ đại sứ quán/lãnh sự.",
+            "3": "Thông báo dị ứng, thuốc và bệnh nền cho nhân viên y tế."
+          }
+        },
+        "disaster": {
+          "title": "Hỏa hoạn / thiên tai / sơ tán",
+          "short": "Cháy, mưa lớn, mất điện…",
+          "steps": {
+            "1": "Làm theo báo động/hướng dẫn, đi theo lối thoát an toàn.",
+            "2": "Có người bị thương: an toàn trước, sau đó gọi cứu hộ.",
+            "3": "Chia sẻ vị trí và tình hình với đại sứ quán/chỗ ở."
+          }
+        },
+        "immigration": {
+          "title": "Nhập cư / trục xuất / lưu trú",
+          "short": "Quá hạn lưu trú, rủi ro trục xuất",
+          "steps": {
+            "1": "Không tự xử lý; chụp giấy tờ/thông báo và liên hệ nhanh lãnh sự.",
+            "2": "Cần luật sư/thông dịch thì xin hướng dẫn.",
+            "3": "Tránh hành động trái phép ảnh hưởng thủ tục nhập cảnh."
+          }
+        },
+        "interpreter": {
+          "title": "Liên hệ lãnh sự / thông dịch",
+          "short": "Rào cản ngôn ngữ khiến khó cầu cứu",
+          "steps": {
+            "1": "Tóm tắt ngắn (khi nào/ở đâu/việc gì) và gửi cho lãnh sự.",
+            "2": "Chuẩn bị số điện thoại, địa chỉ và chỗ ở.",
+            "3": "Có thể cần gọi song song đường dây khẩn (cảnh sát/cấp cứu)."
+          }
+        }
+      }
+    },
+    "detail": {
+      "badge": "Hướng dẫn ứng phó",
+      "call_police": "112 Cảnh sát",
+      "call_119": "119 Cấp cứu",
+      "call_1339": "1339 KDCA (tư vấn y tế)",
+      "call_consulate": "Liên hệ lãnh sự"
+    },
+    "share": {
+      "title_mobile": "Chia sẻ khẩn cấp",
+      "title": "Chia sẻ khẩn cấp công khai",
+      "type_title": "Loại khẩn cấp",
+      "type_subtitle": "Chọn loại và đính kèm ảnh/âm thanh để chia sẻ nhanh.",
+      "aria": { "select_reason": "Chọn {{id}}" },
+      "attach_title": "Đính kèm",
+      "attach_subtitle": "Ảnh hoặc âm thanh giúp xử lý nhanh hơn.",
+      "photo_section": "Thêm ảnh",
+      "photo_pick": "Chọn ảnh",
+      "photo_empty": "Vui lòng chọn ảnh.",
+      "audio_section": "Ghi âm",
+      "recording": "Đang ghi: {{s}} giây",
+      "record_ready": "Sẵn sàng",
+      "optional": "Tùy chọn",
+      "audio_start": "Bắt đầu ghi",
+      "audio_stop": "Dừng",
+      "audio_delete": "Xóa âm thanh",
+      "audio_perm": "Có thể cần quyền ghi âm.",
+      "now_title": "Chia sẻ ngay",
+      "now_subtitle": "Demo: hiển thị xác nhận thay vì gửi thật.",
+      "call_emergency": "Gọi khẩn cấp",
+      "start_button": "Bắt đầu chia sẻ khẩn cấp",
+      "reason": {
+        "location": {
+          "label": "Cần hỗ trợ vị trí/an toàn",
+          "desc": "Yêu cầu trợ giúp theo vị trí hiện tại."
+        },
+        "medical": {
+          "label": "Cần hỗ trợ y tế",
+          "desc": "Cần y tế khẩn cấp do bệnh hoặc thương tích."
+        },
+        "danger": {
+          "label": "Nguy hiểm cấp bách",
+          "desc": "Cần an toàn ngay do bạo lực/lừa đảo/đe dọa."
+        }
+      },
+      "alert": {
+        "audio_permission": "Vui lòng kiểm tra quyền ghi âm.",
+        "select_reason": "Chọn ít nhất một loại khẩn cấp.",
+        "attach_required": "Vui lòng đính kèm ảnh hoặc âm thanh.",
+        "start_demo": "Bắt đầu chia sẻ khẩn cấp. (Demo)\nĐã chọn: {{selected}}"
+      }
+    }
+  },
+  "notices": {
+    "new_button_alert": "Tính năng «Viết thông báo mới» sẽ được bổ sung sau.",
+    "seed": {
+      "author": { "ops": "Đội vận hành" },
+      "7": {
+        "title": "Phát hành v1.0.3 (cải thiện hiệu năng và sửa lỗi)",
+        "content": "Bản cập nhật cải thiện tốc độ tải và sửa một số lỗi.\nNếu vẫn gặp sự cố, hãy liên hệ trung tâm hỗ trợ."
+      },
+      "6": {
+        "title": "Thông báo bảo trì máy chủ (dự kiến)",
+        "content": "Một số chức năng có thể tạm ngưng.\nThời gian và phạm vi xem cuối thông báo."
+      },
+      "5": {
+        "title": "Cập nhật bộ lọc thông báo",
+        "content": "Có thể lọc theo loại và tìm kiếm để xem nhanh hơn."
+      },
+      "4": {
+        "title": "Đã xử lý: tải ảnh chậm ở một số môi trường",
+        "content": "Đã sửa lỗi trễ khi tải ảnh.\nVui lòng báo nếu vẫn còn."
+      },
+      "3": {
+        "title": "Phát hành v1.0.2 (cải UX hỗ trợ)",
+        "content": "Thêm tab cho màn hình hỗ trợ và lịch sử."
+      }
+    }
+  }
+}

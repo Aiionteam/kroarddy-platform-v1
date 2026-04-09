@@ -19,6 +19,8 @@ import type { UserModel } from "@/lib/api/user";
 import { getTourstarSharePreview, type TourstarSharePreview } from "@/lib/api/tourstar";
 import { extractTourstarPostIdFromMessage } from "@/lib/tourstar-share";
 import { AppLayout } from "@/components/organisms/AppLayout";
+import "@/lib/i18n/config";
+import { useTranslation } from "react-i18next";
 
 function toConvList(data: any): WhisperConversationSummary[] {
   if (!data) return [];
@@ -37,14 +39,15 @@ function fmtTime(s?: string) {
   const d = new Date(s);
   const now = new Date();
   if (d.toDateString() === now.toDateString()) {
-    return d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
+    return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
   }
-  return d.toLocaleDateString("ko-KR", { month: "numeric", day: "numeric" });
+  return d.toLocaleDateString(undefined, { month: "numeric", day: "numeric" });
 }
 
 export default function WhisperPage() {
   const router = useRouter();
   const { isAuthenticated, logout, restoreAuthState } = useLoginStore();
+  const { t } = useTranslation();
   const myId = typeof window !== "undefined" ? Number(sessionStorage.getItem("app_user_id")) || null : null;
 
   const [isHydrated, setIsHydrated] = useState(false);
@@ -67,6 +70,14 @@ export default function WhisperPage() {
   const [deletingConv, setDeletingConv] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [sharePreviewMap, setSharePreviewMap] = useState<Record<string, TourstarSharePreview | null>>({});
+  const userFallback = useCallback(
+    (id: number | string | undefined) =>
+      t("chat.whisper.user_fallback", {
+        id: String(id ?? ""),
+        defaultValue: "사용자 {{id}}",
+      }),
+    [t]
+  );
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -215,7 +226,16 @@ export default function WhisperPage() {
 
   const handleDeleteConversation = async () => {
     if (!activePartnerId || deletingConv) return;
-    if (!window.confirm(`${activePartnerName}님과의 대화를 모두 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+    if (
+      !window.confirm(
+        t("chat.whisper.delete_confirm", {
+          defaultValue: "{{name}}님과의 대화를 모두 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.",
+          name: activePartnerName,
+        }),
+      )
+    ) {
+      return;
+    }
     setDeletingConv(true);
     setShowMenu(false);
     try {
@@ -244,11 +264,11 @@ export default function WhisperPage() {
       {/* ── 대화 목록 패널 ── */}
       <div className="flex w-72 shrink-0 flex-col border-r border-gray-200 bg-white">
         <div className="flex items-center justify-between border-b border-gray-200 px-4 py-4">
-          <h1 className="text-base font-semibold text-gray-800">귓속말</h1>
+          <h1 className="text-base font-semibold text-gray-800">{t("chat.whisper.title", { defaultValue: "귓속말" })}</h1>
           <button
             type="button"
             onClick={openNewChat}
-            title="새 대화"
+            title={t("chat.whisper.new_chat", { defaultValue: "새 대화" })}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-purple-600 hover:bg-purple-50 transition-colors"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -275,13 +295,13 @@ export default function WhisperPage() {
               <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               </svg>
-              <p className="text-sm text-gray-400">대화 없음</p>
+              <p className="text-sm text-gray-400">{t("chat.whisper.no_conversations", { defaultValue: "대화 없음" })}</p>
               <button
                 type="button"
                 onClick={openNewChat}
                 className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs text-white hover:bg-purple-700"
               >
-                귓속말 보내기
+                {t("chat.whisper.start", { defaultValue: "귓속말 보내기" })}
               </button>
             </div>
           ) : (
@@ -335,7 +355,7 @@ export default function WhisperPage() {
               <div>
                 <p className="text-sm font-semibold text-gray-800">{activePartnerName}</p>
                 {partnerBlocked && (
-                  <p className="text-[10px] text-red-500">차단된 사용자</p>
+                  <p className="text-[10px] text-red-500">{t("chat.whisper.blocked_user", { defaultValue: "차단된 사용자" })}</p>
                 )}
               </div>
             </div>
@@ -361,7 +381,7 @@ export default function WhisperPage() {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
                     </svg>
-                    {deletingConv ? "삭제 중..." : "대화 삭제"}
+                    {deletingConv ? t("common.deleting", { defaultValue: "삭제 중..." }) : t("chat.whisper.delete_conv", { defaultValue: "대화 삭제" })}
                   </button>
                   <div className="mx-2 border-t border-gray-100" />
                   <button
@@ -373,7 +393,7 @@ export default function WhisperPage() {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
                     </svg>
-                    {blockLoading ? "처리 중..." : partnerBlocked ? "차단 해제" : "사용자 차단"}
+                    {blockLoading ? t("common.processing", { defaultValue: "처리 중..." }) : partnerBlocked ? t("chat.whisper.unblock", { defaultValue: "차단 해제" }) : t("chat.whisper.block", { defaultValue: "사용자 차단" })}
                   </button>
                 </div>
               )}
@@ -393,7 +413,7 @@ export default function WhisperPage() {
               </div>
             ) : messages.length === 0 ? (
               <p className="text-center text-sm text-gray-400 pt-12">
-                {activePartnerName}님과의 대화를 시작해보세요
+                {t("chat.whisper.empty_thread", { defaultValue: "{{name}}님과의 대화를 시작해보세요", name: activePartnerName })}
               </p>
             ) : (
               messages.map((msg, i) => {
@@ -441,9 +461,9 @@ export default function WhisperPage() {
                                 <p className={`mt-0.5 truncate text-[11px] ${isMe ? "text-purple-100" : "text-gray-500"}`}>
                                   {sharedPreview.location}
                                 </p>
-                                <p className={`mt-1 text-[10px] ${isMe ? "text-purple-200" : "text-purple-600"}`}>
-                                  Tourstar 게시글 보기
-                                </p>
+                          <p className={`mt-1 text-[10px] ${isMe ? "text-purple-200" : "text-purple-600"}`}>
+                            {t("chat.whisper.view_tourstar", { defaultValue: "Tourstar 게시글 보기" })}
+                          </p>
                               </div>
                             </div>
                           </Link>
@@ -455,7 +475,7 @@ export default function WhisperPage() {
                         <span className="text-[10px] text-gray-400">{fmtTime(msg.createdAt)}</span>
                         {isMe && (
                           <span className={`text-[10px] ${isRead ? "text-purple-400" : "text-gray-300"}`}>
-                            {isRead ? "읽음" : ""}
+                            {isRead ? t("chat.whisper.read", { defaultValue: "읽음" }) : ""}
                           </span>
                         )}
                       </div>
@@ -471,9 +491,9 @@ export default function WhisperPage() {
           <div className="border-t border-gray-200 px-4 py-3">
             {partnerBlocked ? (
               <div className="rounded-xl bg-red-50 px-4 py-3 text-center text-sm text-red-500">
-                차단된 사용자에게는 메시지를 보낼 수 없습니다.
+                {t("chat.whisper.cannot_send_blocked", { defaultValue: "차단된 사용자에게는 메시지를 보낼 수 없습니다." })}
                 <button type="button" onClick={handleBlock} className="ml-2 underline">
-                  차단 해제
+                  {t("chat.whisper.unblock", { defaultValue: "차단 해제" })}
                 </button>
               </div>
             ) : (
@@ -488,7 +508,7 @@ export default function WhisperPage() {
                       handleSend();
                     }
                   }}
-                  placeholder="메시지 입력... (Enter 전송, Shift+Enter 줄바꿈)"
+                  placeholder={t("chat.whisper.input_placeholder", { defaultValue: "메시지 입력... (Enter 전송, Shift+Enter 줄바꿈)" })}
                   rows={1}
                   maxLength={500}
                   className="flex-1 resize-none rounded-2xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100 transition-colors"
@@ -517,13 +537,13 @@ export default function WhisperPage() {
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
-            <p className="text-gray-400">대화를 선택하거나 새 귓속말을 보내보세요</p>
+            <p className="text-gray-400">{t("chat.whisper.pick_or_start", { defaultValue: "대화를 선택하거나 새 귓속말을 보내보세요" })}</p>
             <button
               type="button"
               onClick={openNewChat}
               className="rounded-xl bg-purple-600 px-5 py-2.5 text-sm text-white hover:bg-purple-700"
             >
-              + 새 귓속말
+              {t("chat.whisper.new_whisper", { defaultValue: "+ 새 귓속말" })}
             </button>
           </div>
         )}
@@ -539,7 +559,7 @@ export default function WhisperPage() {
         >
           <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-              <h2 className="text-base font-semibold text-gray-800">새 귓속말</h2>
+              <h2 className="text-base font-semibold text-gray-800">{t("chat.whisper.new_whisper_title", { defaultValue: "새 귓속말" })}</h2>
               <button
                 type="button"
                 onClick={() => setShowNewChat(false)}
@@ -553,23 +573,24 @@ export default function WhisperPage() {
             <div className="max-h-72 overflow-y-auto p-2">
               {friends.length === 0 ? (
                 <div className="px-4 py-8 text-center text-sm text-gray-400">
-                  친구가 없습니다.{" "}
+                  {t("chat.whisper.no_friends", { defaultValue: "친구가 없습니다." })}{" "}
                   <button
                     type="button"
                     onClick={() => { setShowNewChat(false); router.push("/chat/friends"); }}
                     className="text-purple-600 underline"
                   >
-                    친구 추가하기
+                    {t("chat.whisper.add_friend", { defaultValue: "친구 추가하기" })}
                   </button>
                 </div>
               ) : (
                 friends.map((f) => {
-                  const name = f.nickname || f.name || `사용자 ${f.id}`;
+                  const name = f.nickname || f.name || userFallback(f.id);
                   return (
                     <button
-                      key={f.id}
+                      key={f.id ?? name}
                       type="button"
                       onClick={() => {
+                        if (f.id == null) return;
                         setShowNewChat(false);
                         openConversation(Number(f.id), name);
                       }}

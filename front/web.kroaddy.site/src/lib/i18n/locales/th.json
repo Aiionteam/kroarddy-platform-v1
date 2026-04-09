@@ -1,0 +1,2729 @@
+{
+  "app": {
+    "name": "Kroaddy"
+  },
+  "common": {
+    "save": "บันทึก",
+    "cancel": "ยกเลิก",
+    "next": "ถัดไป",
+    "skip": "ข้าม",
+    "done": "เสร็จสิ้น",
+    "loading": "กำลังโหลด...",
+    "saving": "กำลังบันทึก...",
+    "processing": "กำลังประมวลผล...",
+    "error": "เกิดข้อผิดพลาด",
+    "logout": "ออกจากระบบ",
+    "menu_open": "เปิดเมนู",
+    "search": "ค้นหา",
+    "show_all": "แสดงทั้งหมด",
+    "back": "ย้อนกลับ",
+    "close": "ปิด",
+    "retry": "ลองอีกครั้ง",
+    "fold": "ย่อ",
+    "view_all": "ดูทั้งหมด",
+    "more": "เพิ่มเติม",
+    "delete": "ลบ",
+    "deleting": "กำลังลบ...",
+    "edit": "แก้ไข",
+    "submit": "ส่ง",
+    "share": "แชร์",
+    "go_back": "กลับ",
+    "confirm": "ยืนยัน",
+    "coming_soon": "เร็วๆ นี้",
+    "accept": "ยอมรับ",
+    "login_needed": "ต้องเข้าสู่ระบบ",
+    "login_required": "ต้องเข้าสู่ระบบ",
+    "not_found": {
+      "message": "ไม่พบหน้าที่คุณต้องการ",
+      "back_home": "กลับหน้าแรก"
+    }
+  },
+  "onboarding": {
+    "title": "ความชอบในการท่องเที่ยว",
+    "subtitle": "ช่วยให้เราปรับคำแนะนำทริปจาก AI ให้เหมาะกับคุณ",
+    "later": "ภายหลัง",
+    "saving": "กำลังบันทึก...",
+    "nationality": {
+      "title": "ประเทศ / สัญชาติ",
+      "hint": "แอปจะสลับเป็นภาษาที่คุณต้องการ"
+    },
+    "gender": {
+      "title": "เพศ"
+    },
+    "age": {
+      "title": "ช่วงอายุ"
+    },
+    "diet": {
+      "title": "ความต้องการด้านอาหาร"
+    },
+    "religion": {
+      "title": "ศาสนา"
+    }
+  },
+  "auth": {
+    "api": {
+      "naver_auth_url_fail": "ไม่สามารถรับ URL เข้าสู่ระบบ Naver ได้",
+      "naver_auth_url_missing": "ไม่ได้รับ URL เข้าสู่ระบบ Naver",
+      "kakao_auth_url_fail": "ไม่สามารถรับ URL เข้าสู่ระบบ Kakao ได้",
+      "kakao_auth_url_missing": "ไม่ได้รับ URL เข้าสู่ระบบ Kakao",
+      "google_auth_url_fail": "ไม่สามารถรับ URL เข้าสู่ระบบ Google ได้",
+      "google_auth_url_missing": "ไม่ได้รับ URL เข้าสู่ระบบ Google",
+      "refresh_token_invalid": "รีเฟรชโทเค็นหมดอายุหรือไม่ถูกต้อง กรุณาเข้าสู่ระบบอีกครั้ง"
+    }
+  },
+  "weather": {
+    "reason": {
+      "no_location": "ไม่มีข้อมูลตำแหน่ง"
+    }
+  },
+  "planner.standard": {
+    "title": "เลือกจุดหมาย",
+    "subtitle": "เลือกสถานที่ แล้ว AI จะแนะนำเส้นทางที่เหมาะกับคุณ",
+    "mode_label": "มาตรฐาน",
+    "date": "วันที่",
+    "mode_car": "🚗 รถยนต์",
+    "mode_transit": "🚇 ขนส่งสาธารณะ",
+    "mode_walk": "🚶 เดิน",
+    "generating_loading": "กำลังค้นหาข้อมูลที่แม่นยำ…",
+    "generate_route": "✨ สร้างเส้นทาง",
+    "ai_recommended_routes": "เส้นทางที่ AI แนะนำ",
+    "set_date_and_generate": "ตั้งวันที่และ\nสร้างเส้นทาง",
+    "start_generate": "✨ เริ่มสร้างเส้นทาง",
+    "pick_route": "กรุณาเลือกเส้นทาง",
+    "range_hint": "AI จะสร้างกำหนดการสำหรับช่วง {{start}} ~ {{end}}",
+    "select_date_then_generate": "เลือกวันที่แล้วสร้างเส้นทาง",
+    "generate_hint": "กดปุ่ม ✨ สร้างเส้นทาง ที่มุมซ้ายบน",
+    "making_schedule": "AI กำลังสร้างกำหนดการสำหรับ <b>{{name}}</b>…",
+    "recommended_schedule_title": "{{name}} — กำหนดการแนะนำ",
+    "saved_goto_schedule": "✅ บันทึกแล้ว · เปิดตัวจัดการกำหนดการ",
+    "save_plan": "💾 บันทึก",
+    "total_cost": "ค่าใช้จ่ายรวมโดยประมาณ",
+    "cost_per_day": "วันที่{{day}} {{total}}",
+    "search_placeholder": "ค้นหาเมือง/สถานที่ (เช่น คังนึง, หมู่บ้านฮันอก)",
+    "search_result": "ผลการค้นหา “{{query}}” {{count}} รายการ",
+    "no_results": "ไม่พบผลลัพธ์",
+    "reset": "รีเซ็ต",
+    "metro_quick": "ทางลัดเมืองหลัก (เขตมหานคร)",
+    "metro_quick_sub": "ไปยังเมืองหลักยอดนิยมได้ทันที และดูโซนย่อยด้านล่าง",
+    "metro_detail": "โซนย่อยของเมืองหลัก",
+    "metro_detail_sub": "สำหรับทริปในเมืองอย่างโซล/ปูซาน/แทกู/อุลซัน สามารถดูพื้นที่ย่อยได้ที่นี่",
+    "province": "จังหวัด",
+    "province_sub": "เปรียบเทียบภูมิภาค เช่น คยองกี ชุงชอง ชอลลา คยองซัง คังวอน และเชจู",
+    "image_pending": "รูปภาพจะมาเร็วๆ นี้",
+    "popular": "ยอดนิยม",
+    "route_load_fail": "โหลดเส้นทางไม่สำเร็จ",
+    "schedule_load_fail": "โหลดกำหนดการไม่สำเร็จ",
+    "save_fail": "บันทึกไม่สำเร็จ",
+    "subtotal": "ยอดย่อย {{total}}",
+    "theme": {
+      "event": "อีเวนต์",
+      "food": "อาหาร",
+      "spot": "สถานที่ท่องเที่ยว",
+      "luxury": "หรูหรา",
+      "value": "คุ้มค่า",
+      "family": "ครอบครัว",
+      "couple": "คู่รัก"
+    },
+    "highlight": {
+      "gyeongbokgung": "Gyeongbokgung",
+      "hongdae": "Hongdae",
+      "hangang_park": "Hangang Park",
+      "cheongwadae": "Cheongwadae",
+      "insadong": "Insadong",
+      "myeongdong_cathedral": "Myeongdong Cathedral",
+      "euljiro_alley": "Euljiro Alley",
+      "national_museum_of_korea": "National Museum of Korea",
+      "itaewon": "Itaewon",
+      "haeundae": "Haeundae",
+      "haeundae_beach": "Haeundae Beach",
+      "gamcheon_village": "Gamcheon Village",
+      "jagalchi_market": "Jagalchi Market",
+      "biff_square": "BIFF Square",
+      "dongseongro": "Dongseong-ro",
+      "kim_gwangseok_street": "Kim Gwangseok Street",
+      "suseong_lake": "Suseong Lake",
+      "songdo": "Songdo",
+      "chinatown": "Chinatown",
+      "gangneung": "Gangneung",
+      "gyeongpo": "Gyeongpo Pavilion",
+      "anmok_coffee_street": "Anmok Coffee Street",
+      "ojukheon": "Ojukheon",
+      "sokcho": "Sokcho",
+      "seoraksan": "Seoraksan",
+      "central_market": "Central Market",
+      "hallasan": "Hallasan",
+      "seongsan_ilchulbong": "Seongsan Ilchulbong"
+    }
+  },
+  "planner.dest": {
+    "seoul": {
+      "name": "Seoul",
+      "highlight1": "Gyeongbokgung",
+      "highlight2": "Hangang Park"
+    },
+    "busan": {
+      "name": "Busan",
+      "highlight1": "Haeundae Beach",
+      "highlight2": "Jagalchi Market"
+    },
+    "daegu": {
+      "name": "Daegu",
+      "highlight1": "Dongseong-ro",
+      "highlight2": "Suseong Lake"
+    },
+    "incheon": {
+      "name": "Incheon",
+      "highlight1": "Songdo",
+      "highlight2": "Chinatown"
+    },
+    "gwangju": {
+      "name": "Gwangju",
+      "highlight1": "ACC (Asia Culture Center)",
+      "highlight2": "Yangnim-dong"
+    },
+    "daejeon": {
+      "name": "Daejeon",
+      "highlight1": "Seongsimdang",
+      "highlight2": "Expo Park"
+    },
+    "ulsan": {
+      "name": "Ulsan",
+      "highlight1": "Ganjeolgot",
+      "highlight2": "Daewangam Park"
+    },
+    "sejong": {
+      "name": "Sejong",
+      "highlight1": "Sejong Lake Park",
+      "highlight2": "National Arboretum"
+    },
+    "jongno": {
+      "name": "Jongno & Gwanghwamun",
+      "highlight1": "Gyeongbokgung",
+      "highlight2": "Insadong"
+    },
+    "myeongdong": {
+      "name": "Myeongdong & Euljiro",
+      "highlight1": "Myeongdong Cathedral",
+      "highlight2": "Euljiro Alley"
+    },
+    "yongsan": {
+      "name": "Yongsan & Itaewon",
+      "highlight1": "National Museum of Korea",
+      "highlight2": "Itaewon"
+    },
+    "hongdae": {
+      "name": "Hongdae & Mapo",
+      "highlight1": "Hongdae",
+      "highlight2": "Yeonnam-dong"
+    },
+    "bukchon": {
+      "name": "Bukchon & Samcheong",
+      "highlight1": "Bukchon Hanok Village",
+      "highlight2": "Samcheong-dong"
+    },
+    "nowon": {
+      "name": "Nowon & Dobong"
+    },
+    "gangnam": {
+      "name": "Gangnam & Seocho",
+      "highlight1": "COEX",
+      "highlight2": "Apgujeong Rodeo"
+    },
+    "jamsil": {
+      "name": "Jamsil & Songpa",
+      "highlight1": "Lotte World",
+      "highlight2": "Olympic Park"
+    },
+    "seongsu": {
+      "name": "Seongsu & Hannam",
+      "highlight1": "Seongsu Cafe Street",
+      "highlight2": "Hannam-dong"
+    },
+    "goyang": {
+      "name": "Goyang"
+    },
+    "paju": {
+      "name": "Paju",
+      "highlight1": "Heyri Art Village",
+      "highlight2": "Imjingak"
+    },
+    "gimpo": {
+      "name": "Gimpo"
+    },
+    "uijeongbu": {
+      "name": "Uijeongbu"
+    },
+    "namyangju": {
+      "name": "Namyangju",
+      "highlight1": "Dumulmeori",
+      "highlight2": "Dasan-gil"
+    },
+    "guri": {
+      "name": "Guri"
+    },
+    "gapyeong": {
+      "name": "Gapyeong",
+      "highlight1": "Nami Island",
+      "highlight2": "Jara Island"
+    },
+    "yangpyeong": {
+      "name": "Yangpyeong",
+      "highlight1": "Dumulmeori",
+      "highlight2": "Yongmunsan"
+    },
+    "pocheon": {
+      "name": "Pocheon",
+      "highlight1": "Sanjeong Lake",
+      "highlight2": "Herb Island"
+    },
+    "yangju": {
+      "name": "Yangju"
+    },
+    "dongducheon": {
+      "name": "Dongducheon"
+    },
+    "suwon": {
+      "name": "Suwon",
+      "highlight1": "Hwaseong Haenggung",
+      "highlight2": "Haengnidan-gil"
+    },
+    "hwaseong": {
+      "name": "Hwaseong"
+    },
+    "ansan": {
+      "name": "Ansan"
+    },
+    "siheung": {
+      "name": "Siheung"
+    },
+    "anyang": {
+      "name": "Anyang"
+    },
+    "gunpo": {
+      "name": "Gunpo"
+    },
+    "pyeongtaek": {
+      "name": "Pyeongtaek"
+    },
+    "yongin": {
+      "name": "Yongin",
+      "highlight1": "Everland",
+      "highlight2": "Korean Folk Village"
+    },
+    "seongnam": {
+      "name": "Seongnam"
+    },
+    "hanam": {
+      "name": "Hanam"
+    },
+    "icheon": {
+      "name": "Icheon",
+      "highlight1": "Ceramics Village",
+      "highlight2": "Icheon Rice"
+    },
+    "yeoju": {
+      "name": "Yeoju"
+    },
+    "anseong": {
+      "name": "Anseong"
+    },
+    "osan": {
+      "name": "Osan"
+    },
+    "uiwang": {
+      "name": "Uiwang"
+    },
+    "gwacheon": {
+      "name": "Gwacheon"
+    },
+    "bucheon": {
+      "name": "Bucheon"
+    },
+    "gwangmyeong": {
+      "name": "Gwangmyeong"
+    },
+    "chuncheon": {
+      "name": "Chuncheon",
+      "highlight1": "Nami Island",
+      "highlight2": "Dakgalbi Alley"
+    },
+    "wonju": {
+      "name": "Wonju",
+      "highlight1": "Museum SAN",
+      "highlight2": "Sogeumsan Suspension Bridge"
+    },
+    "pyeongchang": {
+      "name": "Pyeongchang",
+      "highlight1": "Daegwallyeong Sheep Ranch",
+      "highlight2": "Odaesan"
+    },
+    "yeongwol": {
+      "name": "Yeongwol"
+    },
+    "hoengseong": {
+      "name": "Hoengseong"
+    },
+    "jeongseon": {
+      "name": "Jeongseon"
+    },
+    "inje": {
+      "name": "Inje"
+    },
+    "taebaek": {
+      "name": "Taebaek"
+    },
+    "gangneung": {
+      "name": "Gangneung",
+      "highlight1": "Gyeongpo Pavilion",
+      "highlight2": "Anmok Coffee Street"
+    },
+    "sokcho": {
+      "name": "Sokcho",
+      "highlight1": "Seoraksan",
+      "highlight2": "Central Market"
+    },
+    "yangyang": {
+      "name": "Yangyang",
+      "highlight1": "Surfyy Beach",
+      "highlight2": "Naksansa"
+    },
+    "donghae": {
+      "name": "Donghae"
+    },
+    "samcheok": {
+      "name": "Samcheok"
+    },
+    "goseong-gw": {
+      "name": "Goseong"
+    },
+    "cheongju": {
+      "name": "Cheongju"
+    },
+    "chungju": {
+      "name": "Chungju"
+    },
+    "jecheon": {
+      "name": "Jecheon",
+      "highlight1": "Cheongpung Lake",
+      "highlight2": "Uirimji"
+    },
+    "danyang": {
+      "name": "Danyang",
+      "highlight1": "Danyang Palgyeong",
+      "highlight2": "Dodamsambong"
+    },
+    "gongju": {
+      "name": "Gongju",
+      "highlight1": "Gongsanseong Fortress",
+      "highlight2": "Tomb of King Muryeong"
+    },
+    "buyeo": {
+      "name": "Buyeo",
+      "highlight1": "Busosanseong Fortress",
+      "highlight2": "Baekje Cultural Land"
+    },
+    "asan": {
+      "name": "Asan"
+    },
+    "cheonan": {
+      "name": "Cheonan"
+    },
+    "nonsan": {
+      "name": "Nonsan"
+    },
+    "boryeong": {
+      "name": "Boryeong",
+      "highlight1": "Mud Festival",
+      "highlight2": "Daecheon Beach"
+    },
+    "taean": {
+      "name": "Taean",
+      "highlight1": "Anmyeondo",
+      "highlight2": "Kkotji Beach"
+    },
+    "seosan": {
+      "name": "Seosan"
+    },
+    "dangjin": {
+      "name": "Dangjin"
+    },
+    "jeonju": {
+      "name": "Jeonju",
+      "highlight1": "Hanok Village",
+      "highlight2": "Makgeolli Alley"
+    },
+    "gunsan": {
+      "name": "Gunsan",
+      "highlight1": "Modern History Street",
+      "highlight2": "Lee Seongdang"
+    },
+    "iksan": {
+      "name": "Iksan"
+    },
+    "gochang": {
+      "name": "Gochang"
+    },
+    "jeongeup": {
+      "name": "Jeongeup"
+    },
+    "namwon": {
+      "name": "Namwon"
+    },
+    "gimje": {
+      "name": "Gimje"
+    },
+    "yeosu": {
+      "name": "Yeosu",
+      "highlight1": "Maritime Cable Car",
+      "highlight2": "Odongdo"
+    },
+    "suncheon": {
+      "name": "Suncheon",
+      "highlight1": "Suncheon Bay National Garden",
+      "highlight2": "Naganeupseong Folk Village"
+    },
+    "mokpo": {
+      "name": "Mokpo",
+      "highlight1": "Maritime Cable Car",
+      "highlight2": "Yudalsan"
+    },
+    "wando": {
+      "name": "Wando"
+    },
+    "gangjin": {
+      "name": "Gangjin"
+    },
+    "yeonggwang": {
+      "name": "Yeonggwang"
+    },
+    "haenam": {
+      "name": "Haenam"
+    },
+    "goheung": {
+      "name": "Goheung"
+    },
+    "yeongam": {
+      "name": "Yeongam"
+    },
+    "damyang": {
+      "name": "Damyang",
+      "highlight1": "Juknokwon",
+      "highlight2": "Metasequoia Road"
+    },
+    "gwangyang": {
+      "name": "Gwangyang"
+    },
+    "boseong": {
+      "name": "Boseong",
+      "highlight1": "Green Tea Fields",
+      "highlight2": "Yulpo Beach"
+    },
+    "naju": {
+      "name": "Naju"
+    },
+    "haeundae": {
+      "name": "Haeundae",
+      "highlight1": "Haeundae Beach",
+      "highlight2": "Dongbaekseom"
+    },
+    "gwangalli": {
+      "name": "Gwangalli & Suyeong",
+      "highlight1": "Gwangandaegyo Bridge",
+      "highlight2": "Gwangalli Beach"
+    },
+    "gijang": {
+      "name": "Gijang",
+      "highlight1": "Jukseong Dream Cathedral",
+      "highlight2": "Daebyeon Port"
+    },
+    "songjeong": {
+      "name": "Songjeong & Cheongsapo"
+    },
+    "nampo": {
+      "name": "Nampo & Jung-gu",
+      "highlight1": "Jagalchi Market",
+      "highlight2": "BIFF Square"
+    },
+    "seomyeon": {
+      "name": "Seomyeon & Bujeon"
+    },
+    "gamcheon": {
+      "name": "Gamcheon Culture Village",
+      "highlight1": "Gamcheon Village",
+      "highlight2": "Skywalk"
+    },
+    "yeongdo": {
+      "name": "Yeongdo"
+    },
+    "geumjeong": {
+      "name": "Geumjeong & Oncheonjang"
+    },
+    "gangseo-bs": {
+      "name": "Gangseo & Gadeokdo"
+    },
+    "dadaepo": {
+      "name": "Saha & Dadaepo"
+    },
+    "dongseongno": {
+      "name": "Dongseongno & Jung-gu",
+      "highlight1": "Dongseong-ro",
+      "highlight2": "Seomun Market"
+    },
+    "gimgwangseok": {
+      "name": "Kim Gwangseok Street",
+      "highlight1": "Kim Gwangseok Street",
+      "highlight2": "Bangcheon Market"
+    },
+    "suseongmot": {
+      "name": "Suseong Lake & Beomeo",
+      "highlight1": "Suseong Lake",
+      "highlight2": "Suseong Resort"
+    },
+    "palgongsan": {
+      "name": "Palgongsan",
+      "highlight1": "Donghwasa",
+      "highlight2": "Gatbawi"
+    },
+    "dalseong": {
+      "name": "Biseulsan & Dalseong",
+      "highlight1": "Biseulsan Royal Azaleas",
+      "highlight2": "Dalseong Wetlands"
+    },
+    "gunwi": {
+      "name": "Gunwi"
+    },
+    "ganjeolgot": {
+      "name": "Ganjeolgot",
+      "highlight1": "Ganjeolgot Lighthouse",
+      "highlight2": "Sunrise Spot"
+    },
+    "daewangam": {
+      "name": "Daewangam",
+      "highlight1": "Daewangam Park",
+      "highlight2": "Ilsan Beach"
+    },
+    "taehwagang": {
+      "name": "Taehwagang"
+    },
+    "bangudae": {
+      "name": "Bangudae"
+    },
+    "gyeongju": {
+      "name": "Gyeongju",
+      "highlight1": "Hwangnidan-gil",
+      "highlight2": "Bulguksa"
+    },
+    "andong": {
+      "name": "Andong",
+      "highlight1": "Hahoe Village",
+      "highlight2": "Dosanseowon"
+    },
+    "yeongju": {
+      "name": "Yeongju"
+    },
+    "mungyeong": {
+      "name": "Mungyeong"
+    },
+    "pohang": {
+      "name": "Pohang",
+      "highlight1": "Homigot",
+      "highlight2": "Space Walk"
+    },
+    "yeongdeok": {
+      "name": "Yeongdeok"
+    },
+    "uljin": {
+      "name": "Uljin"
+    },
+    "dokdo": {
+      "name": "Dokdo & Ulleungdo",
+      "highlight1": "Dokdo",
+      "highlight2": "Ulleungdo"
+    },
+    "gumi": {
+      "name": "Gumi"
+    },
+    "gimcheon": {
+      "name": "Gimcheon"
+    },
+    "yeongcheon": {
+      "name": "Yeongcheon"
+    },
+    "sangju": {
+      "name": "Sangju"
+    },
+    "gyeongsan": {
+      "name": "Gyeongsan"
+    },
+    "tongyeong": {
+      "name": "Tongyeong",
+      "highlight1": "Luge",
+      "highlight2": "Dongpirang Village"
+    },
+    "geoje": {
+      "name": "Geoje",
+      "highlight1": "Windy Hill",
+      "highlight2": "Oedo"
+    },
+    "namhae": {
+      "name": "Namhae",
+      "highlight1": "German Village",
+      "highlight2": "Darangyi Village"
+    },
+    "goseong-gn": {
+      "name": "Goseong"
+    },
+    "jinju": {
+      "name": "Jinju",
+      "highlight1": "Lantern Festival",
+      "highlight2": "Jinjuseong Fortress"
+    },
+    "changwon": {
+      "name": "Changwon"
+    },
+    "hapcheon": {
+      "name": "Hapcheon"
+    },
+    "miryang": {
+      "name": "Miryang"
+    },
+    "hamyang": {
+      "name": "Hamyang"
+    },
+    "sancheong": {
+      "name": "Sancheong"
+    },
+    "hadong": {
+      "name": "Hadong",
+      "highlight1": "Hwagae Market",
+      "highlight2": "Ssanggyesa"
+    },
+    "geochang": {
+      "name": "Geochang"
+    },
+    "gimhae": {
+      "name": "Gimhae"
+    },
+    "yangsan": {
+      "name": "Yangsan"
+    },
+    "changnyeong": {
+      "name": "Changnyeong"
+    },
+    "uiryeong": {
+      "name": "Uiryeong"
+    },
+    "jeju": {
+      "name": "Jeju City",
+      "highlight1": "Hallasan",
+      "highlight2": "Seongsan Ilchulbong"
+    },
+    "seogwipo": {
+      "name": "Seogwipo",
+      "highlight1": "Cheonjiyeon Falls",
+      "highlight2": "Olle Trail"
+    }
+  },
+  "planner.region": {
+    "seoul-areas": {
+      "label": "Seoul",
+      "subLabel": "Key areas by district"
+    },
+    "gyeonggi-north": {
+      "label": "Northern Gyeonggi",
+      "subLabel": "Goyang, Paju, Uijeongbu, Namyangju, etc."
+    },
+    "gyeonggi-south": {
+      "label": "Southern Gyeonggi",
+      "subLabel": "Suwon, Yongin, Seongnam, Pyeongtaek, etc."
+    },
+    "gangwon": {
+      "label": "Gangwon-do",
+      "subLabel": "Gangwon Special Self-Governing Province"
+    },
+    "chungbuk": {
+      "label": "Chungcheongbuk-do",
+      "subLabel": "Cheongju, Chungju, Jecheon, Danyang"
+    },
+    "chungnam": {
+      "label": "Chungcheongnam-do",
+      "subLabel": "Gongju, Buyeo, Boryeong, Taean, etc."
+    },
+    "jeonbuk": {
+      "label": "Jeonbuk",
+      "subLabel": "Jeonbuk Special Self-Governing Province"
+    },
+    "jeonnam": {
+      "label": "Jeollanam-do",
+      "subLabel": "Yeosu, Suncheon, Mokpo, Damyang, etc."
+    },
+    "busan": {
+      "label": "Busan",
+      "subLabel": "Busan Metropolitan City"
+    },
+    "daegu": {
+      "label": "Daegu",
+      "subLabel": "Daegu Metropolitan City"
+    },
+    "ulsan": {
+      "label": "Ulsan",
+      "subLabel": "Ulsan Metropolitan City"
+    },
+    "gyeongbuk": {
+      "label": "Gyeongsangbuk-do",
+      "subLabel": "Gyeongju, Pohang, Andong, etc."
+    },
+    "gyeongnam": {
+      "label": "Gyeongsangnam-do",
+      "subLabel": "Tongyeong, Geoje, Jinju, Changwon, etc."
+    },
+    "jeju": {
+      "label": "Jeju-do",
+      "subLabel": "Jeju Special Self-Governing Province"
+    }
+  },
+  "home": {
+    "subtitle": "สร้างทริปที่สมบูรณ์แบบด้วย AI",
+    "planner": {
+      "label": "วางแผนทริป",
+      "desc": "เส้นทางและกำหนดการที่ AI แนะนำ"
+    },
+    "schedule": {
+      "label": "แผนของฉัน",
+      "desc": "ดูแผนการเดินทางที่บันทึกไว้"
+    },
+    "guide": {
+      "label": "ค้นพบ",
+      "desc": "ร้านอาหารและอีเวนต์ในที่เดียว"
+    },
+    "kcontent": {
+      "label": "แพลน K-Content",
+      "desc": "วางแผนทริปตามแรงบันดาลใจจาก K-content",
+      "title": "🎭 ทริปธีม K-content",
+      "theme_kpop": "K-POP",
+      "theme_kdrama": "K-DRAMA",
+      "theme_kfood": "K-FOOD",
+      "theme_kbeauty": "K-BEAUTY"
+    },
+    "news": {
+      "prev": "ก่อนหน้า",
+      "next": "ถัดไป",
+      "page_n": "หน้า {{page}}",
+      "nationwide": "ทั่วประเทศ",
+      "analyzing": "กำลังวิเคราะห์ด้วย AI อยู่",
+      "error": "โหลดข่าวไม่สำเร็จ"
+    },
+    "rebate": {
+      "city_route_title": "เส้นทางและตารางเที่ยว {{name}} (แพลนเนอร์มาตรฐาน)",
+      "province": {
+        "강원": "คังวอน",
+        "충북": "ชุงบุก",
+        "전북": "ชอนบุก",
+        "전남": "ชอนนัม",
+        "경남": "คยองนัม",
+        "gangwon": "คังวอน",
+        "chungbuk": "ชุงบุก",
+        "jeonbuk": "ชอนบุก",
+        "jeonnam": "ชอนนัม",
+        "gyeongnam": "คยองนัม"
+      },
+      "period": "2026.4 ~ 6 · โครงการนำร่อง",
+      "title": "🎫 คืนเงินสูงสุด 50% เมื่อท่องเที่ยวพื้นที่ชนบทที่กำหนด",
+      "desc": "รับคืนครึ่งหนึ่งของค่าใช้จ่ายทริปเป็นบัตรของขวัญท้องถิ่นบนมือถือ สูงสุด 100,000 วอน/คน สูงสุด 200,000 วอนสำหรับกลุ่ม 2 คนขึ้นไป",
+      "visit_korea": "เว็บท่องเที่ยวเกาหลีอย่างเป็นทางการ",
+      "fold": "ซ่อนวิธีใช้",
+      "expand": "วิธีใช้ · พื้นที่ที่เข้าร่วม",
+      "step1": "ลงทะเบียนล่วงหน้า — ตรวจพื้นที่ที่เข้าร่วมที่ visitkorea.or.kr และได้รับอนุมัติก่อนเดินทาง",
+      "step2": "เดินทาง — ใช้จ่ายในพื้นที่ที่อนุมัติ (อาหาร ที่พัก ฯลฯ) และเก็บใบเสร็จ",
+      "step3": "ส่งหลักฐาน — หลังเดินทางส่งใบเสร็จตามคำแนะนำของท้องถิ่น",
+      "step4": "คืนเงิน — หลังตรวจสอบ คืน 50% ของค่าใช้จ่ายเป็นบัตรของขวัญท้องถิ่นบนมือถือ",
+      "step5": "ใช้จ่าย — ใช้ภายในปีนั้นที่ร้านอาหาร คาเฟ่ หรือช้อปปิ้งออนไลน์ในพื้นที่",
+      "notice": "หมายเหตุ: ต้องลงทะเบียนและได้รับอนุมัติล่วงหน้า อาจปิดรับเร็วหากงบหมด รายละเอียดแตกต่างตามท้องถิ่น โปรดตรวจเว็บไซต์ทางการต้นเดือนเมษายน",
+      "targets": "16 พื้นที่ที่เข้าร่วม · ดูเส้นทางในแพลนเนอร์หรือคู่มือทางการ"
+    },
+    "banner": {
+      "title": "ตั้งค่าความชอบเพื่อให้ AI แนะนำได้แม่นยำขึ้น!",
+      "sub": "เพิ่มเพศ ช่วงอายุ อาหาร และศาสนา เพื่อเส้นทางที่เหมาะกับคุณ",
+      "setup": "ตั้งค่า",
+      "close": "ปิด"
+    },
+    "popular": {
+      "title": "📍 จุดหมายยอดนิยม"
+    },
+    "shortcuts": {
+      "planner": "วางแผนทริป",
+      "kcontent": "K-คอนเทนต์",
+      "schedule": "ตาราง",
+      "standard": "ค้นหาสถานที่",
+      "user": "เส้นทางผู้ใช้",
+      "group": "แชทกลุ่ม"
+    }
+  },
+  "sidebar": {
+    "tourstar": "ดาวท่องเที่ยว",
+    "planner": "วางแผนทริป",
+    "schedule": "แผนของฉัน",
+    "guide": "ค้นพบ",
+    "groupchat": "แชทกลุ่ม",
+    "friends": "รายชื่อเพื่อน",
+    "whisper": "กระซิบ",
+    "profile": "โปรไฟล์ของฉัน",
+    "customer": "ศูนย์บริการลูกค้า",
+    "logout": "ออกจากระบบ"
+  },
+  "settings": {
+    "title": "การตั้งค่า",
+    "saved": "บันทึกแล้ว",
+    "error": {
+      "load_user": "โหลดข้อมูลผู้ใช้ไม่สำเร็จ",
+      "save": "บันทึกไม่สำเร็จ",
+      "save_during": "เกิดข้อผิดพลาดขณะบันทึก"
+    },
+    "account": {
+      "title": "ข้อมูลบัญชี",
+      "email": "อีเมล",
+      "nickname": "ชื่อเล่น",
+      "default": "(ค่าเริ่มต้น)",
+      "nickname_placeholder": "ว่างไว้จะแสดงชื่อ",
+      "nickname_hint": "หากไม่กรอกจะแสดงชื่อของคุณ",
+      "honor": "เกียรติยศ",
+      "point": "คะแนน",
+      "provider": "เชื่อมต่อ"
+    },
+    "withdraw": {
+      "title": "ลบบัญชี",
+      "desc": "การลบบัญชีจะลบข้อมูลทั้งหมดและกู้คืนไม่ได้",
+      "button": "ลบบัญชี",
+      "confirm_desc": "ยืนยันการลบบัญชีหรือไม่? พิมพ์ Delete account ด้านล่างเพื่อดำเนินการต่อ",
+      "placeholder": "Delete account",
+      "submit": "ลบ",
+      "error": "ลบบัญชีไม่สำเร็จ",
+      "error_during": "เกิดข้อผิดพลาดขณะลบบัญชี"
+    },
+    "profile": {
+      "title": "โปรไฟล์การท่องเที่ยว",
+      "subtitle": "ใช้เพื่อคำแนะนำจาก AI ที่เหมาะกับคุณ",
+      "save": "บันทึกโปรไฟล์การท่องเที่ยว",
+      "saved": "บันทึกโปรไฟล์การท่องเที่ยวแล้ว"
+    }
+  },
+  "customer": {
+    "subscription": {
+      "title_mobile": "การสมัครสมาชิก",
+      "title": "บริการสมัครสมาชิก",
+      "subtitle": "หลังทดลองใช้ฟรี โปรดเลือกแพ็กเกจที่ต้องการ",
+      "safety": "ชำระเงินปลอดภัย · ยกเลิกได้ตลอด",
+      "free": {
+        "kicker": "เริ่มใช้ฟรีวันนี้",
+        "note": "หลัง 7 วันฟรี ระบบจะเปลี่ยนเป็นแพ็กเกจที่เลือกอัตโนมัติ"
+      },
+      "plan_monthly": {
+        "title": "แพ็กเกจรายเดือน",
+        "badge": "พื้นฐาน",
+        "price": "₩5,900 / เดือน",
+        "note": "เรียกเก็บรายเดือน",
+        "features": {
+          "1": "สรุปคำแนะนำจากผู้เชี่ยวชาญ",
+          "2": "ตอบกลับคำถาม/คู่มือแบบเร่งด่วน",
+          "3": "รวมอัปเดตฟีเจอร์ล่าสุด"
+        }
+      },
+      "plan_yearly": {
+        "title": "แพ็กเกจรายปี",
+        "badge": "แนะนำ",
+        "price": "₩46,800 / ปี",
+        "note": "เรียกเก็บรายปี",
+        "oldPrice": "เทียบเท่าประมาณ ₩7,000/เดือน",
+        "features": {
+          "1": "รวมสิทธิ์แพ็กเกจรายเดือนทั้งหมด",
+          "2": "ส่วนลดสำหรับระยะเวลา 1 ปี",
+          "3": "สนับสนุนแบบเร่งด่วนและเสถียรภาพดีขึ้น"
+        }
+      },
+      "cta_monthly": "เริ่มสมัครรายเดือน",
+      "cta_yearly": "เริ่มสมัครรายปี",
+      "selected": {
+        "title": "แพ็กเกจที่เลือก",
+        "compare": "เปรียบเทียบ: ",
+        "includes": "สิทธิประโยชน์ที่รวม"
+      },
+      "agree": {
+        "service_title": "ยอมรับการใช้บริการ",
+        "service_desc": "จำเป็นสำหรับการชำระเงินและใช้งานสมาชิก",
+        "billing_title": "ยอมรับประกาศการเรียกเก็บเงิน",
+        "billing_desc": "ข้อมูลเกี่ยวกับการสลับอัตโนมัติและรอบการเรียกเก็บ"
+      },
+      "demo_alert": "(UI เดโม) จะเชื่อม API ชำระเงินจริงในขั้นถัดไป",
+      "demo_note": "หน้าจอเดโม การชำระเงิน/สลับอัตโนมัติจริงใช้ในโปรดักชัน"
+    },
+    "emergency": {
+      "title_mobile": "ความช่วยเหลือฉุกเฉิน",
+      "title": "ความช่วยเหลือฉุกเฉินและเคล็ดลับท่องเที่ยว",
+      "subtitle": "คำแนะนำตามหมวดสำหรับเหตุฉุกเฉินที่ชาวต่างชาติอาจพบในเกาหลี",
+      "share_button": "แชร์เหตุฉุกเฉิน",
+      "consulate": {
+        "title": "สถานทูต / สถานกงสุล",
+        "nationality": "สัญชาติ",
+        "find_contact": "ค้นหาติดต่อสถานกงสุล",
+        "callcenter": "ศูนย์โทรกงสุล 24 ชม. 02-3210-0404",
+        "unknown_nationality": "ไม่ทราบ"
+      },
+      "categories": {
+        "title": "หมวดเหตุฉุกเฉิน",
+        "selected": "เลือกแล้ว",
+        "view": "ดู",
+        "items": {
+          "passport": {
+            "title": "หนังสือเดินทาง / วีซ่าและการพำนัก",
+            "short": "หนังสือเดินทางหายหรือต้องการความช่วยเหลือวีซ่า/พำนัก",
+            "steps": {
+              "1": "ถ้าได้ ให้เก็บสำเนา/รูปและแจ้งที่พัก/ตำรวจ",
+              "2": "ติดต่อสถานทูต/กงสุลเพื่อออกใหม่หรือเอกสารชั่วคราว",
+              "3": "เตรียมเลขคดีตำรวจหากจำเป็น"
+            }
+          },
+          "lost": {
+            "title": "แจ้งของหาย / ถูกขโมย",
+            "short": "กระเป๋าเงิน โทรศัพท์ หรือของสำคัญหาย",
+            "steps": {
+              "1": "หากสงสัยบัญชีถูกแฮ็ก ให้หยุดยืนยันตัวตนและเปลี่ยนรหัสทันที",
+              "2": "แจ้ง สน./ศูนย์ของหายและรับเลขคดี",
+              "3": "หากหนังสือเดินทาง/บัตรหายด้วย ติดต่อกงสุลด่วน"
+            }
+          },
+          "safety": {
+            "title": "อาชญากรรม / ความรุนแรง / ภัยคุกคาม",
+            "short": "หลอกลวง ทำร้าย ข่มขู่ หรืออันตรายใกล้ตัว",
+            "steps": {
+              "1": "ย้ายไปที่ปลอดภัยทันทีและขอความช่วยเหลือ",
+              "2": "หากบาดเจ็บ โทร 119 หรือ 112",
+              "3": "จดเวลา/สถานที่และเก็บหลักฐาน (รูป ข้อความ)"
+            }
+          },
+          "medical": {
+            "title": "การแพทย์ฉุกเฉิน / อุบัติเหตุ",
+            "short": "เจ็บป่วยกะทันหันหรือบาดเจ็บจากอุบัติเหตุ",
+            "steps": {
+              "1": "โทร 119 หรือ 112 ตามสถานการณ์และปฐมพยาบาล",
+              "2": "โรงพยาบาลต้องการล่าม ขอความช่วยเหลือจากกงสุล",
+              "3": "แจ้งแพ้ยา ยาประจำ และโรคประจำตัว"
+            }
+          },
+          "disaster": {
+            "title": "ไฟไหม้ / ภัยพิบัติ / อพยพ",
+            "short": "ไฟ ฝนหนัก ไฟดับ ฯลฯ",
+            "steps": {
+              "1": "ทำตามสัญญาณเตือนและเส้นทางอพยพที่ปลอดภัย",
+              "2": "มีผู้บาดเจ็บ ความปลอดภัยก่อน แล้วขอความช่วยเหลือ",
+              "3": "แชร์ตำแหน่งกับสถานทูต/ที่พัก"
+            }
+          },
+          "immigration": {
+            "title": "ตรวจคนเข้าเมือง / เนรเทศ / พำนัก",
+            "short": "อยู่เกินกำหนด ความเสี่ยงเนรเทศ",
+            "steps": {
+              "1": "อย่าจัดการคนเดียว ถ่ายเอกสาร/หนังสือแจ้งและโทรกงสุลทันที",
+              "2": "ขอทนาย/ล่ามหากจำเป็น",
+              "3": "หลีกเลี่ยงการกระทำที่กระทบขั้นตอนตรวจคนเข้าเมือง"
+            }
+          },
+          "interpreter": {
+            "title": "ติดต่อกงสุล / ล่าม",
+            "short": "ภาษาเป็นอุปสรรคในการขอความช่วยเหลือ",
+            "steps": {
+              "1": "สรุปสั้นๆ (เมื่อไหร่/ที่ไหน/เรื่องอะไร) ส่งให้กงสุล",
+              "2": "เตรียมเบอร์โทร ที่อยู่ และที่พัก",
+              "3": "อาจต้องโทรฉุกเฉินควบคู่ (ตำรวจ/กู้ภัย)"
+            }
+          }
+        }
+      },
+      "detail": {
+        "badge": "คู่มือรับมือ",
+        "call_police": "112 ตำรวจ",
+        "call_119": "119 ฉุกเฉิน",
+        "call_1339": "1339 KDCA (ปรึกษาแพทย์)",
+        "call_consulate": "ติดต่อกงสุล"
+      },
+      "share": {
+        "title_mobile": "แชร์ฉุกเฉิน",
+        "title": "แชร์เหตุฉุกเฉินสาธารณะ",
+        "type_title": "ประเภทเหตุฉุกเฉิน",
+        "type_subtitle": "เลือกประเภทและแนบรูป/เสียงเพื่อแชร์ได้เร็ว",
+        "aria": {
+          "select_reason": "เลือก {{id}}"
+        },
+        "attach_title": "ไฟล์แนบ",
+        "attach_subtitle": "รูปหรือเสียงช่วยให้ดำเนินการเร็วขึ้น",
+        "photo_section": "เพิ่มรูป",
+        "photo_pick": "เลือกรูป",
+        "photo_empty": "โปรดเลือกรูป",
+        "audio_section": "บันทึกเสียง",
+        "recording": "กำลังบันทึก: {{s}} วิ",
+        "record_ready": "พร้อม",
+        "optional": "ไม่บังคับ",
+        "audio_start": "เริ่มบันทึก",
+        "audio_stop": "หยุด",
+        "audio_delete": "ลบเสียง",
+        "audio_perm": "อาจต้องอนุญาตไมโครโฟน",
+        "now_title": "แชร์ทันที",
+        "now_subtitle": "เดโม: แสดงยืนยันแทนการส่งจริง",
+        "call_emergency": "โทรฉุกเฉิน",
+        "start_button": "เริ่มแชร์เหตุฉุกเฉิน",
+        "reason": {
+          "location": {
+            "label": "ต้องการความช่วยเหลือตำแหน่ง/ความปลอดภัย",
+            "desc": "ขอความช่วยเหลือตามตำแหน่งปัจจุบัน"
+          },
+          "medical": {
+            "label": "ต้องการความช่วยเหลือทางการแพทย์",
+            "desc": "ต้องการการแพทย์ฉุกเฉินเนื่องจากเจ็บป่วยหรือบาดเจ็บ"
+          },
+          "danger": {
+            "label": "สถานการณ์อันตรายเร่งด่วน",
+            "desc": "ต้องการความปลอดภัยทันทีจากความรุนแรง/หลอกลวง/ข่มขู่"
+          }
+        },
+        "alert": {
+          "audio_permission": "โปรดตรวจสอบสิทธิ์บันทึกเสียง",
+          "select_reason": "เลือกอย่างน้อยหนึ่งประเภท",
+          "attach_required": "โปรดแนบรูปหรือเสียง",
+          "start_demo": "เริ่มแชร์ฉุกเฉิน (เดโม)\nเลือก: {{selected}}"
+        }
+      }
+    },
+    "notices": {
+      "title": "ประกาศ",
+      "subtitle": "ตรวจสอบประกาศล่าสุด",
+      "new_button": "เขียนประกาศใหม่",
+      "new_button_alert": "ฟีเจอร์ «เขียนประกาศใหม่» จะเพิ่มในภายหลัง",
+      "search_placeholder": "ค้นหาประกาศ (หัวข้อ/เนื้อหา)",
+      "search_button": "ค้นหา",
+      "count": "{{count}} รายการ",
+      "no_results": "ไม่พบผลลัพธ์",
+      "seed": {
+        "3": {
+          "title": "เผยแพร่ v1.0.2 (ปรับ UX การสอบถาม)",
+          "content": "เพิ่มแท็บสำหรับหน้าสอบถามและประวัติ"
+        },
+        "4": {
+          "title": "แก้แล้ว: อัปโหลดรูปช้าในบางสภาพแวดล้อม",
+          "content": "แก้ปัญหาความล่าช้าเมื่ออัปโหลดรูป\nแจ้งหากยังพบปัญหา"
+        },
+        "5": {
+          "title": "อัปเดตตัวกรองประกาศ",
+          "content": "กรองตามประเภทและค้นหาเพื่อหาข้อมูลได้เร็วขึ้น"
+        },
+        "6": {
+          "title": "แจ้งบำรุงเซิร์ฟเวอร์ (กำหนดการ)",
+          "content": "ฟีเจอร์บางอย่างอาจใช้งานไม่ได้ชั่วคราว\nเวลาและขอบเขตดูท้ายประกาศ"
+        },
+        "7": {
+          "title": "เผยแพร่ v1.0.3 (ปรับปรุงประสิทธิภาพและแก้บั๊ก)",
+          "content": "อัปเดตนี้ปรับความเร็วโหลดและแก้ข้อผิดพลาด\nหากยังมีปัญหา โปรดติดต่อศูนย์ช่วยเหลือ"
+        },
+        "author": {
+          "ops": "ทีมปฏิบัติการ"
+        }
+      },
+      "table": {
+        "no": "ลำดับ",
+        "title": "หัวข้อ",
+        "author": "ผู้เขียน",
+        "date": "วันที่",
+        "views": "ยอดดู"
+      },
+      "aria": {
+        "select_all": "เลือกทั้งหมด",
+        "select_row": "เลือกประกาศ {{id}}"
+      },
+      "modal": {
+        "meta": "โดย {{author}} · {{date}}",
+        "close": "ปิด"
+      }
+    },
+    "inquiry": {
+      "title": "ติดต่อเรา",
+      "tabs": {
+        "write": "สอบถาม 1:1",
+        "list": "คำถามของฉัน"
+      },
+      "form": {
+        "subject": "หัวข้อ",
+        "subject_placeholder": "ใส่หัวข้อ",
+        "content": "ข้อความ",
+        "content_placeholder": "โปรดระบุรายละเอียด",
+        "attachments": "ไฟล์แนบ",
+        "attachment_help": "รูป (GIF, PNG, JPG) ไฟล์ละสูงสุด 10MB สูงสุด 3 ไฟล์",
+        "privacy_agree": "ยินยอมให้เก็บและใช้ข้อมูลส่วนบุคคล",
+        "sending": "กำลังส่ง…",
+        "submit": "ส่ง"
+      },
+      "list": {
+        "search_label": "ค้นหา",
+        "search_placeholder": "ค้นตามหัวข้อ/เนื้อหา/สถานะ",
+        "no_results": "ไม่พบผลลัพธ์"
+      },
+      "status": {
+        "answered": "ตอบแล้ว",
+        "pending": "กำลังดำเนินการ"
+      },
+      "submit_done": "ส่งคำถามของคุณแล้ว",
+      "seed": {
+        "10001": {
+          "title": "อัปโหลดรูปโปรไฟล์ไม่ได้",
+          "content": "เลือกรูปแล้วแต่อัปโหลดล้มเหลวหลายครั้ง"
+        },
+        "10002": {
+          "title": "แก้ตารางเที่ยวอย่างไร?",
+          "content": "อยากเปลี่ยนแค่วันเดียวในแผนที่บันทึกไว้",
+          "answer": "เปิดตารางเที่ยว เลือกวันที่ แล้วใช้สุ่มใหม่หรือแก้ด้วย AI"
+        }
+      }
+    },
+    "inquiries": {
+      "title": "คำถามของฉัน",
+      "mobile_title": "ประวัติคำถาม",
+      "subtitle": "ดูคำถามที่ส่งและคำตอบ",
+      "my_list": "รายการคำถาม",
+      "write": "เขียนคำถาม",
+      "search_placeholder": "ค้นตามหัวข้อ/เนื้อหา/สถานะ",
+      "no_results": "ไม่พบผลลัพธ์",
+      "status": {
+        "answered": "ตอบแล้ว",
+        "pending": "กำลังดำเนินการ"
+      },
+      "seed": {
+        "10001": {
+          "title": "อัปโหลดรูปโปรไฟล์ไม่ได้",
+          "content": "เลือกรูปแล้วแต่อัปโหลดล้มเหลวหลายครั้ง"
+        },
+        "10002": {
+          "title": "แก้ตารางเที่ยวอย่างไร?",
+          "content": "อยากเปลี่ยนแค่วันเดียวในแผนที่บันทึกไว้",
+          "answer": "เปิดตารางเที่ยว เลือกวันที่ แล้วใช้สุ่มใหม่หรือแก้ด้วย AI"
+        }
+      },
+      "detail": {
+        "title": "รายละเอียดคำถาม",
+        "mobile_title": "รายละเอียดคำถาม",
+        "back_to_list": "กลับรายการ",
+        "received_at": "วันที่รับ: {{date}}",
+        "content": "เนื้อหา",
+        "attachments": "ไฟล์แนบ",
+        "no_attachments": "ไม่มีไฟล์แนบ",
+        "answer": "คำตอบ",
+        "answer_pending": "กำลังเตรียมคำตอบ โปรดรอสักครู่",
+        "not_found": "ไม่พบคำถาม"
+      }
+    },
+    "faq": {
+      "count": "{{count}} รายการ",
+      "title": "คำถามที่พบบ่อย",
+      "no_results": "ไม่พบผลการค้นหา",
+      "items": {
+        "login_help": {
+          "category": "สอบถาม",
+          "question": "ล็อกอินไม่ได้ทำอย่างไร?",
+          "answer": "รีเฟรชแอปแล้วลองใหม่ หากยังไม่ได้ติดต่อฝ่ายสนับสนุน"
+        },
+        "first_steps": {
+          "category": "คู่มือ",
+          "question": "มือใหม่ควรเริ่มจากอะไร?",
+          "answer": "เริ่มจากแผนการเดินทางและค้นหาสถานที่จากหน้าแรก แล้วใช้ตารางเที่ยว"
+        },
+        "update_notes": {
+          "category": "ประกาศ",
+          "question": "ดูบันทึกอัปเดตที่ไหน?",
+          "answer": "ในเมนูประกาศของศูนย์ช่วยเหลือ"
+        },
+        "refund_flow": {
+          "category": "การชำระเงินและบริการ",
+          "question": "ยกเลิกการชำระเงิน (คืนเงิน) อย่างไร?",
+          "answer": "ส่งคำถามพร้อมข้อมูลการชำระและหมายเล่งคำสั่งซื้อ"
+        },
+        "emergency_help": {
+          "category": "ฉุกเฉินและเคล็ดลับท่องเที่ยว",
+          "question": "ฉุกเฉินขณะเดินทางมีความช่วยเหลืออะไร?",
+          "answer": "ดูเบอร์ฉุกเฉินและคู่มือเบื้องต้น หากจำเป็นติดต่อสนับสนุนทันที"
+        }
+      }
+    },
+    "center": {
+      "title": "ศูนย์ช่วยเหลือ",
+      "subtitle": "ค้นหาความช่วยเหลือที่ต้องการอย่างรวดเร็ว"
+    },
+    "search": {
+      "label": "ให้เราช่วยอะไรดี?",
+      "placeholder": "พิมพ์คำค้น"
+    },
+    "categories": {
+      "title": "หมวดหมู่",
+      "items": {
+        "inquiry": {
+          "title": "สอบถาม",
+          "desc": "บัญชี ฟีเจอร์ ข้อผิดพลาด — คำถามทั่วไป"
+        },
+        "guide": {
+          "title": "คู่มือการใช้งาน",
+          "desc": "วิธีใช้บริการและเริ่มต้น"
+        },
+        "notices": {
+          "title": "ประกาศ",
+          "desc": "บำรุงรักษา เวอร์ชัน และการเปลี่ยนแปลง"
+        },
+        "payment": {
+          "title": "การชำระเงินและการใช้งาน",
+          "desc": "การชำระเงิน คืนเงิน และการสมัครสมาชิก"
+        },
+        "emergency": {
+          "title": "ความช่วยเหลือฉุกเฉินและเคล็ดลับท่องเที่ยว",
+          "desc": "การรับมือฉุกเฉินและความปลอดภัย"
+        }
+      }
+    },
+    "guide": {
+      "title": "คู่มือการใช้งาน",
+      "subtitle": "ภาพรวม 5 ฟีเจอร์หลักที่เริ่มได้จากหน้าแรก",
+      "hero": {
+        "kicker": "ทริปแรกของคุณทำแบบนี้ได้",
+        "title": "สร้างเส้นทาง → จัดตาราง → แชร์และแชทเมื่อต้องการ",
+        "steps": {
+          "planner": "แผนการเดินทาง",
+          "schedule": "ตารางเที่ยว",
+          "guide": "แนะนำสถานที่",
+          "social": "Tourstar / แชทกลุ่ม"
+        },
+        "cta_planner": "เริ่มแผนการเดินทาง",
+        "cta_groupchat": "ดูแชทกลุ่ม"
+      },
+      "cards": {
+        "tourstar": {
+          "title": "Tourstar",
+          "subtitle": "บันทึก รีวิว และแชร์ทริปในที่เดียว",
+          "cta": "ไป Tourstar",
+          "items": {
+            "1": {
+              "title": "1) เตรียมรูป/บันทึก",
+              "body": "อัปโหลดรูป AI ช่วยหัวข้อและสรุป"
+            },
+            "2": {
+              "title": "2) เลือกการมองเห็น",
+              "body": "สาธารณะหรือส่วนตัวตามต้องการ"
+            },
+            "3": {
+              "title": "3) ปฏิสัมพันธ์",
+              "body": "แลกเปลี่ยนทิปส์ผ่านไลก์/คอมเมนต์ เชื่อมเพื่อน"
+            }
+          },
+          "tip": {
+            "title": "เคล็ดลับ",
+            "body": "หัวข้อสั้น ๆ เนื้อหาเรียง เมื่อไหร่/ที่ไหน/ชอบอะไร"
+          }
+        },
+        "planner": {
+          "title": "แผนการเดินทาง",
+          "subtitle": "AI แนะนำเส้นทางและตารางตามสไตล์คุณ",
+          "cta": "ไปแผนการเดินทาง",
+          "items": {
+            "1": {
+              "label": "มาตรฐาน / K-content / เนื้อหาผู้ใช้",
+              "body": "เลือกอย่างใดอย่างหนึ่ง"
+            },
+            "2": {
+              "label": "เลือกปลายทาง (หรือธีม)",
+              "body": "ยิ่งชัดบริบท คำแนะนำยิ่งแม่น"
+            },
+            "3": {
+              "body": "ตารางที่แนะนำบันทึกอัตโนมัติ ปรับต่อในตารางเที่ยว"
+            }
+          }
+        },
+        "schedule": {
+          "title": "ตารางเที่ยว",
+          "subtitle": "ดูแผนในปฏิทิน สุ่มใหม่หรือแก้ด้วย AI",
+          "cta": "เปิดตารางเที่ยว",
+          "items": {
+            "1": {
+              "title": "1) เลือกวันที่ในปฏิทิน",
+              "body": "แตะวันที่เพื่อดูกิจของวันนั้น"
+            },
+            "2": {
+              "title": "2) สุ่มใหม่เวอร์ชันอื่น",
+              "body": "สร้างใหม่เฉพาะส่วนที่ไม่ชอบ"
+            },
+            "3": {
+              "title": "3) ขอ AI แก้",
+              "body": "พิมพ์คำขอเพื่อปรับตาราง"
+            }
+          },
+          "tip": {
+            "title": "แผนที่ / สภาพอากาศ",
+            "body": "ดูแผนที่และสรุปอากาศในการ์ดตาราง"
+          }
+        },
+        "discover": {
+          "title": "แนะนำสถานที่",
+          "subtitle": "ร้านอาหาร กิจกรรม ในหน้าจอเดียว",
+          "cta": "ไปแนะนำสถานที่",
+          "items": {
+            "1": {
+              "title": "1) เลือกคู่มือ",
+              "body": "แท็บร้านอาหารหรือกิจกรรม"
+            },
+            "2": {
+              "title": "2) ดูการ์ด/รายการ",
+              "body": "แตะสถานที่เพื่อรายละเอียด"
+            },
+            "3": {
+              "body": "จะใส่ในแผน ปรับในแผน/ตารางให้เข้ากับเส้นทาง"
+            }
+          }
+        },
+        "groupchat": {
+          "title": "แชทกลุ่ม",
+          "subtitle": "ห้องตามระดับเกียรติยศ แบ่งปันเรื่องทริป",
+          "cta": "ไปแชทกลุ่ม",
+          "items": {
+            "1": {
+              "title": "1) เข้าจากรายการห้อง",
+              "body": "การเข้าได้อาจขึ้นกับเกียรติยศ"
+            },
+            "2": {
+              "title": "2) ส่งข้อความ",
+              "body": "พิมพ์ในช่องแล้วส่งแบบเรียลไทม์"
+            },
+            "3": {
+              "title": "3) เพื่อน / ข้อความลับ / เกียรติยศ",
+              "body": "เมนูข้อความ: ข้อความลับ เพิ่มเพื่อน เกียรติยศ"
+            }
+          }
+        }
+      }
+    }
+  },
+  "planner": {
+    "title": "วางแผนทริป",
+    "subtitle": "เลือกรูปแบบการเดินทางที่คุณต้องการ",
+    "modes": {
+      "standard": {
+        "title": "สแตนดาร์ด",
+        "desc": "เส้นทางและกำหนดการที่ AI แนะนำ"
+      },
+      "kcontent": {
+        "title": "K-คอนเทนต์",
+        "desc": "ทริปตามสถานที่ถ่ายทำละคร/ภาพยนตร์"
+      },
+      "usercontent": {
+        "title": "คอนเทนต์ผู้ใช้",
+        "desc": "เส้นทางแนะนำจากนักท่องเที่ยว"
+      }
+    },
+    "schedule": {
+      "title": "แผนของฉัน",
+      "subtitle_with_count": "{{count}} แผนที่บันทึกไว้ · คลิกวันที่เพื่อดูแผนของวันนั้น",
+      "new_route": "+ เส้นทางใหม่",
+      "prev_month": "เดือนก่อนหน้า",
+      "next_month": "เดือนถัดไป",
+      "year_month": "{{year}}-{{month}}",
+      "legend": "คำอธิบายสัญลักษณ์",
+      "reroll_fail": "สร้างใหม่ไม่สำเร็จ",
+      "modify_fail": "แก้ไขไม่สำเร็จ",
+      "view_all_route": "ดูเส้นทางของทุกจุดแวะ",
+      "all_route": "🗺️ เส้นทางทั้งหมด",
+      "in_trip_period": "อยู่ในช่วงทริป",
+      "rerolled": "🔄 สร้างใหม่แล้ว",
+      "generating": "กำลังสร้าง…",
+      "reroll_this_item": "สร้างรายการนี้ใหม่",
+      "view_on_map": "ดูบนแผนที่",
+      "ask_ai_modify": "ให้ AI ช่วยแก้ไขกำหนดการ",
+      "modify_placeholder": "เช่น \"เปลี่ยนทัวร์ Changdeokgung Secret Garden เป็นสถานที่อื่น\"",
+      "ai_modifying": "AI กำลังแก้ไข…",
+      "item_regenerating": "กำลังสร้างรายการใหม่…",
+      "modify_login_needed": "ต้องเข้าสู่ระบบเพื่อใช้ฟีเจอร์แก้ไข",
+      "date_ymd": "{{year}}-{{month}}-{{day}}",
+      "item_count": "{{count}} รายการ",
+      "no_items_on_day": "ไม่มีรายการในวันนี้",
+      "delete_confirm": "ลบแผนนี้หรือไม่?",
+      "saved_at": "บันทึกเมื่อ {{date}}",
+      "weather_forecast": "🌤 พยากรณ์อากาศ",
+      "within_5days": "· ภายใน 5 วัน",
+      "view_schedule": "ดูกำหนดการ",
+      "view_day_route": "ดูเส้นทางของวัน {{day}}",
+      "route": "🗺️ เส้นทาง",
+      "ai_modified": "✨ แก้ไขโดย AI",
+      "load_fail": "โหลดแผนไม่สำเร็จ",
+      "delete_fail": "ลบไม่สำเร็จ",
+      "login_note": "แผนการเดินทางจะถูกบันทึกอัตโนมัติหลังเข้าสู่ระบบด้วย SNS",
+      "login_needed": "ต้องเข้าสู่ระบบ",
+      "empty_title": "ไม่มีแผนที่บันทึกไว้",
+      "empty_desc": "เลือกเส้นทางใน Trip Planner\nแล้ว AI จะบันทึกแผนอัตโนมัติ",
+      "go_planner": "เปิด Trip Planner",
+      "list_hint": "ทุกแผน · คลิกวันที่เพื่อดูแผนของวันนั้น"
+    },
+    "kcontent": {
+      "title": "แพลนเนอร์ K-Content",
+      "subtitle": "สำรวจเกาหลีผ่าน K-Pop ละคร อาหาร และบิวตี้",
+      "hero_title": "แพลนเนอร์ K-Content",
+      "hero_subtitle": "สำรวจเกาหลีผ่าน K-Pop ละคร อาหาร และบิวตี้",
+      "hero_cta": "สร้างเส้นทาง AI",
+      "back": "กลับไปแพลนเนอร์",
+      "row_kpop": "K-POP",
+      "row_kdrama": "K-ดรามา / ภาพยนตร์",
+      "row_kfood": "K-Food",
+      "row_kbeauty": "K-Beauty",
+      "sample_itinerary": "ตัวอย่างกำหนดการ",
+      "search_bar": "ค้นหา",
+      "quick_selection": "เลือกด่วน",
+      "vibe_grid": "เลือกบรรยากาศ",
+      "date": "วันที่",
+      "generating": "กำลังสร้าง…",
+      "generate": "✨ สร้างกำหนดการ",
+      "ai_recommended": "กำหนดการแนะนำโดย AI",
+      "region_select": "เลือกภูมิภาค",
+      "traditional_market": "ตลาดดั้งเดิม",
+      "market_generate": "สร้างกำหนดการกินที่ตลาดนี้",
+      "cafe_question": "วันนี้อยากได้บรรยากาศแบบไหน?",
+      "cafe_hint": "เลือกบรรยากาศหรือพิมพ์ชื่อคาเฟ่เพื่อให้ AI สร้างคอร์ส",
+      "cafe_placeholder": "พิมพ์ชื่อคาเฟ่ (เช่น Seongsu Tongue Planet)",
+      "cafe_generate": "สร้างกำหนดการ AI",
+      "trending_items": "ไอเทมฮิตตอนนี้",
+      "my_recipe": "สูตรมิกซ์ของฉัน",
+      "convenience_q": "ตอนนี้ที่ร้านสะดวกซื้อหายากที่สุดคืออะไร?",
+      "trending_placeholder": "เช่น ขนมปังครีมนม Yonsei",
+      "recipe_q": "อยากลองผสมรสชาติแบบไหน?",
+      "extra_keywords": "คีย์เวิร์ดเพิ่ม",
+      "recipe_placeholder": "เช่น ชาเลนจ์เผ็ด ของหวานเค็ม",
+      "recipe_generate": "สร้างสูตรมิกซ์ AI",
+      "set_date_and_generate": "ตั้งวันที่แล้ว\nสร้างกำหนดการ",
+      "start_generate": "✨ เริ่มสร้างกำหนดการ",
+      "making_schedule": "AI กำลังสร้างกำหนดการ <b>{{title}}</b>…",
+      "recommended_schedule_title": "{{title}} — กำหนดการแนะนำ",
+      "save_plan": "💾 บันทึกกำหนดการ",
+      "total_cost": "ค่าใช้จ่ายโดยประมาณ",
+      "cost_per_day": "วันที่ {{day}} {{total}}",
+      "no_schedule": "ยังไม่มีกำหนดการ ลองอีกครั้ง",
+      "saved_goto_schedule": "บันทึกแล้ว · ไปปฏิทิน",
+      "find_nearby_store": "หาร้านที่ขายใกล้ๆ",
+      "recipe_hashtags": "#มอดิซูเมอร์ #ชาเลนจ์ร้านสะดวกซื้อ #สูตรAI",
+      "description_fallback": "จุดแนะนำให้ไปที่ {{place}}",
+      "challenge_location": "จุดชาเลนจ์",
+      "challenge_location_desc": "จุดชาเลนจ์ที่ AI เลือก (ภายใน 100 กม.) — โซนม้านั่งหน้าป่าโซลซองซู",
+      "subtotal": "ยอดรวมย่อย {{total}}",
+      "schedule_item_default": "กำหนดการ",
+      "schedule_load_fail": "โหลดกำหนดการไม่สำเร็จ",
+      "save_fail": "บันทึกไม่สำเร็จ",
+      "cafe_place_hint": "คำใบ้คาเฟ่/สถานที่",
+      "convenience_trending": "ไอเทมฮิตร้านสะดวกซื้อ",
+      "recipe_title_with_vibe": "ชาเลนจ์ {{vibe}} เวอร์ชัน 2026",
+      "recipe_title_default": "Mark set เวอร์ชัน 2026",
+      "region_tab.all": "ทั้งหมด",
+      "region_tab.seoul": "โซล",
+      "region_tab.gangwon": "คังวอน",
+      "region_tab.jeonla": "ชอลลา",
+      "region_tab.gyeongsang": "คย็องซัง",
+      "region_tab.jeju": "เชจู",
+      "cafe_vibe.industrial_raw.label": "อินดัสเทรียล/ดิบ",
+      "cafe_vibe.industrial_raw.description": "บรรยากาศคอนกรีตและเหล็กเท่ๆ",
+      "cafe_vibe.traditional_zen.label": "ดั้งเดิม/เซน",
+      "cafe_vibe.traditional_zen.description": "พักใจกับฮันอกและเนื้อไม้",
+      "cafe_vibe.nature_botanical.label": "ธรรมชาติ/พืช",
+      "cafe_vibe.nature_botanical.description": "พื้นที่เต็มไปด้วยต้นไม้และแสงแดด",
+      "cafe_vibe.retro_newtro.label": "เรโทร/นิวโทร",
+      "cafe_vibe.retro_newtro.description": "ความคิดถึงและตรอกวินเทจ",
+      "cafe_vibe.modern_minimal.label": "โมเดิร์น/มินิมอล",
+      "cafe_vibe.modern_minimal.description": "สีโทนเดียวเรียบหรู",
+      "brand.seveneleven": "7-Eleven",
+      "brand.emart24": "emart24",
+      "market": {
+        "SEOUL": {
+          "0": {
+            "name": "ตลาดควังจัง",
+            "description": "สวรรค์ของยูเคและแพนเค้กถั่ว."
+          },
+          "1": {
+            "name": "ตลาดมังวอน",
+            "description": "ตลาดเทรนด์ที่วัยรุ่นชอบ."
+          },
+          "2": {
+            "name": "ตลาดทงอิน",
+            "description": "ประสบการณ์กล่องข้าวเหรียญโบราณ."
+          }
+        },
+        "GANGWON": {
+          "0": {
+            "name": "ตลาดกลางยองวอล",
+            "description": "แพนเค้กบัควีทและบะหมี่."
+          },
+          "1": {
+            "name": "ตลาดท่องเที่ยวโซคโช",
+            "description": "ไก่ทอดเกาหลีและอาหารทะเลริมทาง."
+          }
+        },
+        "JEONLA": {
+          "0": {
+            "name": "ตลาดนัมบูชอนจู",
+            "description": "ไส้กรอกเลือดและซุปถั่วงอก."
+          },
+          "1": {
+            "name": "ตลาดสถานีซองจองกวางจู 1913",
+            "description": "บรรยากาศเรโทรนิวโทร."
+          }
+        },
+        "GYEONGSANG": {
+          "0": {
+            "name": "ตลาดกุกเจปูซาน",
+            "description": "ความทรงจำจากหนังและหมี่ผัด."
+          },
+          "1": {
+            "name": "ตลาดซอมุนแทกู",
+            "description": "ขนาดและรสชาติตลาดใหญ่สามอันดับ."
+          }
+        },
+        "JEJU": {
+          "0": {
+            "name": "ตลาดตงมุนเชจู",
+            "description": "ขนมโอเมกิและหมูดำทอด."
+          }
+        }
+      },
+      "fallback": {
+        "kfood": {
+          "KF_MARKET": {
+            "title": "ทัวร์ตลาดดั้งเดิมทั่วประเทศ",
+            "description": "สัมผัสรสท้องถิ่นอบอุ่นทั่วเกาหลี."
+          },
+          "KF_CAFE": {
+            "title": "ทัวร์ K-ของหวานและคาเฟ่",
+            "description": "เชื่อมคาเฟ่และร้านคัดสรรที่ตรงใจคุณ."
+          },
+          "KF_CONVENIENCE": {
+            "title": "ชาเลนจ์มิกซ์ร้านสะดวกซื้อ K",
+            "description": "จากของใหม่หมดสต็อกถึงสูตรลับ — เป็นมอดิซูเมอร์ตัวจริง!"
+          }
+        },
+        "kbeauty": {
+          "KBEAUTY_01": {
+            "title": "Olive Young Flagship",
+            "description": "เปรียบเทียบและช้อปเทรนด์สกินแคร์และเมคอัพ."
+          },
+          "KBEAUTY_02": {
+            "title": "ถนนบิวตี้เมียงดง",
+            "description": "สำรวจขายดีรอบร้านใหญ่."
+          },
+          "KBEAUTY_03": {
+            "title": "ร้านประสบการณ์สกินแคร์",
+            "description": "ดูแลเฉพาะบุคคลและกิจกรรมความงามแบบลงมือ."
+          }
+        },
+        "kpop": {
+          "KPOP_01": {
+            "title": "BTS: HYYH นิรันดร์",
+            "description": "BTS, ARMY, คังนัม, HYBE"
+          },
+          "KPOP_02": {
+            "title": "BLACKPINK: ฮิปและหรูหรา",
+            "description": "BLACKPINK, YG, หรูหรา, เทรนด์"
+          },
+          "KPOP_03": {
+            "title": "SEVENTEEN & Stray Kids: พลังเวที",
+            "description": "SEVENTEEN, Stray Kids, JYP, การแสดง"
+          },
+          "KPOP_04": {
+            "title": "NewJeans & IVE: โซลไฮทีน",
+            "description": "NewJeans, IVE, Y2K, ซองซู, ฮันนัม"
+          },
+          "KPOP_05": {
+            "title": "SM: Kwangya Express",
+            "description": "SM, aespa, NCT, Kwangya, ซองซู"
+          },
+          "KPOP_06": {
+            "title": "ประสบการณ์ไอดอล",
+            "description": "ประสบการณ์, เต้น, อัดเสียง, ชีวิตไอดอล"
+          },
+          "KPOP_07": {
+            "title": "ฮงแด: ศูนย์วัฒนธรรมแฟนคลับ",
+            "description": "ฮงแด, บัสกิง, อัลบั้ม, แฟน"
+          },
+          "KPOP_08": {
+            "title": "K-OST & โซลฮีลใจ",
+            "description": "IU, OST, ฮีลลิ่ง, เรโทร, โซล"
+          }
+        },
+        "kdrama": {
+          "KD_01": {
+            "title": "โกบลิน",
+            "description": "Goblin · #GongYoo #แฟนตาซี #โรแมนซ์"
+          },
+          "KD_02": {
+            "title": "เกมปลาหมึก",
+            "description": "Squid Game · #Netflix #เอาชีวิต #ระทึก"
+          },
+          "KD_03": {
+            "title": "ปักหมักรักฉุกเฉิน",
+            "description": "Crash Landing on You · #HyunBin #SonYeJin #โรแมนซ์"
+          },
+          "KD_04": {
+            "title": "กงจักร ซีซั่น 1",
+            "description": "Kingdom · #ซอมบี้ #ย้อนยุค #สยอง"
+          },
+          "KD_05": {
+            "title": "ชนชั้นปรสิต",
+            "description": "Parasite · #ออสการ์ #BongJoonHo #สังคม"
+          },
+          "KD_06": {
+            "title": "ย้อนเวลาพิชิตใจนาย",
+            "description": "Lovely Runner · #ByeonWooSeok #ไทม์สลิป #วัยรุ่น"
+          },
+          "KD_07": {
+            "title": "โรงแรมเดลูนา",
+            "description": "Hotel Del Luna · #IU #แฟนตาซี #ลึกลับ"
+          },
+          "KD_08": {
+            "title": "คิงเดอะแลนด์",
+            "description": "King the Land · #JunHo #Yoona #หรูหรา"
+          },
+          "KD_09": {
+            "title": "มิสเตอร์ซันไชน์",
+            "description": "Mr. Sunshine · #ประวัติศาสตร์ #LeeByungHun #KimTaeri"
+          },
+          "KD_10": {
+            "title": "เชิญใจให้รักกัน",
+            "description": "Descendants of the Sun · #SongJoongKi #SongHyeKyo #ทหาร"
+          },
+          "KD_11": {
+            "title": "ราชินีแห่งน้ำตา",
+            "description": "Queen of Tears · #KimSooHyun #KimJiWon #เชโบล"
+          },
+          "KD_12": {
+            "title": "ชายผู้อยู่กับกษัตริย์",
+            "description": "The Man Who Lives with the King · #GangDongWon #YooHaeJin #ประวัติศาสตร์"
+          }
+        }
+      },
+      "recipe_vibe.spicy_fire.label": "เผ็ดร้อน",
+      "recipe_vibe.spicy_fire.description": "ชาเลนจ์เผ็ดปลดปล่อยความเครียด",
+      "recipe_vibe.sweet_salty.label": "หวานเค็มคลาสสิก",
+      "recipe_vibe.sweet_salty.description": "สมดุลหวานและเค็ม",
+      "recipe_vibe.diet_healthy.label": "ไดเอตร้านสะดวกซื้อ",
+      "recipe_vibe.diet_healthy.description": "เบาแต่อิ่ม",
+      "recipe_vibe.night_snack.label": "ของกินก่อนนอน",
+      "recipe_vibe.night_snack.description": "สูตรของกินเล็กๆ ยามค่ำ",
+      "recipe_vibe.hangover.label": "แก้เมา",
+      "recipe_vibe.hangover.description": "คอมโบดูแลหลังปาร์ตี้",
+      "recipe_vibe.luxury_meal.label": "มื้อพรีเมียมคุ้มค่า",
+      "recipe_vibe.luxury_meal.description": "มื้อพรีเมียมจากร้านสะดวกซื้อ",
+      "shopping.ramen": "บะหมี่ถ้วย",
+      "shopping.tuna_kimbap": "ข้าวห่อสามเหลี่ยมทูน่ามายองเนส",
+      "shopping.string_cheese": "ชีสเส้น",
+      "shopping.sparkling_water": "น้ำโซดา",
+      "cooking.1": "เตรียมวัตถุดิบใส่ภาชนะไมโครเวฟได้",
+      "cooking.2": "ผสมซอส/ท็อปปิ้ง อุ่น 1 นาที 30 วินาที",
+      "cooking.3": "ใส่ท็อปปิ้งตามชอบแล้วถ่ายรูป",
+      "trending_card.1.title": "ขนมปังครีมนม Yonsei",
+      "trending_card.2.title": "ไฮบอลโค้กซีโร่แก้วน้ำแข็ง",
+      "trending_card.default_title": "ไอเทมฮิตที่ AI เลือก",
+      "trending_card.tag.new": "#ใหม่",
+      "trending_card.tag.soldout": "#หมดสต็อก",
+      "trending_card.tag.review": "#รีวิวแรง",
+      "trending_card.tag.repurchase": "#ซื้อซ้ำ",
+      "meta.kf_market.title_ko": "ทัวร์ตลาดดั้งเดิมทั่วประเทศ",
+      "meta.kf_cafe.title_ko": "ทัวร์ K-ของหวานและคาเฟ่",
+      "meta.kf_convenience.title_ko": "ชาเลนจ์มิกซ์ร้านสะดวกซื้อ K",
+      "meta.kf_market.tags": "ตลาดดั้งเดิม, อาหาร, ท้องถิ่น",
+      "meta.kf_cafe.tags": "คาเฟ่, ของหวาน, ร้านคัดสรร",
+      "meta.kf_convenience.tags": "ร้านสะดวกซื้อ, มิกซ์, มอดิซูเมอร์",
+      "empty.pick_market": "เลือกตลาดแล้วค่อยสร้างกำหนดการ",
+      "empty.pick_vibe_or_cafe": "เลือกบรรยากาศหรือชื่อคาเฟ่",
+      "empty.pick_tab_condition": "เลือกเงื่อนไขแท็บแล้วสร้าง",
+      "empty.pick_date": "เลือกวันที่แล้วสร้างกำหนดการ",
+      "empty.market_guide": "เลือกตลาดซ้าย แล้วกด [สร้างกำหนดการกินที่ตลาดนี้] หรือ ✨ ด้านบน",
+      "empty.cafe_guide": "เลือกบรรยากาศ/ชื่อคาเฟ่ซ้าย แล้วกด [สร้างกำหนดการ AI]",
+      "empty.convenience_guide": "เลือกโหมดแท็บบน ใส่คีย์เวิร์ดแล้วสร้าง",
+      "empty.default_guide": "กดปุ่ม ✨ สร้างกำหนดการด้านบน",
+      "shopping_list_title": "รายการซื้อของ",
+      "cooking_steps_title": "ขั้นตอนปรุง"
+    },
+    "usercontent": {
+      "title": "คอนเทนต์ผู้ใช้",
+      "subtitle": "เส้นทางที่นักท่องเที่ยวแชร์",
+      "upload": "อัปโหลดเส้นทางของฉัน",
+      "tab_all": "เส้นทางทั้งหมด",
+      "tab_mine": "เส้นทางของฉัน",
+      "search_placeholder": "ค้นด้วยชื่อเล่น…",
+      "search_result": "พบ {{count}} รายการ",
+      "empty_all_title": "ยังไม่มีเส้นทางที่แชร์",
+      "empty_all_sub": "เป็นคนแรกที่อัปโหลด!",
+      "empty_mine_title": "คุณยังไม่ได้อัปโหลดเส้นทาง",
+      "empty_mine_sub": "แชร์เส้นทางเพื่อรับไลก์!",
+      "cta_first_upload": "อัปโหลดเส้นทางแรก",
+      "cta_share_first": "แชร์เส้นทางแรก",
+      "already_liked": "ไลก์แล้ว",
+      "like": "ไลก์",
+      "delete": "ลบ",
+      "delete_my_route": "ลบเส้นทางของฉัน",
+      "shared_route": "เส้นทางที่แชร์",
+      "schedule_save_fail": "บันทึกตารางไม่สำเร็จ",
+      "route": "เส้นทาง",
+      "added_to_schedule": "เพิ่มในตารางของฉันแล้ว",
+      "go_schedule": "ไปจัดการตาราง",
+      "add_to_schedule": "เพิ่มในตารางของฉัน",
+      "login_required": "ต้องเข้าสู่ระบบ",
+      "no_places_to_save": "ไม่มีสถานที่ให้บันทึก",
+      "when_trip": "วางแผนไปเมื่อไหร่?",
+      "date_applied": "วันที่เลือกจะใช้กับตาราง",
+      "visit_date": "วันที่ไป",
+      "add_with_this_date": "เพิ่มด้วยวันที่นี้",
+      "image_validate_fail": "ตรวจภาพไม่ผ่าน",
+      "ai_polish_fail": "AI ปรับแต่งไม่สำเร็จ",
+      "save_fail": "บันทึกไม่สำเร็จ",
+      "step_photo": "เลือกรูป",
+      "step_form": "กรอกเส้นทาง",
+      "step_polish": "AI ปรับแต่ง",
+      "upload_my_route": "อัปโหลดเส้นทางของฉัน",
+      "upload_photo_hint": "ลากหรือคลิกอัปโหลดรูป",
+      "upload_photo_types": "รองรับ JPG, PNG, WEBP",
+      "remove_photo": "ลบรูป",
+      "image_validated": "ตรวจภาพสำเร็จ",
+      "validating": "กำลังตรวจ…",
+      "continue_without_photo": "ทำต่อโดยไม่มีรูป",
+      "import_saved_schedule": "นำเข้าจากตารางที่บันทึก",
+      "select_saved_schedule": "เลือกตารางที่บันทึก",
+      "no_saved_schedule": "ไม่มีตารางที่บันทึก",
+      "place_count": " · {{count}} แห่ง",
+      "route_title_required": "ชื่อเส้นทาง *",
+      "route_title_placeholder": "เช่น ทริปวันเดียวคังนึง",
+      "destination_required": "จุดหมาย *",
+      "destination_placeholder": "เช่น คังนึง หาดคย็องโพ",
+      "one_line_intro_optional": "แนะนำสั้นๆ (ไม่บังคับ)",
+      "one_line_intro_placeholder": "อธิบายสั้นๆ (AI จะช่วยแต่ง)",
+      "place_list_required": "รายการสถานที่ *",
+      "max_per_day": "(สูงสุด {{max}} ต่อวัน)",
+      "day_n": "วันที่ {{day}}",
+      "add_place": "+ เพิ่มสถานที่",
+      "place_name_placeholder": "ชื่อสถานที่ (เช่น ถนนคาเฟ่หาดอันมก)",
+      "memo_optional_placeholder": "บันทึกสั้นๆ (ไม่บังคับ)",
+      "add_day_n": "+ เพิ่มวันที่ {{day}}",
+      "ai_polish": "✨ ให้ AI ปรับแต่ง",
+      "ai_polishing": "AI กำลังปรับแต่งเส้นทาง",
+      "ai_polishing_sub": "กำลังเพิ่มคำแนะนำและทิปท่องเที่ยว…",
+      "re_enter": "แก้ไขใหม่",
+      "share": "แชร์",
+      "shared_success": "แชร์เส้นทางแล้ว!",
+      "shared_success_sub": "ดูในฟีด",
+      "delete_confirm": "ลบเส้นทางนี้?",
+      "delete_fail": "ลบไม่สำเร็จ"
+    },
+    "standard": {
+      "title": "เลือกจุดหมาย",
+      "subtitle": "เลือกจุดหมายแล้ว AI จะแนะนำเส้นทางที่เหมาะกับคุณ",
+      "search_placeholder": "ค้นหาเมือง/แลนด์มาร์ก (เช่น คังนึง หมู่บ้านฮันอก)",
+      "search_result": "“{{query}}”: {{count}} แห่ง",
+      "no_results": "ไม่พบผลลัพธ์",
+      "reset": "รีเซ็ต",
+      "metro_quick": "เข้าถึงเมืองใหญ่ด่วน",
+      "metro_quick_sub": "เลือกเมืองยอดนิยม แล้วดูรายละเอียดด้านล่าง",
+      "metro_detail": "พื้นที่ย่อยในมหานคร",
+      "metro_detail_sub": "โซล ปูซาน แทกู อุลซาน แบ่งตามย่าน",
+      "province": "ตามจังหวัด/ภูมิภาค",
+      "province_sub": "เปรียบเทียบคย็องกี ชุงช็อง ชอลลา คย็องซัง คังวอน เชจู",
+      "image_pending": "รูปกำลังเตรียม",
+      "popular": "ยอดนิยม",
+      "mode_label": "สแตนดาร์ด",
+      "date": "วันที่",
+      "mode_car": "🚗 รถยนต์",
+      "mode_transit": "🚇 ขนส่งสาธารณะ",
+      "mode_walk": "🚶 เดิน",
+      "generate_route": "✨ สร้างเส้นทาง",
+      "generating_loading": "กำลังค้นหาข้อมูล…",
+      "ai_recommended_routes": "เส้นทางแนะนำโดย AI",
+      "set_date_and_generate": "ตั้งวันที่แล้ว\nสร้างเส้นทาง",
+      "start_generate": "✨ เริ่มสร้างเส้นทาง",
+      "route_load_fail": "โหลดเส้นทางไม่สำเร็จ",
+      "pick_route": "กรุณาเลือกเส้นทาง",
+      "range_hint": "AI จะจัดตาราง {{start}} ถึง {{end}}",
+      "select_date_then_generate": "เลือกวันที่แล้วสร้างเส้นทาง",
+      "generate_hint": "กดปุ่ม ✨ มุมบนซ้าย",
+      "making_schedule": "AI กำลังสร้างตารางให้ <b>{{name}}</b>…",
+      "schedule_load_fail": "โหลดตารางไม่สำเร็จ",
+      "recommended_schedule_title": "{{name}} — ตารางแนะนำ",
+      "saved_goto_schedule": "✅ บันทึกแล้ว · เปิดจัดการตาราง",
+      "save_plan": "💾 บันทึก",
+      "save_fail": "บันทึกไม่สำเร็จ",
+      "total_cost": "ค่าใช้จ่ายโดยประมาณ",
+      "cost_per_day": "วันที่ {{day}} {{total}}",
+      "subtotal": "ยอดรวมย่อย {{total}}",
+      "theme": {
+        "event": "อีเวนต์",
+        "food": "อาหาร",
+        "spot": "ที่เที่ยว",
+        "luxury": "หรูหรา",
+        "value": "คุ้มค่า",
+        "family": "ครอบครัว",
+        "couple": "คู่รัก"
+      },
+      "highlight": {
+        "gyeongbokgung": "Cung Gyeongbok",
+        "hongdae": "Hongdae",
+        "hangang_park": "Công viên Hangang",
+        "cheongwadae": "Nhà Xanh",
+        "insadong": "Insadong",
+        "myeongdong_cathedral": "Nhà thờ Myeongdong",
+        "euljiro_alley": "Hẻm Euljiro",
+        "national_museum_of_korea": "Bảo tàng quốc gia",
+        "itaewon": "Itaewon",
+        "haeundae": "Haeundae",
+        "haeundae_beach": "Bãi biển Haeundae",
+        "gamcheon_village": "Làng Gamcheon",
+        "jagalchi_market": "Chợ Jagalchi",
+        "biff_square": "Quảng trường BIFF",
+        "dongseongro": "Dongseong-ro",
+        "kim_gwangseok_street": "Phố Kim Gwangseok",
+        "suseong_lake": "Hồ Suseong",
+        "songdo": "Songdo",
+        "chinatown": "Phố Tàu",
+        "gangneung": "Gangneung",
+        "gyeongpo": "Gyeongpo",
+        "anmok_coffee_street": "Phố cà phê Anmok",
+        "ojukheon": "Ojukheon",
+        "sokcho": "Sokcho",
+        "seoraksan": "Seoraksan",
+        "central_market": "Chợ trung tâm",
+        "hallasan": "Hallasan",
+        "seongsan_ilchulbong": "Seongsan Ilchulbong"
+      }
+    },
+    "region": {
+      "seoul-areas": {
+        "label": "โซล",
+        "subLabel": "ย่านสำคัญแบ่งตามเขต"
+      },
+      "gyeonggi-north": {
+        "label": "คยองกีตอนเหนือ",
+        "subLabel": "โคยัง พาจู อุยจ็องบู นัมยังจู ฯลฯ"
+      },
+      "gyeonggi-south": {
+        "label": "คยองกีตอนใต้",
+        "subLabel": "ซูวอน ยงอิน ซองนัม พย็องแท็ก ฯลฯ"
+      },
+      "gangwon": {
+        "label": "จังหวัดคังวอน",
+        "subLabel": "จังหวัดปกครองพิเศษคังวอน"
+      },
+      "chungbuk": {
+        "label": "จังหวัดชุงช็องเหนือ",
+        "subLabel": "ช็องจู ชุงจู เจช็อน ทันยัง"
+      },
+      "chungnam": {
+        "label": "จังหวัดชุงช็องใต้",
+        "subLabel": "กงจู บูยอ โบรยอง แทอัน ฯลฯ"
+      },
+      "jeonbuk": {
+        "label": "ช็อนบุก",
+        "subLabel": "จังหวัดปกครองพิเศษช็อนบุก"
+      },
+      "jeonnam": {
+        "label": "จังหวัดช็อลลาใต้",
+        "subLabel": "ยอซู ซุนช็อน มกโป ทัมยัง ฯลฯ"
+      },
+      "busan": {
+        "label": "ปูซาน",
+        "subLabel": "นครปกครองพิเศษปูซาน"
+      },
+      "daegu": {
+        "label": "แทกู",
+        "subLabel": "นครปกครองพิเศษแทกู"
+      },
+      "ulsan": {
+        "label": "อุลซาน",
+        "subLabel": "นครปกครองพิเศษอุลซาน"
+      },
+      "gyeongbuk": {
+        "label": "จังหวัดคยองซังเหนือ",
+        "subLabel": "คยองจู โพฮัง อันดง ฯลฯ"
+      },
+      "gyeongnam": {
+        "label": "จังหวัดคยองซังใต้",
+        "subLabel": "ทงยอง โคเจ จินจู ชังวอน ฯลฯ"
+      },
+      "jeju": {
+        "label": "เกาะเชจู",
+        "subLabel": "จังหวัดปกครองพิเศษเชจู"
+      }
+    },
+    "dest": {
+      "seoul": {
+        "name": "โซล",
+        "highlight1": "พระราชวังคยองบก",
+        "highlight2": "ฮงแด",
+        "highlight3": "สวนริมแม่น้ำฮัน"
+      },
+      "busan": {
+        "name": "ปูซาน",
+        "highlight1": "หาดแฮอุนแด",
+        "highlight2": "หมู่บ้านวัฒนธรรมคัมชอน",
+        "highlight3": "ตลาดจากัลชี"
+      },
+      "daegu": {
+        "name": "แทกู",
+        "highlight1": "ถนนทงซองโร",
+        "highlight2": "ถนนคิมกวังซอก",
+        "highlight3": "ทะเลสาบซูซอง"
+      },
+      "incheon": {
+        "name": "อินชอน",
+        "highlight1": "ซงโด",
+        "highlight2": "เกาะคังฮวา",
+        "highlight3": "ไชน่าทาวน์"
+      },
+      "gwangju": {
+        "name": "กวังจู",
+        "highlight1": "ศูนย์วัฒนธรรมเอเชีย (ACC)",
+        "highlight2": "ยางนิมดง"
+      },
+      "daejeon": {
+        "name": "แทจอน",
+        "highlight1": "ร้านซองซิมดัง",
+        "highlight2": "สวนเอ็กซ์โป",
+        "highlight3": "บ่อน้ำพุร้อนยูซอง"
+      },
+      "ulsan": {
+        "name": "อุลซาน",
+        "highlight1": "คันเจิลกอท",
+        "highlight2": "สวนแดวังอัม",
+        "highlight3": "แม่น้ำแทฮวา"
+      },
+      "sejong": {
+        "name": "เซจง",
+        "highlight1": "สวนริมทะเลสาบเซจง",
+        "highlight2": "สวนพฤกษศาสตร์แห่งชาติ"
+      },
+      "jongno": {
+        "name": "จงโน / กวังฮวามุน",
+        "highlight1": "คยองบกกุง",
+        "highlight2": "บ้านสีน้ำเงิน",
+        "highlight3": "อินซาดง"
+      },
+      "myeongdong": {
+        "name": "มยองดง / อึลจิโร",
+        "highlight1": "อาสนวิหารมยองดง",
+        "highlight2": "ซอยอึลจิโร"
+      },
+      "yongsan": {
+        "name": "ยงซาน / อีแทวอน",
+        "highlight1": "พิพิธภัณฑ์แห่งชาติเกาหลี",
+        "highlight2": "อีแทวอน"
+      },
+      "gangnam": {
+        "name": "คังนัม / โซโช",
+        "highlight1": "COEX",
+        "highlight2": "อัปกูจองโรเดโอ",
+        "highlight3": "สวนโดซาน"
+      },
+      "jamsil": {
+        "name": "จัมชิล / ซงพา",
+        "highlight1": "ล็อตเต้เวิลด์",
+        "highlight2": "สวนโอลิมปิก",
+        "highlight3": "ทะเลสาบซอกชอน"
+      },
+      "seongsu": {
+        "name": "ซองซู / ฮันนัม",
+        "highlight1": "ถนนคาเฟ่ซองซู",
+        "highlight2": "แกลเลอรีฮันนัมดง"
+      },
+      "hongdae": {
+        "name": "ฮงแด / มาโพ",
+        "highlight1": "คลับฮงแด",
+        "highlight2": "ยอนนัมดง",
+        "highlight3": "ป่าไม้รถไฟคยองอุย"
+      },
+      "bukchon": {
+        "name": "บุกชอน / ซัมชอง",
+        "highlight1": "หมู่บ้านฮันนกบุกชอน",
+        "highlight2": "คาเฟ่ซัมชองดง"
+      },
+      "nowon": {
+        "name": "โนวอน / โดบง",
+        "highlight1": "ภูเขาซูรัก",
+        "highlight2": "ภูเขาโดบง",
+        "highlight3": "ภูเขาบูลัม"
+      },
+      "haeundae": {
+        "name": "แฮอุนแด",
+        "highlight1": "หาดแฮอุนแด",
+        "highlight2": "เกาะทงแบก",
+        "highlight3": "ถนนดัลมาจิ"
+      },
+      "gwangalli": {
+        "name": "กวังอัลลี / ซูยอง",
+        "highlight1": "สะพานกวังอันแดกโย",
+        "highlight2": "หาดกวังอัลลี"
+      },
+      "gijang": {
+        "name": "คีจัง",
+        "highlight1": "โบสถ์จุกซองดรีม",
+        "highlight2": "ท่าเรือแดบยอน",
+        "highlight3": "พิพิธภัณฑ์สัตว์น้ำ"
+      },
+      "songjeong": {
+        "name": "ซงจอง / ชองซาโพ",
+        "highlight1": "หาดซงจอง",
+        "highlight2": "จุดชมวิวชองซาโพ"
+      },
+      "nampo": {
+        "name": "นัมโพ / จุงกู",
+        "highlight1": "ตลาดจากัลชี",
+        "highlight2": "ลาน BIFF",
+        "highlight3": "ตรอกหนังสือโบซูดง"
+      },
+      "seomyeon": {
+        "name": "ซอมยอน / บูจอน",
+        "highlight1": "ถนนซอมยอน",
+        "highlight2": "จูดิสแทฮวา",
+        "highlight3": "ตลาดบูจอน"
+      },
+      "gamcheon": {
+        "name": "หมู่บ้านวัฒนธรรมคัมชอน",
+        "highlight1": "หมู่บ้านวัฒนธรรมคัมชอน",
+        "highlight2": "สกายโรด"
+      },
+      "yeongdo": {
+        "name": "ยองโด",
+        "highlight1": "แทจงแด",
+        "highlight2": "หมู่บ้านฮึนนยอล",
+        "highlight3": "ภูเขาบงแน"
+      },
+      "geumjeong": {
+        "name": "กึมจอง / ออนชอนจัง",
+        "highlight1": "ป้อมกึมจองซานซอง",
+        "highlight2": "วัดพอมอซา",
+        "highlight3": "ออนชอนจัง"
+      },
+      "gangseo-bs": {
+        "name": "คังซอ / แกด็อก",
+        "highlight1": "อึลซุกโด",
+        "highlight2": "พื้นที่น้ำขึ้นน้ำลงแกด็อก"
+      },
+      "dadaepo": {
+        "name": "ซาฮา / ดาแดโพ",
+        "highlight1": "หาดดาแดโพ",
+        "highlight2": "ปากแม่น้ำนักดง"
+      },
+      "dongseongno": {
+        "name": "ทงซองโน / จุงกู",
+        "highlight1": "ทงซองโร",
+        "highlight2": "ตลาดซอมุน",
+        "highlight3": "ตลาดยักจอน"
+      },
+      "gimgwangseok": {
+        "name": "ถนนคิมกวังซอก",
+        "highlight1": "ถนนคิมกวังซอก",
+        "highlight2": "ตลาดบังชอน"
+      },
+      "suseongmot": {
+        "name": "ทะเลสาบซูซอง / พอมอ",
+        "highlight1": "ทะเลสาบซูซอง",
+        "highlight2": "สวนสนุกซูซอง"
+      },
+      "palgongsan": {
+        "name": "ภูเขาพัลกง",
+        "highlight1": "วัดทงฮวา",
+        "highlight2": "หินกัตบาวี",
+        "highlight3": "เส้นขอบฟ้าพัลกง"
+      },
+      "dalseong": {
+        "name": "พิซูลซาน / ดัลซอง",
+        "highlight1": "ซากุระพิซูลซาน",
+        "highlight2": "พื้นที่ชุ่มน้ำดัลซอง"
+      },
+      "gunwi": {
+        "name": "กุนวี",
+        "highlight1": "สวนสนุกซัมกุกยูซา",
+        "highlight2": "ป้อมฮวาซาน"
+      },
+      "ganjeolgot": {
+        "name": "คันเจิลกอท",
+        "highlight1": "ประภาคารคันเจิลกอท",
+        "highlight2": "พระอาทิตย์ขึ้นปีใหม่"
+      },
+      "daewangam": {
+        "name": "แดวังอัม",
+        "highlight1": "สวนแดวังอัม",
+        "highlight2": "หาดอิลซาน"
+      },
+      "taehwagang": {
+        "name": "แม่น้ำแทฮวา",
+        "highlight1": "สวนแห่งชาติแทฮวา",
+        "highlight2": "ป่าไผ่ซิปรีแดซุป"
+      },
+      "bangudae": {
+        "name": "บังกูแด",
+        "highlight1": "ภาพสลักหินบังกูแด",
+        "highlight2": "จิบชองจอง"
+      },
+      "jeju": {
+        "name": "เมืองเชจู",
+        "highlight1": "ฮัลลาซาน",
+        "highlight2": "ซองซานอิลชุลบง",
+        "highlight3": "หาดฮย็อบแจ"
+      },
+      "gyeongju": {
+        "name": "คยองจู",
+        "highlight1": "ฮวังริดันกิล",
+        "highlight2": "ชอมซองแด",
+        "highlight3": "พุลกุกซา"
+      },
+      "gangneung": {
+        "name": "คังนึง",
+        "highlight1": "หาดคยองโพ",
+        "highlight2": "ถนนคาเฟ่อันมก",
+        "highlight3": "เรือนโอจุคฮอน"
+      },
+      "jeonju": {
+        "name": "ชอนจู",
+        "highlight1": "หมู่บ้านฮันนก",
+        "highlight2": "ซอยมักกอลลี"
+      }
+    }
+  },
+  "guide": {
+    "title": "ค้นพบ",
+    "subtitle": "เลือกร้านอาหารหรืออีเวนต์ได้ในที่เดียว",
+    "restaurant": {
+      "title": "ร้านอาหาร",
+      "soon": "Restaurant recommendations will be available soon."
+    },
+    "event": {
+      "title": "อีเวนต์",
+      "subtitle": "อ้างอิงข้อมูลเทศกาลวัฒนธรรมแห่งชาติ · คลิกวันที่เพื่อดูอีเวนต์ของวันนั้น",
+      "prev_month": "Previous month",
+      "next_month": "Next month",
+      "legend_hint": "● Has events · Click a date to filter that day",
+      "list_title_day": "{{y}}-{{m}}-{{d}} Events",
+      "list_title_all": "{{y}}-{{m}} All events",
+      "count": "{{count}} items",
+      "show_all": "แสดงทั้งหมด",
+      "no_data_period": "ไม่มีอีเวนต์ที่ลงทะเบียนในช่วงเวลานี้",
+      "no_data_day": "ไม่มีอีเวนต์ที่จัดในวันนี้",
+      "no_data": "ไม่มีอีเวนต์",
+      "hosted_by": "จัดโดย: {{name}}",
+      "year_month": "{{m}}/{{y}}",
+      "untitled": "(Untitled)",
+      "homepage": "Homepage",
+      "error": {
+        "load": "โหลดรายการอีเวนต์ไม่สำเร็จ",
+        "connection": "ไม่สามารถโหลดข้อมูลอีเวนต์ได้ โปรดลองอีกครั้งในภายหลัง"
+      }
+    },
+    "tabs": {
+      "restaurant": {
+        "label": "Restaurant Picks",
+        "description": "Explore restaurants by region"
+      },
+      "event": {
+        "label": "Event Picks",
+        "description": "Nationwide cultural festival calendar"
+      }
+    },
+    "mobile_title": "ค้นพบ",
+    "category_tabs_aria": "หมวดคู่มือ",
+    "gemini_notice": "AI แนะนำสถานที่ใหม่ตามความชอบและบริบทของคุณ",
+    "places_none": "ไม่มีสถานที่แนะนำ",
+    "places_extra": " และอีก {{n}} แห่ง",
+    "places_summary": "{{listed}}{{extra}} — แนะนำ {{count}} แห่ง\nแตะหมุดบนแผนที่เพื่อดูรายละเอียด",
+    "coords_hint": "ไม่พบพิกัดบนแผนที่ ลองใช้ชื่อสถานที่ที่ชัดเจนขึ้น",
+    "answer_empty": "ไม่สามารถรับคำตอบได้",
+    "guide_error": "ไม่สามารถรับคำตอบจากไกด์ได้",
+    "directions_no_location": "ต้องใช้ตำแหน่งของคุณสำหรับเส้นทางขับรถ อนุญาตตำแหน่งแล้วลองอีกครั้ง",
+    "festival_on_map": "แสดง {{count}} งานบนแผนที่ ({{year}}/{{month}})",
+    "festival_map_empty": "ไม่มีงานที่มีพิกัด หรือ API ไม่ส่งข้อมูล",
+    "festival_load_error": "โหลดงานไม่ได้: {{message}}",
+    "festival_loading_overlay": "กำลังโหลดงาน…",
+    "marker_event": "งาน",
+    "marker_place": "สถานที่",
+    "nearby_category_fallback": "ร้านอาหาร · คาเฟ่",
+    "badge_event": "งาน",
+    "badge_spot": "สถานที่แนะนำ",
+    "keyword_default": "แนะนำ",
+    "info_none": "ไม่มีข้อมูล",
+    "category": {
+      "all": "ทั้งหมด",
+      "festival": "งาน",
+      "activity": "กิจกรรม K",
+      "historic": "ประวัติศาสตร์และมรดก",
+      "culture": "วัฒนธรรมท้องถิ่น",
+      "nature": "ธรรมชาติและพักผ่อน",
+      "restaurant": "ร้านอาหาร",
+      "cafe": "คาเฟ่"
+    },
+    "prompt": {
+      "activity": "แนะนำกิจกรรม K และประสบการณ์ที่ลองทำในเกาหลี",
+      "historic": "แนะนำสถานที่ประวัติศาสตร์ มรดก และแลนด์มาร์กในเกาหลี",
+      "culture": "แนะนำที่สัมผัสวัฒนธรรมท้องถิ่น ตลาด และบรรยากาศย่านในเกาหลี",
+      "nature": "แนะนำธรรมชาติ สวนสาธารณะ และที่พักผ่อนในเกาหลี",
+      "restaurant": "แนะนำร้านอาหารและสตรีทฟู้ดในเกาหลี",
+      "cafe": "แนะนำคาเฟ่บรรยากาศดี ของหวาน และกาแฟในเกาหลี"
+    },
+    "placeholder": {
+      "festival": "เทศกาล",
+      "cafe": "คาเฟ่",
+      "restaurant": "ร้านอาหาร",
+      "heritage": "มรดก",
+      "nature": "ธรรมชาติ",
+      "shopping": "ช้อปปิ้ง",
+      "default": "สถานที่"
+    },
+    "route": {
+      "minutes": "{{m}} นาที",
+      "hours": "{{h}} ชม.",
+      "hours_minutes": "{{h}} ชม. {{m}} นาที",
+      "car_km_only": "🚗 ~{{km}} กม. โดยรถ",
+      "car_summary": "🚗 ~{{dur}} ({{km}} กม.)",
+      "won": "₩{{amount}}",
+      "won_zero": "₩0"
+    },
+    "chat": {
+      "placeholder": "ถามเกี่ยวกับสถานที่…",
+      "role_user": "คุณ",
+      "role_bot": "Kroaddy",
+      "collapse": "ย่อแชท",
+      "open": "เปิดแชท",
+      "input_aria": "คำถามไกด์ AI",
+      "send_wait": "โปรดรอคำตอบ",
+      "send_empty": "กรุณาใส่คำถาม",
+      "send": "ส่ง",
+      "send_aria_busy": "กำลังประมวลผล",
+      "send_aria_empty": "ใส่คำถาม",
+      "send_aria": "ส่งคำถาม"
+    },
+    "map": {
+      "my_location": "ตำแหน่งของฉัน",
+      "aria_map": "แผนที่",
+      "loading": "กำลังโหลดแผนที่…",
+      "load_error": "โหลดแผนที่ไม่ได้",
+      "load_error_hint": "ตรวจสอบเครือข่ายและ NEXT_PUBLIC_NAVER_MAP_CLIENT_ID"
+    },
+    "searching": {
+      "chat": "Kroaddy กำลังค้นหา",
+      "map": "Kroaddy กำลังหาสถานที่ที่ดีที่สุด"
+    },
+    "sheet": {
+      "driving_route": "เส้นทางขับรถ",
+      "driving_route_aria": "แสดงเส้นทางขับรถ",
+      "route_loading": "กำลังโหลดเส้นทาง…",
+      "route_unavailable": "ไม่มีเส้นทางขับรถสำหรับช่วงนี้ ลองโหมดอื่น",
+      "retry": "ลองอีกครั้ง",
+      "retry_route": "โหลดเส้นทางใหม่",
+      "route_summary_aria": "สรุปการขับ",
+      "drive_duration_label": "เวลาขับ",
+      "distance_label": "ระยะทาง",
+      "km_suffix": "{{km}} กม.",
+      "fuel_label": "ค่าน้ำมันโดยประมาณ",
+      "toll_label": "ค่าผ่านทาง",
+      "taxi_label": "แท็กซี่ (โดยประมาณ)",
+      "route_detail_missing": "โหลดรายละเอียดเวลาและระยะทางไม่ได้",
+      "nearby_load_fail": "โหลดสถานที่ใกล้เคียงไม่ได้",
+      "share_ok": "แชร์หรือคัดลอกไปคลิปบอร์ดแล้ว",
+      "share_fail": "แชร์ไม่สำเร็จ",
+      "image_prep": "กำลังโหลดรูป",
+      "festival_label": "เทศกาล",
+      "keywords_aria": "คำสำคัญของสถานที่",
+      "place_info_aria": "ข้อมูลสถานที่",
+      "info_loading": "กำลังโหลดข้อมูล…",
+      "address_copied": "คัดลอกแล้ว",
+      "address_tap_copy": "แตะเพื่อคัดลอก",
+      "visit_homepage": "ไปที่เว็บไซต์",
+      "naver_partial": "ไม่พบผลค้นหาในระบบท้องถิ่น แสดงข้อมูลบางส่วน ดูคำแนะนำ AI และแผนที่ด้วย",
+      "why_recommend": "ทำไม Kroaddy ถึงแนะนำ",
+      "points_aria": "ไฮไลต์",
+      "desc_collapse": "แสดงน้อยลง",
+      "desc_expand": "แสดงเพิ่ม",
+      "ai_why": "คำแนะนำ AI",
+      "no_ai_desc": "ยังไม่มีคำอธิบาย AI ถามใหม่หรือเลือกหมุดอื่น",
+      "nearby_section_aria": "ร้านอาหารและคาเฟ่ใกล้เคียง",
+      "nearby_title": "สถานที่ใกล้เคียงไปด้วยกัน",
+      "nearby_type_aria": "ประเภทสถานที่ใกล้เคียง",
+      "nearby_empty": "ไม่พบร้านอาหารหรือคาเฟ่ใกล้เคียง ลองตัวกรองอื่น",
+      "distance_about": "~{{dist}}",
+      "est_cost": "ค่าใช้จ่ายโดยประมาณ",
+      "visit_duration": "การเยี่ยมชม / ระยะเวลา",
+      "photo_spot": "จุดถ่ายรูป",
+      "copy_address": "คัดลอกที่อยู่",
+      "done": "เสร็จ",
+      "coords_aria": "พิกัดงาน",
+      "lat_label": "ละติจูด",
+      "lng_label": "ลองจิจูด",
+      "venue_label": "สถานที่จัด",
+      "period_label": "วันที่",
+      "event_info": "รายละเอียดงาน",
+      "event_desc_fail": "โหลดคำอธิบายไม่ได้ ถามใหม่หรือเลือกหมุดอื่น",
+      "official_site": "เว็บไซต์ทางการ",
+      "share": "แชร์"
+    }
+  },
+  "chat": {
+    "tier": {
+      "silver": "Silver",
+      "gold": "Gold",
+      "platinum": "Platinum",
+      "diamond": "Diamond"
+    },
+    "group": {
+      "title_list": "ห้องแชทกลุ่ม",
+      "title_room": "แชทกลุ่ม - {{room}}",
+      "back_to_list": "รายการห้อง",
+      "loading_rooms": "กำลังโหลดห้อง...",
+      "rooms_hint": "ห้องที่เข้าได้ขึ้นอยู่กับระดับเกียรติยศ ผู้มีอันดับสูงกว่าสามารถเข้าห้องระดับต่ำกว่าได้ด้วย",
+      "table": {
+        "room": "ห้อง",
+        "honor": "เกียรติยศขั้นต่ำ",
+        "access": "เข้าได้"
+      },
+      "room_label": "ห้อง {{label}}",
+      "or_more": "ขึ้นไป",
+      "access_yes": "ได้",
+      "access_no": "เกียรติยศไม่พอ",
+      "enter": "เข้า",
+      "loading_messages": "กำลังโหลดข้อความ...",
+      "user_fallback": "ผู้ใช้ {{id}}",
+      "open_tourstar": "เปิดโพสต์ Tourstar",
+      "menu": {
+        "whisper": "ส่งข้อความลับ",
+        "honor_up": "โหวตเพิ่มเกียรติยศ",
+        "honor_down": "โหวตลดเกียรติยศ",
+        "add_friend": "เพิ่มเพื่อน"
+      },
+      "input_placeholder": "พิมพ์ข้อความ...",
+      "send": "ส่ง",
+      "dev_add_dummy": "Dev: เพิ่มข้อความทดสอบ (ฝั่งอื่น)",
+      "whisper": {
+        "title": "ส่งข้อความลับ",
+        "to": "ถึง: {{username}}"
+      },
+      "sending": "กำลังส่ง...",
+      "submit": "ส่ง",
+      "action_failed": "คำขอล้มเหลว",
+      "friend_failed": "คำขอเป็นเพื่อนล้มเหลว",
+      "error_load_messages": "โหลดข้อความไม่สำเร็จ",
+      "error_load_messages_runtime": "เกิดข้อผิดพลาดขณะโหลดข้อความ",
+      "error_auth_sse": "ยืนยันตัวตนการเชื่อมต่อแชทล้มเหลว โปรดลองอีกครั้งในภายหลัง",
+      "error_send": "ส่งไม่สำเร็จ",
+      "error_send_runtime": "เกิดข้อผิดพลาดขณะส่ง",
+      "error_whisper_send": "ส่งข้อความลับไม่สำเร็จ",
+      "error_whisper_send_runtime": "เกิดข้อผิดพลาดขณะส่งข้อความลับ",
+      "test_user": "ผู้ใช้ทดสอบ",
+      "test_message": "ใครไปเที่ยวด้วยกัน ทักลับได้นะ! (ข้อความทดสอบ — แตะเพื่อดู)"
+    },
+    "whisper": {
+      "user_fallback": "ผู้ใช้ {{id}}",
+      "title": "ข้อความลับ",
+      "new_chat": "แชทใหม่",
+      "no_conversations": "ยังไม่มีการสนทนา",
+      "start": "ส่งข้อความลับ",
+      "blocked_user": "ผู้ใช้ที่ถูกบล็อก",
+      "delete_conv": "ลบการสนทนา",
+      "unblock": "เลิกบล็อก",
+      "block": "บล็อกผู้ใช้",
+      "empty_thread": "เริ่มแชทกับ {{name}}",
+      "view_tourstar": "ดูโพสต์ Tourstar",
+      "read": "อ่านแล้ว",
+      "cannot_send_blocked": "ส่งข้อความถึงผู้ที่ถูกบล็อกไม่ได้",
+      "input_placeholder": "พิมพ์ข้อความ… (Enter ส่ง, Shift+Enter ขึ้นบรรทัดใหม่)",
+      "pick_or_start": "เลือกการสนทนาหรือส่งข้อความลับใหม่",
+      "new_whisper": "+ ข้อความลับใหม่",
+      "new_whisper_title": "ข้อความลับใหม่",
+      "no_friends": "ยังไม่มีเพื่อน",
+      "add_friend": "เพิ่มเพื่อน",
+      "delete_confirm": "ลบการสนทนาทั้งหมดกับ {{name}} หรือไม่?\nไม่สามารถย้อนกลับได้"
+    },
+    "friends": {
+      "title": "รายชื่อเพื่อน",
+      "whisper_box": "กล่องข้อความลับ",
+      "error_list": "โหลดรายการไม่สำเร็จ",
+      "list_title": "เพื่อน ({{count}})",
+      "empty": "ยังไม่มีเพื่อน ในแชทกลุ่ม แตะข้อความเพื่อส่งคำขอเป็นเพื่อน",
+      "pending_title": "คำขอเป็นเพื่อนที่ได้รับ ({{count}})",
+      "pending_empty": "ไม่มีคำขอที่รอดำเนินการ",
+      "whisper": "ข้อความลับ",
+      "remove_title": "ลบเพื่อน",
+      "block_title": "บล็อกผู้ใช้",
+      "whisper_to_suffix": " — ส่งข้อความลับ",
+      "whisper_placeholder": "พิมพ์ข้อความลับ…",
+      "counter_send_hint": "{{len}} / 500 · Ctrl+Enter เพื่อส่ง",
+      "sending": "กำลังส่ง…",
+      "send": "ส่ง",
+      "honor": "เกียรติยศ {{value}}",
+      "user_fallback": "ผู้ใช้ {{id}}",
+      "accept_ok": "ยอมรับคำขอเป็นเพื่อนแล้ว",
+      "accept_fail": "ยอมรับไม่สำเร็จ",
+      "accept_err": "ประมวลผลการยอมรับล้มเหลว",
+      "remove_confirm": "ลบ {{name}} ออกจากรายชื่อเพื่อนหรือไม่?",
+      "remove_ok": "ลบ {{name}} ออกจากรายชื่อเพื่อนแล้ว",
+      "remove_fail": "ลบเพื่อนไม่สำเร็จ",
+      "remove_err": "ลบเพื่อนไม่สำเร็จ",
+      "block_confirm": "บล็อก {{name}} หรือไม่?\nจะถูกลบออกจากเพื่อนและไม่รับข้อความลับ",
+      "block_ok": "บล็อก {{name}} แล้ว",
+      "block_fail": "บล็อกไม่สำเร็จ",
+      "block_err": "บล็อกไม่สำเร็จ",
+      "whisper_ok": "ส่งข้อความลับถึง {{name}} แล้ว",
+      "whisper_fail": "ส่งข้อความลับไม่สำเร็จ",
+      "whisper_err": "ส่งข้อความลับไม่สำเร็จ"
+    }
+  },
+  "tourstar": {
+    "title": "ทัวร์สตาร์",
+    "subtitle": "AI จะคัดเลือกรูปท่องเที่ยวที่ดีที่สุดของคุณ แล้วเพิ่มคอมเมนต์สั้น ๆ เพื่อโพสต์ได้สวยงาม",
+    "new_post": "โพสต์ใหม่",
+    "back_to_feed_title": "กลับไปที่ฟีดทั้งหมด",
+    "friend_badge": "เพื่อน",
+    "author": {
+      "self_caption": "บันทึกและแชร์ช่วงเวลาท่องเที่ยวล้ำค่าของคุณ",
+      "other_caption": "โพสต์จากผู้ใช้นี้"
+    },
+    "stats": {
+      "posts": "โพสต์",
+      "scraps": "สแครป",
+      "friends": "เพื่อน"
+    },
+    "search": {
+      "all": "ทั้งหมด",
+      "author": "ชื่อผู้ใช้",
+      "title": "ชื่อเรื่อง",
+      "content": "เนื้อหา",
+      "tags": "แท็ก",
+      "location": "สถานที่",
+      "placeholder": "พิมพ์เพื่อค้นหา..."
+    },
+    "tabs": {
+      "all": "ทั้งหมด",
+      "mine": "โพสต์ของฉัน",
+      "friends": "โพสต์ของเพื่อน",
+      "bookmarked": "สแครป"
+    },
+    "sort": {
+      "latest": "ล่าสุด",
+      "likes": "ถูกใจมากที่สุด",
+      "comments": "ความคิดเห็นมากที่สุด"
+    },
+    "empty": {
+      "author": "ไม่มีโพสต์จาก {{name}}",
+      "mine": "คุณยังไม่ได้โพสต์",
+      "bookmarked": "ไม่มีโพสต์ที่สแครปไว้",
+      "friends": "ไม่มีโพสต์จากเพื่อน",
+      "search": "ไม่พบผลลัพธ์",
+      "none": "ยังไม่มีบันทึกการเดินทาง",
+      "help_bookmarked": "กดปุ่มบุ๊กมาร์กบนโพสต์ของผู้อื่น",
+      "help_friends": "เพิ่มเพื่อนเพื่อดูบันทึกการเดินทางของพวกเขา",
+      "help_new": "ใช้ปุ่ม \"โพสต์ใหม่\" ด้านบนเพื่อบันทึกทริปแรกของคุณ",
+      "cta": "บันทึกทริป"
+    },
+    "ai_banner": {
+      "title": "AI คัดเลือกรูปที่ดีที่สุดของคุณโดยอัตโนมัติ",
+      "body": "อัปโหลดรูปท่องเที่ยว แล้ว AI จะแนะนำรูปที่ดีที่สุด; เพิ่มคอมเมนต์สั้น ๆ เพื่อโพสต์ให้สวยงาม"
+    },
+    "status": {
+      "photo_queued": "เข้าคิววิเคราะห์รูปภาพโดย AI...",
+      "photo_running": "กำลังวิเคราะห์รูปภาพด้วย AI...",
+      "photo_failed": "การวิเคราะห์ AI ล้มเหลว",
+      "photo_done_pick": "วิเคราะห์เสร็จแล้ว (ตรวจอันดับและเลือกรูป)",
+      "comment_draft_running": "วิเคราะห์เสร็จแล้ว (กำลังกำหนดร่างคอมเมนต์...)",
+      "comment_draft_done": "วิเคราะห์เสร็จแล้ว (ร่างคอมเมนต์พร้อม)",
+      "photo_done": "วิเคราะห์ AI เสร็จสมบูรณ์",
+      "upload_failed": "อัปโหลดล้มเหลว",
+      "checking_metadata": "กำลังตรวจสอบเมทาดาต้าวันที่ถ่าย...",
+      "no_photo_in_range": "ไม่พบรูปในช่วงที่เลือก",
+      "filtered_uploading": "{{excludedCount}} ถูกตัดออกตามตัวกรองวันที่ กำลังอัปโหลดอัตโนมัติ {{filteredCount}} รูป...",
+      "uploading_count": "กำลังอัปโหลด {{count}} รูป...",
+      "post_generating": "กำลังสร้างโพสต์ AI...",
+      "post_generated": "สร้างโพสต์ AI แล้ว",
+      "post_save_failed": "บันทึกโพสต์ไม่สำเร็จ"
+    },
+    "create": {
+      "title": "สร้างบันทึกการเดินทางใหม่",
+      "subtitle": "อัปโหลดรูปภาพ แล้ว AI จะคัดช็อตที่ดีที่สุดให้อัตโนมัติ ✨",
+      "file_upload": "อัปโหลดไฟล์",
+      "photo_selected_count": "รูป (เลือก {{selected}}/{{total}})",
+      "date_filter_note": "หากระบุวันที่ จะอัปโหลดเฉพาะรูปในช่วงนั้นโดยอัตโนมัติ (ไม่ใช้ OpenAI)",
+      "start_date": "วันที่เริ่ม",
+      "end_date": "วันที่สิ้นสุด",
+      "include_unknown_shot_date": "รวมรูปที่ไม่มีข้อมูลวันที่ถ่าย",
+      "style_preset": "พรีเซ็ตสไตล์ (MBTI)",
+      "user_template_optional": "เทมเพลตผู้ใช้ (ไม่บังคับ)",
+      "style_auto": "อัตโนมัติ (ค่าเริ่มต้น)",
+      "style_group": {
+        "nt": "นักวิเคราะห์/นักวางกลยุทธ์ (NT)",
+        "nf": "นักการทูต/อารมณ์ (NF)",
+        "sj": "จัดการ/ภาคปฏิบัติ (SJ)",
+        "sp": "นักสำรวจ/ฉับไว (SP)"
+      },
+      "checking_shot_date": "กำลังตรวจสอบวันที่ถ่าย...",
+      "uploading": "กำลังอัปโหลด...",
+      "upload_files": "+ อัปโหลดรูปภาพ",
+      "filter_by_date": "คัดกรองอัตโนมัติตามวันที่ถ่าย (เมทาดาต้า)",
+      "location_optional": "สถานที่ (ไม่บังคับ)",
+      "location_placeholder": "เช่น คังนัม โซล, แฮอึนแด ปูซาน (AI ประมาณหากเว้นว่าง)",
+      "one_line_comment": "คอมเมนต์สั้น ๆ",
+      "comment_placeholder": "พิมพ์คอมเมนต์สั้น ๆ เพื่อโพสต์ให้สวยงาม",
+      "style_template_placeholder": "เช่น น้ำเสียงนุ่มนวล เว้นวรรคสวยงาม, 3 แฮชแท็ก",
+      "generated_title": "บันทึกการเดินทางที่ AI แนะนำ {{date}}",
+      "location_empty": "ยังไม่ได้ระบุจุดหมาย",
+      "comment_default": "บันทึกช่วงเวลาท่องเที่ยวอันมีค่า",
+      "generating": "กำลังสร้าง...",
+      "submit": "โพสต์"
+    },
+    "error": {
+      "upload_photo": "อัปโหลดรูปภาพไม่สำเร็จ โปรดตรวจสอบว่าเซิร์ฟเวอร์ tourstar ทำงานอยู่หรือไม่",
+      "upload_photo_simple": "อัปโหลดรูปภาพไม่สำเร็จ",
+      "like_failed": "ประมวลผลการกดถูกใจไม่สำเร็จ โปรดลองอีกครั้งในภายหลัง",
+      "cannot_delete_no_login": "ไม่สามารถยืนยันการเข้าสู่ระบบ จึงลบโพสต์ไม่ได้",
+      "delete_failed": "ลบไม่สำเร็จ ตรวจสอบว่าเป็นโพสต์ของคุณหรือไม่ หรือลองใหม่ภายหลัง",
+      "delete_retry": "ลบไม่สำเร็จ โปรดลองอีกครั้งในภายหลัง",
+      "edit_failed_with_detail": "แก้ไขโพสต์ไม่สำเร็จ\n{{detail}}",
+      "author_not_found": "ไม่พบบัญชีของ {{name}}",
+      "friend_request_failed": "ส่งคำขอเป็นเพื่อนไม่สำเร็จ",
+      "friend_request_failed_with_detail": "ส่งคำขอเป็นเพื่อนไม่สำเร็จ\n{{detail}}",
+      "friends_only": "เฉพาะเพื่อน",
+      "no_photo_for_period": "ไม่พบรูปภาพในช่วงเวลาที่เลือก\n(ไม่มีเมทาดาต้า: {{unknownCount}}, ตัดออก: {{excludedCount}})"
+    },
+    "confirm": {
+      "delete_post": "ลบโพสต์นี้หรือไม่? ไม่สามารถย้อนกลับได้"
+    },
+    "share": {
+      "copied": "คัดลอกลิงก์แชร์แล้ว วางในแชทได้เลย",
+      "copy_prompt": "คัดลอกลิงก์ด้านล่างแล้วแชร์ในแชท"
+    },
+    "edit": {
+      "title": "แก้ไขโพสต์",
+      "field_title": "ชื่อเรื่อง",
+      "title_placeholder": "กรอกชื่อเรื่อง",
+      "field_location": "สถานที่",
+      "location_placeholder": "เช่น คังนัม โซล, แฮอึนแด ปูซาน",
+      "field_body": "เนื้อหา",
+      "body_placeholder": "กรอกเนื้อหาโพสต์",
+      "photo_edit": "แก้ไขรูปภาพ",
+      "add_photo": "+ เพิ่มรูปภาพ",
+      "click_to_remove": "คลิกเพื่อลบออกจากรายการ",
+      "new": "ใหม่",
+      "photo_help": "คลิกรูปเดิมเพื่อคงไว้/ลบออก คลิกรูปใหม่เพื่อเอาออก",
+      "tags_label": "แท็ก (คั่นด้วยจุลภาคหรือช่องว่าง)",
+      "tags_placeholder": "เช่น winterwalk, healing, travelrecord",
+      "deleting": "กำลังลบ...",
+      "delete_post": "ลบโพสต์",
+      "saving": "กำลังบันทึก..."
+    },
+    "placeholder": {
+      "location_unknown": "ไม่ทราบสถานที่",
+      "anonymous": "ไม่ระบุชื่อ"
+    },
+    "time": {
+      "now": "เมื่อสักครู่",
+      "minutes_ago": "{{count}} นาทีที่แล้ว",
+      "hours_ago": "{{count}} ชั่วโมงที่แล้ว",
+      "days_ago": "{{count}} วันที่แล้ว"
+    },
+    "bookmarked": "บันทึกแล้ว",
+    "bookmark": "บันทึก",
+    "comments_count": "{{count}} ความคิดเห็น",
+    "photos_count": "{{count}} รูป",
+    "first_comment": "แสดงความคิดเห็นเป็นคนแรก",
+    "comment_placeholder": "พิมพ์ความคิดเห็น",
+    "copy_share_link": "คัดลอกลิงก์แชร์",
+    "friend_request_sent": "ส่งคำขอเป็นเพื่อนถึง {{name}} แล้ว",
+    "already_friend": "ผู้ใช้นี้เป็นเพื่อนของคุณอยู่แล้ว",
+    "requesting": "กำลังส่งคำขอ...",
+    "send_friend_request": "ส่งคำขอเป็นเพื่อน",
+    "view_posts": "ดูโพสต์",
+    "cancel_bookmark": "เอาบุ๊กมาร์กออก",
+    "my_post": "โพสต์ของฉัน",
+    "change_profile_photo": "เปลี่ยนรูปโปรไฟล์"
+  },
+  "calendar": {
+    "weekday": {
+      "0": "อา",
+      "1": "จ",
+      "2": "อ",
+      "3": "พ",
+      "4": "พฤ",
+      "5": "ศ",
+      "6": "ส"
+    }
+  },
+  "map": {
+    "mode": {
+      "car": "รถยนต์",
+      "walk": "เดิน",
+      "transit": "ขนส่งสาธารณะ"
+    },
+    "duration_min": "ประมาณ {{min}} นาที",
+    "duration_hour_min": "ประมาณ {{hour}} ชม. {{min}} นาที",
+    "total_route_stops": "เส้นทางทั้งหมด · {{count}} จุดแวะ",
+    "searching_locations": "กำลังค้นหาสถานที่… {{resolved}} / {{total}}",
+    "routing_car": "กำลังคำนวณเส้นทางถนน…",
+    "drawing_route": "กำลังวาดเส้นทาง…",
+    "car_estimate": "(car estimate)",
+    "walk_estimate": "(walk estimate)",
+    "route_failed": "ไม่สามารถแสดงเส้นทางได้",
+    "segment_route": "เส้นทาง {{from}}→{{to}}",
+    "view_map": "ดูแผนที่",
+    "same_place": "📌 สถานที่เดิม",
+    "open_in_naver_title": "ดู {{name}} ใน Naver Map",
+    "loading": "กำลังโหลดแผนที่…",
+    "static_failed": "ไม่สามารถโหลดแผนที่แบบคงที่ได้",
+    "open_in_naver": "ดูใน Naver Map",
+    "note_new_schedule": "กำหนดการที่เพิ่งสร้างจะแสดงแผนที่อัตโนมัติ",
+    "zoom_in": "ขยาย",
+    "zoom_out": "ย่อ",
+    "zoom_reset": "รีเซ็ตการซูม",
+    "open_in_naver_with_arrow": "เปิดใน Naver Map ↗"
+  },
+  "options": {
+    "gender": {
+      "male": "ชาย",
+      "female": "หญิง",
+      "other": "อื่นๆ",
+      "no_answer": "ไม่ต้องการระบุ"
+    },
+    "age": {
+      "teens": "วัยรุ่น",
+      "twenties": "20s",
+      "thirties": "30s",
+      "forties": "40s",
+      "fifties": "50s",
+      "sixties_plus": "60+"
+    },
+    "diet": {
+      "normal": "ทั่วไป",
+      "vegetarian": "มังสวิรัติ",
+      "vegan": "วีแกน",
+      "halal": "ฮาลาล",
+      "allergy": "แพ้อาหาร"
+    },
+    "religion": {
+      "none": "ไม่มี",
+      "christian": "คริสต์",
+      "buddhist": "พุทธ",
+      "catholic": "คาทอลิก",
+      "islam": "อิสลาม",
+      "other": "อื่นๆ"
+    },
+    "nationality": {
+      "korea": "เกาหลี",
+      "japan": "ญี่ปุ่น",
+      "china": "จีน",
+      "usa": "สหรัฐอเมริกา",
+      "united_kingdom": "สหราชอาณาจักร",
+      "france": "ฝรั่งเศส",
+      "germany": "เยอรมนี",
+      "canada": "แคนาดา",
+      "australia": "ออสเตรเลีย",
+      "vietnam": "เวียดนาม",
+      "thailand": "ประเทศไทย",
+      "philippines": "ฟิลิปปินส์",
+      "indonesia": "อินโดนีเซีย",
+      "singapore": "สิงคโปร์",
+      "malaysia": "มาเลเซีย",
+      "india": "อินเดีย",
+      "other": "อื่นๆ"
+    }
+  }
+}

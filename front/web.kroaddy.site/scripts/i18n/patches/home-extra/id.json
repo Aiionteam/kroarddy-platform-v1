@@ -1,0 +1,62 @@
+{
+  "common": {
+    "view_all": "Lihat semua",
+    "more": "Lainnya"
+  },
+  "home": {
+    "kcontent": {
+      "title": "🎭 Perjalanan tema K-content",
+      "theme_kpop": "K-POP",
+      "theme_kdrama": "K-DRAMA",
+      "theme_kfood": "K-FOOD",
+      "theme_kbeauty": "K-BEAUTY"
+    },
+    "news": {
+      "prev": "Sebelumnya",
+      "next": "Berikutnya",
+      "page_n": "Halaman {{page}}",
+      "nationwide": "Nasional",
+      "analyzing": "Analisis AI masih berlangsung.",
+      "error": "Gagal memuat berita."
+    },
+    "rebate": {
+      "city_route_title": "Rute & jadwal perjalanan {{name}} (Perencana standar)",
+      "province": {
+        "강원": "Gangwon",
+        "충북": "Chungbuk",
+        "전북": "Jeonbuk",
+        "전남": "Jeonnam",
+        "경남": "Gyeongnam",
+        "gangwon": "Gangwon",
+        "chungbuk": "Chungbuk",
+        "jeonbuk": "Jeonbuk",
+        "jeonnam": "Jeonnam",
+        "gyeongnam": "Gyeongnam"
+      },
+      "period": "2026.4 ~ 6 · Program percontohan",
+      "title": "🎫 Pengembalian hingga 50% untuk perjalanan pedesaan tertentu",
+      "desc": "Dapatkan kembali separuh pengeluaran perjalanan sebagai voucher lokal digital. Maks. 100.000 KRW per orang, maks. 200.000 KRW untuk grup 2+ orang.",
+      "visit_korea": "Visit Korea",
+      "fold": "Sembunyikan cara pakai",
+      "expand": "Cara pakai · Wilayah yang memenuhi syarat",
+      "step1": "Ajukan lebih dulu — periksa wilayah di visitkorea.or.kr dan dapatkan persetujuan sebelum berangkat.",
+      "step2": "Bepergian — belanjakan di wilayah yang disetujui (makan, menginap, dll.) dan simpan struk.",
+      "step3": "Kirim bukti — setelah perjalanan, kirim struk sesuai arahan pemerintah daerah.",
+      "step4": "Pengembalian — setelah verifikasi, 50% pengeluaran dibayar sebagai voucher lokal digital.",
+      "step5": "Pakai — gunakan dalam tahun yang sama di restoran, kafe, atau toko online setempat.",
+      "notice": "Catatan: Wajib pendaftaran & persetujuan awal. Dapat ditutup lebih awal jika anggaran habis. Detail berbeda per daerah; cek situs resmi awal April.",
+      "targets": "16 wilayah memenuhi syarat · Lihat rute di Perencana atau panduan resmi"
+    },
+    "popular": {
+      "title": "📍 Destinasi populer"
+    },
+    "shortcuts": {
+      "planner": "Perencana perjalanan",
+      "kcontent": "K-content",
+      "schedule": "Jadwal",
+      "standard": "Temukan tempat",
+      "user": "Rute pengguna",
+      "group": "Obrolan grup"
+    }
+  }
+}

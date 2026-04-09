@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import "@/lib/i18n/config";
+import { useTranslation } from "react-i18next";
 import { getCurrentPositionOrNull } from "@/lib/guide/geolocation";
 import type { GuideDirectionsBbox } from "@/lib/guide/types";
 import { GuideKroaddySearchingMapOverlay } from "@/components/guide/GuideKroaddySearching";
@@ -137,6 +139,7 @@ export function MapContainer({
   directionBBox = null,
   showSearchingOverlay = false,
 }: MapContainerProps) {
+  const { t } = useTranslation();
   const mapDivRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<unknown>(null);
   const markerObjsRef = useRef<unknown[]>([]);
@@ -322,7 +325,7 @@ export function MapContainer({
       const userMarker = new naver.maps.Marker({
         position: new naver.maps.LatLng(loc.lat, loc.lng),
         map,
-        title: "현재 위치",
+        title: t("guide.map.my_location", { defaultValue: "My location" }),
         zIndex: 500,
         icon: {
           content: dot,
@@ -493,7 +496,7 @@ export function MapContainer({
         }
       }
     }
-  }, [phase, markers, cameraAnimation, selectedMarkerId, directionPolylinePath, directionBBox]);
+  }, [phase, markers, cameraAnimation, selectedMarkerId, directionPolylinePath, directionBBox, t]);
 
   return (
     <div className={`relative h-full w-full min-h-0 ${className}`}>
@@ -501,13 +504,15 @@ export function MapContainer({
         ref={mapDivRef}
         className="absolute inset-0 z-[1] h-full w-full bg-gray-100"
         role="application"
-        aria-label="네이버 지도"
+        aria-label={t("guide.map.aria_map", { defaultValue: "Map" })}
       />
 
       {phase === "loading" && (
         <div className="absolute inset-0 z-[2] flex flex-col items-center justify-center gap-3 bg-gradient-to-b from-gray-50 to-gray-100">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-sky-100 border-t-sky-600" />
-          <p className="text-sm font-medium text-gray-600">지도를 불러오는 중…</p>
+          <p className="text-sm font-medium text-gray-600">
+            {t("guide.map.loading", { defaultValue: "Loading map…" })}
+          </p>
           <div className="mt-4 h-32 w-[85%] max-w-md animate-pulse rounded-md bg-gray-200/80" />
           <div className="h-4 w-48 animate-pulse rounded bg-gray-200/80" />
         </div>
@@ -516,8 +521,14 @@ export function MapContainer({
       {phase === "error" && (
         <div className="absolute inset-0 z-[2] flex flex-col items-center justify-center gap-2 bg-gray-100 p-6 text-center">
           <span className="text-3xl">🗺️</span>
-          <p className="text-sm text-gray-600">네이버 지도를 불러오지 못했습니다.</p>
-          <p className="text-xs text-gray-400">네트워크와 NEXT_PUBLIC_NAVER_MAP_CLIENT_ID 를 확인해 주세요.</p>
+          <p className="text-sm text-gray-600">
+            {t("guide.map.load_error", { defaultValue: "Could not load the map." })}
+          </p>
+          <p className="text-xs text-gray-400">
+            {t("guide.map.load_error_hint", {
+              defaultValue: "Check your network and NEXT_PUBLIC_NAVER_MAP_CLIENT_ID.",
+            })}
+          </p>
         </div>
       )}
 

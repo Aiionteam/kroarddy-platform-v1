@@ -1,6 +1,8 @@
 /**
  * Planner API – Java 게이트웨이(8080) /api/v1/planner 경유
  */
+import i18n from "@/lib/i18n/config";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 
@@ -9,8 +11,8 @@ async function throwApiError(res: Response, fallback: string): Promise<never> {
   if (res.status === 429 || res.status === 503) {
     let detail =
       res.status === 503
-        ? "AI 서버가 바쁩니다. 잠시 후 다시 시도해 주세요."
-        : "AI 사용량이 초과됐습니다. 잠시 후 다시 시도해 주세요.";
+        ? i18n.t("planner.api.ai_busy", { defaultValue: "AI 서버가 바쁩니다. 잠시 후 다시 시도해 주세요." })
+        : i18n.t("planner.api.ai_rate_limited", { defaultValue: "AI 사용량이 초과됐습니다. 잠시 후 다시 시도해 주세요." });
     try {
       const body = await res.json();
       if (body?.detail) detail = body.detail;
@@ -108,7 +110,7 @@ export async function fetchRoutes(
     }),
     cache: "no-store",
   });
-  if (!res.ok) await throwApiError(res, "루트 API 오류");
+  if (!res.ok) await throwApiError(res, i18n.t("planner.api.route_error", { defaultValue: "루트 API 오류" }));
   return res.json();
 }
 
@@ -139,7 +141,7 @@ export async function rerollPlanItem(
     body: JSON.stringify({ item_index: itemIndex, user_id: userId ?? null }),
     cache: "no-store",
   });
-  if (!res.ok) await throwApiError(res, "리롤 API 오류");
+  if (!res.ok) await throwApiError(res, i18n.t("planner.api.reroll_error", { defaultValue: "리롤 API 오류" }));
   return res.json();
 }
 
@@ -154,7 +156,7 @@ export async function modifyPlan(
     body: JSON.stringify({ instruction, user_id: userId }),
     cache: "no-store",
   });
-  if (!res.ok) await throwApiError(res, "일정 수정 API 오류");
+  if (!res.ok) await throwApiError(res, i18n.t("planner.api.modify_error", { defaultValue: "일정 수정 API 오류" }));
   return res.json();
 }
 
@@ -163,7 +165,7 @@ export async function fetchMyPlans(userId: number, signal?: AbortSignal): Promis
     cache: "no-store",
     signal,
   });
-  if (!res.ok) throw new Error(`플랜 목록 API 오류: ${res.status}`);
+  if (!res.ok) throw new Error(`${i18n.t("planner.api.plan_list_error", { defaultValue: "플랜 목록 API 오류" })}: ${res.status}`);
   const data = await res.json();
   return data.plans ?? [];
 }
@@ -173,7 +175,7 @@ export async function deletePlan(planId: number, userId: number): Promise<void> 
     method: "DELETE",
     cache: "no-store",
   });
-  if (!res.ok) throw new Error(`플랜 삭제 API 오류: ${res.status}`);
+  if (!res.ok) throw new Error(`${i18n.t("planner.api.plan_delete_error", { defaultValue: "플랜 삭제 API 오류" })}: ${res.status}`);
 }
 
 export async function savePlan(data: {
@@ -197,7 +199,7 @@ export async function savePlan(data: {
     }),
     cache: "no-store",
   });
-  if (!res.ok) throw new Error(`저장 API 오류: ${res.status}`);
+  if (!res.ok) throw new Error(`${i18n.t("planner.api.save_error", { defaultValue: "저장 API 오류" })}: ${res.status}`);
   return res.json();
 }
 
@@ -227,7 +229,7 @@ export async function fetchSchedule(
     }),
     cache: "no-store",
   });
-  if (!res.ok) await throwApiError(res, "일정 API 오류");
+  if (!res.ok) await throwApiError(res, i18n.t("planner.api.schedule_error", { defaultValue: "일정 API 오류" }));
   return res.json();
 }
 

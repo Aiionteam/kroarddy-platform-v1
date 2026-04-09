@@ -1,0 +1,199 @@
+{
+  "title": "Kコンテンツプランナー",
+  "subtitle": "K-POP、ドラマ、グルメ、ビューティで韓国を楽しむ",
+  "hero_title": "Kコンテンツプランナー",
+  "hero_subtitle": "K-POP、ドラマ、グルメ、ビューティで韓国を楽しむ",
+  "hero_cta": "AIルートを生成",
+  "back": "プランナーに戻る",
+  "row_kpop": "K-POP",
+  "row_kdrama": "K-ドラマ / 映画",
+  "row_kfood": "K-フード",
+  "row_kbeauty": "K-ビューティ",
+  "sample_itinerary": "サンプル行程",
+  "search_bar": "検索",
+  "quick_selection": "クイック選択",
+  "vibe_grid": "雰囲気を選ぶ",
+  "date": "日付",
+  "generating": "生成中…",
+  "generate": "✨ 行程を生成",
+  "ai_recommended": "AIおすすめの行程",
+  "region_select": "地域を選択",
+  "traditional_market": "伝統市場",
+  "market_generate": "この市場のグルメ行程を生成",
+  "cafe_question": "今日の一日はどんな雰囲気にしたいですか？",
+  "cafe_hint": "雰囲気を選ぶか、カフェ名を入力してAIコースを生成します。",
+  "cafe_placeholder": "カフェ名を直接入力（例：聖水トングプラネット）",
+  "cafe_generate": "AI行程を生成",
+  "trending_items": "今話題のアイテム",
+  "my_recipe": "マイ神コラボレシピ",
+  "convenience_q": "今コンビニで手に入りにくいものは？",
+  "trending_placeholder": "例：延世ミルククリームパン",
+  "recipe_q": "どんな味の組み合わせに挑戦しますか？",
+  "extra_keywords": "追加キーワード",
+  "recipe_placeholder": "例：激辛チャレンジ、甘じょっぱいデザート",
+  "recipe_generate": "AI神コラボレシピを生成",
+  "set_date_and_generate": "日付を設定して\n行程を生成してください",
+  "start_generate": "✨ 行程生成を開始",
+  "making_schedule": "AIが<b>{{title}}</b>の行程を作成中…",
+  "recommended_schedule_title": "{{title}} — おすすめ行程",
+  "save_plan": "💾 行程を保存",
+  "total_cost": "おおよその合計費用",
+  "cost_per_day": "{{day}}日目 {{total}}",
+  "no_schedule": "行程が生成されませんでした。もう一度お試しください。",
+  "saved_goto_schedule": "保存済み · スケジュールへ",
+  "find_nearby_store": "これを売っている近くの場所を探す",
+  "recipe_hashtags": "#モディシューマー #コンビニチャレンジ #AIレシピ",
+  "description_fallback": "{{place}}で楽しめるおすすめスポットです。",
+  "challenge_location": "チャレンジ場所",
+  "challenge_location_desc": "AIが選んだベストスポット（100km圏内）— 聖水ソウルの森前ベンチエリア",
+  "subtotal": "小計 {{total}}",
+  "schedule_item_default": "行程",
+  "schedule_load_fail": "行程を読み込めませんでした。",
+  "save_fail": "保存に失敗しました。",
+  "cafe_place_hint": "カフェ・場所のヒント",
+  "convenience_trending": "コンビニ話題商品",
+  "recipe_title_with_vibe": "{{vibe}}チャレンジ 2026 Ver.",
+  "recipe_title_default": "マーク定食 2026 Ver.",
+  "region_tab.all": "すべて",
+  "region_tab.seoul": "ソウル",
+  "region_tab.gangwon": "江原",
+  "region_tab.jeonla": "全羅",
+  "region_tab.gyeongsang": "慶尚",
+  "region_tab.jeju": "済州",
+  "cafe_vibe.industrial_raw.label": "インダストリアル/ラフ",
+  "cafe_vibe.industrial_raw.description": "コンクリートと鉄のクールな雰囲気。",
+  "cafe_vibe.traditional_zen.label": "伝統/禅",
+  "cafe_vibe.traditional_zen.description": "韓屋と木の質感で静かなひととき。",
+  "cafe_vibe.nature_botanical.label": "自然/ボタニカル",
+  "cafe_vibe.nature_botanical.description": "緑と陽射しあふれる空間。",
+  "cafe_vibe.retro_newtro.label": "レトロ/ニュートロ",
+  "cafe_vibe.retro_newtro.description": "懐かしさと路地裏ヴィンテージの旅。",
+  "cafe_vibe.modern_minimal.label": "モダン/ミニマル",
+  "cafe_vibe.modern_minimal.description": "洗練されたモノトーンの美学。",
+  "brand.seveneleven": "セブンイレブン",
+  "brand.emart24": "emart24",
+  "market": {
+    "SEOUL": {
+      "0": {
+        "name": "広蔵市場",
+        "description": "ユッケと豆チヂミのメッカ。"
+      },
+      "1": {
+        "name": "望遠市場",
+        "description": "MZ世代に人気のトレンド市場。"
+      },
+      "2": {
+        "name": "通仁市場",
+        "description": "有名な両替弁当体験が楽しめる場所。"
+      }
+    },
+    "GANGWON": {
+      "0": {
+        "name": "寧越中央市場",
+        "description": "そば粉チヂミとオルチェンギ麺の本場。"
+      },
+      "1": {
+        "name": "束草観光魚市場",
+        "description": "タッカンジョンと海鮮屋台の楽園。"
+      }
+    },
+    "JEONLA": {
+      "0": {
+        "name": "全州南部市場",
+        "description": "スンデと豆もやしスープ発祥の地。"
+      },
+      "1": {
+        "name": "光州1913松汀駅市場",
+        "description": "レトロニュートロ満載の市場。"
+      }
+    },
+    "GYEONGSANG": {
+      "0": {
+        "name": "釜山国際市場",
+        "description": "映画の思い出とビビンタンミョン。"
+      },
+      "1": {
+        "name": "大邱西門市場",
+        "description": "韓国三大市場の規模と味。"
+      }
+    },
+    "JEJU": {
+      "0": {
+        "name": "済州東門市場",
+        "description": "オメギ餅と黒豚カンジョンなど島の味。"
+      }
+    }
+  },
+  "fallback": {
+    "kfood": {
+      "KF_MARKET": {
+        "title": "全国伝統市場グルメツアー",
+        "description": "韓国各地のあたたかいローカルフレーバーと活気に満ちた市場征服ツアー。"
+      },
+      "KF_CAFE": {
+        "title": "K-デザート＆カフェツアー",
+        "description": "好みに合うカフェとセレクトショップをつなぐ心ときめくルート。"
+      },
+      "KF_CONVENIENCE": {
+        "title": "K-コンビニ神コラボチャレンジ",
+        "description": "売切れ新商品から秘密レシピまで、真のコンビニマニアに！"
+      }
+    },
+    "kbeauty": {
+      "KBEAUTY_01": {
+        "title": "オリーブヤング旗艦店",
+        "description": "スキンケアとメイクのトレンドを一か所で比較・購入。"
+      },
+      "KBEAUTY_02": {
+        "title": "明洞ビューティストリート",
+        "description": "主要ロードショップ周辺のベストセラーを素早くチェック。"
+      },
+      "KBEAUTY_03": {
+        "title": "スキンケア体験店",
+        "description": "肌診断に基づくカスタムケアとハンズオンビューティプログラム。"
+      }
+    }
+  },
+  "recipe_vibe.spicy_fire.label": "激辛スパイス",
+  "recipe_vibe.spicy_fire.description": "ストレスを吹き飛ばす辛さチャレンジ。",
+  "recipe_vibe.sweet_salty.label": "甘じょっぱい定番",
+  "recipe_vibe.sweet_salty.description": "甘味と塩味のバランス。",
+  "recipe_vibe.diet_healthy.label": "コンビニダイエット",
+  "recipe_vibe.diet_healthy.description": "軽くて満足感のあるヘルシーセット。",
+  "recipe_vibe.night_snack.label": "夜食",
+  "recipe_vibe.night_snack.description": "小さな幸せの夜食レシピ。",
+  "recipe_vibe.hangover.label": "二日酔いセット",
+  "recipe_vibe.hangover.description": "二日酔いケアに特化した組み合わせ。",
+  "recipe_vibe.luxury_meal.label": "お得プレミアム弁当",
+  "recipe_vibe.luxury_meal.description": "プレミアムなコンビニ食。",
+  "shopping.ramen": "カップラーメン",
+  "shopping.tuna_kimbap": "ツナマヨ三角キンパ",
+  "shopping.string_cheese": "ストリングチーズ",
+  "shopping.sparkling_water": "炭酸水",
+  "cooking.1": "材料をすべて準備し電子レンジ対応容器に入れる。",
+  "cooking.2": "ソース/トッピングを混ぜ1分30秒加熱する。",
+  "cooking.3": "好みでトッピングを加え認証写真を撮る。",
+  "trending_card.1.title": "延世ミルククリームパン",
+  "trending_card.2.title": "ゼロコーラ氷カップハイボール",
+  "trending_card.default_title": "AIおすすめ話題商品",
+  "trending_card.tag.new": "#新商品",
+  "trending_card.tag.soldout": "#品切れ注意",
+  "trending_card.tag.review": "#話題",
+  "trending_card.tag.repurchase": "#リピート",
+  "meta.kf_market.title_ko": "全国伝統市場グルメツアー",
+  "meta.kf_cafe.title_ko": "K-デザート＆カフェツアー",
+  "meta.kf_convenience.title_ko": "K-コンビニ神コラボチャレンジ",
+  "meta.kf_market.tags": "伝統市場, グルメ, ローカルフード",
+  "meta.kf_cafe.tags": "カフェ, デザート, セレクトショップ",
+  "meta.kf_convenience.tags": "コンビニ, 神コラボ, モディシューマー",
+  "empty.pick_market": "市場を選んでから行程を生成してください",
+  "empty.pick_vibe_or_cafe": "雰囲気またはカフェ名を選んでください",
+  "empty.pick_tab_condition": "タブの条件を選んで生成してください",
+  "empty.pick_date": "日付を選んで行程を生成してください",
+  "empty.market_guide": "左で市場を選び、[この市場のグルメ行程を生成]または上部の✨生成を押してください",
+  "empty.cafe_guide": "左で雰囲気/カフェ名を決め、[AI行程を生成]を押してください",
+  "empty.convenience_guide": "上部タブでモードを選びキーワードを入力して生成してください",
+  "empty.default_guide": "上部の✨行程生成ボタンを押してください",
+  "shopping_list_title": "買い物リスト",
+  "cooking_steps_title": "調理手順"
+}

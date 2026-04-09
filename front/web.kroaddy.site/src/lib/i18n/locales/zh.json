@@ -1,34 +1,2729 @@
 {
-  "app": { "name": "Kroaddy" },
-  "common": { "save": "保存", "cancel": "取消", "next": "下一步", "skip": "跳过", "done": "完成", "loading": "加载中...", "error": "出现错误", "logout": "退出登录" },
+  "app": {
+    "name": "Kroaddy"
+  },
+  "common": {
+    "save": "保存",
+    "cancel": "取消",
+    "next": "下一步",
+    "skip": "跳过",
+    "done": "完成",
+    "loading": "加载中...",
+    "saving": "保存中...",
+    "processing": "处理中...",
+    "error": "出现错误",
+    "logout": "退出登录",
+    "menu_open": "Open menu",
+    "search": "Search",
+    "show_all": "全部显示",
+    "back": "返回",
+    "close": "关闭",
+    "retry": "重试",
+    "fold": "收起",
+    "view_all": "查看全部",
+    "more": "更多",
+    "delete": "删除",
+    "deleting": "删除中...",
+    "edit": "Edit",
+    "submit": "Submit",
+    "share": "Share",
+    "go_back": "Go back",
+    "confirm": "Confirm",
+    "coming_soon": "Coming soon",
+    "accept": "接受",
+    "login_needed": "需要登录。",
+    "login_required": "需要登录",
+    "not_found": {
+      "message": "We couldn't find the page you requested.",
+      "back_home": "Go back home"
+    }
+  },
   "onboarding": {
     "title": "旅行偏好设置",
     "subtitle": "请输入信息以获取AI个性化旅行推荐",
     "later": "稍后设置",
     "saving": "保存中...",
-    "nationality": { "title": "国家 / 国籍", "hint": "我们将根据您的国籍提供相应语言的服务" },
-    "gender":  { "title": "性别" },
-    "age":     { "title": "年龄段" },
-    "diet":    { "title": "饮食习惯" },
-    "religion":{ "title": "宗教信仰" }
+    "nationality": {
+      "title": "国家 / 国籍",
+      "hint": "我们将根据您的国籍提供相应语言的服务"
+    },
+    "gender": {
+      "title": "性别"
+    },
+    "age": {
+      "title": "年龄段"
+    },
+    "diet": {
+      "title": "饮食习惯"
+    },
+    "religion": {
+      "title": "宗教信仰"
+    }
+  },
+  "auth": {
+    "api": {
+      "naver_auth_url_fail": "无法获取 Naver 登录链接。",
+      "naver_auth_url_missing": "未收到 Naver 登录链接。",
+      "kakao_auth_url_fail": "无法获取 Kakao 登录链接。",
+      "kakao_auth_url_missing": "未收到 Kakao 登录链接。",
+      "google_auth_url_fail": "无法获取 Google 登录链接。",
+      "google_auth_url_missing": "未收到 Google 登录链接。",
+      "refresh_token_invalid": "Refresh token 已过期或无效，请重新登录。"
+    }
+  },
+  "weather": {
+    "reason": {
+      "no_location": "No location info"
+    }
+  },
+  "planner.standard": {
+    "title": "Choose destination",
+    "subtitle": "Pick a place and AI will recommend a tailored route",
+    "mode_label": "Standard",
+    "date": "Date",
+    "mode_car": "🚗 Car",
+    "mode_transit": "🚇 Transit",
+    "mode_walk": "🚶 Walk",
+    "generating_loading": "Searching for accurate info…",
+    "generate_route": "✨ Generate route",
+    "ai_recommended_routes": "AI recommended routes",
+    "set_date_and_generate": "Set dates and\ngenerate a route",
+    "start_generate": "✨ Start generating routes",
+    "pick_route": "Please select a route",
+    "range_hint": "AI will create an itinerary for {{start}} ~ {{end}}",
+    "select_date_then_generate": "Select dates and generate a route",
+    "generate_hint": "Click the ✨ Generate route button on the top-left",
+    "making_schedule": "AI is creating the itinerary for <b>{{name}}</b>…",
+    "recommended_schedule_title": "{{name}} — Recommended itinerary",
+    "saved_goto_schedule": "✅ Saved · Open schedule manager",
+    "save_plan": "💾 Save",
+    "total_cost": "Estimated total cost",
+    "cost_per_day": "Day{{day}} {{total}}",
+    "search_placeholder": "Search city/spot (e.g., Gangneung, Hanok Village)",
+    "search_result": "“{{query}}” results {{count}} items",
+    "no_results": "No results",
+    "reset": "Reset",
+    "metro_quick": "Quick access (Metro cities)",
+    "metro_quick_sub": "Jump to popular metro cities; browse detailed regions below.",
+    "metro_detail": "Metro city regions",
+    "metro_detail_sub": "For city‑based trips like Seoul/Busan/Daegu/Ulsan, see fine‑grained areas.",
+    "province": "Provinces",
+    "province_sub": "Compare regions like Gyeonggi, Chungcheong, Jeolla, Gyeongsang, Gangwon, Jeju.",
+    "image_pending": "Image coming soon",
+    "popular": "POPULAR",
+    "route_load_fail": "Failed to load routes.",
+    "schedule_load_fail": "Failed to load schedule.",
+    "save_fail": "Failed to save.",
+    "subtotal": "Subtotal {{total}}",
+    "theme": {
+      "event": "Event",
+      "food": "Food",
+      "spot": "Attraction",
+      "luxury": "Luxury",
+      "value": "Value",
+      "family": "Family",
+      "couple": "Couple"
+    },
+    "highlight": {
+      "gyeongbokgung": "Gyeongbokgung",
+      "hongdae": "Hongdae",
+      "hangang_park": "Hangang Park",
+      "cheongwadae": "Cheongwadae",
+      "insadong": "Insadong",
+      "myeongdong_cathedral": "Myeongdong Cathedral",
+      "euljiro_alley": "Euljiro Alley",
+      "national_museum_of_korea": "National Museum of Korea",
+      "itaewon": "Itaewon",
+      "haeundae": "Haeundae",
+      "haeundae_beach": "Haeundae Beach",
+      "gamcheon_village": "Gamcheon Village",
+      "jagalchi_market": "Jagalchi Market",
+      "biff_square": "BIFF Square",
+      "dongseongro": "Dongseong-ro",
+      "kim_gwangseok_street": "Kim Gwangseok Street",
+      "suseong_lake": "Suseong Lake",
+      "songdo": "Songdo",
+      "chinatown": "Chinatown",
+      "gangneung": "Gangneung",
+      "gyeongpo": "Gyeongpo Pavilion",
+      "anmok_coffee_street": "Anmok Coffee Street",
+      "ojukheon": "Ojukheon",
+      "sokcho": "Sokcho",
+      "seoraksan": "Seoraksan",
+      "central_market": "Central Market",
+      "hallasan": "Hallasan",
+      "seongsan_ilchulbong": "Seongsan Ilchulbong"
+    }
+  },
+  "planner.dest": {
+    "seoul": {
+      "name": "Seoul",
+      "highlight1": "Gyeongbokgung",
+      "highlight2": "Hangang Park"
+    },
+    "busan": {
+      "name": "Busan",
+      "highlight1": "Haeundae Beach",
+      "highlight2": "Jagalchi Market"
+    },
+    "daegu": {
+      "name": "Daegu",
+      "highlight1": "Dongseong-ro",
+      "highlight2": "Suseong Lake"
+    },
+    "incheon": {
+      "name": "Incheon",
+      "highlight1": "Songdo",
+      "highlight2": "Chinatown"
+    },
+    "gwangju": {
+      "name": "Gwangju",
+      "highlight1": "ACC (Asia Culture Center)",
+      "highlight2": "Yangnim-dong"
+    },
+    "daejeon": {
+      "name": "Daejeon",
+      "highlight1": "Seongsimdang",
+      "highlight2": "Expo Park"
+    },
+    "ulsan": {
+      "name": "Ulsan",
+      "highlight1": "Ganjeolgot",
+      "highlight2": "Daewangam Park"
+    },
+    "sejong": {
+      "name": "Sejong",
+      "highlight1": "Sejong Lake Park",
+      "highlight2": "National Arboretum"
+    },
+    "jongno": {
+      "name": "Jongno & Gwanghwamun",
+      "highlight1": "Gyeongbokgung",
+      "highlight2": "Insadong"
+    },
+    "myeongdong": {
+      "name": "Myeongdong & Euljiro",
+      "highlight1": "Myeongdong Cathedral",
+      "highlight2": "Euljiro Alley"
+    },
+    "yongsan": {
+      "name": "Yongsan & Itaewon",
+      "highlight1": "National Museum of Korea",
+      "highlight2": "Itaewon"
+    },
+    "hongdae": {
+      "name": "Hongdae & Mapo",
+      "highlight1": "Hongdae",
+      "highlight2": "Yeonnam-dong"
+    },
+    "bukchon": {
+      "name": "Bukchon & Samcheong",
+      "highlight1": "Bukchon Hanok Village",
+      "highlight2": "Samcheong-dong"
+    },
+    "nowon": {
+      "name": "Nowon & Dobong"
+    },
+    "gangnam": {
+      "name": "Gangnam & Seocho",
+      "highlight1": "COEX",
+      "highlight2": "Apgujeong Rodeo"
+    },
+    "jamsil": {
+      "name": "Jamsil & Songpa",
+      "highlight1": "Lotte World",
+      "highlight2": "Olympic Park"
+    },
+    "seongsu": {
+      "name": "Seongsu & Hannam",
+      "highlight1": "Seongsu Cafe Street",
+      "highlight2": "Hannam-dong"
+    },
+    "goyang": {
+      "name": "Goyang"
+    },
+    "paju": {
+      "name": "Paju",
+      "highlight1": "Heyri Art Village",
+      "highlight2": "Imjingak"
+    },
+    "gimpo": {
+      "name": "Gimpo"
+    },
+    "uijeongbu": {
+      "name": "Uijeongbu"
+    },
+    "namyangju": {
+      "name": "Namyangju",
+      "highlight1": "Dumulmeori",
+      "highlight2": "Dasan-gil"
+    },
+    "guri": {
+      "name": "Guri"
+    },
+    "gapyeong": {
+      "name": "Gapyeong",
+      "highlight1": "Nami Island",
+      "highlight2": "Jara Island"
+    },
+    "yangpyeong": {
+      "name": "Yangpyeong",
+      "highlight1": "Dumulmeori",
+      "highlight2": "Yongmunsan"
+    },
+    "pocheon": {
+      "name": "Pocheon",
+      "highlight1": "Sanjeong Lake",
+      "highlight2": "Herb Island"
+    },
+    "yangju": {
+      "name": "Yangju"
+    },
+    "dongducheon": {
+      "name": "Dongducheon"
+    },
+    "suwon": {
+      "name": "Suwon",
+      "highlight1": "Hwaseong Haenggung",
+      "highlight2": "Haengnidan-gil"
+    },
+    "hwaseong": {
+      "name": "Hwaseong"
+    },
+    "ansan": {
+      "name": "Ansan"
+    },
+    "siheung": {
+      "name": "Siheung"
+    },
+    "anyang": {
+      "name": "Anyang"
+    },
+    "gunpo": {
+      "name": "Gunpo"
+    },
+    "pyeongtaek": {
+      "name": "Pyeongtaek"
+    },
+    "yongin": {
+      "name": "Yongin",
+      "highlight1": "Everland",
+      "highlight2": "Korean Folk Village"
+    },
+    "seongnam": {
+      "name": "Seongnam"
+    },
+    "hanam": {
+      "name": "Hanam"
+    },
+    "icheon": {
+      "name": "Icheon",
+      "highlight1": "Ceramics Village",
+      "highlight2": "Icheon Rice"
+    },
+    "yeoju": {
+      "name": "Yeoju"
+    },
+    "anseong": {
+      "name": "Anseong"
+    },
+    "osan": {
+      "name": "Osan"
+    },
+    "uiwang": {
+      "name": "Uiwang"
+    },
+    "gwacheon": {
+      "name": "Gwacheon"
+    },
+    "bucheon": {
+      "name": "Bucheon"
+    },
+    "gwangmyeong": {
+      "name": "Gwangmyeong"
+    },
+    "chuncheon": {
+      "name": "Chuncheon",
+      "highlight1": "Nami Island",
+      "highlight2": "Dakgalbi Alley"
+    },
+    "wonju": {
+      "name": "Wonju",
+      "highlight1": "Museum SAN",
+      "highlight2": "Sogeumsan Suspension Bridge"
+    },
+    "pyeongchang": {
+      "name": "Pyeongchang",
+      "highlight1": "Daegwallyeong Sheep Ranch",
+      "highlight2": "Odaesan"
+    },
+    "yeongwol": {
+      "name": "Yeongwol"
+    },
+    "hoengseong": {
+      "name": "Hoengseong"
+    },
+    "jeongseon": {
+      "name": "Jeongseon"
+    },
+    "inje": {
+      "name": "Inje"
+    },
+    "taebaek": {
+      "name": "Taebaek"
+    },
+    "gangneung": {
+      "name": "Gangneung",
+      "highlight1": "Gyeongpo Pavilion",
+      "highlight2": "Anmok Coffee Street"
+    },
+    "sokcho": {
+      "name": "Sokcho",
+      "highlight1": "Seoraksan",
+      "highlight2": "Central Market"
+    },
+    "yangyang": {
+      "name": "Yangyang",
+      "highlight1": "Surfyy Beach",
+      "highlight2": "Naksansa"
+    },
+    "donghae": {
+      "name": "Donghae"
+    },
+    "samcheok": {
+      "name": "Samcheok"
+    },
+    "goseong-gw": {
+      "name": "Goseong"
+    },
+    "cheongju": {
+      "name": "Cheongju"
+    },
+    "chungju": {
+      "name": "Chungju"
+    },
+    "jecheon": {
+      "name": "Jecheon",
+      "highlight1": "Cheongpung Lake",
+      "highlight2": "Uirimji"
+    },
+    "danyang": {
+      "name": "Danyang",
+      "highlight1": "Danyang Palgyeong",
+      "highlight2": "Dodamsambong"
+    },
+    "gongju": {
+      "name": "Gongju",
+      "highlight1": "Gongsanseong Fortress",
+      "highlight2": "Tomb of King Muryeong"
+    },
+    "buyeo": {
+      "name": "Buyeo",
+      "highlight1": "Busosanseong Fortress",
+      "highlight2": "Baekje Cultural Land"
+    },
+    "asan": {
+      "name": "Asan"
+    },
+    "cheonan": {
+      "name": "Cheonan"
+    },
+    "nonsan": {
+      "name": "Nonsan"
+    },
+    "boryeong": {
+      "name": "Boryeong",
+      "highlight1": "Mud Festival",
+      "highlight2": "Daecheon Beach"
+    },
+    "taean": {
+      "name": "Taean",
+      "highlight1": "Anmyeondo",
+      "highlight2": "Kkotji Beach"
+    },
+    "seosan": {
+      "name": "Seosan"
+    },
+    "dangjin": {
+      "name": "Dangjin"
+    },
+    "jeonju": {
+      "name": "Jeonju",
+      "highlight1": "Hanok Village",
+      "highlight2": "Makgeolli Alley"
+    },
+    "gunsan": {
+      "name": "Gunsan",
+      "highlight1": "Modern History Street",
+      "highlight2": "Lee Seongdang"
+    },
+    "iksan": {
+      "name": "Iksan"
+    },
+    "gochang": {
+      "name": "Gochang"
+    },
+    "jeongeup": {
+      "name": "Jeongeup"
+    },
+    "namwon": {
+      "name": "Namwon"
+    },
+    "gimje": {
+      "name": "Gimje"
+    },
+    "yeosu": {
+      "name": "Yeosu",
+      "highlight1": "Maritime Cable Car",
+      "highlight2": "Odongdo"
+    },
+    "suncheon": {
+      "name": "Suncheon",
+      "highlight1": "Suncheon Bay National Garden",
+      "highlight2": "Naganeupseong Folk Village"
+    },
+    "mokpo": {
+      "name": "Mokpo",
+      "highlight1": "Maritime Cable Car",
+      "highlight2": "Yudalsan"
+    },
+    "wando": {
+      "name": "Wando"
+    },
+    "gangjin": {
+      "name": "Gangjin"
+    },
+    "yeonggwang": {
+      "name": "Yeonggwang"
+    },
+    "haenam": {
+      "name": "Haenam"
+    },
+    "goheung": {
+      "name": "Goheung"
+    },
+    "yeongam": {
+      "name": "Yeongam"
+    },
+    "damyang": {
+      "name": "Damyang",
+      "highlight1": "Juknokwon",
+      "highlight2": "Metasequoia Road"
+    },
+    "gwangyang": {
+      "name": "Gwangyang"
+    },
+    "boseong": {
+      "name": "Boseong",
+      "highlight1": "Green Tea Fields",
+      "highlight2": "Yulpo Beach"
+    },
+    "naju": {
+      "name": "Naju"
+    },
+    "haeundae": {
+      "name": "Haeundae",
+      "highlight1": "Haeundae Beach",
+      "highlight2": "Dongbaekseom"
+    },
+    "gwangalli": {
+      "name": "Gwangalli & Suyeong",
+      "highlight1": "Gwangandaegyo Bridge",
+      "highlight2": "Gwangalli Beach"
+    },
+    "gijang": {
+      "name": "Gijang",
+      "highlight1": "Jukseong Dream Cathedral",
+      "highlight2": "Daebyeon Port"
+    },
+    "songjeong": {
+      "name": "Songjeong & Cheongsapo"
+    },
+    "nampo": {
+      "name": "Nampo & Jung-gu",
+      "highlight1": "Jagalchi Market",
+      "highlight2": "BIFF Square"
+    },
+    "seomyeon": {
+      "name": "Seomyeon & Bujeon"
+    },
+    "gamcheon": {
+      "name": "Gamcheon Culture Village",
+      "highlight1": "Gamcheon Village",
+      "highlight2": "Skywalk"
+    },
+    "yeongdo": {
+      "name": "Yeongdo"
+    },
+    "geumjeong": {
+      "name": "Geumjeong & Oncheonjang"
+    },
+    "gangseo-bs": {
+      "name": "Gangseo & Gadeokdo"
+    },
+    "dadaepo": {
+      "name": "Saha & Dadaepo"
+    },
+    "dongseongno": {
+      "name": "Dongseongno & Jung-gu",
+      "highlight1": "Dongseong-ro",
+      "highlight2": "Seomun Market"
+    },
+    "gimgwangseok": {
+      "name": "Kim Gwangseok Street",
+      "highlight1": "Kim Gwangseok Street",
+      "highlight2": "Bangcheon Market"
+    },
+    "suseongmot": {
+      "name": "Suseong Lake & Beomeo",
+      "highlight1": "Suseong Lake",
+      "highlight2": "Suseong Resort"
+    },
+    "palgongsan": {
+      "name": "Palgongsan",
+      "highlight1": "Donghwasa",
+      "highlight2": "Gatbawi"
+    },
+    "dalseong": {
+      "name": "Biseulsan & Dalseong",
+      "highlight1": "Biseulsan Royal Azaleas",
+      "highlight2": "Dalseong Wetlands"
+    },
+    "gunwi": {
+      "name": "Gunwi"
+    },
+    "ganjeolgot": {
+      "name": "Ganjeolgot",
+      "highlight1": "Ganjeolgot Lighthouse",
+      "highlight2": "Sunrise Spot"
+    },
+    "daewangam": {
+      "name": "Daewangam",
+      "highlight1": "Daewangam Park",
+      "highlight2": "Ilsan Beach"
+    },
+    "taehwagang": {
+      "name": "Taehwagang"
+    },
+    "bangudae": {
+      "name": "Bangudae"
+    },
+    "gyeongju": {
+      "name": "Gyeongju",
+      "highlight1": "Hwangnidan-gil",
+      "highlight2": "Bulguksa"
+    },
+    "andong": {
+      "name": "Andong",
+      "highlight1": "Hahoe Village",
+      "highlight2": "Dosanseowon"
+    },
+    "yeongju": {
+      "name": "Yeongju"
+    },
+    "mungyeong": {
+      "name": "Mungyeong"
+    },
+    "pohang": {
+      "name": "Pohang",
+      "highlight1": "Homigot",
+      "highlight2": "Space Walk"
+    },
+    "yeongdeok": {
+      "name": "Yeongdeok"
+    },
+    "uljin": {
+      "name": "Uljin"
+    },
+    "dokdo": {
+      "name": "Dokdo & Ulleungdo",
+      "highlight1": "Dokdo",
+      "highlight2": "Ulleungdo"
+    },
+    "gumi": {
+      "name": "Gumi"
+    },
+    "gimcheon": {
+      "name": "Gimcheon"
+    },
+    "yeongcheon": {
+      "name": "Yeongcheon"
+    },
+    "sangju": {
+      "name": "Sangju"
+    },
+    "gyeongsan": {
+      "name": "Gyeongsan"
+    },
+    "tongyeong": {
+      "name": "Tongyeong",
+      "highlight1": "Luge",
+      "highlight2": "Dongpirang Village"
+    },
+    "geoje": {
+      "name": "Geoje",
+      "highlight1": "Windy Hill",
+      "highlight2": "Oedo"
+    },
+    "namhae": {
+      "name": "Namhae",
+      "highlight1": "German Village",
+      "highlight2": "Darangyi Village"
+    },
+    "goseong-gn": {
+      "name": "Goseong"
+    },
+    "jinju": {
+      "name": "Jinju",
+      "highlight1": "Lantern Festival",
+      "highlight2": "Jinjuseong Fortress"
+    },
+    "changwon": {
+      "name": "Changwon"
+    },
+    "hapcheon": {
+      "name": "Hapcheon"
+    },
+    "miryang": {
+      "name": "Miryang"
+    },
+    "hamyang": {
+      "name": "Hamyang"
+    },
+    "sancheong": {
+      "name": "Sancheong"
+    },
+    "hadong": {
+      "name": "Hadong",
+      "highlight1": "Hwagae Market",
+      "highlight2": "Ssanggyesa"
+    },
+    "geochang": {
+      "name": "Geochang"
+    },
+    "gimhae": {
+      "name": "Gimhae"
+    },
+    "yangsan": {
+      "name": "Yangsan"
+    },
+    "changnyeong": {
+      "name": "Changnyeong"
+    },
+    "uiryeong": {
+      "name": "Uiryeong"
+    },
+    "jeju": {
+      "name": "Jeju City",
+      "highlight1": "Hallasan",
+      "highlight2": "Seongsan Ilchulbong"
+    },
+    "seogwipo": {
+      "name": "Seogwipo",
+      "highlight1": "Cheonjiyeon Falls",
+      "highlight2": "Olle Trail"
+    }
+  },
+  "planner.region": {
+    "seoul-areas": {
+      "label": "Seoul",
+      "subLabel": "Key areas by district"
+    },
+    "gyeonggi-north": {
+      "label": "Northern Gyeonggi",
+      "subLabel": "Goyang, Paju, Uijeongbu, Namyangju, etc."
+    },
+    "gyeonggi-south": {
+      "label": "Southern Gyeonggi",
+      "subLabel": "Suwon, Yongin, Seongnam, Pyeongtaek, etc."
+    },
+    "gangwon": {
+      "label": "Gangwon-do",
+      "subLabel": "Gangwon Special Self-Governing Province"
+    },
+    "chungbuk": {
+      "label": "Chungcheongbuk-do",
+      "subLabel": "Cheongju, Chungju, Jecheon, Danyang"
+    },
+    "chungnam": {
+      "label": "Chungcheongnam-do",
+      "subLabel": "Gongju, Buyeo, Boryeong, Taean, etc."
+    },
+    "jeonbuk": {
+      "label": "Jeonbuk",
+      "subLabel": "Jeonbuk Special Self-Governing Province"
+    },
+    "jeonnam": {
+      "label": "Jeollanam-do",
+      "subLabel": "Yeosu, Suncheon, Mokpo, Damyang, etc."
+    },
+    "busan": {
+      "label": "Busan",
+      "subLabel": "Busan Metropolitan City"
+    },
+    "daegu": {
+      "label": "Daegu",
+      "subLabel": "Daegu Metropolitan City"
+    },
+    "ulsan": {
+      "label": "Ulsan",
+      "subLabel": "Ulsan Metropolitan City"
+    },
+    "gyeongbuk": {
+      "label": "Gyeongsangbuk-do",
+      "subLabel": "Gyeongju, Pohang, Andong, etc."
+    },
+    "gyeongnam": {
+      "label": "Gyeongsangnam-do",
+      "subLabel": "Tongyeong, Geoje, Jinju, Changwon, etc."
+    },
+    "jeju": {
+      "label": "Jeju-do",
+      "subLabel": "Jeju Special Self-Governing Province"
+    }
   },
   "home": {
     "subtitle": "与AI一起打造专属旅行",
-    "planner":  { "label": "旅行规划师", "desc": "AI推荐的旅行路线和行程" },
-    "schedule": { "label": "行程管理",   "desc": "查看保存的旅行计划" },
-    "guide":    { "label": "地点推荐",   "desc": "餐厅和活动一览" },
-    "kcontent": { "label": "K-Content规划师", "desc": "基于K内容创建旅行计划" },
-    "banner":   { "title": "设置旅行偏好可使AI推荐更准确！", "sub": "输入性别、年龄、饮食习惯和宗教信仰，获取个性化路线推荐。", "setup": "立即设置", "close": "关闭" }
+    "planner": {
+      "label": "旅行规划师",
+      "desc": "AI推荐的旅行路线和行程"
+    },
+    "schedule": {
+      "label": "行程管理",
+      "desc": "查看保存的旅行计划"
+    },
+    "guide": {
+      "label": "地点推荐",
+      "desc": "餐厅和活动一览"
+    },
+    "kcontent": {
+      "label": "K-Content规划师",
+      "desc": "基于K内容创建旅行计划",
+      "title": "🎭 K-内容主题旅行",
+      "theme_kpop": "K-POP",
+      "theme_kdrama": "K-韩剧",
+      "theme_kfood": "K-美食",
+      "theme_kbeauty": "K-美妆"
+    },
+    "news": {
+      "prev": "上一页",
+      "next": "下一页",
+      "page_n": "第{{page}}页",
+      "nationwide": "全国",
+      "analyzing": "AI 分析仍在进行中。",
+      "error": "新闻加载失败。"
+    },
+    "rebate": {
+      "city_route_title": "{{name}}旅行路线与行程（标准规划）",
+      "province": {
+        "강원": "江原",
+        "충북": "忠北",
+        "전북": "全北",
+        "전남": "全南",
+        "경남": "庆南",
+        "gangwon": "江原",
+        "chungbuk": "忠北",
+        "jeonbuk": "全北",
+        "jeonnam": "全南",
+        "gyeongnam": "庆南"
+      },
+      "period": "2026.4 ~ 6 · 试点项目",
+      "title": "🎫 指定乡村地区旅行最高返还50%",
+      "desc": "旅行消费的一半可通过移动端“地区爱心消费券”返还。个人最高10万韩元，2人及以上团体最高20万韩元。",
+      "visit_korea": "韩国旅游官网",
+      "fold": "收起使用说明",
+      "expand": "使用说明 · 适用地区",
+      "step1": "提前申请 — 在 visitkorea.or.kr 确认适用地区并于出行前获得批准。",
+      "step2": "出行 — 在获批地区消费（餐饮、住宿等）并保留收据。",
+      "step3": "提交凭证 — 行程结束后按地方政府指引提交收据等材料。",
+      "step4": "返还 — 审核通过后，以移动端地区爱心消费券形式返还消费的50%。",
+      "step5": "使用 — 于当年内在该地区餐厅、咖啡馆、线上商城等使用。",
+      "notice": "注意：须提前申请并获批；可能因预算提前截止；细则因地方政府而异，请务必在4月初查阅官方网站。",
+      "targets": "16个适用地区 · 在规划器中查看路线或查阅官方指南"
+    },
+    "banner": {
+      "title": "设置旅行偏好可使AI推荐更准确！",
+      "sub": "输入性别、年龄、饮食习惯和宗教信仰，获取个性化路线推荐。",
+      "setup": "立即设置",
+      "close": "关闭"
+    },
+    "popular": {
+      "title": "📍 热门目的地"
+    },
+    "shortcuts": {
+      "planner": "旅行规划",
+      "kcontent": "K-内容",
+      "schedule": "日程",
+      "standard": "发现地点",
+      "user": "用户路线",
+      "group": "群聊"
+    }
   },
   "sidebar": {
-    "tourstar": "旅行之星", "planner": "旅行规划师", "schedule": "行程管理",
-    "guide": "地点推荐", "groupchat": "群聊", "friends": "好友",
-    "whisper": "悄悄话", "profile": "我的信息", "customer": "客服中心", "logout": "退出登录"
+    "tourstar": "旅行之星",
+    "planner": "旅行规划师",
+    "schedule": "行程管理",
+    "guide": "地点推荐",
+    "groupchat": "群聊",
+    "friends": "好友列表",
+    "whisper": "悄悄话",
+    "profile": "我的信息",
+    "customer": "客服中心",
+    "logout": "退出登录"
+  },
+  "settings": {
+    "title": "设置",
+    "saved": "已保存。",
+    "error": {
+      "load_user": "无法加载用户信息。",
+      "save": "保存失败。",
+      "save_during": "保存时发生错误。"
+    },
+    "account": {
+      "title": "账户信息",
+      "email": "邮箱",
+      "nickname": "昵称",
+      "default": "（默认）",
+      "nickname_placeholder": "不填则显示姓名",
+      "nickname_hint": "不填时将显示您的姓名。",
+      "honor": "荣誉值",
+      "point": "分",
+      "provider": "绑定"
+    },
+    "withdraw": {
+      "title": "注销账户",
+      "desc": "注销后账户与数据将被删除，无法恢复。",
+      "button": "注销账户",
+      "confirm_desc": "确定要注销吗？在下方输入 Delete account 以继续。",
+      "placeholder": "Delete account",
+      "submit": "注销",
+      "error": "注销失败。",
+      "error_during": "注销过程中发生错误。"
+    },
+    "profile": {
+      "title": "旅行档案",
+      "subtitle": "用于 AI 个性化推荐",
+      "save": "保存旅行档案",
+      "saved": "旅行档案已保存。"
+    }
+  },
+  "customer": {
+    "subscription": {
+      "title_mobile": "订阅",
+      "title": "订阅服务",
+      "subtitle": "免费试用结束后，请选择适合的方案。",
+      "safety": "安全支付 · 随时可取消",
+      "free": {
+        "kicker": "今天即可免费开始",
+        "note": "7 天免费期结束后，将自动切换到所选方案。"
+      },
+      "plan_monthly": {
+        "title": "月付方案",
+        "badge": "基础",
+        "price": "₩5,900 / 月",
+        "note": "按月计费",
+        "features": {
+          "1": "专家推荐摘要",
+          "2": "咨询/指南优先回复",
+          "3": "包含最新功能更新"
+        }
+      },
+      "plan_yearly": {
+        "title": "年付方案",
+        "badge": "推荐",
+        "price": "₩46,800 / 年",
+        "note": "按年计费",
+        "oldPrice": "约合每月 ₩7,000",
+        "features": {
+          "1": "包含月付全部权益",
+          "2": "年度折扣",
+          "3": "优先支持与更高稳定性"
+        }
+      },
+      "cta_monthly": "开始月付订阅",
+      "cta_yearly": "开始年付订阅",
+      "selected": {
+        "title": "已选方案",
+        "compare": "对比：",
+        "includes": "包含权益"
+      },
+      "agree": {
+        "service_title": "同意服务使用条款",
+        "service_desc": "订阅付款与使用服务所必需。",
+        "billing_title": "同意账单说明",
+        "billing_desc": "关于自动切换与计费周期的说明。"
+      },
+      "demo_alert": "（演示界面）实际支付 API 将在后续接入。",
+      "demo_note": "此为演示页面。正式环境将接入真实支付与自动切换。"
+    },
+    "emergency": {
+      "title_mobile": "紧急帮助",
+      "title": "紧急帮助与旅行提示",
+      "subtitle": "为在韩外国人可能遇到的紧急情况提供分类指引。",
+      "share_button": "分享紧急信息",
+      "consulate": {
+        "title": "大使馆/领事馆",
+        "nationality": "国籍",
+        "find_contact": "查找领事联系方式",
+        "callcenter": "24 小时领事呼叫中心 02-3210-0404",
+        "unknown_nationality": "未知"
+      },
+      "categories": {
+        "title": "紧急类别",
+        "selected": "已选",
+        "view": "查看",
+        "items": {
+          "passport": {
+            "title": "护照/签证与居留协助",
+            "short": "护照遗失或需要签证、居留支持时",
+            "steps": {
+              "1": "尽量先准备复印件或照片，并在住宿地或警察局等确认遗失情况。",
+              "2": "联系本国大使馆/领事馆了解补办或临时旅行证件流程。",
+              "3": "如需警方受理编号等请一并准备。"
+            }
+          },
+          "lost": {
+            "title": "遗失/被盗报案",
+            "short": "钱包、手机或重要物品丢失时",
+            "steps": {
+              "1": "若手机或账号可能被盜用，立即停止验证并修改密码。",
+              "2": "到附近警察局或失物招领处报案并取得受理编号。",
+              "3": "若护照、银行卡一并遗失，请紧急联系领事馆。"
+            }
+          },
+          "safety": {
+            "title": "犯罪/暴力/安全威胁",
+            "short": "遭遇诈骗、袭击、威胁或周边危险时",
+            "steps": {
+              "1": "立即转移到安全地点并向周围人或工作人员求助。",
+              "2": "有人受伤请拨打 119（急救）或 112（警察）。",
+              "3": "记录时间地点等经过，保存照片、短信等证据。"
+            }
+          },
+          "medical": {
+            "title": "急救医疗/事故受伤",
+            "short": "突发疾病或事故受伤时",
+            "steps": {
+              "1": "视情况拨打 119 或 112 并接受急救。",
+              "2": "医院需要翻译时可请求大使馆/领事馆协助。",
+              "3": "向医护人员说明过敏、用药及慢性病史。"
+            }
+          },
+          "disaster": {
+            "title": "火灾/灾害与疏散",
+            "short": "火灾、暴雨、停电等灾害时的应对",
+            "steps": {
+              "1": "听从警报与指引，沿安全路线疏散。",
+              "2": "有伤员时先确保安全再请求救援。",
+              "3": "向大使馆或住宿方共享位置与情况以获得帮助。"
+            }
+          },
+          "immigration": {
+            "title": "出入境/遣返与居留问题",
+            "short": "逾期停留、遣返风险等行政问题",
+            "steps": {
+              "1": "不要独自处理；拍照保存文件/通知并尽快联系领事馆。",
+              "2": "必要时寻求律师或翻译协助。",
+              "3": "避免可能影响出入境手续的擅自行动。"
+            }
+          },
+          "interpreter": {
+            "title": "领事馆/翻译联系请求",
+            "short": "语言障碍导致难以求助时",
+            "steps": {
+              "1": "简要整理情况（何时/何地/何事）并告知领事馆。",
+              "2": "准备好可接听的电话、地址和住宿信息。",
+              "3": "可能需要同时拨打紧急电话（警察/急救）。"
+            }
+          }
+        }
+      },
+      "detail": {
+        "badge": "应对指南",
+        "call_police": "112 警察",
+        "call_119": "119 急救",
+        "call_1339": "1339 疾病管理厅（医疗咨询）",
+        "call_consulate": "领事馆联系方式"
+      },
+      "share": {
+        "title_mobile": "紧急分享",
+        "title": "对外紧急信息分享",
+        "type_title": "紧急类型",
+        "type_subtitle": "选择类型并附上照片或音频即可快速分享。",
+        "aria": {
+          "select_reason": "选择 {{id}}"
+        },
+        "attach_title": "附件",
+        "attach_subtitle": "附上照片或音频可加快处理。",
+        "photo_section": "添加照片",
+        "photo_pick": "选择照片",
+        "photo_empty": "请选择照片。",
+        "audio_section": "录音",
+        "recording": "录音中：{{s}} 秒",
+        "record_ready": "录音完成",
+        "optional": "可选",
+        "audio_start": "开始录音",
+        "audio_stop": "停止",
+        "audio_delete": "删除录音",
+        "audio_perm": "可能需要录音权限。",
+        "now_title": "立即分享",
+        "now_subtitle": "演示界面：不会真实发送，仅显示确认提示。",
+        "call_emergency": "紧急电话",
+        "start_button": "开始紧急分享",
+        "reason": {
+          "location": {
+            "label": "需要位置/安全协助",
+            "desc": "可基于当前位置请求帮助。"
+          },
+          "medical": {
+            "label": "需要医疗帮助",
+            "desc": "因疾病或受伤需要紧急医疗支持。"
+          },
+          "danger": {
+            "label": "紧急危险情况",
+            "desc": "因暴力、诈骗、威胁等需要立即确保安全。"
+          }
+        },
+        "alert": {
+          "audio_permission": "请检查录音权限。",
+          "select_reason": "请至少选择一种紧急类型。",
+          "attach_required": "请附上照片或音频。",
+          "start_demo": "开始紧急分享。（演示）\n已选：{{selected}}"
+        }
+      }
+    },
+    "notices": {
+      "title": "公告",
+      "subtitle": "查看最新公告。",
+      "new_button": "撰写新公告",
+      "new_button_alert": "「撰写新公告」功能将在后续上线。",
+      "search_placeholder": "搜索公告（标题/内容）",
+      "search_button": "搜索",
+      "count": "{{count}} 条",
+      "no_results": "没有找到结果。",
+      "seed": {
+        "3": {
+          "title": "v1.0.2 发布说明（咨询体验改进）",
+          "content": "咨询与历史记录界面新增标签切换。\n查看自己的咨询更方便。"
+        },
+        "4": {
+          "title": "【已处理】部分环境图片上传延迟",
+          "content": "已修复特定环境下图片上传缓慢的问题。\n若重试后仍异常请反馈。"
+        },
+        "5": {
+          "title": "公告筛选功能更新说明",
+          "content": "公告页面支持类型与搜索筛选。\n可更快找到所需信息。"
+        },
+        "6": {
+          "title": "服务器定期维护通知（预定）",
+          "content": "维护期间部分功能可能暂时不可用。\n时间与影响范围请见公告底部。"
+        },
+        "7": {
+          "title": "v1.0.3 发布说明（性能优化与错误修复）",
+          "content": "本次发布改进了页面加载速度并修复部分错误。\n若更新后问题仍存在，请联系客户中心。"
+        },
+        "author": {
+          "ops": "运营团队"
+        }
+      },
+      "table": {
+        "no": "编号",
+        "title": "标题",
+        "author": "作者",
+        "date": "日期",
+        "views": "查看"
+      },
+      "aria": {
+        "select_all": "全选",
+        "select_row": "选择公告 {{id}}"
+      },
+      "modal": {
+        "meta": "作者 {{author}} · {{date}}",
+        "close": "关闭"
+      }
+    },
+    "inquiry": {
+      "title": "联系我们",
+      "tabs": {
+        "write": "1:1 咨询",
+        "list": "我的咨询"
+      },
+      "form": {
+        "subject": "主题",
+        "subject_placeholder": "请输入主题",
+        "content": "内容",
+        "content_placeholder": "请填写详情",
+        "attachments": "附件",
+        "attachment_help": "图片（GIF、PNG、JPG）每个最大 10MB，最多 3 个",
+        "privacy_agree": "同意收集和使用个人信息",
+        "sending": "发送中…",
+        "submit": "提交"
+      },
+      "list": {
+        "search_label": "搜索",
+        "search_placeholder": "按标题/内容/状态搜索",
+        "no_results": "没有结果。"
+      },
+      "status": {
+        "answered": "已回复",
+        "pending": "处理中"
+      },
+      "submit_done": "您的咨询已提交。",
+      "seed": {
+        "10001": {
+          "title": "无法上传头像",
+          "content": "选择图片后多次尝试仍上传失败。"
+        },
+        "10002": {
+          "title": "如何修改行程？",
+          "content": "想只更改已保存行程中的某一天。",
+          "answer": "打开日程管理，选择日期，使用重抽或 AI 修改调整具体项目。"
+        }
+      }
+    },
+    "inquiries": {
+      "title": "我的咨询",
+      "mobile_title": "咨询记录",
+      "subtitle": "查看已提交的咨询与回复。",
+      "my_list": "咨询列表",
+      "write": "写咨询",
+      "search_placeholder": "按标题/内容/状态搜索",
+      "no_results": "没有结果。",
+      "status": {
+        "answered": "已回复",
+        "pending": "处理中"
+      },
+      "seed": {
+        "10001": {
+          "title": "无法上传头像",
+          "content": "选择图片后多次尝试仍上传失败。"
+        },
+        "10002": {
+          "title": "如何修改行程？",
+          "content": "想只更改已保存行程中的某一天。",
+          "answer": "打开日程管理，选择日期，使用重抽或 AI 修改调整具体项目。"
+        }
+      },
+      "detail": {
+        "title": "咨询详情",
+        "mobile_title": "咨询详情",
+        "back_to_list": "返回列表",
+        "received_at": "受理日期：{{date}}",
+        "content": "咨询内容",
+        "attachments": "附件",
+        "no_attachments": "无附件。",
+        "answer": "回复",
+        "answer_pending": "正在准备回复，请稍候。",
+        "not_found": "未找到该咨询。"
+      }
+    },
+    "faq": {
+      "count": "{{count}} 条",
+      "title": "常见问题",
+      "no_results": "没有搜索结果。",
+      "items": {
+        "login_help": {
+          "category": "咨询",
+          "question": "无法登录怎么办？",
+          "answer": "请刷新应用后重试。若仍失败请联系客服。"
+        },
+        "first_steps": {
+          "category": "指南",
+          "question": "我是新用户，应先使用哪些功能？",
+          "answer": "从首页进入旅行规划与发现地点，再使用日程管理。"
+        },
+        "update_notes": {
+          "category": "公告",
+          "question": "在哪里查看更新说明？",
+          "answer": "可在客户中心的「公告」分类查看最新变更。"
+        },
+        "refund_flow": {
+          "category": "支付与服务",
+          "question": "取消付款（退款）如何办理？",
+          "answer": "请提交咨询并附上支付信息与订单号，我们将依次协助。"
+        },
+        "emergency_help": {
+          "category": "紧急与旅行提示",
+          "question": "旅行中遇到紧急情况可获得哪些帮助？",
+          "answer": "请先查看紧急联系方式与基本应对指南，必要时立即联系客服。"
+        }
+      }
+    },
+    "center": {
+      "title": "客户中心",
+      "subtitle": "快速找到您需要的帮助。"
+    },
+    "search": {
+      "label": "需要什么帮助？",
+      "placeholder": "输入搜索关键词"
+    },
+    "categories": {
+      "title": "分类",
+      "items": {
+        "inquiry": {
+          "title": "咨询",
+          "desc": "账户、功能、错误等一般问题"
+        },
+        "guide": {
+          "title": "使用指南",
+          "desc": "服务使用方法与入门"
+        },
+        "notices": {
+          "title": "公告",
+          "desc": "维护、发布与变更通知"
+        },
+        "payment": {
+          "title": "支付与服务使用",
+          "desc": "付款、退款与订阅说明"
+        },
+        "emergency": {
+          "title": "紧急帮助与旅行提示",
+          "desc": "紧急情况应对与安全提示"
+        }
+      }
+    },
+    "guide": {
+      "title": "使用指南",
+      "subtitle": "一览从首页即可开始的五项核心功能。",
+      "hero": {
+        "kicker": "第一次旅行可以这样做",
+        "title": "创建路线 → 整理日程 → 需要时分享与聊天",
+        "steps": {
+          "planner": "旅行规划",
+          "schedule": "日程管理",
+          "guide": "地点推荐",
+          "social": "Tourstar / 群聊"
+        },
+        "cta_planner": "开始旅行规划",
+        "cta_groupchat": "浏览群聊"
+      },
+      "cards": {
+        "tourstar": {
+          "title": "Tourstar",
+          "subtitle": "在一处创建旅行记录、点评与分享。",
+          "cta": "前往 Tourstar",
+          "items": {
+            "1": {
+              "title": "1) 准备照片/游记",
+              "body": "上传照片后 AI 可协助标题与摘要，加快写作。"
+            },
+            "2": {
+              "title": "2) 选择可见范围",
+              "body": "可按需选择公开或仅自己可见。"
+            },
+            "3": {
+              "title": "3) 获得互动",
+              "body": "通过点赞与评论交流贴士，也可连接好友。"
+            }
+          },
+          "tip": {
+            "title": "提示",
+            "body": "标题宜短，正文按「何时/何地/喜欢什么」顺序写更易读。"
+          }
+        },
+        "planner": {
+          "title": "旅行规划",
+          "subtitle": "AI 按您的风格推荐路线与日程。",
+          "cta": "前往旅行规划",
+          "items": {
+            "1": {
+              "label": "标准 / K 内容 / 用户内容",
+              "body": "任选其一开始。"
+            },
+            "2": {
+              "label": "选择目的地（或主题）",
+              "body": "明确路线背景后推荐更准确。"
+            },
+            "3": {
+              "body": "推荐日程会自动保存，可在日程管理中继续调整。"
+            }
+          }
+        },
+        "schedule": {
+          "title": "日程管理",
+          "subtitle": "在日历查看已保存计划，并用 AI 重抽或修改。",
+          "cta": "打开日程管理",
+          "items": {
+            "1": {
+              "title": "1) 在日历选日期",
+              "body": "点击日期即可查看当天安排。"
+            },
+            "2": {
+              "title": "2) 用「重抽」生成新版本",
+              "body": "可只重做不满意的部分。"
+            },
+            "3": {
+              "title": "3) 请求 AI 修改",
+              "body": "用提示语说明即可调整日程。"
+            }
+          },
+          "tip": {
+            "title": "地图 / 天气",
+            "body": "在日程卡片内可查看地图与天气摘要。"
+          }
+        },
+        "discover": {
+          "title": "地点推荐",
+          "subtitle": "在同一屏浏览餐厅、活动等本地推荐。",
+          "cta": "前往地点推荐",
+          "items": {
+            "1": {
+              "title": "1) 选择指南",
+              "body": "选择「餐厅推荐」或「活动推荐」标签。"
+            },
+            "2": {
+              "title": "2) 浏览卡片/列表",
+              "body": "点击感兴趣的地点查看详情。"
+            },
+            "3": {
+              "body": "若要加入行程，请在规划/日程中按当前路线调整。"
+            }
+          }
+        },
+        "groupchat": {
+          "title": "群聊",
+          "subtitle": "按荣誉等级加入房间，分享旅行故事。",
+          "cta": "前往群聊",
+          "items": {
+            "1": {
+              "title": "1) 从房间列表进入",
+              "body": "是否可进房可能因荣誉等级而异。"
+            },
+            "2": {
+              "title": "2) 发送消息",
+              "body": "在输入框输入并发送即可实时共享。"
+            },
+            "3": {
+              "title": "3) 好友/私信/荣誉",
+              "body": "在消息菜单可使用私信、加好友与荣誉操作。"
+            }
+          }
+        }
+      }
+    }
+  },
+  "planner": {
+    "title": "旅行规划师",
+    "subtitle": "选择你想要的出行风格",
+    "modes": {
+      "standard": {
+        "title": "标准",
+        "desc": "AI 推荐的路线与行程"
+      },
+      "kcontent": {
+        "title": "K-内容",
+        "desc": "韩剧/电影取景地之旅"
+      },
+      "usercontent": {
+        "title": "用户内容",
+        "desc": "旅行者推荐的路线"
+      }
+    },
+    "schedule": {
+      "title": "行程管理",
+      "subtitle_with_count": "已保存 {{count}} 个计划 · 点击日期查看当天安排",
+      "new_route": "+ 新路线",
+      "prev_month": "上个月",
+      "next_month": "下个月",
+      "year_month": "{{year}}-{{month}}",
+      "legend": "计划图例",
+      "reroll_fail": "重新生成失败。",
+      "modify_fail": "修改失败。",
+      "view_all_route": "查看全部经由地路线",
+      "all_route": "🗺️ 全部路线",
+      "in_trip_period": "旅行期间",
+      "rerolled": "🔄 已重新生成",
+      "generating": "生成中…",
+      "reroll_this_item": "重新生成此项",
+      "view_on_map": "在地图上查看",
+      "ask_ai_modify": "让 AI 修改行程",
+      "modify_placeholder": "例如：“把昌德宫秘苑之旅换成别的地方”",
+      "ai_modifying": "AI 修改中…",
+      "item_regenerating": "正在重新生成项目…",
+      "modify_login_needed": "登录后可使用修改功能",
+      "date_ymd": "{{year}}-{{month}}-{{day}}",
+      "item_count": "{{count}} 个项目",
+      "no_items_on_day": "这一天没有安排",
+      "delete_confirm": "要删除这个计划吗？",
+      "saved_at": "保存于 {{date}}",
+      "weather_forecast": "🌤 天气预报",
+      "within_5days": "· 5 天内",
+      "view_schedule": "查看行程",
+      "view_day_route": "查看第 {{day}} 天路线",
+      "route": "🗺️ 路线",
+      "ai_modified": "✨ AI 已修改",
+      "load_fail": "无法加载计划列表。",
+      "delete_fail": "删除失败。",
+      "login_note": "SNS 登录后行程会自动保存",
+      "login_needed": "需要登录",
+      "empty_title": "还没有保存的计划",
+      "empty_desc": "在旅行规划师中选择路线，\nAI 会自动保存计划",
+      "go_planner": "打开旅行规划师",
+      "list_hint": "全部计划 · 点击日期查看当天"
+    },
+    "kcontent": {
+      "title": "K-内容规划师",
+      "subtitle": "通过 K-Pop、韩剧、美食与美妆探索韩国",
+      "hero_title": "K-内容规划师",
+      "hero_subtitle": "通过 K-Pop、韩剧、美食与美妆探索韩国",
+      "hero_cta": "生成 AI 路线",
+      "back": "返回规划师",
+      "row_kpop": "K-POP",
+      "row_kdrama": "K-剧 / 电影",
+      "row_kfood": "K-美食",
+      "row_kbeauty": "K-美妆",
+      "sample_itinerary": "示例行程",
+      "search_bar": "搜索",
+      "quick_selection": "快捷选择",
+      "vibe_grid": "氛围选择",
+      "date": "日期",
+      "generating": "生成中…",
+      "generate": "✨ 生成行程",
+      "ai_recommended": "AI 推荐行程",
+      "region_select": "选择地区",
+      "traditional_market": "传统市场",
+      "market_generate": "生成此市场美食行程",
+      "cafe_question": "今天想要哪种氛围？",
+      "cafe_hint": "选择氛围或直接输入咖啡厅名称以生成 AI 行程。",
+      "cafe_placeholder": "直接输入咖啡厅名（例如：圣水 Tongue Planet）",
+      "cafe_generate": "生成 AI 行程",
+      "trending_items": "当下热门",
+      "my_recipe": "我的神仙搭配",
+      "convenience_q": "现在便利店最难买到什么？",
+      "trending_placeholder": "例如：延世牛奶奶油面包",
+      "recipe_q": "想尝试哪种口味组合？",
+      "extra_keywords": "额外关键词",
+      "recipe_placeholder": "例如：辣味挑战、甜咸甜点",
+      "recipe_generate": "生成 AI 搭配食谱",
+      "set_date_and_generate": "设置日期后\n生成行程",
+      "start_generate": "✨ 开始生成行程",
+      "making_schedule": "AI 正在创建<b>{{title}}</b>行程…",
+      "recommended_schedule_title": "{{title}} — 推荐行程",
+      "save_plan": "💾 保存行程",
+      "total_cost": "预计总费用",
+      "cost_per_day": "第{{day}}天 {{total}}",
+      "no_schedule": "未能生成行程，请重试。",
+      "saved_goto_schedule": "已保存 · 前往日程",
+      "find_nearby_store": "查找附近有售的地点",
+      "recipe_hashtags": "#便利店达人 #便利店挑战 #AI食谱",
+      "description_fallback": "在 {{place}} 值得打卡的推荐地点。",
+      "challenge_location": "挑战地点",
+      "challenge_location_desc": "AI 精选挑战点（100 公里内）— 圣水首尔森林前长椅区",
+      "subtotal": "小计 {{total}}",
+      "schedule_item_default": "行程",
+      "schedule_load_fail": "加载行程失败。",
+      "save_fail": "保存失败。",
+      "cafe_place_hint": "咖啡厅/地点提示",
+      "convenience_trending": "便利店热门单品",
+      "recipe_title_with_vibe": "{{vibe}} 挑战 2026 版",
+      "recipe_title_default": "马克定食 2026 版",
+      "region_tab.all": "全部",
+      "region_tab.seoul": "首尔",
+      "region_tab.gangwon": "江原",
+      "region_tab.jeonla": "全罗",
+      "region_tab.gyeongsang": "庆尚",
+      "region_tab.jeju": "济州",
+      "cafe_vibe.industrial_raw.label": "工业/粗犷",
+      "cafe_vibe.industrial_raw.description": "水泥与金属的酷感空间。",
+      "cafe_vibe.traditional_zen.label": "传统/禅意",
+      "cafe_vibe.traditional_zen.description": "韩屋与木色带来的安静时光。",
+      "cafe_vibe.nature_botanical.label": "自然/植物",
+      "cafe_vibe.nature_botanical.description": "绿意与阳光充盈的空间。",
+      "cafe_vibe.retro_newtro.label": "复古/Newtro",
+      "cafe_vibe.retro_newtro.description": "怀旧与小巷复古漫步。",
+      "cafe_vibe.modern_minimal.label": "现代/极简",
+      "cafe_vibe.modern_minimal.description": "克制的单色美学。",
+      "brand.seveneleven": "7-Eleven",
+      "brand.emart24": "emart24",
+      "market": {
+        "SEOUL": {
+          "0": {
+            "name": "广藏市场",
+            "description": "生拌牛肉与绿豆饼圣地。"
+          },
+          "1": {
+            "name": "望远市场",
+            "description": "深受 MZ 世代喜爱的潮流市场。"
+          },
+          "2": {
+            "name": "通仁市场",
+            "description": "可体验著名铜钱便当的市场。"
+          }
+        },
+        "GANGWON": {
+          "0": {
+            "name": "宁越中央市场",
+            "description": "荞麦煎饼与冷面之乡。"
+          },
+          "1": {
+            "name": "束草观光水产市场",
+            "description": "炸鸡块与海鲜小吃的天堂。"
+          }
+        },
+        "JEONLA": {
+          "0": {
+            "name": "全州南部市场",
+            "description": "血肠与豆芽汤的发源地。"
+          },
+          "1": {
+            "name": "光州1913松汀站市场",
+            "description": "充满复古 Newtro 氛围的市场。"
+          }
+        },
+        "GYEONGSANG": {
+          "0": {
+            "name": "釜山国际市场",
+            "description": "电影回忆与拌凉粉。"
+          },
+          "1": {
+            "name": "大邱西门市场",
+            "description": "韩国三大市场之一的规模与味道。"
+          }
+        },
+        "JEJU": {
+          "0": {
+            "name": "济州东门市场",
+            "description": "艾草糕、黑猪肉块等岛屿风味。"
+          }
+        }
+      },
+      "fallback": {
+        "kfood": {
+          "KF_MARKET": {
+            "title": "全国传统市场美食之旅",
+            "description": "走遍韩国各地，感受温暖在地风味与烟火气。"
+          },
+          "KF_CAFE": {
+            "title": "K-甜品与咖啡厅氛围之旅",
+            "description": "串联符合你口味的咖啡厅与精选小店。"
+          },
+          "KF_CONVENIENCE": {
+            "title": "K-便利店神仙搭配挑战",
+            "description": "从断货新品到隐藏食谱，成为便利店达人！"
+          }
+        },
+        "kbeauty": {
+          "KBEAUTY_01": {
+            "title": "Olive Young 旗舰店",
+            "description": "一站式比较与购买护肤彩妆趋势。"
+          },
+          "KBEAUTY_02": {
+            "title": "明洞美妆街",
+            "description": "快速打卡主街周边畅销好物。"
+          },
+          "KBEAUTY_03": {
+            "title": "护肤体验店",
+            "description": "基于肌肤检测的定制护理与互动美妆项目。"
+          }
+        },
+        "kpop": {
+          "KPOP_01": {
+            "title": "BTS：花样年华 永恒",
+            "description": "BTS、ARMY、江南、HYBE"
+          },
+          "KPOP_02": {
+            "title": "BLACKPINK：酷飒与奢华",
+            "description": "BLACKPINK、YG、奢华、潮流"
+          },
+          "KPOP_03": {
+            "title": "SEVENTEEN 与 Stray Kids：舞台能量",
+            "description": "SEVENTEEN、Stray Kids、JYP、表演"
+          },
+          "KPOP_04": {
+            "title": "NewJeans 与 IVE：青春首尔",
+            "description": "NewJeans、IVE、Y2K、圣水、汉南"
+          },
+          "KPOP_05": {
+            "title": "SM：旷野快线",
+            "description": "SM、aespa、NCT、旷野、圣水"
+          },
+          "KPOP_06": {
+            "title": "偶像体验",
+            "description": "体验、舞蹈、录音、偶像日常"
+          },
+          "KPOP_07": {
+            "title": "弘大：饭圈文化中心",
+            "description": "弘大、路演、专辑、粉丝"
+          },
+          "KPOP_08": {
+            "title": "K-OST 与感性治愈首尔",
+            "description": "IU、OST、治愈、复古、首尔"
+          }
+        },
+        "kdrama": {
+          "KD_01": {
+            "title": "鬼怪",
+            "description": "鬼怪 · #孔刘 #奇幻 #爱情"
+          },
+          "KD_02": {
+            "title": "鱿鱼游戏",
+            "description": "鱿鱼游戏 · #Netflix #生存 #惊悚"
+          },
+          "KD_03": {
+            "title": "爱的迫降",
+            "description": "爱的迫降 · #玄彬 #孙艺珍 #爱情"
+          },
+          "KD_04": {
+            "title": "王国",
+            "description": "王国 · #丧尸 #古装 #恐怖"
+          },
+          "KD_05": {
+            "title": "寄生虫",
+            "description": "寄生虫 · #奥斯卡 #奉俊昊 #社会议题"
+          },
+          "KD_06": {
+            "title": "背着善宰跑",
+            "description": "背着善宰跑 · #边佑锡 #穿越 #青春"
+          },
+          "KD_07": {
+            "title": "德鲁纳酒店",
+            "description": "德鲁纳酒店 · #IU #奇幻 #悬疑"
+          },
+          "KD_08": {
+            "title": "欢迎来到王之国",
+            "description": "欢迎来到王之国 · #李俊昊 #林允儿 #奢华"
+          },
+          "KD_09": {
+            "title": "阳光先生",
+            "description": "阳光先生 · #史剧 #李秉宪 #金泰梨"
+          },
+          "KD_10": {
+            "title": "太阳的后裔",
+            "description": "太阳的后裔 · #宋仲基 #宋慧乔 #军旅"
+          },
+          "KD_11": {
+            "title": "眼泪女王",
+            "description": "眼泪女王 · #金秀贤 #金智媛 #财阀"
+          },
+          "KD_12": {
+            "title": "与王同住的男人",
+            "description": "与王同住的男人 · #姜栋元 #刘海镇 #史剧"
+          }
+        }
+      },
+      "recipe_vibe.spicy_fire.label": "火辣挑战",
+      "recipe_vibe.spicy_fire.description": "用辣味释放压力。",
+      "recipe_vibe.sweet_salty.label": "甜咸经典",
+      "recipe_vibe.sweet_salty.description": "甜与咸的平衡。",
+      "recipe_vibe.diet_healthy.label": "便利店轻食",
+      "recipe_vibe.diet_healthy.description": "轻盈又有饱腹感的健康组合。",
+      "recipe_vibe.night_snack.label": "宵夜",
+      "recipe_vibe.night_snack.description": "治愈系宵夜食谱。",
+      "recipe_vibe.hangover.label": "解酒组合",
+      "recipe_vibe.hangover.description": "专为宿醉舒缓设计。",
+      "recipe_vibe.luxury_meal.label": "高性价比豪华餐",
+      "recipe_vibe.luxury_meal.description": "便利店里的进阶美味。",
+      "shopping.ramen": "杯面",
+      "shopping.tuna_kimbap": "金枪鱼蛋黄酱三角饭团",
+      "shopping.string_cheese": "手撕奶酪条",
+      "shopping.sparkling_water": "气泡水",
+      "cooking.1": "备好食材放入可微波容器。",
+      "cooking.2": "混合酱料/配料微波 1 分 30 秒。",
+      "cooking.3": "按喜好加配料并拍照打卡。",
+      "trending_card.1.title": "延世牛奶奶油面包",
+      "trending_card.2.title": "零度可乐冰杯嗨棒",
+      "trending_card.default_title": "AI 推荐热门单品",
+      "trending_card.tag.new": "#新品",
+      "trending_card.tag.soldout": "#断货预警",
+      "trending_card.tag.review": "#好评爆棚",
+      "trending_card.tag.repurchase": "#回购",
+      "meta.kf_market.title_ko": "全国传统市场美食之旅",
+      "meta.kf_cafe.title_ko": "K-甜品与咖啡厅氛围之旅",
+      "meta.kf_convenience.title_ko": "K-便利店神仙搭配挑战",
+      "meta.kf_market.tags": "传统市场, 美食, 本地风味",
+      "meta.kf_cafe.tags": "咖啡厅, 甜品, 买手店, 氛围之旅",
+      "meta.kf_convenience.tags": "便利店, 搭配, 达人, 挑战",
+      "empty.pick_market": "请先选择市场再生成行程",
+      "empty.pick_vibe_or_cafe": "请选择氛围或输入咖啡厅名",
+      "empty.pick_tab_condition": "请选择标签条件后生成",
+      "empty.pick_date": "请选择日期后生成行程",
+      "empty.market_guide": "在左侧选择市场，点击【生成此市场美食行程】或顶部 ✨ 生成",
+      "empty.cafe_guide": "在左侧选择氛围/咖啡厅名，点击【生成 AI 行程】",
+      "empty.convenience_guide": "在顶部标签选择模式，输入关键词后生成",
+      "empty.default_guide": "点击顶部 ✨ 生成行程按钮",
+      "shopping_list_title": "购物清单",
+      "cooking_steps_title": "制作步骤"
+    },
+    "usercontent": {
+      "title": "用户内容",
+      "subtitle": "旅行者分享的路线",
+      "upload": "上传我的路线",
+      "tab_all": "全部路线",
+      "tab_mine": "我的路线",
+      "search_placeholder": "按昵称搜索…",
+      "search_result": "找到 {{count}} 条结果",
+      "empty_all_title": "还没有人分享路线",
+      "empty_all_sub": "快来第一个上传吧！",
+      "empty_mine_title": "你还没有上传路线",
+      "empty_mine_sub": "分享路线，收获点赞！",
+      "cta_first_upload": "上传第一条路线",
+      "cta_share_first": "第一个分享路线",
+      "already_liked": "已点赞",
+      "like": "点赞",
+      "delete": "删除",
+      "delete_my_route": "删除我的路线",
+      "shared_route": "共享路线",
+      "schedule_save_fail": "保存日程失败。",
+      "route": "路线",
+      "added_to_schedule": "已添加到我的日程",
+      "go_schedule": "前往日程管理",
+      "add_to_schedule": "添加到我的日程",
+      "login_required": "登录后可用。",
+      "no_places_to_save": "没有可保存的地点。",
+      "when_trip": "计划什么时候出行？",
+      "date_applied": "所选日期将应用到日程。",
+      "visit_date": "出行日期",
+      "add_with_this_date": "使用该日期添加",
+      "image_validate_fail": "图片验证失败",
+      "ai_polish_fail": "AI 润色失败",
+      "save_fail": "保存失败",
+      "step_photo": "选择照片",
+      "step_form": "填写路线",
+      "step_polish": "AI 润色",
+      "upload_my_route": "上传我的路线",
+      "upload_photo_hint": "拖拽或点击上传照片",
+      "upload_photo_types": "支持 JPG、PNG、WEBP",
+      "remove_photo": "移除照片",
+      "image_validated": "图片验证完成",
+      "validating": "验证中…",
+      "continue_without_photo": "不上传照片继续",
+      "import_saved_schedule": "从已保存日程导入",
+      "select_saved_schedule": "选择已保存日程",
+      "no_saved_schedule": "没有已保存的日程。",
+      "place_count": " · {{count}} 个地点",
+      "route_title_required": "路线标题 *",
+      "route_title_placeholder": "例如：江陵一日治愈之旅",
+      "destination_required": "目的地 *",
+      "destination_placeholder": "例如：江陵、镜浦台",
+      "one_line_intro_optional": "一句话介绍（可选）",
+      "one_line_intro_placeholder": "简单描述这条路线（AI 会润色）",
+      "place_list_required": "地点列表 *",
+      "max_per_day": "（每天最多 {{max}} 个）",
+      "day_n": "第 {{day}} 天",
+      "add_place": "+ 添加地点",
+      "place_name_placeholder": "地点名称（例如：安木海边咖啡街）",
+      "memo_optional_placeholder": "简短备注（可选）",
+      "add_day_n": "+ 添加第 {{day}} 天",
+      "ai_polish": "✨ AI 润色",
+      "ai_polishing": "AI 正在润色你的路线",
+      "ai_polishing_sub": "正在添加生动的介绍与旅行提示…",
+      "re_enter": "重新编辑",
+      "share": "分享",
+      "shared_success": "路线已分享！",
+      "shared_success_sub": "在动态中查看你的路线",
+      "delete_confirm": "确定删除这条路线吗？",
+      "delete_fail": "删除失败。"
+    },
+    "standard": {
+      "title": "选择目的地",
+      "subtitle": "选择目的地后，AI 将推荐适合你的路线。",
+      "search_placeholder": "搜索城市/地标（例如：江陵、韩屋村）",
+      "search_result": "「{{query}}」搜索结果：{{count}} 处",
+      "no_results": "没有搜索结果",
+      "reset": "重置",
+      "metro_quick": "大都市快速入口",
+      "metro_quick_sub": "快速选择热门大城市，下方可浏览细分区域。",
+      "metro_detail": "大都市细分区域",
+      "metro_detail_sub": "首尔、釜山、大邱、蔚山等按片区展示。",
+      "province": "道/广域地区",
+      "province_sub": "可按京畿、忠清、全罗、庆尚、江原、济州等广域比较。",
+      "image_pending": "图片准备中",
+      "popular": "热门",
+      "mode_label": "标准",
+      "date": "日期",
+      "mode_car": "🚗 驾车",
+      "mode_transit": "🚇 公共交通",
+      "mode_walk": "🚶 步行",
+      "generate_route": "✨ 生成路线",
+      "generating_loading": "正在检索准确信息…",
+      "ai_recommended_routes": "AI 推荐路线",
+      "set_date_and_generate": "设置日期后\n生成路线",
+      "start_generate": "✨ 开始生成路线",
+      "route_load_fail": "加载路线失败。",
+      "pick_route": "请选择一条路线",
+      "range_hint": "AI 将为你安排 {{start}} ～ {{end}} 的行程",
+      "select_date_then_generate": "请先选择日期再生成路线",
+      "generate_hint": "请点击左上角的 ✨ 生成路线按钮",
+      "making_schedule": "AI 正在为<b>{{name}}</b>创建行程…",
+      "schedule_load_fail": "加载行程失败。",
+      "recommended_schedule_title": "{{name}} — 推荐行程",
+      "saved_goto_schedule": "✅ 已保存 · 打开日程管理",
+      "save_plan": "💾 保存",
+      "save_fail": "保存失败。",
+      "total_cost": "预计总费用",
+      "cost_per_day": "第{{day}}天 {{total}}",
+      "subtotal": "小计 {{total}}",
+      "theme": {
+        "event": "活动",
+        "food": "美食",
+        "spot": "景点",
+        "luxury": "奢华",
+        "value": "性价比",
+        "family": "亲子",
+        "couple": "情侣"
+      },
+      "highlight": {
+        "gyeongbokgung": "景福宫",
+        "hongdae": "弘大",
+        "hangang_park": "汉江公园",
+        "cheongwadae": "青瓦台",
+        "insadong": "仁寺洞",
+        "myeongdong_cathedral": "明洞大教堂",
+        "euljiro_alley": "乙支路巷弄",
+        "national_museum_of_korea": "国立中央博物馆",
+        "itaewon": "梨泰院",
+        "haeundae": "海云台",
+        "haeundae_beach": "海云台海滩",
+        "gamcheon_village": "甘川文化村",
+        "jagalchi_market": "札嘎其市场",
+        "biff_square": "BIFF 广场",
+        "dongseongro": "东城路",
+        "kim_gwangseok_street": "金光石街",
+        "suseong_lake": "寿城池",
+        "songdo": "松岛",
+        "chinatown": "唐人街",
+        "gangneung": "江陵",
+        "gyeongpo": "镜浦亭",
+        "anmok_coffee_street": "安木咖啡街",
+        "ojukheon": "乌竹轩",
+        "sokcho": "束草",
+        "seoraksan": "雪岳山",
+        "central_market": "中央市场",
+        "hallasan": "汉拿山",
+        "seongsan_ilchulbong": "城山日出峰"
+      }
+    },
+    "region": {
+      "seoul-areas": {
+        "label": "首尔",
+        "subLabel": "按区域划分的代表地段"
+      },
+      "gyeonggi-north": {
+        "label": "京畿北部",
+        "subLabel": "高阳、坡州、议政府、南杨州等"
+      },
+      "gyeonggi-south": {
+        "label": "京畿南部",
+        "subLabel": "水原、龙仁、城南、平泽等"
+      },
+      "gangwon": {
+        "label": "江原道",
+        "subLabel": "江原特别自治道"
+      },
+      "chungbuk": {
+        "label": "忠清北道",
+        "subLabel": "清州、忠州、堤川、丹阳"
+      },
+      "chungnam": {
+        "label": "忠清南道",
+        "subLabel": "公州、扶余、保宁、泰安等"
+      },
+      "jeonbuk": {
+        "label": "全北",
+        "subLabel": "全北特别自治道"
+      },
+      "jeonnam": {
+        "label": "全罗南道",
+        "subLabel": "丽水、顺天、木浦、潭阳等"
+      },
+      "busan": {
+        "label": "釜山",
+        "subLabel": "釜山广域市"
+      },
+      "daegu": {
+        "label": "大邱",
+        "subLabel": "大邱广域市"
+      },
+      "ulsan": {
+        "label": "蔚山",
+        "subLabel": "蔚山广域市"
+      },
+      "gyeongbuk": {
+        "label": "庆尚北道",
+        "subLabel": "庆州、浦项、安东等"
+      },
+      "gyeongnam": {
+        "label": "庆尚南道",
+        "subLabel": "统营、巨济、晋州、昌原等"
+      },
+      "jeju": {
+        "label": "济州岛",
+        "subLabel": "济州特别自治道"
+      }
+    },
+    "dest": {
+      "seoul": {
+        "name": "首尔",
+        "highlight1": "景福宫",
+        "highlight2": "弘大",
+        "highlight3": "汉江公园"
+      },
+      "busan": {
+        "name": "釜山",
+        "highlight1": "海云台海水浴场",
+        "highlight2": "甘川文化村",
+        "highlight3": "札嘎其市场"
+      },
+      "daegu": {
+        "name": "大邱",
+        "highlight1": "东城路",
+        "highlight2": "金光石街",
+        "highlight3": "寿城池"
+      },
+      "incheon": {
+        "name": "仁川",
+        "highlight1": "松岛",
+        "highlight2": "江华岛",
+        "highlight3": "唐人街"
+      },
+      "gwangju": {
+        "name": "光州",
+        "highlight1": "国立亚洲文化殿堂",
+        "highlight2": "杨林洞"
+      },
+      "daejeon": {
+        "name": "大田",
+        "highlight1": "圣心堂",
+        "highlight2": "世博园",
+        "highlight3": "儒城温泉"
+      },
+      "ulsan": {
+        "name": "蔚山",
+        "highlight1": "艮绝岬",
+        "highlight2": "大王岩公园",
+        "highlight3": "太和江"
+      },
+      "sejong": {
+        "name": "世宗",
+        "highlight1": "世宗湖公园",
+        "highlight2": "国立树木园"
+      },
+      "jongno": {
+        "name": "钟路·光化门",
+        "highlight1": "景福宫",
+        "highlight2": "青瓦台",
+        "highlight3": "仁寺洞"
+      },
+      "myeongdong": {
+        "name": "明洞·乙支路",
+        "highlight1": "明洞大教堂",
+        "highlight2": "乙支路巷弄"
+      },
+      "yongsan": {
+        "name": "龙山·梨泰院",
+        "highlight1": "国立中央博物馆",
+        "highlight2": "梨泰院"
+      },
+      "gangnam": {
+        "name": "江南·瑞草",
+        "highlight1": "COEX",
+        "highlight2": "狎鸥亭罗德奥",
+        "highlight3": "岛山公园"
+      },
+      "jamsil": {
+        "name": "蚕室·松坡",
+        "highlight1": "乐天世界",
+        "highlight2": "奥林匹克公园",
+        "highlight3": "石村湖"
+      },
+      "seongsu": {
+        "name": "圣水·汉南",
+        "highlight1": "圣水咖啡街",
+        "highlight2": "汉南洞画廊"
+      },
+      "hongdae": {
+        "name": "弘大·麻浦",
+        "highlight1": "弘大俱乐部街",
+        "highlight2": "延南洞",
+        "highlight3": "京义线林道"
+      },
+      "bukchon": {
+        "name": "北村·三清",
+        "highlight1": "北村韩屋村",
+        "highlight2": "三清洞咖啡街"
+      },
+      "nowon": {
+        "name": "芦原·道峰",
+        "highlight1": "水落山",
+        "highlight2": "道峰山",
+        "highlight3": "佛岩山"
+      },
+      "haeundae": {
+        "name": "海云台",
+        "highlight1": "海云台海水浴场",
+        "highlight2": "冬柏岛",
+        "highlight3": "迎月路"
+      },
+      "gwangalli": {
+        "name": "广安里·水营",
+        "highlight1": "广安大桥",
+        "highlight2": "广安里海水浴场"
+      },
+      "gijang": {
+        "name": "机张",
+        "highlight1": "竹城梦想教堂",
+        "highlight2": "大边港",
+        "highlight3": "水族馆"
+      },
+      "songjeong": {
+        "name": "松亭·青沙浦",
+        "highlight1": "松亭海水浴场",
+        "highlight2": "青沙浦展望台"
+      },
+      "nampo": {
+        "name": "南浦·中区",
+        "highlight1": "札嘎其市场",
+        "highlight2": "BIFF广场",
+        "highlight3": "宝水洞书房胡同"
+      },
+      "seomyeon": {
+        "name": "西面·釜田",
+        "highlight1": "西面商业街",
+        "highlight2": "朱迪斯泰华",
+        "highlight3": "釜田市场"
+      },
+      "gamcheon": {
+        "name": "甘川文化村",
+        "highlight1": "甘川文化村",
+        "highlight2": "天空之脊"
+      },
+      "yeongdo": {
+        "name": "影岛",
+        "highlight1": "太宗台",
+        "highlight2": "白浅滩文化村",
+        "highlight3": "峰莱山"
+      },
+      "geumjeong": {
+        "name": "金井·温泉场",
+        "highlight1": "金井山城",
+        "highlight2": "梵鱼寺",
+        "highlight3": "温泉场"
+      },
+      "gangseo-bs": {
+        "name": "江西·加德岛",
+        "highlight1": "乙淑岛",
+        "highlight2": "加德岛大项新栖息地"
+      },
+      "dadaepo": {
+        "name": "沙下·多大浦",
+        "highlight1": "多大浦海水浴场",
+        "highlight2": "洛东江入海口"
+      },
+      "dongseongno": {
+        "name": "东城路·中区",
+        "highlight1": "东城路",
+        "highlight2": "西门市场",
+        "highlight3": "药令市"
+      },
+      "gimgwangseok": {
+        "name": "金光石街",
+        "highlight1": "金光石街",
+        "highlight2": "防川市场"
+      },
+      "suseongmot": {
+        "name": "寿城池·凡鱼",
+        "highlight1": "寿城池",
+        "highlight2": "寿城游园地"
+      },
+      "palgongsan": {
+        "name": "八公山",
+        "highlight1": "桐华寺",
+        "highlight2": "笠岩",
+        "highlight3": "八公山天际线"
+      },
+      "dalseong": {
+        "name": "毗瑟山·达城",
+        "highlight1": "毗瑟山樱花",
+        "highlight2": "达城湿地"
+      },
+      "gunwi": {
+        "name": "军威",
+        "highlight1": "三国遗事主题公园",
+        "highlight2": "火山山城"
+      },
+      "ganjeolgot": {
+        "name": "艮绝岬",
+        "highlight1": "艮绝岬灯塔",
+        "highlight2": "新年日出"
+      },
+      "daewangam": {
+        "name": "大王岩",
+        "highlight1": "大王岩公园",
+        "highlight2": "日山海水浴场"
+      },
+      "taehwagang": {
+        "name": "太和江",
+        "highlight1": "太和江国家庭园",
+        "highlight2": "十里竹林"
+      },
+      "bangudae": {
+        "name": "盘龟台",
+        "highlight1": "盘龟台岩刻画",
+        "highlight2": "漆溪亭"
+      },
+      "jeju": {
+        "name": "济州市",
+        "highlight1": "汉拿山",
+        "highlight2": "城山日出峰",
+        "highlight3": "挟才海滩"
+      },
+      "gyeongju": {
+        "name": "庆州",
+        "highlight1": "皇理团路",
+        "highlight2": "瞻星台",
+        "highlight3": "佛国寺"
+      },
+      "gangneung": {
+        "name": "江陵",
+        "highlight1": "镜浦台",
+        "highlight2": "安木咖啡街",
+        "highlight3": "乌竹轩"
+      },
+      "jeonju": {
+        "name": "全州",
+        "highlight1": "韩屋村",
+        "highlight2": "马格利酒胡同"
+      }
+    }
+  },
+  "guide": {
+    "title": "Discover",
+    "subtitle": "Pick Restaurants or Events in one place.",
+    "restaurant": {
+      "title": "Restaurants",
+      "soon": "Restaurant recommendations will be available soon."
+    },
+    "event": {
+      "title": "Events",
+      "subtitle": "Based on National Culture Festival data · Click a date to see events for that day",
+      "prev_month": "Previous month",
+      "next_month": "Next month",
+      "legend_hint": "● Has events · Click a date to filter that day",
+      "list_title_day": "{{y}}-{{m}}-{{d}} Events",
+      "list_title_all": "{{y}}-{{m}} All events",
+      "count": "{{count}} items",
+      "show_all": "Show all",
+      "no_data_period": "No events registered for the period.",
+      "no_data_day": "No events running on this day.",
+      "no_data": "No events.",
+      "hosted_by": "Hosted by: {{name}}",
+      "year_month": "{{m}}/{{y}}",
+      "untitled": "(Untitled)",
+      "homepage": "Homepage",
+      "error": {
+        "load": "Failed to load event list.",
+        "connection": "Unable to load event information. Please try again shortly."
+      }
+    },
+    "tabs": {
+      "restaurant": {
+        "label": "Restaurant Picks",
+        "description": "Explore restaurants by region"
+      },
+      "event": {
+        "label": "Event Picks",
+        "description": "Nationwide cultural festival calendar"
+      }
+    },
+    "mobile_title": "发现",
+    "category_tabs_aria": "指南分类",
+    "gemini_notice": "AI 会根据您的偏好和场景推荐新地点。",
+    "places_none": "暂无可推荐的地点。",
+    "places_extra": "，另有 {{n}} 处",
+    "places_summary": "{{listed}}{{extra}} — 共推荐 {{count}} 处。\n点击地图上的标记查看详情。",
+    "coords_hint": "未找到可标注的坐标。请尝试更具体的地点名称。",
+    "answer_empty": "未能获取回答。",
+    "guide_error": "未能获取指南回复。",
+    "directions_no_location": "驾车路线需要您的位置。请允许定位后重试。",
+    "festival_on_map": "地图上显示 {{count}} 个活动（{{year}}/{{month}}）。",
+    "festival_map_empty": "没有带坐标的活动，或接口未返回数据。",
+    "festival_load_error": "无法加载活动：{{message}}",
+    "festival_loading_overlay": "正在加载活动…",
+    "marker_event": "活动",
+    "marker_place": "地点",
+    "nearby_category_fallback": "餐厅 · 咖啡",
+    "badge_event": "活动",
+    "badge_spot": "推荐地点",
+    "keyword_default": "推荐",
+    "info_none": "暂无信息",
+    "category": {
+      "all": "全部",
+      "festival": "活动",
+      "activity": "K-体验",
+      "historic": "历史/古迹",
+      "culture": "本地文化",
+      "nature": "自然/疗愈",
+      "restaurant": "美食",
+      "cafe": "咖啡"
+    },
+    "prompt": {
+      "activity": "请推荐在韩国可以尝试的 K-活动与体验项目。",
+      "historic": "请推荐韩国的历史遗迹、文化遗产与值得参观的地标。",
+      "culture": "请推荐能感受本地文化的街区、市场与文化场所。",
+      "nature": "请推荐适合自然与疗愈的公园、山区与海滨地点。",
+      "restaurant": "请推荐韩国值得打卡的餐厅与本地美食。",
+      "cafe": "请推荐氛围好的咖啡馆、甜品店与咖啡打卡地。"
+    },
+    "placeholder": {
+      "festival": "活动",
+      "cafe": "咖啡",
+      "restaurant": "餐厅",
+      "heritage": "古迹",
+      "nature": "自然",
+      "shopping": "购物",
+      "default": "地点"
+    },
+    "route": {
+      "minutes": "{{m}} 分钟",
+      "hours": "{{h}} 小时",
+      "hours_minutes": "{{h}} 小时 {{m}} 分钟",
+      "car_km_only": "🚗 驾车约 {{km}} 公里",
+      "car_summary": "🚗 约 {{dur}}（{{km}} 公里）",
+      "won": "₩{{amount}}",
+      "won_zero": "₩0"
+    },
+    "chat": {
+      "placeholder": "问问关于地点的问题…",
+      "role_user": "你",
+      "role_bot": "Kroaddy",
+      "collapse": "收起聊天",
+      "open": "打开聊天",
+      "input_aria": "AI 指南提问",
+      "send_wait": "请等待回复完成。",
+      "send_empty": "请输入问题。",
+      "send": "发送",
+      "send_aria_busy": "处理中",
+      "send_aria_empty": "输入问题",
+      "send_aria": "发送问题"
+    },
+    "map": {
+      "my_location": "我的位置",
+      "aria_map": "地图",
+      "loading": "正在加载地图…",
+      "load_error": "无法加载地图。",
+      "load_error_hint": "请检查网络与 NEXT_PUBLIC_NAVER_MAP_CLIENT_ID 配置。"
+    },
+    "searching": {
+      "chat": "Kroaddy 正在搜索",
+      "map": "Kroaddy 正在寻找好去处"
+    },
+    "sheet": {
+      "driving_route": "驾车路线",
+      "driving_route_aria": "显示驾车路线",
+      "route_loading": "正在加载路线…",
+      "route_unavailable": "此路段无法显示驾车路线，请尝试其他方式。",
+      "retry": "重试",
+      "retry_route": "重新加载路线",
+      "route_summary_aria": "驾车摘要",
+      "drive_duration_label": "驾车时间",
+      "distance_label": "距离",
+      "km_suffix": "{{km}} 公里",
+      "fuel_label": "预估油费",
+      "toll_label": "过路费",
+      "taxi_label": "出租车（预估）",
+      "route_detail_missing": "无法加载该路段的详细时间与距离。",
+      "nearby_load_fail": "无法加载周边地点。",
+      "share_ok": "已分享或已复制到剪贴板。",
+      "share_fail": "分享失败。",
+      "image_prep": "图片加载中",
+      "festival_label": "活动",
+      "keywords_aria": "地点关键词",
+      "place_info_aria": "地点信息",
+      "info_loading": "正在加载信息…",
+      "address_copied": "已复制",
+      "address_tap_copy": "点按复制",
+      "visit_homepage": "访问网站",
+      "naver_partial": "未匹配到本地搜索结果，仅显示部分信息。请结合 AI 提示与地图查看。",
+      "why_recommend": "Kroaddy 推荐原因",
+      "points_aria": "亮点",
+      "desc_collapse": "收起",
+      "desc_expand": "展开更多",
+      "ai_why": "AI 推荐",
+      "no_ai_desc": "暂无 AI 描述。请重新提问或选择其他标记。",
+      "nearby_section_aria": "周边餐厅与咖啡馆",
+      "nearby_title": "适合一起去的周边好去处",
+      "nearby_type_aria": "周边类型",
+      "nearby_empty": "附近未找到餐厅或咖啡馆，请尝试其他筛选。",
+      "distance_about": "约 {{dist}}",
+      "est_cost": "预估费用",
+      "visit_duration": "参观/时长",
+      "photo_spot": "拍照点",
+      "copy_address": "复制地址",
+      "done": "完成",
+      "coords_aria": "活动坐标",
+      "lat_label": "纬度",
+      "lng_label": "经度",
+      "venue_label": "场地",
+      "period_label": "日期",
+      "event_info": "活动详情",
+      "event_desc_fail": "无法加载描述。请重新提问或选择其他标记。",
+      "official_site": "官方网站",
+      "share": "分享"
+    }
+  },
+  "chat": {
+    "tier": {
+      "silver": "白银",
+      "gold": "黄金",
+      "platinum": "铂金",
+      "diamond": "钻石"
+    },
+    "group": {
+      "title_list": "群聊",
+      "title_room": "群聊 - {{room}}",
+      "back_to_list": "房间列表",
+      "loading_rooms": "正在加载房间列表…",
+      "rooms_hint": "可进入的房间因荣誉等级而异。高等级用户也可进入低等级房间。",
+      "table": {
+        "room": "房间",
+        "honor": "所需荣誉",
+        "access": "可否进入"
+      },
+      "room_label": "{{label}}房间",
+      "or_more": "及以上",
+      "access_yes": "可以",
+      "access_no": "荣誉不足",
+      "enter": "进入",
+      "loading_messages": "正在加载消息…",
+      "user_fallback": "用户{{id}}",
+      "open_tourstar": "查看 Tourstar 帖子",
+      "menu": {
+        "whisper": "发送悄悄话",
+        "honor_up": "提高荣誉",
+        "honor_down": "降低荣誉",
+        "add_friend": "添加好友"
+      },
+      "input_placeholder": "输入消息…",
+      "send": "发送",
+      "dev_add_dummy": "开发：添加对方测试消息",
+      "whisper": {
+        "title": "发送悄悄话",
+        "to": "收件人：{{username}}"
+      },
+      "sending": "发送中…",
+      "submit": "发送",
+      "action_failed": "处理失败。",
+      "friend_failed": "好友请求失败。",
+      "error_load_messages": "无法加载消息。",
+      "error_load_messages_runtime": "加载消息时出错。",
+      "error_auth_sse": "聊天连接认证失败，请稍后重试。",
+      "error_send": "发送失败。",
+      "error_send_runtime": "发送时出错。",
+      "error_whisper_send": "悄悄话发送失败。",
+      "error_whisper_send_runtime": "发送悄悄话时出错。",
+      "test_user": "测试用户",
+      "test_message": "想一起旅行就发悄悄话吧！（测试消息 — 点我试试）"
+    },
+    "whisper": {
+      "user_fallback": "用户{{id}}",
+      "title": "私信",
+      "new_chat": "新对话",
+      "no_conversations": "暂无对话",
+      "start": "发送私信",
+      "blocked_user": "已屏蔽用户",
+      "delete_conv": "删除对话",
+      "unblock": "解除屏蔽",
+      "block": "屏蔽用户",
+      "empty_thread": "开始与 {{name}} 的对话",
+      "view_tourstar": "查看 Tourstar 帖子",
+      "read": "已读",
+      "cannot_send_blocked": "无法向已屏蔽用户发送消息。",
+      "input_placeholder": "输入消息…（Enter 发送，Shift+Enter 换行）",
+      "pick_or_start": "选择对话或发送新私信",
+      "new_whisper": "+ 新私信",
+      "new_whisper_title": "新私信",
+      "no_friends": "暂无好友。",
+      "add_friend": "添加好友",
+      "delete_confirm": "要删除与 {{name}} 的全部对话吗？\n此操作无法撤销。"
+    },
+    "friends": {
+      "title": "好友列表",
+      "whisper_box": "私信箱",
+      "error_list": "无法加载列表。",
+      "list_title": "好友（{{count}}）",
+      "empty": "暂无好友。在群聊中点击消息可发送好友请求。",
+      "pending_title": "收到的好友请求（{{count}}）",
+      "pending_empty": "没有待处理的请求。",
+      "whisper": "私信",
+      "remove_title": "删除好友",
+      "block_title": "屏蔽用户",
+      "whisper_to_suffix": "的私信",
+      "whisper_placeholder": "输入私信内容…",
+      "counter_send_hint": "{{len}} / 500 · Ctrl+Enter 发送",
+      "sending": "发送中…",
+      "send": "发送",
+      "honor": "荣誉 {{value}}",
+      "user_fallback": "用户{{id}}",
+      "accept_ok": "已接受好友请求。",
+      "accept_fail": "接受失败。",
+      "accept_err": "处理接受时失败。",
+      "remove_confirm": "要将 {{name}} 从好友列表中删除吗？",
+      "remove_ok": "已将 {{name}} 从好友列表中删除。",
+      "remove_fail": "删除好友失败。",
+      "remove_err": "删除好友失败。",
+      "block_confirm": "要屏蔽 {{name}} 吗？\n屏蔽后将从好友列表移除且无法收到私信。",
+      "block_ok": "已屏蔽 {{name}}。",
+      "block_fail": "屏蔽失败。",
+      "block_err": "屏蔽失败。",
+      "whisper_ok": "已向 {{name}} 发送私信。",
+      "whisper_fail": "发送私信失败。",
+      "whisper_err": "发送私信失败。"
+    }
+  },
+  "tourstar": {
+    "title": "旅行之星",
+    "subtitle": "AI 挑选最佳旅行照片；配上简短评论即可优雅发布。",
+    "new_post": "新建帖子",
+    "back_to_feed_title": "返回总览",
+    "friend_badge": "好友",
+    "author": {
+      "self_caption": "记录并分享珍贵的旅行瞬间",
+      "other_caption": "该用户的帖子"
+    },
+    "stats": {
+      "posts": "帖子",
+      "scraps": "收藏",
+      "friends": "好友"
+    },
+    "search": {
+      "all": "全部",
+      "author": "用户名",
+      "title": "标题",
+      "content": "正文",
+      "tags": "标签",
+      "location": "地点",
+      "placeholder": "输入搜索内容..."
+    },
+    "tabs": {
+      "all": "全部",
+      "mine": "我的帖子",
+      "friends": "好友帖子",
+      "bookmarked": "收藏"
+    },
+    "sort": {
+      "latest": "最新",
+      "likes": "点赞最多",
+      "comments": "评论最多"
+    },
+    "empty": {
+      "author": "暂无 {{name}} 的帖子",
+      "mine": "你还没有发布过",
+      "bookmarked": "暂无收藏的帖子",
+      "friends": "暂无好友帖子",
+      "search": "没有搜索结果",
+      "none": "尚无旅行记录",
+      "help_bookmarked": "在他人帖子上点击收藏按钮",
+      "help_friends": "添加好友即可查看他们的旅行记录",
+      "help_new": "点击上方“新建帖子”记录第一次旅行",
+      "cta": "记录一次旅行"
+    },
+    "ai_banner": {
+      "title": "AI 自动挑选你的最佳照片",
+      "body": "上传旅行照片，AI 推荐更好的；配合简短评论即可发布。"
+    },
+    "status": {
+      "photo_queued": "AI 照片分析排队中...",
+      "photo_running": "AI 照片分析进行中...",
+      "photo_failed": "AI 分析失败",
+      "photo_done_pick": "分析完成（查看排名并选择照片）",
+      "comment_draft_running": "分析完成（正在生成评论草稿...）",
+      "comment_draft_done": "分析完成（评论草稿已就绪）",
+      "photo_done": "AI 分析完成",
+      "upload_failed": "上传失败",
+      "checking_metadata": "正在检查拍摄日期元数据...",
+      "no_photo_in_range": "所选时间段内没有照片",
+      "filtered_uploading": "按日期过滤排除 {{excludedCount}} 张，自动上传 {{filteredCount}} 张照片...",
+      "uploading_count": "正在上传 {{count}} 张照片...",
+      "post_generating": "正在生成 AI 帖子...",
+      "post_generated": "AI 帖子已生成",
+      "post_save_failed": "保存帖子失败"
+    },
+    "create": {
+      "title": "创建新的旅行记录",
+      "subtitle": "上传照片，AI 将自动挑选最佳镜头 ✨",
+      "file_upload": "上传文件",
+      "photo_selected_count": "照片（已选 {{selected}}/{{total}}）",
+      "date_filter_note": "如填写日期，仅该时间段的照片会自动上传（不使用 OpenAI）。",
+      "start_date": "开始日期",
+      "end_date": "结束日期",
+      "include_unknown_shot_date": "包含无拍摄日期的照片",
+      "style_preset": "文风预设（MBTI）",
+      "user_template_optional": "用户模板（可选）",
+      "style_auto": "自动（默认）",
+      "style_group": {
+        "nt": "分析/策略（NT）",
+        "nf": "外交/情感（NF）",
+        "sj": "管理/务实（SJ）",
+        "sp": "探索/即兴（SP）"
+      },
+      "checking_shot_date": "正在检查拍摄日期...",
+      "uploading": "正在上传...",
+      "upload_files": "+ 上传照片",
+      "filter_by_date": "按拍摄日期自动过滤（元数据）",
+      "location_optional": "地点（可选）",
+      "location_placeholder": "例如 首尔江南、釜山海云台（留空则由 AI 估算）",
+      "one_line_comment": "一句话评论",
+      "comment_placeholder": "写一条简短评论，发布更美观",
+      "style_template_placeholder": "例如：文风平和，3 个话题标签",
+      "generated_title": "AI 推荐旅行记录 {{date}}",
+      "location_empty": "未填写目的地",
+      "comment_default": "记录珍贵的旅行瞬间。",
+      "generating": "正在生成...",
+      "submit": "发布"
+    },
+    "error": {
+      "upload_photo": "上传照片失败。请检查 Tourstar 服务器是否运行。",
+      "upload_photo_simple": "Failed to upload photos.",
+      "like_failed": "Failed to process like. Please try again shortly.",
+      "cannot_delete_no_login": "Unable to verify login info, so the post cannot be deleted.",
+      "delete_failed": "Deletion failed. Check if this is your post or try again later.",
+      "delete_retry": "Deletion failed. Please try again shortly.",
+      "edit_failed_with_detail": "Failed to edit post.\n{{detail}}",
+      "author_not_found": "Could not find account for {{name}}.",
+      "friend_request_failed": "Failed to send friend request.",
+      "friend_request_failed_with_detail": "Failed to send friend request.\n{{detail}}",
+      "friends_only": "Friends only.",
+      "no_photo_for_period": "No photos found for the selected period.\n(No metadata: {{unknownCount}}, excluded: {{excludedCount}})"
+    },
+    "confirm": {
+      "delete_post": "删除此帖子？该操作不可撤销。"
+    },
+    "share": {
+      "copied": "已复制分享链接。粘贴到聊天中即可。",
+      "copy_prompt": "复制下方链接，在聊天中分享。"
+    },
+    "edit": {
+      "title": "编辑帖子",
+      "field_title": "标题",
+      "title_placeholder": "输入标题",
+      "field_location": "地点",
+      "location_placeholder": "例如 首尔江南、釜山海云台",
+      "field_body": "正文",
+      "body_placeholder": "输入正文",
+      "photo_edit": "编辑照片",
+      "add_photo": "+ 添加照片",
+      "click_to_remove": "点击可从列表移除。",
+      "new": "新建",
+      "photo_help": "点击现有照片以保留/移除。点击新照片以移除。",
+      "tags_label": "标签（逗号或空格分隔）",
+      "tags_placeholder": "例如 winterwalk, healing, travelrecord",
+      "deleting": "正在删除...",
+      "delete_post": "删除帖子",
+      "saving": "正在保存..."
+    },
+    "placeholder": {
+      "location_unknown": "地点未知",
+      "anonymous": "匿名"
+    },
+    "time": {
+      "now": "刚刚",
+      "minutes_ago": "{{count}} 分钟前",
+      "hours_ago": "{{count}} 小时前",
+      "days_ago": "{{count}} 天前"
+    },
+    "bookmarked": "已收藏",
+    "bookmark": "收藏",
+    "comments_count": "{{count}} 条评论",
+    "photos_count": "{{count}} 张照片",
+    "first_comment": "抢沙发，写下第一条评论。",
+    "comment_placeholder": "输入评论",
+    "copy_share_link": "复制分享链接",
+    "friend_request_sent": "已向 {{name}} 发送好友请求。",
+    "already_friend": "该用户已是你的好友。",
+    "requesting": "发送中...",
+    "send_friend_request": "发送好友请求",
+    "view_posts": "查看帖子",
+    "cancel_bookmark": "取消收藏",
+    "my_post": "我的帖子",
+    "change_profile_photo": "更换头像"
+  },
+  "calendar": {
+    "weekday": {
+      "0": "日",
+      "1": "一",
+      "2": "二",
+      "3": "三",
+      "4": "四",
+      "5": "五",
+      "6": "六"
+    }
+  },
+  "map": {
+    "mode": {
+      "car": "驾车",
+      "walk": "步行",
+      "transit": "公共交通"
+    },
+    "duration_min": "约 {{min}} 分钟",
+    "duration_hour_min": "约 {{hour}} 小时 {{min}} 分钟",
+    "total_route_stops": "全程路线 · {{count}} 个经由地",
+    "searching_locations": "正在搜索位置… {{resolved}} / {{total}}",
+    "routing_car": "正在计算道路路线…",
+    "drawing_route": "正在绘制路线…",
+    "car_estimate": "（驾车预估）",
+    "walk_estimate": "（步行预估）",
+    "route_failed": "无法显示路线",
+    "segment_route": "{{from}}→{{to}} 路线",
+    "view_map": "查看地图",
+    "same_place": "📌 同一位置",
+    "open_in_naver_title": "在 Naver 地图中查看 {{name}}",
+    "loading": "地图加载中…",
+    "static_failed": "无法加载静态地图",
+    "open_in_naver": "在 Naver 地图中查看",
+    "note_new_schedule": "新生成的行程会自动显示地图",
+    "zoom_in": "放大",
+    "zoom_out": "缩小",
+    "zoom_reset": "默认缩放",
+    "open_in_naver_with_arrow": "在 Naver 地图中打开 ↗"
   },
   "options": {
-    "gender":   { "남성": "男性", "여성": "女性", "기타": "其他", "무응답": "不便透露" },
-    "age":      { "10대": "10多岁", "20대": "20多岁", "30대": "30多岁", "40대": "40多岁", "50대": "50多岁", "60대이상": "60岁以上" },
-    "diet":     { "일반": "普通", "채식": "素食", "비건": "纯素", "할랄": "清真", "알레르기있음": "有过敏" },
-    "religion": { "없음": "无", "기독교": "基督教", "불교": "佛教", "천주교": "天主教", "이슬람": "伊斯兰", "기타": "其他" }
+    "gender": {
+      "male": "男性",
+      "female": "女性",
+      "other": "其他",
+      "no_answer": "不便透露"
+    },
+    "age": {
+      "teens": "10多岁",
+      "twenties": "20多岁",
+      "thirties": "30多岁",
+      "forties": "40多岁",
+      "fifties": "50多岁",
+      "sixties_plus": "60岁以上"
+    },
+    "diet": {
+      "normal": "普通",
+      "vegetarian": "素食",
+      "vegan": "纯素",
+      "halal": "清真",
+      "allergy": "有过敏"
+    },
+    "religion": {
+      "none": "无",
+      "christian": "基督教",
+      "buddhist": "佛教",
+      "catholic": "天主教",
+      "islam": "伊斯兰",
+      "other": "其他"
+    },
+    "nationality": {
+      "korea": "韩国",
+      "japan": "日本",
+      "china": "中国",
+      "usa": "美国",
+      "united_kingdom": "英国",
+      "france": "法国",
+      "germany": "德国",
+      "canada": "加拿大",
+      "australia": "澳大利亚",
+      "vietnam": "越南",
+      "thailand": "泰国",
+      "philippines": "菲律宾",
+      "indonesia": "印度尼西亚",
+      "singapore": "新加坡",
+      "malaysia": "马来西亚",
+      "india": "印度",
+      "other": "其他"
+    }
   }
 }

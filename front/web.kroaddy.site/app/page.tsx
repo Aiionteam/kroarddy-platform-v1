@@ -8,6 +8,7 @@ import { useLoginStore } from "@/store";
 import { useHydration } from "@/hooks/useHydration";
 import { useOAuthCallback } from "@/hooks/useOAuthCallback";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+import { useTranslation } from "react-i18next";
 
 function HomeContent() {
   const { isAuthenticated, restoreAuthState } = useLoginStore();
@@ -31,9 +32,18 @@ function HomeContent() {
   );
 }
 
+function LoadingFallback() {
+  const { t } = useTranslation();
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center text-sm text-gray-500" aria-live="polite">
+      {t("common.loading", { defaultValue: "로딩 중..." })}
+    </div>
+  );
+}
+
 export default function Home() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<LoadingFallback />}>
       <HomeContent />
     </Suspense>
   );

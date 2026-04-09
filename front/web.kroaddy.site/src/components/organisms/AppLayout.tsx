@@ -2,10 +2,11 @@
 
 import "@/lib/i18n/config";
 import React, { useState, useCallback, useEffect } from "react";
-import Image from "next/image";
+import { useTranslation } from "react-i18next";
 import { usePathname } from "next/navigation";
 import { AppSidebar } from "./AppSidebar";
 import { useTokenRefresher } from "@/hooks/useTokenRefresher";
+import { useAutoLocaleFromProfile } from "@/hooks/useAutoLocaleFromProfile";
 
 function HamburgerIcon() {
   return (
@@ -26,12 +27,14 @@ export interface AppLayoutProps {
 
 export function AppLayout({ onLogout, children, mobileTitle }: AppLayoutProps) {
   useTokenRefresher();
+  useAutoLocaleFromProfile();
+  const { t } = useTranslation();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
 
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
-  const openSidebar  = useCallback(() => setSidebarOpen(true),  []);
+  const openSidebar = useCallback(() => setSidebarOpen(true), []);
 
   // 페이지 이동 시 사이드바 자동 닫기
   useEffect(() => {
@@ -81,17 +84,13 @@ export function AppLayout({ onLogout, children, mobileTitle }: AppLayoutProps) {
             type="button"
             onClick={openSidebar}
             className="rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 active:bg-gray-200"
-            aria-label="메뉴 열기"
+            aria-label={t("common.menu_open", { defaultValue: "메뉴 열기" })}
           >
             <HamburgerIcon />
           </button>
-          <Image
-            src="/logo/titile.png"
-            alt={mobileTitle ?? "Kroaddy"}
-            width={110}
-            height={34}
-            priority
-          />
+          <span className="text-base font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            {mobileTitle ?? t("app.name", { defaultValue: "Kroaddy" })}
+          </span>
         </header>
 
         {/* 페이지 콘텐츠: 모바일에서 스크롤 허용, 데스크톱에서 overflow-hidden 유지 */}

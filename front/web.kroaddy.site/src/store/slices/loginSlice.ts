@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import * as authAPI from "@/lib/api/auth";
+import i18n from "@/lib/i18n/config";
 
 type LoadingType = "login" | "google" | "kakao" | "naver" | "guest" | "logout" | null;
 
@@ -49,8 +50,12 @@ function createPopupLoginHandler(
       if (typeof window === "undefined") return;
       const popup = window.open(url, popupName, getCenteredPopupFeatures());
       if (!popup) {
-        set({ isLoading: false, loadingType: null, error: "팝업이 차단되었습니다." });
-        alert("팝업 차단을 해제해 주세요.");
+        set({
+          isLoading: false,
+          loadingType: null,
+          error: i18n.t("auth.popup_blocked", { defaultValue: "팝업이 차단되었습니다." }),
+        });
+        alert(i18n.t("auth.popup_unblock", { defaultValue: "팝업 차단을 해제해 주세요." }));
         return;
       }
       let timeoutId: NodeJS.Timeout | null = null;
@@ -72,7 +77,12 @@ function createPopupLoginHandler(
         }
         if (event.data?.type === "OAUTH_LOGIN_ERROR") {
           set({ isLoading: false, loadingType: null, error: event.data.error });
-          alert("로그인 실패: " + (event.data.error || "알 수 없는 오류"));
+          alert(
+            i18n.t("auth.login_failed_with_detail", {
+              detail: event.data.error || i18n.t("common.unknown_error", { defaultValue: "알 수 없는 오류" }),
+              defaultValue: "로그인 실패: {{detail}}",
+            })
+          );
           window.removeEventListener("message", messageListener);
           if (timeoutId) clearTimeout(timeoutId);
         }
@@ -84,7 +94,13 @@ function createPopupLoginHandler(
       }, 5 * 60 * 1000);
     } catch (error: any) {
       set({ isLoading: false, loadingType: null, error: error.message });
-      alert(error.message || `${defaultProvider} 로그인에 실패했습니다.`);
+      alert(
+        error.message ||
+          i18n.t("auth.provider_login_failed", {
+            provider: defaultProvider,
+            defaultValue: "{{provider}} 로그인에 실패했습니다.",
+          })
+      );
     }
   };
 }
@@ -119,16 +135,16 @@ export const useLoginStore = create<LoginState>((set) => ({
         sessionStorage.setItem("lastSessionVerified", String(Date.now()));
         // app_user_id가 없을 경우 refresh 응답에서 복원 (하위호환)
         if (!sessionStorage.getItem("app_user_id")) {
-          console.warn("[LoginStore] app_user_id 없음 — 재로그인 필요");
+          console.warn("[LoginStore] app_user_id missing — re-login required");
         }
       } catch (error: any) {
         const isNetworkError =
           (error instanceof TypeError && error.message === "Failed to fetch") ||
           (error instanceof Error && /failed to fetch|network|load failed|서버에 연결/i.test(error.message));
         if (isNetworkError) {
-          console.warn("[LoginStore] 서버에 연결할 수 없어 로그인 화면으로 돌아갑니다.");
+          console.warn("[LoginStore] Cannot connect to server — returning to login screen");
         } else {
-          console.warn("[LoginStore] 세션이 만료되어 로그아웃합니다:", error?.message);
+          console.warn("[LoginStore] Session expired — logging out:", error?.message);
         }
         sessionStorage.removeItem("isAuthenticated");
         sessionStorage.removeItem("loadingType");

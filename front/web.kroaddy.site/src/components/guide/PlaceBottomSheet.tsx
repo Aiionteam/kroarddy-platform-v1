@@ -3,6 +3,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { motion } from "framer-motion";
+import "@/lib/i18n/config";
+import { useTranslation } from "react-i18next";
 import {
   Camera,
   Copy,
@@ -31,18 +33,20 @@ import type {
   GuidePlaceDetailsResponse,
 } from "@/lib/guide/types";
 import type { MapMarker } from "./MapContainer";
+import { GUIDE_CATEGORY_LABEL_DEFAULTS } from "./CategoryChipBar";
 import { BottomSheet } from "./BottomSheet";
 
-const NAVER_INFO_NONE = "정보 없음";
+/** 네이버 API·내부 폴백에서 쓰는 ‘정보 없음’ 리터럴 (비교용) */
+const NAVER_INFO_SENTINEL = "정보 없음";
 
 function isInfoNone(v: string | null | undefined): boolean {
-  const t = v?.trim() ?? "";
-  return !t || t === NAVER_INFO_NONE;
+  const s = v?.trim() ?? "";
+  return !s || s === NAVER_INFO_SENTINEL;
 }
 
 function isHttpUrl(v: string | null | undefined): boolean {
   const s = v?.trim() ?? "";
-  if (!s || s === NAVER_INFO_NONE) return false;
+  if (!s || s === NAVER_INFO_SENTINEL) return false;
   try {
     const u = new URL(s);
     return u.protocol === "http:" || u.protocol === "https:";
@@ -76,13 +80,14 @@ function DrivingRouteToolbarButton({
   onRequestDrivingRoute?: () => void;
   className?: string;
 }) {
+  const { t } = useTranslation();
   return (
     <motion.button
       type="button"
       onClick={() => onRequestDrivingRoute?.()}
       disabled={!onRequestDrivingRoute || directionsLoading}
-      title="자동차 경로"
-      aria-label="자동차 경로 보기"
+      title={t("guide.sheet.driving_route", { defaultValue: "Driving directions" })}
+      aria-label={t("guide.sheet.driving_route_aria", { defaultValue: "Show driving directions" })}
       whileTap={{ scale: 0.97 }}
       className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-slate-200/90 bg-white text-sky-600 shadow-sm ring-1 ring-slate-100/80 transition hover:border-sky-200 hover:bg-sky-50/60 hover:text-sky-800 disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
     >
@@ -109,10 +114,12 @@ function DrivingRouteDetailsBody({
   driveTimeLabel: string;
   driveDistanceKm: string;
 }) {
+  const { t, i18n } = useTranslation();
+  const loc = i18n.language?.replace("_", "-");
   if (directionsLoading && drivingRoute == null) {
     return (
       <p className="text-sm font-medium text-slate-600" role="status">
-        경로를 불러오는 중…
+        {t("guide.sheet.route_loading", { defaultValue: "Loading route…" })}
       </p>
     );
   }
@@ -123,19 +130,21 @@ function DrivingRouteDetailsBody({
       <div className="space-y-3" role="status">
         <p className="text-sm font-medium leading-relaxed text-slate-600">
           {drivingRoute.message?.trim() ||
-            "자동차 경로를 지원하지 않는 구간입니다. 다른 이동 수단을 이용해 보세요."}
+            t("guide.sheet.route_unavailable", {
+              defaultValue: "Driving directions are not available for this segment. Try another mode.",
+            })}
         </p>
         {onRequestDrivingRoute ? (
           <div className="flex justify-end">
             <motion.button
               type="button"
               onClick={() => onRequestDrivingRoute()}
-              title="다시 시도"
-              aria-label="경로 다시 시도"
+              title={t("guide.sheet.retry", { defaultValue: "Retry" })}
+              aria-label={t("guide.sheet.retry_route", { defaultValue: "Retry route" })}
               whileTap={{ scale: 0.97 }}
               className="text-sm font-bold text-sky-700 underline-offset-4 hover:text-sky-800 hover:underline"
             >
-              다시 시도
+              {t("guide.sheet.retry", { defaultValue: "Retry" })}
             </motion.button>
           </div>
         ) : null}
@@ -144,35 +153,51 @@ function DrivingRouteDetailsBody({
   }
 
   return (
-    <dl className="space-y-3 text-sm" aria-label="자동차 경로 안내">
+    <dl className="space-y-3 text-sm" aria-label={t("guide.sheet.route_summary_aria", { defaultValue: "Driving summary" })}>
       {driveTimeLabel ? (
         <div className="rounded-md bg-slate-50 px-4 py-4 shadow-sm ring-1 ring-slate-100 sm:px-6 sm:py-5">
-          <dt className="text-xs font-bold text-slate-500">자동차 이동 시 소요 시간</dt>
+          <dt className="text-xs font-bold text-slate-500">
+            {t("guide.sheet.drive_duration_label", { defaultValue: "Driving time" })}
+          </dt>
           <dd className="mt-1 text-lg font-bold text-slate-900">{driveTimeLabel}</dd>
         </div>
       ) : null}
       {driveDistanceKm ? (
         <div className="flex items-baseline justify-between gap-3 rounded-md bg-slate-50 px-4 py-4 shadow-sm ring-1 ring-slate-100 sm:px-6 sm:py-5">
-          <dt className="font-bold text-slate-500">예상 거리</dt>
-          <dd className="text-base font-bold text-slate-900 tabular-nums">{driveDistanceKm}km</dd>
+          <dt className="font-bold text-slate-500">
+            {t("guide.sheet.distance_label", { defaultValue: "Distance" })}
+          </dt>
+          <dd className="text-base font-bold text-slate-900 tabular-nums">
+            {t("guide.sheet.km_suffix", { km: driveDistanceKm, defaultValue: "{{km}} km" })}
+          </dd>
         </div>
       ) : null}
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-md bg-white px-4 py-4 shadow-sm ring-1 ring-slate-100 sm:px-6 sm:py-5">
-          <dt className="text-[11px] font-bold text-slate-500">예상 유류비</dt>
-          <dd className="mt-1 font-bold text-slate-900 tabular-nums">{formatWon(drivingRoute.fuel_price)}</dd>
+          <dt className="text-[11px] font-bold text-slate-500">
+            {t("guide.sheet.fuel_label", { defaultValue: "Est. fuel" })}
+          </dt>
+          <dd className="mt-1 font-bold text-slate-900 tabular-nums">{formatWon(drivingRoute.fuel_price, t, loc)}</dd>
         </div>
         <div className="rounded-md bg-white px-4 py-4 shadow-sm ring-1 ring-slate-100 sm:px-6 sm:py-5">
-          <dt className="text-[11px] font-bold text-slate-500">통행료</dt>
-          <dd className="mt-1 font-bold text-slate-900 tabular-nums">{formatWon(drivingRoute.toll_fare)}</dd>
+          <dt className="text-[11px] font-bold text-slate-500">
+            {t("guide.sheet.toll_label", { defaultValue: "Tolls" })}
+          </dt>
+          <dd className="mt-1 font-bold text-slate-900 tabular-nums">{formatWon(drivingRoute.toll_fare, t, loc)}</dd>
         </div>
         <div className="rounded-md bg-white px-4 py-4 shadow-sm ring-1 ring-slate-100 sm:col-span-1 sm:px-6 sm:py-5">
-          <dt className="text-[11px] font-bold text-slate-500">택시 요금(추정)</dt>
-          <dd className="mt-1 font-bold text-slate-900 tabular-nums">{formatWon(drivingRoute.taxi_fare ?? 0)}</dd>
+          <dt className="text-[11px] font-bold text-slate-500">
+            {t("guide.sheet.taxi_label", { defaultValue: "Taxi (est.)" })}
+          </dt>
+          <dd className="mt-1 font-bold text-slate-900 tabular-nums">{formatWon(drivingRoute.taxi_fare ?? 0, t, loc)}</dd>
         </div>
       </div>
       {!driveTimeLabel && !driveDistanceKm ? (
-        <p className="text-sm font-medium text-slate-500">이 구간의 상세 시간·거리 정보를 가져오지 못했어요.</p>
+        <p className="text-sm font-medium text-slate-500">
+          {t("guide.sheet.route_detail_missing", {
+            defaultValue: "Could not load detailed time and distance for this segment.",
+          })}
+        </p>
       ) : null}
     </dl>
   );
@@ -207,6 +232,7 @@ export function PlaceBottomSheet({
   onRequestDrivingRoute,
   onSelectNearbyPlace,
 }: PlaceBottomSheetProps) {
+  const { t } = useTranslation();
   const [shareHint, setShareHint] = useState<string | null>(null);
   const [addressCopied, setAddressCopied] = useState(false);
   const [naverDetails, setNaverDetails] = useState<GuidePlaceDetailsResponse | null>(null);
@@ -287,14 +313,18 @@ export function PlaceBottomSheet({
       .catch((e) => {
         if (!ac.signal.aborted) {
           setNearbyItems([]);
-          setNearbyError(e instanceof Error ? e.message : "주변 장소를 불러오지 못했습니다.");
+          setNearbyError(
+            e instanceof Error
+              ? e.message
+              : t("guide.sheet.nearby_load_fail", { defaultValue: "Could not load nearby places." }),
+          );
         }
       })
       .finally(() => {
         if (!ac.signal.aborted) setNearbyLoading(false);
       });
     return () => ac.abort();
-  }, [marker?.id, marker?.kind, marker?.lat, marker?.lng, anchorNameForNearby, nearbyCategory]);
+  }, [marker?.id, marker?.kind, marker?.lat, marker?.lng, anchorNameForNearby, nearbyCategory, t]);
 
   useEffect(() => {
     if (!marker || marker.kind === "festival") {
@@ -313,10 +343,10 @@ export function PlaceBottomSheet({
         if (ac.signal.aborted) return;
         setNaverDetails({
           title: marker.title,
-          category: NAVER_INFO_NONE,
-          address: NAVER_INFO_NONE,
-          telephone: NAVER_INFO_NONE,
-          link: NAVER_INFO_NONE,
+          category: NAVER_INFO_SENTINEL,
+          address: NAVER_INFO_SENTINEL,
+          telephone: NAVER_INFO_SENTINEL,
+          link: NAVER_INFO_SENTINEL,
           imageUrl: null,
           naverMatched: false,
         });
@@ -349,13 +379,13 @@ export function PlaceBottomSheet({
     const body = guideMarkdown || marker.description?.trim() || marker.address?.trim() || "";
     try {
       await sharePlaceCard(marker.title, body);
-      setShareHint("공유했거나 클립보드에 복사했어요.");
+      setShareHint(t("guide.sheet.share_ok", { defaultValue: "Shared or copied to clipboard." }));
       window.setTimeout(() => setShareHint(null), 2500);
     } catch {
-      setShareHint("공유에 실패했습니다.");
+      setShareHint(t("guide.sheet.share_fail", { defaultValue: "Share failed." }));
       window.setTimeout(() => setShareHint(null), 2500);
     }
-  }, [marker, guideMarkdown]);
+  }, [marker, guideMarkdown, t]);
 
   const primaryAddress = useMemo(() => {
     const n = naverDetails?.address?.trim();
@@ -376,7 +406,9 @@ export function PlaceBottomSheet({
   }, [primaryAddress]);
 
   const isFest = marker?.kind === "festival";
-  const badge = isFest ? "행사" : marker?.category?.trim() || "추천 장소";
+  const badge = isFest
+    ? t("guide.badge_event", { defaultValue: "Event" })
+    : marker?.category?.trim() || t("guide.badge_spot", { defaultValue: "Recommended place" });
   const visual = getPlacePlaceholderVisual(marker?.category, marker?.kind);
   const festHeroImageUrl = isFest ? marker?.imageUrl?.trim() || "" : "";
   const hasGuide = Boolean(guideMarkdown);
@@ -413,14 +445,14 @@ export function PlaceBottomSheet({
       if (arr.length === 0) return { show: false, tags: [] };
       return { show: true, tags: arr };
     }
-    if (arr.length === 0) return { show: true, tags: ["추천장소"] };
+    if (arr.length === 0) return { show: true, tags: [t("guide.keyword_default")] };
     return { show: true, tags: arr };
-  }, [marker]);
+  }, [marker, t]);
 
   const driveTimeLabel = useMemo(() => {
     if (!drivingRoute?.ok) return "";
-    return formatDurationMsToHoursMinutes(drivingRoute.duration_ms);
-  }, [drivingRoute]);
+    return formatDurationMsToHoursMinutes(drivingRoute.duration_ms, t);
+  }, [drivingRoute, t]);
 
   const driveDistanceKm =
     drivingRoute?.ok && drivingRoute.distance_m > 0
@@ -443,7 +475,7 @@ export function PlaceBottomSheet({
       ? addressLine
       : !isFest && marker?.address?.trim()
         ? marker.address.trim()
-        : addressLine || NAVER_INFO_NONE;
+        : addressLine || t("guide.info_none", { defaultValue: "No information" });
 
   return (
     <BottomSheet
@@ -469,14 +501,16 @@ export function PlaceBottomSheet({
               ) : (
                 <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-slate-100 to-slate-200 text-slate-500">
                   <Camera className="h-10 w-10 opacity-60" strokeWidth={1.5} aria-hidden />
-                  <span className="text-xs font-semibold">이미지 준비 중</span>
+                  <span className="text-xs font-semibold">
+                    {t("guide.sheet.image_prep", { defaultValue: "Image loading" })}
+                  </span>
                 </div>
               )}
               <motion.button
                 type="button"
                 onClick={onClose}
-                title="닫기"
-                aria-label="닫기"
+                title={t("common.close", { defaultValue: "Close" })}
+                aria-label={t("common.close", { defaultValue: "Close" })}
                 whileTap={{ scale: 0.94 }}
                 transition={{ type: "spring", stiffness: 480, damping: 28 }}
                 className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-md bg-gray-900/40 text-white shadow-sm backdrop-blur-md transition hover:bg-gray-900/55"
@@ -491,8 +525,8 @@ export function PlaceBottomSheet({
               <motion.button
                 type="button"
                 onClick={onClose}
-                title="닫기"
-                aria-label="닫기"
+                title={t("common.close", { defaultValue: "Close" })}
+                aria-label={t("common.close", { defaultValue: "Close" })}
                 whileTap={{ scale: 0.94 }}
                 transition={{ type: "spring", stiffness: 480, damping: 28 }}
                 className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-md bg-gray-900/40 text-white shadow-sm backdrop-blur-md transition hover:bg-gray-900/55"
@@ -517,15 +551,17 @@ export function PlaceBottomSheet({
                     isFest ? "text-white/95" : "text-guide"
                   }`}
                 >
-                  {visual.shortLabel}
+                  {t(`guide.placeholder.${visual.labelKey}`, {
+                    defaultValue: visual.labelKey,
+                  })}
                 </span>
               </div>
               <div className="flex shrink-0 items-center gap-1">
                 <motion.button
                   type="button"
                   onClick={onClose}
-                  title="닫기"
-                  aria-label="닫기"
+                  title={t("common.close", { defaultValue: "Close" })}
+                  aria-label={t("common.close", { defaultValue: "Close" })}
                   whileTap={{ scale: 0.94 }}
                   transition={{ type: "spring", stiffness: 480, damping: 28 }}
                   className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition ${
@@ -558,7 +594,7 @@ export function PlaceBottomSheet({
                     {badge}
                   </span>
                   <span className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-900">
-                    Festival
+                    {t("guide.sheet.festival_label", { defaultValue: "Festival" })}
                   </span>
                 </div>
                 <div className="mt-4 flex items-start justify-between gap-3">
@@ -578,7 +614,7 @@ export function PlaceBottomSheet({
                   <div
                     className="mt-3 flex flex-wrap gap-2"
                     role="list"
-                    aria-label="장소 키워드"
+                    aria-label={t("guide.sheet.keywords_aria", { defaultValue: "Place keywords" })}
                   >
                     {keywordTagsForUi.tags.map((kw, i) => (
                       <span
@@ -608,10 +644,12 @@ export function PlaceBottomSheet({
             {!isFest ? (
               <section
                 className="rounded-md bg-white p-6 shadow-sm ring-1 ring-slate-100"
-                aria-label="장소 정보"
+                aria-label={t("guide.sheet.place_info_aria", { defaultValue: "Place information" })}
               >
                 {naverLoading || naverDetails == null ? (
-                  <p className="text-sm font-medium text-slate-500">정보를 불러오는 중…</p>
+                  <p className="text-sm font-medium text-slate-500">
+                    {t("guide.sheet.info_loading", { defaultValue: "Loading information…" })}
+                  </p>
                 ) : (
                   <>
                     <div className="flex items-start justify-between gap-3">
@@ -654,7 +692,9 @@ export function PlaceBottomSheet({
                           </span>
                           {primaryAddress ? (
                             <span className="shrink-0 text-[11px] font-bold text-sky-600">
-                              {addressCopied ? "복사됨" : "탭하여 복사"}
+                              {addressCopied
+                                ? t("guide.sheet.address_copied", { defaultValue: "Copied" })
+                                : t("guide.sheet.address_tap_copy", { defaultValue: "Tap to copy" })}
                             </span>
                           ) : null}
                         </motion.button>
@@ -671,7 +711,7 @@ export function PlaceBottomSheet({
                         ) : (
                           <div className="flex items-center gap-3 text-sm font-medium text-slate-500">
                             <Phone className="h-5 w-5 shrink-0 text-slate-400" aria-hidden strokeWidth={2} />
-                            {NAVER_INFO_NONE}
+                            {t("guide.info_none", { defaultValue: "No information" })}
                           </div>
                         )}
                       </li>
@@ -684,12 +724,12 @@ export function PlaceBottomSheet({
                             className="inline-flex items-center gap-2 text-sm font-bold text-sky-700 underline-offset-4 hover:text-sky-800 hover:underline"
                           >
                             <ExternalLink className="h-5 w-5 shrink-0 text-sky-600" aria-hidden strokeWidth={2} />
-                            홈페이지 방문
+                            {t("guide.sheet.visit_homepage", { defaultValue: "Visit website" })}
                           </a>
                         ) : (
                           <div className="flex items-center gap-3 text-sm font-medium text-slate-500">
                             <ExternalLink className="h-5 w-5 shrink-0 text-slate-400" aria-hidden strokeWidth={2} />
-                            {NAVER_INFO_NONE}
+                            {t("guide.info_none", { defaultValue: "No information" })}
                           </div>
                         )}
                       </li>
@@ -697,7 +737,9 @@ export function PlaceBottomSheet({
 
                     {!naverDetails.naverMatched ? (
                       <p className="mt-4 rounded-md bg-amber-50 px-3 py-2.5 text-sm font-medium text-amber-900 ring-1 ring-amber-100">
-                        지역 검색 결과가 없어 일부만 표시할 수 있어요. AI 추천과 지도 정보를 함께 참고해 주세요.
+                        {t("guide.sheet.naver_partial", {
+                          defaultValue: "No local search match; showing partial info. Check AI tips and the map.",
+                        })}
                       </p>
                     ) : null}
 
@@ -718,7 +760,11 @@ export function PlaceBottomSheet({
             ) : null}
 
             {!isFest && keywordTagsForUi.show ? (
-              <div className="flex flex-wrap gap-2" role="list" aria-label="장소 키워드">
+              <div
+                className="flex flex-wrap gap-2"
+                role="list"
+                aria-label={t("guide.sheet.keywords_aria", { defaultValue: "Place keywords" })}
+              >
                 {keywordTagsForUi.tags.map((kw, i) => (
                   <span
                     key={`${kw}-${i}`}
@@ -738,7 +784,7 @@ export function PlaceBottomSheet({
                     <div className="rounded-md bg-white p-6 shadow-sm ring-1 ring-slate-100">
                       <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-sky-700">
                         <Sparkles className="h-4 w-4 text-sky-600" aria-hidden strokeWidth={2} />
-                        Kroaddy의 추천 사유
+                        {t("guide.sheet.why_recommend", { defaultValue: "Why Kroaddy recommends this" })}
                       </p>
                       {marker.summary?.trim() ? (
                         <p className="mt-3 text-lg font-bold leading-snug tracking-tight text-slate-900">
@@ -748,7 +794,7 @@ export function PlaceBottomSheet({
                       {recommendationPoints.length > 0 ? (
                         <ul
                           className="mt-4 space-y-3 rounded-md bg-slate-50 p-4 shadow-sm ring-1 ring-slate-100/80"
-                          aria-label="추천 포인트"
+                          aria-label={t("guide.sheet.points_aria", { defaultValue: "Highlights" })}
                         >
                           {recommendationPoints.map((pt, i) => (
                             <li key={`${pt.text}-${i}`} className="flex items-start gap-3 text-sm font-medium text-slate-800">
@@ -787,7 +833,9 @@ export function PlaceBottomSheet({
                                 whileTap={{ scale: 0.98 }}
                                 className="mt-2 w-full rounded-md bg-slate-100 px-4 py-3 text-sm font-bold text-slate-700 shadow-sm ring-1 ring-slate-200/80 transition hover:bg-slate-200/80"
                               >
-                                {descExpanded ? "상세 설명 접기" : "상세 설명 더보기"}
+                                {descExpanded
+                                  ? t("guide.sheet.desc_collapse", { defaultValue: "Show less" })
+                                  : t("guide.sheet.desc_expand", { defaultValue: "Show more" })}
                               </motion.button>
                             </>
                           ) : (
@@ -806,7 +854,7 @@ export function PlaceBottomSheet({
                     <div className="rounded-md bg-white p-6 shadow-sm ring-1 ring-slate-100">
                       <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-sky-700">
                         <Sparkles className="h-4 w-4 text-sky-600" aria-hidden strokeWidth={2} />
-                        Kroaddy의 AI 추천 사유
+                        {t("guide.sheet.ai_why", { defaultValue: "AI recommendation" })}
                       </p>
                       <div className={`${proseGuide} mt-4`}>
                         <ReactMarkdown>{guideMarkdown}</ReactMarkdown>
@@ -815,29 +863,42 @@ export function PlaceBottomSheet({
                   </section>
                 ) : (
                   <p className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-6 py-6 text-center text-sm font-medium text-slate-500 shadow-sm">
-                    이 장소에 대한 AI 설명이 아직 없어요. 질문을 다시 보내 보시거나 다른 마커를 선택해 보세요.
+                    {t("guide.sheet.no_ai_desc", {
+                      defaultValue: "No AI description yet. Ask again or pick another marker.",
+                    })}
                   </p>
                 )}
 
                 {nearbySectionEligible ? (
                   <section
                     className="rounded-md border border-slate-200/90 bg-white p-4 shadow-sm ring-1 ring-slate-100"
-                    aria-label="주변 맛집과 카페"
+                    aria-label={t("guide.sheet.nearby_section_aria", { defaultValue: "Nearby restaurants and cafés" })}
                   >
                     <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                       <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-600">
-                        함께 가기 좋은 근처 장소
+                        {t("guide.sheet.nearby_title", { defaultValue: "Nearby spots to visit together" })}
                       </p>
                       <div
                         className="flex gap-0.5 rounded-md bg-slate-100/90 p-1 shadow-inner ring-1 ring-slate-100/80"
                         role="group"
-                        aria-label="주변 장소 유형"
+                        aria-label={t("guide.sheet.nearby_type_aria", { defaultValue: "Nearby place type" })}
                       >
                         {(
                           [
-                            { id: "all" as const, label: "전체" },
-                            { id: "restaurant" as const, label: "맛집" },
-                            { id: "cafe" as const, label: "카페" },
+                            {
+                              id: "all" as const,
+                              label: t("guide.category.all", { defaultValue: GUIDE_CATEGORY_LABEL_DEFAULTS.all }),
+                            },
+                            {
+                              id: "restaurant" as const,
+                              label: t("guide.category.restaurant", {
+                                defaultValue: GUIDE_CATEGORY_LABEL_DEFAULTS.restaurant,
+                              }),
+                            },
+                            {
+                              id: "cafe" as const,
+                              label: t("guide.category.cafe", { defaultValue: GUIDE_CATEGORY_LABEL_DEFAULTS.cafe }),
+                            },
                           ] as const
                         ).map(({ id, label }) => (
                           <button
@@ -862,7 +923,9 @@ export function PlaceBottomSheet({
                     ) : null}
                     {!nearbyLoading && !nearbyError && nearbyItems.length === 0 ? (
                       <p className="text-center text-xs font-medium text-slate-500">
-                        이 근처에서 맛집·카페 검색 결과가 없어요. 다른 필터를 눌러 보세요.
+                        {t("guide.sheet.nearby_empty", {
+                          defaultValue: "No restaurants or cafés found nearby. Try another filter.",
+                        })}
                       </p>
                     ) : null}
                     <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1 pt-0.5 [scrollbar-width:thin]">
@@ -906,7 +969,13 @@ export function PlaceBottomSheet({
                                   {item.name}
                                 </p>
                                 <p className="text-[10px] font-medium tabular-nums text-slate-500">
-                                  약 {item.distanceM < 1000 ? `${Math.round(item.distanceM)}m` : `${(item.distanceM / 1000).toFixed(1)}km`}
+                                  {t("guide.sheet.distance_about", {
+                                    dist:
+                                      item.distanceM < 1000
+                                        ? `${Math.round(item.distanceM)}m`
+                                        : `${(item.distanceM / 1000).toFixed(1)}km`,
+                                    defaultValue: "~{{dist}}",
+                                  })}
                                 </p>
                               </div>
                             </motion.button>
@@ -920,21 +989,27 @@ export function PlaceBottomSheet({
             <div className="flex flex-col gap-3">
               {est ? (
                 <section className="rounded-md border border-gray-200 bg-gradient-to-br from-amber-50/90 to-white px-4 py-4 shadow-sm">
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900">예상 경비</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900">
+                    {t("guide.sheet.est_cost", { defaultValue: "Estimated cost" })}
+                  </p>
                   <p className="mt-2 text-sm font-medium text-gray-900">{est}</p>
                 </section>
               ) : null}
 
               {visit ? (
                 <section className="rounded-md border border-gray-200 bg-white px-4 py-4 shadow-sm">
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-gray-500">관람·체류</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-gray-500">
+                    {t("guide.sheet.visit_duration", { defaultValue: "Visit / duration" })}
+                  </p>
                   <p className="mt-2 text-sm font-medium text-gray-800">{visit}</p>
                 </section>
               ) : null}
 
               {photo ? (
                 <section className="rounded-md border border-gray-200 bg-gradient-to-br from-sky-50/80 to-white px-4 py-3.5 shadow-sm">
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-sky-900">포토스팟</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-sky-900">
+                    {t("guide.sheet.photo_spot", { defaultValue: "Photo spot" })}
+                  </p>
                   <p className="mt-2 text-sm font-medium text-gray-800">{photo}</p>
                 </section>
               ) : null}
@@ -951,11 +1026,13 @@ export function PlaceBottomSheet({
                   onClick={() => void copyAddress()}
                   whileTap={{ scale: 0.95 }}
                   className="shrink-0 rounded-md bg-slate-50 p-2.5 text-slate-600 shadow-sm ring-1 ring-slate-100 transition hover:bg-sky-50 hover:text-sky-700"
-                  title="주소 복사"
-                  aria-label="주소 복사"
+                  title={t("guide.sheet.copy_address", { defaultValue: "Copy address" })}
+                  aria-label={t("guide.sheet.copy_address", { defaultValue: "Copy address" })}
                 >
                   {addressCopied ? (
-                    <span className="text-xs font-bold text-emerald-600">완료</span>
+                    <span className="text-xs font-bold text-emerald-600">
+                      {t("guide.sheet.done", { defaultValue: "Done" })}
+                    </span>
                   ) : (
                     <Copy className="h-[18px] w-[18px]" aria-hidden strokeWidth={2} />
                   )}
@@ -971,11 +1048,13 @@ export function PlaceBottomSheet({
             Math.abs(marker.lng) <= 180 ? (
               <p
                 className="rounded-md bg-slate-50 px-4 py-3 text-xs font-medium tabular-nums text-slate-600 ring-1 ring-slate-100"
-                aria-label="행사 위치 좌표"
+                aria-label={t("guide.sheet.coords_aria", { defaultValue: "Event coordinates" })}
               >
-                위도 <span className="font-semibold text-slate-800">{marker.lat.toFixed(5)}</span>
+                {t("guide.sheet.lat_label", { defaultValue: "Lat" })}{" "}
+                <span className="font-semibold text-slate-800">{marker.lat.toFixed(5)}</span>
                 {" · "}
-                경도 <span className="font-semibold text-slate-800">{marker.lng.toFixed(5)}</span>
+                {t("guide.sheet.lng_label", { defaultValue: "Lng" })}{" "}
+                <span className="font-semibold text-slate-800">{marker.lng.toFixed(5)}</span>
               </p>
             ) : null}
 
@@ -985,7 +1064,10 @@ export function PlaceBottomSheet({
               <section className="rounded-md border border-gray-200 bg-white px-4 py-4 shadow-sm">
                 {marker.festival?.opar && !marker.address?.includes(marker.festival.opar) ? (
                   <p className="text-sm font-medium text-gray-700">
-                    <span className="font-bold text-gray-900">개최</span> {marker.festival.opar}
+                    <span className="font-bold text-gray-900">
+                      {t("guide.sheet.venue_label", { defaultValue: "Venue" })}
+                    </span>{" "}
+                    {marker.festival.opar}
                   </p>
                 ) : null}
                 {(marker.festival?.startDate || marker.festival?.endDate) && (
@@ -994,7 +1076,9 @@ export function PlaceBottomSheet({
                       marker.festival?.opar && !marker.address?.includes(marker.festival.opar) ? "mt-2" : ""
                     }`}
                   >
-                    <span className="font-bold text-gray-900">기간</span>{" "}
+                    <span className="font-bold text-gray-900">
+                      {t("guide.sheet.period_label", { defaultValue: "Dates" })}
+                    </span>{" "}
                     {formatFestivalDate(marker.festival?.startDate || "")} ~{" "}
                     {formatFestivalDate(marker.festival?.endDate || "")}
                   </p>
@@ -1006,7 +1090,9 @@ export function PlaceBottomSheet({
               hasGuide ? (
                 <section className="rounded-md bg-amber-50/50 p-4 shadow-sm ring-1 ring-amber-100/80">
                   <div className="rounded-md bg-white p-6 shadow-sm ring-1 ring-slate-100">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-900">행사 안내</p>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-900">
+                      {t("guide.sheet.event_info", { defaultValue: "Event details" })}
+                    </p>
                     <div className={`${proseGuide} mt-4`}>
                       <ReactMarkdown>{guideMarkdown}</ReactMarkdown>
                     </div>
@@ -1014,7 +1100,9 @@ export function PlaceBottomSheet({
                 </section>
               ) : (
                 <p className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-6 py-6 text-center text-sm font-medium text-slate-500 shadow-sm">
-                  이 장소에 대한 설명을 불러오지 못했습니다. 질문을 다시 보내 보시거나 다른 마커를 선택해 보세요.
+                  {t("guide.sheet.event_desc_fail", {
+                    defaultValue: "Could not load a description. Ask again or pick another marker.",
+                  })}
                 </p>
               )
             ) : null}
@@ -1026,7 +1114,7 @@ export function PlaceBottomSheet({
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-sm font-bold text-sky-600 underline-offset-4 hover:text-sky-700 hover:underline"
               >
-                공식 홈페이지
+                {t("guide.sheet.official_site", { defaultValue: "Official website" })}
               </a>
             ) : null}
 
@@ -1040,13 +1128,13 @@ export function PlaceBottomSheet({
               <motion.button
                 type="button"
                 onClick={onShare}
-                title="공유하기"
-                aria-label="공유하기"
+                title={t("guide.sheet.share", { defaultValue: "Share" })}
+                aria-label={t("guide.sheet.share", { defaultValue: "Share" })}
                 whileTap={{ scale: 0.98 }}
                 className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-md bg-white px-6 py-3.5 text-sm font-bold text-sky-600 shadow-sm ring-1 ring-slate-100 transition hover:bg-sky-50 hover:text-sky-700"
               >
                 <Share2 className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
-                공유하기
+                {t("guide.sheet.share", { defaultValue: "Share" })}
               </motion.button>
             </div>
           </div>

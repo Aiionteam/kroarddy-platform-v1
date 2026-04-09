@@ -1,0 +1,62 @@
+{
+  "common": {
+    "view_all": "Alle anzeigen",
+    "more": "Mehr"
+  },
+  "home": {
+    "kcontent": {
+      "title": "🎭 K-Content-Themenreisen",
+      "theme_kpop": "K-POP",
+      "theme_kdrama": "K-DRAMA",
+      "theme_kfood": "K-FOOD",
+      "theme_kbeauty": "K-BEAUTY"
+    },
+    "news": {
+      "prev": "Zurück",
+      "next": "Weiter",
+      "page_n": "Seite {{page}}",
+      "nationwide": "Landesweit",
+      "analyzing": "Die KI-Analyse läuft noch.",
+      "error": "Nachrichten konnten nicht geladen werden."
+    },
+    "rebate": {
+      "city_route_title": "{{name}} Reiseroute & Plan (Standard-Planer)",
+      "province": {
+        "강원": "Gangwon",
+        "충북": "Nord-Chungcheong",
+        "전북": "Nord-Jeolla",
+        "전남": "Süd-Jeolla",
+        "경남": "Süd-Gyeongsang",
+        "gangwon": "Gangwon",
+        "chungbuk": "Nord-Chungcheong",
+        "jeonbuk": "Nord-Jeolla",
+        "jeonnam": "Süd-Jeolla",
+        "gyeongnam": "Süd-Gyeongsang"
+      },
+      "period": "2026.4 ~ 6 · Pilotprogramm",
+      "title": "🎫 Bis zu 50 % Rückerstattung für ausgewählte ländliche Reisen",
+      "desc": "Die Hälfte Ihrer Reiseausgaben zurückerhalten als mobile regionale Gutscheine. Bis zu 100.000 KRW pro Person, bis zu 200.000 KRW für Gruppen ab 2 Personen.",
+      "visit_korea": "Visit Korea",
+      "fold": "Nutzung ausblenden",
+      "expand": "Nutzung · berechtigte Regionen",
+      "step1": "Vorab beantragen — berechtigte Regionen auf visitkorea.or.kr prüfen und vor der Reise eine Genehmigung erhalten.",
+      "step2": "Reisen — in genehmigten Regionen ausgeben (Essen, Unterkunft usw.) und Belege aufbewahren.",
+      "step3": "Nachweise einreichen — nach der Reise gemäß örtlicher Behörde Belege einreichen.",
+      "step4": "Rückerstattung — nach Prüfung werden 50 % der Ausgaben als mobile regionale Gutscheine ausgezahlt.",
+      "step5": "Einlösen — innerhalb des Jahres in Geschäften, Cafés oder Online-Shops der Region einlösen.",
+      "notice": "Hinweis: Vorantrag und Genehmigung erforderlich. Kann bei Budgetgrenze vorzeitig enden. Details variieren je nach Gemeinde; Anfang April die offizielle Website prüfen.",
+      "targets": "16 berechtigte Regionen · Routen im Planer ansehen oder offizielle Infos"
+    },
+    "popular": {
+      "title": "📍 Beliebte Reiseziele"
+    },
+    "shortcuts": {
+      "planner": "Reiseplaner",
+      "kcontent": "K-Content",
+      "schedule": "Terminplan",
+      "standard": "Orte entdecken",
+      "user": "Nutzer-Routen",
+      "group": "Gruppenchat"
+    }
+  }
+}
