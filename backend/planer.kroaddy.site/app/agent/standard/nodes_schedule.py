@@ -12,6 +12,7 @@ from app.agent.standard.nodes_common import (
     _build_user_profile_block,
     _format_festival_date,
     _get_lang,
+    _get_llm,
     _get_llm_with_search,
     _invoke,
     _lang_directive,
@@ -21,7 +22,7 @@ from app.agent.standard.nodes_common import (
 )
 from app.agent.standard.state import PlannerState
 from app.core.config import settings
-from app.services.naver_map_client import geocode
+from app.services.naver_map_client import geocode, keyword_search
 from app.services.naver_place_hours import enrich_schedule_items_with_hours
 from app.services.news_client import build_news_block_for_prompt
 from app.services.weather_client import build_weather_block_for_prompt
@@ -77,6 +78,7 @@ class _SingleDayCommonKwargs(TypedDict):
     weather_block: str
     transport_block: str
     news_block: str
+    use_search: bool  # True일 때만 Google Search grounding (느림)
 
 
 async def _generate_single_day(
@@ -93,6 +95,7 @@ async def _generate_single_day(
     weather_block: str,
     transport_block: str,
     news_block: str,
+    use_search: bool = False,
     exclude_places: list[str] | None = None,
 ) -> tuple[list[dict[str, Any]], dict]:
     t0 = perf_counter()
@@ -142,8 +145,13 @@ async def _generate_single_day(
         "\nRespond ONLY with valid JSON:\n"
         f"{schema}"
     )
-    llm = _get_llm_with_search()
-    response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=True)
+    # 기본: 일반 Gemini (빠름). use_search=True일 때만 Google Search grounding(추가 지연).
+    if use_search:
+        llm = _get_llm_with_search()
+        response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=True)
+    else:
+        llm = _get_llm()
+        response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=False)
     data = _parse_json(response)
     raw_items = data.get("items", [])
     day_total_str = data.get("day_total", "₩0")
@@ -219,6 +227,7 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
     news_top10: list = state.get("news_top10") or []
     weather_forecast: dict | None = state.get("weather_forecast")
     transport_mode: str | None = state.get("transport_mode")
+    use_search: bool = bool(state.get("use_search"))
 
     lang = _get_lang(user_profile)
     lang_dir = _lang_directive(lang)
@@ -235,6 +244,7 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
             "num_days": num_days, "location_name": location_name, "route_name": route_name,
             "lang": lang, "lang_dir": lang_dir, "user_block": user_block, "festival_block": festival_block,
             "weather_block": weather_block, "transport_block": transport_block, "news_block": news_block,
+            "use_search": use_search,
         }
 
         # 일(Day)별로 독립적으로 LLM 호출해 전부 병렬 실행한다.
@@ -328,9 +338,13 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         "- MULTI-DAY: Assign DIFFERENT districts to different days.\n"
         f"{lang_dir}\nRespond ONLY with valid JSON (no explanation):\n{fb_schema}"
     )
-    llm = _get_llm_with_search()
     try:
-        response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=True)
+        if use_search:
+            llm = _get_llm_with_search()
+            response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=True)
+        else:
+            llm = _get_llm()
+            response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=False)
         data = _parse_json(response)
         fb_schedule = data.get("schedule") or []
         if not isinstance(fb_schedule, list):
@@ -342,13 +356,21 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         return {**state, "schedule": [], "cost_summary": None, "error": str(e)}
 
 
-async def _geocode_item(item: dict[str, Any]) -> dict[str, Any]:
-    queries = []
-    if item.get("address"):
-        queries.append(item["address"])
-    if item.get("place"):
-        queries.append(item["place"])
-    for q in queries:
+async def _geocode_item(item: dict[str, Any], location_name: str = "") -> dict[str, Any]:
+    """네이버로 좌표·주소를 보강하고, 가능하면 ‘실제 등록된 장소’인지 검증한다.
+
+    1. Geocoding API: 도로명 주소 → 장소명 순 (공식 주소 DB)
+    2. 지역 검색 API: 「장소명 + 여행지」→ 장소명만 (네이버 장소/상호 인덱스)
+
+    Geocoding이 실패하거나 주소만 맞고 상호가 허구인 경우, 지역검색으로 POI를 찾으면
+    좌표·주소·naver_place_id를 채우고 ``naver_verified=True`` 로 표시한다.
+    끝까지 매칭되지 않으면 ``naver_verified=False`` (LLM이 넣은 lat/lng 유지).
+    """
+    place = (item.get("place") or "").strip()
+    address = (item.get("address") or "").strip()
+    region = (location_name or "").strip()
+
+    for q in [x for x in [address, place] if x]:
         result = await geocode(q)
         if result:
             return {
@@ -356,15 +378,41 @@ async def _geocode_item(item: dict[str, Any]) -> dict[str, Any]:
                 "lat": float(result["y"]),
                 "lng": float(result["x"]),
                 "address": result.get("road_address") or result.get("address") or item.get("address", ""),
+                "naver_verified": True,
+                "naver_source": "geocode",
             }
-    return item
+
+    if not place:
+        return {**item, "naver_verified": False, "naver_source": "none"}
+
+    local_queries = [f"{place} {region}", place] if region else [place]
+    for q in local_queries:
+        ks = await keyword_search(q)
+        if not ks:
+            continue
+        out: dict[str, Any] = {
+            **item,
+            "lat": float(ks["y"]),
+            "lng": float(ks["x"]),
+            "address": ks.get("address") or item.get("address", ""),
+            "naver_verified": True,
+            "naver_source": "local_search",
+        }
+        if ks.get("name"):
+            out["naver_place_name"] = ks["name"]
+        if ks.get("place_id"):
+            out["naver_place_id"] = ks["place_id"]
+        return out
+
+    return {**item, "naver_verified": False, "naver_source": "none"}
 
 
 async def geocode_schedule(state: PlannerState) -> PlannerState:
     schedule: list[dict[str, Any]] = state.get("schedule", [])
     if not schedule:
         return state
-    geocoded = list(await asyncio.gather(*[_geocode_item(item) for item in schedule]))
+    loc = str(state.get("location_name") or state.get("location") or "").strip()
+    geocoded = list(await asyncio.gather(*[_geocode_item(item, loc) for item in schedule]))
     days_map: dict[int, list[dict[str, Any]]] = {}
     for item in geocoded:
         d = item.get("day", 1)
