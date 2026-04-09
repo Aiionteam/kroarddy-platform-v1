@@ -2,12 +2,13 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:url_launcher/url_launcher.dart";
 
+import "../../../core/theme/kroaddy_colors.dart";
 import "../data/guide_models.dart";
 import "state/guide_controller.dart";
 import "state/guide_state.dart";
 
 // ── 색상 상수 ─────────────────────────────────────────────────
-const _primary = Color(0xFF7C3AED);
+const _primary = KroaddyColors.primary;
 const _indigo = Color(0xFF4F46E5);
 const _indigoLight = Color(0xFFEEF2FF);
 const _textPrimary = Color(0xFF1F2937);

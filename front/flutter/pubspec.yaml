@@ -44,6 +44,9 @@ dependencies:
   url_launcher: ^6.3.1
   app_links: ^7.0.0
   flutter_naver_map: ^1.4.4
+  geolocator: ^13.0.4
+  flutter_markdown: ^0.7.7+1
+  google_fonts: ^6.3.3
 
 dev_dependencies:
   flutter_test:
@@ -55,6 +58,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_native_splash: ^2.4.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -67,10 +71,70 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    - assets/branding/kroaddy_logo.png
+    - assets/branding/kroaddy_logo_white.png
+    - assets/branding/kroaddy_splash_legacy.png
+    - assets/branding/kroaddy_splash_android12.png
+    - assets/branding/cloud_icon.png
+    - assets/branding/cloud_mask.png
+    - assets/branding/cloud_outline.png
+    - assets/branding/social/kakao.png
+    - assets/branding/social/naver.png
+    - assets/branding/social/google.png
+    - icons/seoul.png
+    - icons/busan.png
+    - icons/daegu.png
+    - icons/inchoen.png
+    - icons/gwangju.png
+    - icons/daejun.png
+    - icons/ulsan.png
+    - icons/sejong.png
+    - icons/gyeongi.png
+    - icons/gyeongi2.png
+    - icons/gangwon.png
+    - icons/zezudo-Photoroom.png
+    - icons/zunra-Photoroom.png
+    - icons/junra.png
+    - icons/zunbuk.png
+    - icons/gyeongnam.png
+    - icons/gyeongbuk.png
+    - icons/chungnam-Photoroom.png
+    - icons/chungbukk.png
+    - icons/sidebar/jangso.png
+    - icons/sidebar/feed.png
+    - icons/sidebar/planner.png
+    - icons/sidebar/myplan.png
+    - icons/sidebar/grouptalk.png
+    - icons/sidebar/talk.png
+    - icons/home_icon/kpop.png
+    - icons/home_icon/kdrama.png
+    - icons/home_icon/kfood.png
+    - icons/home_icon/kbeuaty.png
+    - icons/home_icon/kcontents.png
+    - icons/chat_icon/silver-Photoroom.png
+    - icons/chat_icon/gold-Photoroom.png
+    - icons/chat_icon/platinum-Photoroom.png
+    - icons/chat_icon/dia-Photoroom.png
+    - icons/hwasalpyo.png
+    - icons/bg/seoul_bg.jpg
+    - icons/bg/busan_bg.jpg
+    - icons/bg/daegu_bg.jpg
+    - icons/bg/incheon_bg.jpg
+    - icons/bg/gwangu_bg.jpg
+    - icons/bg/daejun_bg.jpg
+    - icons/bg/ulsan_bg.jpg
+    - icons/bg/sejong_bg.jpg
+    - icons/bg/gyungi1_bg.jpg
+    - icons/bg/gyungi2_bg.jpg
+    - icons/bg/gangwondo_bg.jpg
+    - icons/bg/chungju_bg.jpg
+    - icons/bg/chunan_bg.jpg
+    - icons/bg/junbuk_bg.jpg
+    - icons/bg/junam_bg.jpg
+    - icons/bg/gyungbuk_bg.jpg
+    - icons/bg/gyungnam_bg.jpg
+    - icons/bg/jejudo_bg.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -97,3 +161,16 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# 네이티브 스플래시: 흰 배경 + Android 12 원형 마스크용 정사각 아이콘
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/branding/kroaddy_splash_legacy.png
+  android_gravity: center
+  ios: true
+  android: true
+  web: true
+  android_12:
+    color: "#FFFFFF"
+    image: assets/branding/kroaddy_splash_android12.png
+    icon_background_color: "#FFFFFF"

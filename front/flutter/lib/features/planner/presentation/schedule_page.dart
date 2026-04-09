@@ -6,12 +6,13 @@ import "package:flutter_naver_map/flutter_naver_map.dart";
 import "package:go_router/go_router.dart";
 import "package:url_launcher/url_launcher.dart";
 import "../../../core/auth/jwt_claims.dart";
+import "../../../core/theme/kroaddy_colors.dart";
 import "../../../core/router/main_shell.dart";
 import "../../auth/presentation/state/auth_controller.dart";
 import "../data/planner_models.dart";
 import "../data/planner_repository.dart";
 
-const _purple = Color(0xFF7C3AED);
+const _purple = KroaddyColors.primary;
 const _textPrimary = Color(0xFF1F2937);
 const _textSecondary = Color(0xFF6B7280);
 const _bgPage = Color(0xFFF8F7FF);
@@ -129,7 +130,7 @@ const _planPalettes = <_PlanPalette>[
     light: Color(0xFFFAF5FF),
     border: Color(0xFFE9D5FF),
     text: Color(0xFF7E22CE),
-    badgeBg: Color(0xFFF3E8FF),
+    badgeBg: KroaddyColors.brandWash,
   ),
   _PlanPalette(
     dot: Color(0xFF14B8A6),
@@ -386,7 +387,7 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
           onPressed: () => mainScaffoldKey.currentState?.openDrawer(),
         ),
         title: const Text(
-          "일정 관리",
+          "마이플랜",
           style: TextStyle(color: _textPrimary, fontWeight: FontWeight.bold, fontSize: 18),
         ),
         actions: [
@@ -1054,7 +1055,7 @@ class _NaverPlaceMapDialogState extends State<_NaverPlaceMapDialog> {
             Container(
               padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
               decoration: const BoxDecoration(
-                gradient: LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)]),
+                gradient: LinearGradient(colors: [KroaddyColors.accent, KroaddyColors.primary]),
               ),
               child: Row(
                 children: [
@@ -1394,7 +1395,7 @@ class _NaverRouteMapDialogState extends State<_NaverRouteMapDialog> {
             Container(
               padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
               decoration: const BoxDecoration(
-                gradient: LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)]),
+                gradient: LinearGradient(colors: [KroaddyColors.accent, KroaddyColors.primary]),
               ),
               child: Row(
                 children: [

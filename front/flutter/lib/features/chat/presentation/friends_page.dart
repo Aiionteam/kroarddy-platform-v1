@@ -2,12 +2,13 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
 import "../../../core/router/main_shell.dart";
+import "../../../core/theme/kroaddy_colors.dart";
 import "../data/friend_repository.dart";
 
 // ignore_for_file: avoid_catches_without_on_clauses
 
-const _primary = Color(0xFF7C3AED);
-const _primaryLight = Color(0xFFF3E8FF);
+const _primary = KroaddyColors.primary;
+const _primaryLight = KroaddyColors.brandWash;
 const _textPrimary = Color(0xFF1F2937);
 const _textSecondary = Color(0xFF6B7280);
 const _bgPage = Color(0xFFF8F7FF);
@@ -131,7 +132,7 @@ class _FriendsPageState extends ConsumerState<FriendsPage> {
                       ),
                       SizedBox(height: 4),
                       Text(
-                        "투어스타 게시물에서 닉네임을 눌러 친구를 추가하세요",
+                        "여행피드 게시물에서 닉네임을 눌러 친구를 추가하세요",
                         style: TextStyle(fontSize: 12, color: Color(0xFFD1D5DB)),
                         textAlign: TextAlign.center,
                       ),
@@ -186,7 +187,7 @@ class _FriendsPageState extends ConsumerState<FriendsPage> {
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    "투어스타 게시물에서 닉네임을 탭하면 친구 요청을 보낼 수 있어요.",
+                    "여행피드 게시물에서 닉네임을 탭하면 친구 요청을 보낼 수 있어요.",
                     style: TextStyle(fontSize: 12, color: _primary, height: 1.5),
                   ),
                 ),

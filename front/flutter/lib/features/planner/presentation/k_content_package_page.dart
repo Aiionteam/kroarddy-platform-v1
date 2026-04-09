@@ -8,7 +8,9 @@ import "../../auth/presentation/state/auth_controller.dart";
 import "../../home/state/news_context.dart";
 import "../data/k_content_repository.dart";
 
-const _primary = Color(0xFF7C3AED);
+import "../../../core/theme/kroaddy_colors.dart";
+
+const _primary = KroaddyColors.primary;
 const _textPrimary = Color(0xFF1F2937);
 const _textSecondary = Color(0xFF6B7280);
 
@@ -285,7 +287,7 @@ class _KContentPackagePageState extends ConsumerState<KContentPackagePage> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               gradient: const LinearGradient(
-                colors: [Color(0xFF1E3A8A), Color(0xFF7C3AED)],
+                colors: [KroaddyColors.primary, KroaddyColors.accent],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -345,7 +347,7 @@ class _KContentPackagePageState extends ConsumerState<KContentPackagePage> {
                 if (_savedPlanId != null)
                   TextButton(
                     onPressed: () => context.push("/planner/schedule"),
-                    child: const Text("저장됨 · 일정관리 보기"),
+                    child: const Text("저장됨 · 마이플랜 보기"),
                   )
                 else
                   FilledButton(

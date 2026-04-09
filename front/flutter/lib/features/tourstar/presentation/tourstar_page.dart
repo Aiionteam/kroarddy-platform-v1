@@ -8,16 +8,17 @@ import "package:image_picker/image_picker.dart";
 // ignore_for_file: avoid_catches_without_on_clauses
 
 import "../../../core/router/main_shell.dart";
+import "../../../core/theme/kroaddy_colors.dart";
 import "../data/tourstar_models.dart";
 import "../data/tourstar_repository.dart";
 import "state/tourstar_controller.dart";
 import "state/tourstar_state.dart";
 
-// ── Design tokens ────────────────────────────────────────────
-const _kPurple = Color(0xFF8A2BE2);
-const _kPurple2 = Color(0xFF9333EA);
+// ── Design tokens (강조·버튼·선택: Kroaddy 남색) ─────────────────
+const _kPurple = KroaddyColors.primary;
+const _kPurple2 = KroaddyColors.primary;
 const _kPink = Color(0xFFEC4899);
-const _kPurpleLight = Color(0xFFF3E8FF);
+const _kPurpleLight = KroaddyColors.brandWash;
 const _kGray100 = Color(0xFFF3F4F6);
 const _kGray200 = Color(0xFFE5E7EB);
 const _kGray300 = Color(0xFFD1D5DB);
@@ -389,7 +390,7 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    "투어스타",
+                    "여행피드",
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
