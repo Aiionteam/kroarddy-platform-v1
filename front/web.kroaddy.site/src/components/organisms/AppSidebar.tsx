@@ -2,6 +2,7 @@
 
 import "@/lib/i18n/config";
 import React from "react";
+import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
 
@@ -56,9 +57,16 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ onLogout, onClose }) => 
         <button
           type="button"
           onClick={() => navigate("/home")}
-          className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent hover:opacity-90"
+          className="hover:opacity-90 transition-opacity"
+          aria-label={t("app.name")}
         >
-          {t("app.name", { defaultValue: "Kroaddy" })}
+          <Image
+            src="/logo/titile.png"
+            alt={t("app.name", { defaultValue: "Kroaddy" })}
+            width={140}
+            height={44}
+            priority
+          />
         </button>
         {onClose && (
           <button

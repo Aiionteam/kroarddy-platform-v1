@@ -1,5 +1,8 @@
+import "dart:math" as math;
+
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:flutter_naver_map/flutter_naver_map.dart";
 import "package:go_router/go_router.dart";
 import "package:url_launcher/url_launcher.dart";
 import "../../../core/auth/jwt_claims.dart";
@@ -8,12 +11,84 @@ import "../../auth/presentation/state/auth_controller.dart";
 import "../data/planner_models.dart";
 import "../data/planner_repository.dart";
 
-import "dart:typed_data";
-
 const _purple = Color(0xFF7C3AED);
 const _textPrimary = Color(0xFF1F2937);
 const _textSecondary = Color(0xFF6B7280);
 const _bgPage = Color(0xFFF8F7FF);
+/// 웹 `NaverRouteMapModal`과 동일 — 한국 범위·중복 좌표 필터
+const _kKoreaLatMin = 33.0;
+const _kKoreaLatMax = 38.7;
+const _kKoreaLngMin = 124.5;
+const _kKoreaLngMax = 132.0;
+const _routeDedupeThresholdM = 50.0;
+
+bool _isValidKoreaMapCoord(double lat, double lng) {
+  if (lat == 0 && lng == 0) return false;
+  if (!lat.isFinite || !lng.isFinite) return false;
+  return lat >= _kKoreaLatMin &&
+      lat <= _kKoreaLatMax &&
+      lng >= _kKoreaLngMin &&
+      lng <= _kKoreaLngMax;
+}
+
+double _radForMap(double deg) => deg * math.pi / 180.0;
+
+double _haversineMeters(double lat1, double lng1, double lat2, double lng2) {
+  const r = 6371000.0;
+  final dLat = _radForMap(lat2 - lat1);
+  final dLng = _radForMap(lng2 - lng1);
+  final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+      math.cos(_radForMap(lat1)) *
+          math.cos(_radForMap(lat2)) *
+          math.sin(dLng / 2) *
+          math.sin(dLng / 2);
+  return r * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+}
+
+List<({double lat, double lng, String name})> _dedupeRoutePlacesByDistance(
+  List<({double lat, double lng, String name})> input,
+) {
+  if (input.length <= 1) return input;
+  final out = <({double lat, double lng, String name})>[input.first];
+  for (var i = 1; i < input.length; i++) {
+    final cur = input[i];
+    final prev = out.last;
+    if (_haversineMeters(prev.lat, prev.lng, cur.lat, cur.lng) >
+        _routeDedupeThresholdM) {
+      out.add(cur);
+    }
+  }
+  return out;
+}
+
+Future<DirectionsRouteDto?> _fetchCarDirectionsForPlaces(
+  PlannerRepository repo,
+  List<({double lat, double lng, String name})> resolved,
+) async {
+  final valid =
+      resolved.where((p) => _isValidKoreaMapCoord(p.lat, p.lng)).toList();
+  if (valid.length < 2) return null;
+
+  final deduped = _dedupeRoutePlacesByDistance(valid);
+  if (deduped.length < 2) return null;
+
+  final limited = deduped.length > 7 ? deduped.sublist(0, 7) : deduped;
+  final start = limited.first;
+  final goal = limited.last;
+  final wp = limited
+      .sublist(1, limited.length - 1)
+      .map((e) => (lat: e.lat, lng: e.lng))
+      .toList();
+
+  return repo.fetchDirections(
+    startLat: start.lat,
+    startLng: start.lng,
+    goalLat: goal.lat,
+    goalLng: goal.lng,
+    waypoints: wp,
+  );
+}
+
 const _planDots = <Color>[
   Color(0xFF6366F1),
   Color(0xFFA855F7),
@@ -896,7 +971,7 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
 }
 
 // ══════════════════════════════════════════════════════════════
-// 개별 장소 지도 다이얼로그 (백엔드 Static Map 프록시)
+// 개별 장소 지도 다이얼로그 (네이버 동적 지도)
 // ══════════════════════════════════════════════════════════════
 class _NaverPlaceMapDialog extends StatefulWidget {
   const _NaverPlaceMapDialog({
@@ -915,12 +990,12 @@ class _NaverPlaceMapDialog extends StatefulWidget {
 }
 
 class _NaverPlaceMapDialogState extends State<_NaverPlaceMapDialog> {
-  Uint8List? _imageBytes;
   String _status = "loading";
   String _errorMsg = "";
   double? _resolvedLat;
   double? _resolvedLng;
-  int _zoom = 15;
+  double _zoom = 15;
+  NaverMapController? _controller;
 
   @override
   void initState() {
@@ -951,28 +1026,18 @@ class _NaverPlaceMapDialogState extends State<_NaverPlaceMapDialog> {
 
     _resolvedLat = lat;
     _resolvedLng = lng;
-    await _fetchMap(lat, lng, _zoom);
-  }
-
-  Future<void> _fetchMap(double lat, double lng, int zoom) async {
-    if (!mounted) return;
-    setState(() => _status = "loading");
-    try {
-      final bytes = await widget.repo.fetchStaticMapBytes(lat: lat, lng: lng, w: 600, h: 400, zoom: zoom);
-      if (!mounted) return;
-      setState(() { _imageBytes = bytes; _status = "ok"; });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() { _status = "error"; _errorMsg = e.toString(); });
-    }
+    if (mounted) setState(() => _status = "ok");
   }
 
   void _changeZoom(int delta) {
     if (_resolvedLat == null || _resolvedLng == null) return;
-    final newZoom = (_zoom + delta).clamp(6, 19);
+    final newZoom = (_zoom + delta).clamp(6, 19).toDouble();
     if (newZoom == _zoom) return;
     _zoom = newZoom;
-    _fetchMap(_resolvedLat!, _resolvedLng!, _zoom);
+    final target = NLatLng(_resolvedLat!, _resolvedLng!);
+    _controller?.updateCamera(
+      NCameraUpdate.scrollAndZoomTo(target: target, zoom: _zoom),
+    );
   }
 
   @override
@@ -1059,7 +1124,7 @@ class _NaverPlaceMapDialogState extends State<_NaverPlaceMapDialog> {
         ),
       );
     }
-    if (_status == "error" || _imageBytes == null) {
+    if (_status == "error" || _resolvedLat == null || _resolvedLng == null) {
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -1090,17 +1155,112 @@ class _NaverPlaceMapDialogState extends State<_NaverPlaceMapDialog> {
         ],
       );
     }
-    return Image.memory(
-      _imageBytes!,
-      fit: BoxFit.cover,
-      width: double.infinity,
-      height: double.infinity,
+    final target = NLatLng(_resolvedLat!, _resolvedLng!);
+    final safePadding = MediaQuery.paddingOf(context);
+    return Stack(
+      children: [
+        NaverMap(
+          options: NaverMapViewOptions(
+            contentPadding: safePadding,
+            initialCameraPosition: NCameraPosition(target: target, zoom: _zoom),
+            indoorEnable: true,
+            locationButtonEnable: false,
+            logoClickEnable: false,
+          ),
+          onMapReady: (controller) async {
+            _controller = controller;
+            final marker = NMarker(
+              id: "place",
+              position: target,
+              caption: NOverlayCaption(text: widget.placeName),
+            );
+            await controller.addOverlay(marker);
+          },
+        ),
+        Positioned(
+          right: 12,
+          top: 12,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.92),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: const [BoxShadow(color: Color(0x22000000), blurRadius: 10, offset: Offset(0, 4))],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.add, size: 18),
+                  onPressed: () => _changeZoom(1),
+                  tooltip: "확대",
+                ),
+                const Divider(height: 1),
+                IconButton(
+                  icon: const Icon(Icons.remove, size: 18),
+                  onPressed: () => _changeZoom(-1),
+                  tooltip: "축소",
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
+/// `NaverRouteMapModal` 교통수단 탭과 동작 정렬
+enum _RouteTransportMode { car, walk, transit }
+
+extension on _RouteTransportMode {
+  String get label => switch (this) {
+        _RouteTransportMode.car => "차량",
+        _RouteTransportMode.walk => "도보",
+        _RouteTransportMode.transit => "대중교통",
+      };
+  String get emoji => switch (this) {
+        _RouteTransportMode.car => "🚗",
+        _RouteTransportMode.walk => "🚶",
+        _RouteTransportMode.transit => "🚌",
+      };
+  Color get accent => switch (this) {
+        _RouteTransportMode.car => const Color(0xFF6366F1),
+        _RouteTransportMode.walk => const Color(0xFF10B981),
+        _RouteTransportMode.transit => const Color(0xFF0EA5E9),
+      };
+}
+
+double _totalStraightDistanceM(
+  List<({double lat, double lng, String name})> places,
+) {
+  if (places.length < 2) return 0;
+  var total = 0.0;
+  for (var i = 0; i < places.length - 1; i++) {
+    total += _haversineMeters(
+      places[i].lat,
+      places[i].lng,
+      places[i + 1].lat,
+      places[i + 1].lng,
+    );
+  }
+  return total;
+}
+
+String _naverTransitSegmentUrl(
+  List<({double lat, double lng, String name})> places,
+  int index,
+) {
+  if (index <= 0 || index >= places.length) return "";
+  final a = places[index - 1];
+  final b = places[index];
+  final sName = Uri.encodeComponent(a.name);
+  final gName = Uri.encodeComponent(b.name);
+  return "https://map.naver.com/v5/directions/"
+      "${a.lng},${a.lat},$sName/${b.lng},${b.lat},$gName/-/transit";
+}
+
 // ══════════════════════════════════════════════════════════════
-// 전체 경로 지도 다이얼로그 (첫 번째 장소 Static Map + 장소 목록)
+// 전체 경로 지도 다이얼로그 (동적 지도 + 백엔드 Directions 도로 경로, 웹과 동일)
 // ══════════════════════════════════════════════════════════════
 class _NaverRouteMapDialog extends StatefulWidget {
   const _NaverRouteMapDialog({
@@ -1117,10 +1277,14 @@ class _NaverRouteMapDialog extends StatefulWidget {
 }
 
 class _NaverRouteMapDialogState extends State<_NaverRouteMapDialog> {
-  Uint8List? _imageBytes;
   String _status = "loading";
   String _errorMsg = "";
   List<({double lat, double lng, String name})> _resolvedPlaces = [];
+  /// 웹과 동일: 백엔드 Directions 성공 시 도로 폴리라인. 실패 시 null → 직선 점선.
+  List<NLatLng>? _carRoutePoints;
+  int? _routeDistanceM;
+  int? _routeDurationMs;
+  _RouteTransportMode _mode = _RouteTransportMode.car;
 
   @override
   void initState() {
@@ -1151,17 +1315,69 @@ class _NaverRouteMapDialogState extends State<_NaverRouteMapDialog> {
     }
     _resolvedPlaces = resolved;
 
-    // 첫 번째 장소 기준 지도 (중심점으로 사용)
-    final first = resolved.first;
-    try {
-      final bytes = await widget.repo.fetchStaticMapBytes(lat: first.lat, lng: first.lng, w: 600, h: 280, zoom: 14);
-      if (!mounted) return;
-      setState(() { _imageBytes = bytes; _status = "ok"; });
-    } catch (e) {
-      if (!mounted) return;
-      _errorMsg = e.toString();
-      setState(() => _status = "ok"); // 에러 메시지는 표시하되 목록은 보여줌
+    DirectionsRouteDto? dto;
+    if (resolved.length >= 2) {
+      dto = await _fetchCarDirectionsForPlaces(widget.repo, resolved);
     }
+    if (!mounted) return;
+    if (dto != null) {
+      _carRoutePoints =
+          dto.pathLngLat.map((p) => NLatLng(p.$2, p.$1)).toList();
+      _routeDistanceM = dto.distanceM;
+      _routeDurationMs = dto.durationMs;
+    } else {
+      _carRoutePoints = null;
+      _routeDistanceM = null;
+      _routeDurationMs = null;
+    }
+
+    setState(() => _status = "ok");
+  }
+
+  /// 차량·도보 요약 (대중교통은 웹과 같이 배너 생략)
+  String? _routeSummaryLine() {
+    if (_resolvedPlaces.length < 2) return null;
+    if (_mode == _RouteTransportMode.transit) return null;
+    final straight = _totalStraightDistanceM(_resolvedPlaces);
+    if (_mode == _RouteTransportMode.car) {
+      if (_routeDistanceM != null && _routeDistanceM! > 0) {
+        final km = (_routeDistanceM! / 1000).toStringAsFixed(1);
+        final min = ((_routeDurationMs ?? 0) / 60000).ceil();
+        return "약 $km km · 차량 약 $min분";
+      }
+      final d = (straight * 1.3).round();
+      final tMs = ((straight * 1.3) / 400 * 60000).round();
+      final km = (d / 1000).toStringAsFixed(1);
+      final min = (tMs / 60000).ceil();
+      return "약 $km km · 차량 약 $min분 (추정)";
+    }
+    // walk
+    final d = (straight * 1.2).round();
+    final tMs = ((straight * 1.2) / 80 * 60000).round();
+    final km = (d / 1000).toStringAsFixed(1);
+    final min = (tMs / 60000).ceil();
+    return "약 $km km · 도보 약 $min분 (추정)";
+  }
+
+  Widget _transportModeBar() {
+    final modes = _RouteTransportMode.values;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      child: Row(
+        children: [
+          for (var i = 0; i < modes.length; i++) ...[
+            if (i > 0) const SizedBox(width: 6),
+            Expanded(
+              child: _RouteModeChip(
+                mode: modes[i],
+                selected: _mode == modes[i],
+                onTap: () => setState(() => _mode = modes[i]),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   @override
@@ -1198,6 +1414,14 @@ class _NaverRouteMapDialogState extends State<_NaverRouteMapDialog> {
                 ],
               ),
             ),
+            if (_status != "loading" && _resolvedPlaces.isNotEmpty)
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+                ),
+                child: _transportModeBar(),
+              ),
             // 지도 (있을 때만)
             if (_status == "loading")
               const SizedBox(
@@ -1211,11 +1435,31 @@ class _NaverRouteMapDialogState extends State<_NaverRouteMapDialog> {
                   ],
                 )),
               )
-            else if (_imageBytes != null)
-              SizedBox(
-                width: double.infinity,
-                height: 220,
-                child: Image.memory(_imageBytes!, fit: BoxFit.cover, width: double.infinity),
+            else if (_resolvedPlaces.isNotEmpty)
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    height: 260,
+                    child: _buildDynamicRouteMap(context),
+                  ),
+                  if (_routeSummaryLine() != null)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      color: _mode.accent,
+                      child: Text(
+                        _routeSummaryLine()!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                ],
               )
             else if (_status == "ok" && _errorMsg.isNotEmpty)
               Padding(
@@ -1246,6 +1490,10 @@ class _NaverRouteMapDialogState extends State<_NaverRouteMapDialog> {
                         separatorBuilder: (_, _) => const SizedBox(height: 4),
                         itemBuilder: (_, i) {
                           const dotColors = [Color(0xFF1E88E5), Color(0xFF8E24AA), Color(0xFFD81B60), Color(0xFFF57C00), Color(0xFF43A047)];
+                          final isTransit = _mode == _RouteTransportMode.transit;
+                          final segmentUrl = isTransit && i > 0
+                              ? _naverTransitSegmentUrl(_resolvedPlaces, i)
+                              : null;
                           return Row(
                             children: [
                               Container(
@@ -1256,6 +1504,29 @@ class _NaverRouteMapDialogState extends State<_NaverRouteMapDialog> {
                               ),
                               const SizedBox(width: 8),
                               Expanded(child: Text(_resolvedPlaces[i].name, style: const TextStyle(fontSize: 12, color: Color(0xFF374151)), overflow: TextOverflow.ellipsis)),
+                              TextButton(
+                                onPressed: () async {
+                                  final uri = segmentUrl != null
+                                      ? Uri.parse(segmentUrl)
+                                      : Uri.parse(
+                                          "https://map.naver.com/p/search/${Uri.encodeComponent(_resolvedPlaces[i].name)}");
+                                  try {
+                                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                  } catch (_) {}
+                                },
+                                style: TextButton.styleFrom(
+                                  foregroundColor: isTransit && segmentUrl != null
+                                      ? const Color(0xFF0284C7)
+                                      : const Color(0xFF6B7280),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Text(
+                                  isTransit && segmentUrl != null ? "$i→${i + 1} 경로" : "지도 보기",
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                                ),
+                              ),
                             ],
                           );
                         },
@@ -1284,6 +1555,136 @@ class _NaverRouteMapDialogState extends State<_NaverRouteMapDialog> {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDynamicRouteMap(BuildContext context) {
+    final safePadding = MediaQuery.paddingOf(context);
+    final targets = _resolvedPlaces.map((p) => NLatLng(p.lat, p.lng)).toList();
+    final initial = targets.first;
+    final carRoad = _carRoutePoints;
+    final mode = _mode;
+
+    return NaverMap(
+      key: ValueKey(mode),
+      options: NaverMapViewOptions(
+        contentPadding: safePadding,
+        initialCameraPosition: NCameraPosition(target: initial, zoom: 13),
+        indoorEnable: true,
+        locationButtonEnable: false,
+        logoClickEnable: false,
+      ),
+      onMapReady: (controller) async {
+        final overlays = <NAddableOverlay>{};
+        for (var i = 0; i < _resolvedPlaces.length; i++) {
+          final p = _resolvedPlaces[i];
+          overlays.add(
+            NMarker(
+              id: "p$i",
+              position: NLatLng(p.lat, p.lng),
+              caption: NOverlayCaption(text: "${i + 1}. ${p.name}"),
+            ),
+          );
+        }
+
+        if (targets.length >= 2) {
+          late final List<NLatLng> lineCoords;
+          late final Color stroke;
+          late final double strokeWidth;
+          late final List<int> pattern;
+
+          switch (mode) {
+            case _RouteTransportMode.car:
+              final hasRoad = carRoad != null && carRoad.length >= 2;
+              lineCoords = hasRoad ? carRoad : targets;
+              stroke = const Color(0xFF6366F1);
+              strokeWidth = hasRoad ? 5 : 3;
+              pattern = hasRoad ? const [] : const [6, 6];
+            case _RouteTransportMode.walk:
+              lineCoords = targets;
+              stroke = const Color(0xFF10B981);
+              strokeWidth = 4;
+              pattern = const [6, 6];
+            case _RouteTransportMode.transit:
+              lineCoords = targets;
+              stroke = const Color(0x800EA5E9);
+              strokeWidth = 3;
+              pattern = const [6, 6];
+          }
+
+          overlays.add(
+            NPolylineOverlay(
+              id: "route",
+              coords: lineCoords,
+              color: stroke,
+              width: strokeWidth,
+              pattern: pattern,
+            ),
+          );
+        }
+
+        await controller.addOverlayAll(overlays);
+
+        if (targets.length >= 2) {
+          final boundsPoints = <NLatLng>[...targets];
+          if (mode == _RouteTransportMode.car) {
+            final r = carRoad;
+            if (r != null && r.length >= 2) {
+              boundsPoints.addAll(r);
+            }
+          }
+          final bounds = NLatLngBounds.from(boundsPoints);
+          await controller.updateCamera(
+            NCameraUpdate.fitBounds(bounds, padding: const EdgeInsets.all(42)),
+          );
+        } else {
+          await controller.updateCamera(
+            NCameraUpdate.scrollAndZoomTo(target: targets.first, zoom: 15),
+          );
+        }
+      },
+    );
+  }
+}
+
+class _RouteModeChip extends StatelessWidget {
+  const _RouteModeChip({
+    required this.mode,
+    required this.selected,
+    required this.onTap,
+  });
+  final _RouteTransportMode mode;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = mode.accent;
+    return Material(
+      color: selected ? accent : const Color(0xFFF3F4F6),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(mode.emoji, style: const TextStyle(fontSize: 13)),
+              const SizedBox(width: 4),
+              Text(
+                mode.label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: selected ? Colors.white : const Color(0xFF6B7280),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -152,6 +152,12 @@ class PostResponse(BaseModel):
     selected_scores: dict | None = None
     created_at: datetime
     updated_at: datetime
+    # 명예도 (썸업/썸다운)
+    honor_up: int = 0
+    honor_down: int = 0
+    # 조회자 기준: -1 | 0 | 1
+    honor_vote: int = 0
+    # 하위 호환: likes = honor_up - honor_down (순 명예), liked = (honor_vote == 1)
     likes: int = 0
     liked: bool = False
     comments: list[CommentResponse] = Field(default_factory=list)
@@ -195,6 +201,20 @@ class ToggleLikeRequest(BaseModel):
 
 class ToggleLikeResponse(BaseModel):
     post_id: str
+    likes: int
+    liked: bool
+
+
+class HonorVoteRequest(BaseModel):
+    user_id: int = Field(..., ge=1, description="투표하는 사용자 ID")
+    value: Literal[1, -1] = Field(..., description="1=썸업, -1=썸다운 (같은 버튼 재클릭 시 서버에서 해제)")
+
+
+class HonorVoteResponse(BaseModel):
+    post_id: str
+    honor_up: int
+    honor_down: int
+    honor_vote: int
     likes: int
     liked: bool
 

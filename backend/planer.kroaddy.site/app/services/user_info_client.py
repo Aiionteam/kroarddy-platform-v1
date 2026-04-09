@@ -8,6 +8,16 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+_user_info_client = httpx.AsyncClient(
+    timeout=httpx.Timeout(connect=2.0, read=4.0, write=2.0, pool=1.0),
+    limits=httpx.Limits(max_connections=10, max_keepalive_connections=5, keepalive_expiry=30),
+)
+
+
+async def close_user_info_client() -> None:
+    if not _user_info_client.is_closed:
+        await _user_info_client.aclose()
+
 
 async def fetch_user_profile(user_id: Optional[int]) -> Optional[dict]:
     """user_info 서비스에서 사용자 프로필을 조회한다.
@@ -19,18 +29,17 @@ async def fetch_user_profile(user_id: Optional[int]) -> Optional[dict]:
 
     url = f"{settings.user_info_service_url}/api/v1/user-profile/{user_id}"
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            resp = await client.get(url)
-            if resp.status_code == 200:
-                profile = resp.json()
-                logger.info("유저 프로필 조회 성공: user_id=%s", user_id)
-                return profile
-            elif resp.status_code == 404:
-                logger.info("유저 프로필 없음: user_id=%s", user_id)
-                return None
-            else:
-                logger.warning("유저 프로필 조회 실패: status=%s user_id=%s", resp.status_code, user_id)
-                return None
+        resp = await _user_info_client.get(url)
+        if resp.status_code == 200:
+            profile = resp.json()
+            logger.info("유저 프로필 조회 성공: user_id=%s", user_id)
+            return profile
+        elif resp.status_code == 404:
+            logger.info("유저 프로필 없음: user_id=%s", user_id)
+            return None
+        else:
+            logger.warning("유저 프로필 조회 실패: status=%s user_id=%s", resp.status_code, user_id)
+            return None
     except Exception as e:
         logger.warning("유저 프로필 서비스 연결 실패: %s", e)
         return None

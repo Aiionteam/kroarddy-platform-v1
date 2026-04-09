@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
 import {
@@ -518,7 +519,7 @@ export default function GroupChatPage() {
                         </span>
                       )}
                       {sharedPostId && sharedPreview ? (
-                        <a
+                        <Link
                           href={`/tourstar?postId=${encodeURIComponent(sharedPostId)}`}
                           onClick={(e) => e.stopPropagation()}
                           className={`block overflow-hidden rounded-lg border ${
@@ -548,7 +549,7 @@ export default function GroupChatPage() {
                               </p>
                             </div>
                           </div>
-                        </a>
+                        </Link>
                       ) : (
                         <span className="block break-words">{msg.message}</span>
                       )}

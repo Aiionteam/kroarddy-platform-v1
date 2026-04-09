@@ -1092,9 +1092,6 @@
       "count": "{{count}} items",
       "no_results": "No results found.",
       "seed": {
-        "author": {
-          "ops": "Operations Team"
-        },
         "3": {
           "title": "Service Maintenance Notice",
           "content": "Scheduled maintenance will occur this weekend. Some features may be temporarily unavailable."
@@ -1114,6 +1111,9 @@
         "7": {
           "title": "New Features Preview",
           "content": "More localization and smarter AI recommendations are coming soon."
+        },
+        "author": {
+          "ops": "Operations Team"
         }
       },
       "table": {
@@ -2175,6 +2175,141 @@
         "label": "Event Picks",
         "description": "Nationwide cultural festival calendar"
       }
+    },
+    "mobile_title": "Discover",
+    "category_tabs_aria": "Guide categories",
+    "gemini_notice": "AI suggests new places based on your preferences and context.",
+    "places_none": "No places to recommend.",
+    "places_extra": ", and {{n}} more",
+    "places_summary": "{{listed}}{{extra}} — {{count}} places recommended.\nTap a marker on the map for details.",
+    "coords_hint": "No mappable coordinates found. Try a clearer place name.",
+    "answer_empty": "Could not get an answer.",
+    "guide_error": "Could not get a guide response.",
+    "directions_no_location": "We need your location for driving directions. Allow location and try again.",
+    "festival_on_map": "Showing {{count}} events on the map ({{year}}/{{month}}).",
+    "festival_map_empty": "No events with coordinates, or the API returned nothing.",
+    "festival_load_error": "Could not load events: {{message}}",
+    "festival_loading_overlay": "Loading events…",
+    "marker_event": "Event",
+    "marker_place": "Place",
+    "nearby_category_fallback": "Restaurant · café",
+    "badge_event": "Event",
+    "badge_spot": "Recommended place",
+    "keyword_default": "Recommended",
+    "info_none": "No information",
+    "category": {
+      "all": "All",
+      "festival": "Events",
+      "activity": "K-Activities",
+      "historic": "History & heritage",
+      "culture": "Local culture",
+      "nature": "Nature & healing",
+      "restaurant": "Restaurants",
+      "cafe": "Cafés"
+    },
+    "prompt": {
+      "activity": "Recommend exciting K-activities and hands-on experiences I can try in Korea.",
+      "historic": "Recommend historic sites, heritage spots, and cultural landmarks worth visiting in Korea.",
+      "culture": "Recommend places to experience local Korean culture, markets, and neighborhood vibes.",
+      "nature": "Recommend nature spots, parks, and relaxing places for healing trips in Korea.",
+      "restaurant": "Recommend great restaurants and local food spots in Korea.",
+      "cafe": "Recommend aesthetic cafés, dessert spots, and coffee places in Korea."
+    },
+    "placeholder": {
+      "festival": "Festival",
+      "cafe": "Café",
+      "restaurant": "Restaurant",
+      "heritage": "Heritage",
+      "nature": "Nature",
+      "shopping": "Shopping",
+      "default": "Place"
+    },
+    "route": {
+      "minutes": "{{m}} min",
+      "hours": "{{h}} hr",
+      "hours_minutes": "{{h}}h {{m}}m",
+      "car_km_only": "🚗 ~{{km}} km by car",
+      "car_summary": "🚗 ~{{dur}} ({{km}} km)",
+      "won": "₩{{amount}}",
+      "won_zero": "₩0"
+    },
+    "chat": {
+      "placeholder": "Ask about a place…",
+      "role_user": "You",
+      "role_bot": "Kroaddy",
+      "collapse": "Collapse chat",
+      "open": "Open chat",
+      "input_aria": "AI guide question",
+      "send_wait": "Please wait for the response.",
+      "send_empty": "Enter a question.",
+      "send": "Send",
+      "send_aria_busy": "Processing",
+      "send_aria_empty": "Enter a question",
+      "send_aria": "Send question"
+    },
+    "map": {
+      "my_location": "My location",
+      "aria_map": "Map",
+      "loading": "Loading map…",
+      "load_error": "Could not load the map.",
+      "load_error_hint": "Check your network and NEXT_PUBLIC_NAVER_MAP_CLIENT_ID."
+    },
+    "searching": {
+      "chat": "Kroaddy is searching",
+      "map": "Kroaddy is finding the best places"
+    },
+    "sheet": {
+      "driving_route": "Driving directions",
+      "driving_route_aria": "Show driving directions",
+      "route_loading": "Loading route…",
+      "route_unavailable": "Driving directions are not available for this segment. Try another mode.",
+      "retry": "Retry",
+      "retry_route": "Retry route",
+      "route_summary_aria": "Driving summary",
+      "drive_duration_label": "Driving time",
+      "distance_label": "Distance",
+      "km_suffix": "{{km}} km",
+      "fuel_label": "Est. fuel",
+      "toll_label": "Tolls",
+      "taxi_label": "Taxi (est.)",
+      "route_detail_missing": "Could not load detailed time and distance for this segment.",
+      "nearby_load_fail": "Could not load nearby places.",
+      "share_ok": "Shared or copied to clipboard.",
+      "share_fail": "Share failed.",
+      "image_prep": "Image loading",
+      "festival_label": "Festival",
+      "keywords_aria": "Place keywords",
+      "place_info_aria": "Place information",
+      "info_loading": "Loading information…",
+      "address_copied": "Copied",
+      "address_tap_copy": "Tap to copy",
+      "visit_homepage": "Visit website",
+      "naver_partial": "No local search match; showing partial info. Check AI tips and the map.",
+      "why_recommend": "Why Kroaddy recommends this",
+      "points_aria": "Highlights",
+      "desc_collapse": "Show less",
+      "desc_expand": "Show more",
+      "ai_why": "AI recommendation",
+      "no_ai_desc": "No AI description yet. Ask again or pick another marker.",
+      "nearby_section_aria": "Nearby restaurants and cafés",
+      "nearby_title": "Nearby spots to visit together",
+      "nearby_type_aria": "Nearby place type",
+      "nearby_empty": "No restaurants or cafés found nearby. Try another filter.",
+      "distance_about": "~{{dist}}",
+      "est_cost": "Estimated cost",
+      "visit_duration": "Visit / duration",
+      "photo_spot": "Photo spot",
+      "copy_address": "Copy address",
+      "done": "Done",
+      "coords_aria": "Event coordinates",
+      "lat_label": "Lat",
+      "lng_label": "Lng",
+      "venue_label": "Venue",
+      "period_label": "Dates",
+      "event_info": "Event details",
+      "event_desc_fail": "Could not load a description. Ask again or pick another marker.",
+      "official_site": "Official website",
+      "share": "Share"
     }
   },
   "chat": {

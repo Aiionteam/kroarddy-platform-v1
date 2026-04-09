@@ -8,7 +8,15 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-_TIMEOUT = 5.0
+_news_client = httpx.AsyncClient(
+    timeout=httpx.Timeout(connect=2.0, read=4.0, write=2.0, pool=1.0),
+    limits=httpx.Limits(max_connections=5, max_keepalive_connections=3, keepalive_expiry=30),
+)
+
+
+async def close_news_client() -> None:
+    if not _news_client.is_closed:
+        await _news_client.aclose()
 
 
 async def fetch_news_top10(
@@ -22,10 +30,9 @@ async def fetch_news_top10(
     """
     url = settings.news_service_url.rstrip("/") + "/api/v1/news/processed"
     try:
-        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
-            resp = await client.get(url, params={"limit_rest": 0})
-            resp.raise_for_status()
-            data = resp.json()
+        resp = await _news_client.get(url, params={"limit_rest": 0})
+        resp.raise_for_status()
+        data = resp.json()
         top10: list[dict] = data.get("top10", [])
         if start_date and end_date and top10:
             top10 = _sort_by_date_relevance(top10, start_date, end_date)

@@ -227,7 +227,7 @@ export default function KContentPage() {
       const mapped = await Promise.all(
         packages.map(async (pkg, idx) => ({
           id: pkg.package_id,
-          title: isKorean ? (pkg.title_ko || pkg.title_en) : (pkg.title_en || pkg.title_ko),
+          title: (isKorean ? (pkg.title_ko || pkg.title_en) : (pkg.title_en || pkg.title_ko)) ?? "",
           description: isKorean ? (pkg.tags || pkg.description_en || "") : (pkg.description_en || pkg.tags || ""),
           imageUrl: await resolveCardImage(pkg.package_id),
           placeholderGradient: dramaGradients[idx % dramaGradients.length]!,
@@ -244,7 +244,7 @@ export default function KContentPage() {
         packages.map(async (pkg, idx) => {
           return {
             id: pkg.package_id,
-            title: isKorean ? (pkg.title_ko || pkg.title_en) : (pkg.title_en || pkg.title_ko),
+            title: (isKorean ? (pkg.title_ko || pkg.title_en) : (pkg.title_en || pkg.title_ko)) ?? "",
             description: isKorean ? (pkg.tags || pkg.description_en || "") : (pkg.description_en || pkg.tags || ""),
             imageUrl: await resolveCardImage(pkg.package_id),
             placeholderGradient: kpopGradients[idx % kpopGradients.length]!,

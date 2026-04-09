@@ -30,13 +30,14 @@ export interface WeatherResult {
   dates: Record<string, WeatherDay>;
 }
 
-/** time 문자열 → time_slots 키 ("09" | "12" | "15" | "18" | "21") */
+/** time 문자열 → time_slots 키 ("09" | "12" | "15" | "18" | "21").
+ * 한국어·영어 모두 지원 (기존 DB 데이터 호환). */
 const TIME_TO_SLOT: Record<string, string> = {
-  오전: "09",
-  점심: "12",
-  오후: "15",
-  저녁: "18",
-  밤:   "21",
+  오전: "09",   morning:   "09",
+  점심: "12",   lunch:     "12",
+  오후: "15",   afternoon: "15",
+  저녁: "18",   evening:   "18",
+  밤:  "21",   night:     "21",
 };
 
 function parseHourFromLabel(label: string): number | null {
@@ -106,10 +107,20 @@ export async function fetchWeather(
     credentials: "include",
   });
   if (!res.ok) {
-    console.warn(`[Weather] API ${res.status} – params: ${params}`);
-    throw new Error(`Weather API ${res.status}`);
+    console.warn(`[Weather] API ${res.status} (기본값 반환) – params: ${params}`);
+    return {
+      available: false,
+      reason: `http_${res.status}`,
+      dates: {},
+    };
   }
-  const data: WeatherResult = await res.json();
+  let data: WeatherResult;
+  try {
+    data = (await res.json()) as WeatherResult;
+  } catch {
+    console.warn("[Weather] JSON 파싱 실패 – 기본값 반환");
+    return { available: false, reason: "parse_error", dates: {} };
+  }
   if (!data.available) {
     console.info(`[Weather] unavailable – ${data.reason ?? "no reason"}`);
   }
@@ -149,4 +160,29 @@ export function isWithinForecastRange(dateStr: string): boolean {
   target.setHours(0, 0, 0, 0);
   const diffDays = (target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
   return diffDays >= 0 && diffDays <= 5;
+}
+
+/**
+ * 가이드 컨텍스트용 — 좌표만으로 현재 예보 요약 (날짜 파라미터 없이 백엔드 기본 동작)
+ */
+export async function fetchWeatherAtCoords(lat: number, lon: number): Promise<unknown | null> {
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/v1/weather?lat=${encodeURIComponent(String(lat))}&lon=${encodeURIComponent(String(lon))}`,
+      { credentials: "include" },
+    );
+    if (!res.ok) {
+      console.warn(`[Weather] fetchWeatherAtCoords ${res.status} – 좌표 컨텍스트 생략`);
+      return null;
+    }
+    try {
+      return await res.json();
+    } catch {
+      console.warn("[Weather] fetchWeatherAtCoords JSON 파싱 실패");
+      return null;
+    }
+  } catch (e) {
+    console.warn("[Weather] fetchWeatherAtCoords 네트워크 오류", e);
+    return null;
+  }
 }

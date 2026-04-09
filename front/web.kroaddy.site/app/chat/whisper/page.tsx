@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
 import {
@@ -70,9 +71,9 @@ export default function WhisperPage() {
   const [showMenu, setShowMenu] = useState(false);
   const [sharePreviewMap, setSharePreviewMap] = useState<Record<string, TourstarSharePreview | null>>({});
   const userFallback = useCallback(
-    (id: number | string) =>
+    (id: number | string | undefined) =>
       t("chat.whisper.user_fallback", {
-        id: String(id),
+        id: String(id ?? ""),
         defaultValue: "사용자 {{id}}",
       }),
     [t]
@@ -436,7 +437,7 @@ export default function WhisperPage() {
                         }`}
                       >
                         {sharedPostId && sharedPreview ? (
-                          <a
+                          <Link
                             href={`/tourstar?postId=${encodeURIComponent(sharedPostId)}`}
                             className={`block overflow-hidden rounded-lg border ${
                               isMe
@@ -465,7 +466,7 @@ export default function WhisperPage() {
                           </p>
                               </div>
                             </div>
-                          </a>
+                          </Link>
                         ) : (
                           msg.message
                         )}
@@ -586,9 +587,10 @@ export default function WhisperPage() {
                   const name = f.nickname || f.name || userFallback(f.id);
                   return (
                     <button
-                      key={f.id}
+                      key={f.id ?? name}
                       type="button"
                       onClick={() => {
+                        if (f.id == null) return;
                         setShowNewChat(false);
                         openConversation(Number(f.id), name);
                       }}

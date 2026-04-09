@@ -50,6 +50,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+            // 플래너·가이드·축제 등 REST API는 모두 /api/** 로 노출 → 동일하게 CSRF 예외 (가이드는 /api/v1/guide/** 사용)
             .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/docs/**", "/v3/api-docs/**"))
 
             .sessionManagement(session -> session
@@ -120,18 +121,22 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         
-        // 허용 Origin: FRONTEND_URL(www.tourstory.site) + 로컬 개발 (www.hohyun.site는 참고용, 미연결)
-        String frontendUrl = System.getenv("FRONTEND_URL");
+        // 허용 Origin: 코드에 명시적으로 관리 (환경변수 의존 제거)
+        // FRONTEND_URL 환경변수가 구 도메인(tourstory.site)으로 설정된 경우에도 영향 없도록 고정 목록 사용
         List<String> origins = new ArrayList<>(Arrays.asList(
             "http://localhost:3000",
             "http://127.0.0.1:3000",
             "http://localhost:8080",
-            "http://127.0.0.1:8080"
+            "http://127.0.0.1:8080",
+            "https://web.kroaddy.site",
+            "https://www.kroaddy.site"
         ));
+        // FRONTEND_URL이 추가 도메인으로 설정된 경우 허용 목록에 추가
+        String frontendUrl = System.getenv("FRONTEND_URL");
         if (frontendUrl != null && !frontendUrl.isEmpty()) {
-            origins.add(frontendUrl.trim());
-            if (frontendUrl.endsWith("/")) {
-                origins.add(frontendUrl.substring(0, frontendUrl.length() - 1));
+            String trimmed = frontendUrl.trim().replaceFirst("/$", "");
+            if (!origins.contains(trimmed)) {
+                origins.add(trimmed);
             }
         }
         config.setAllowedOrigins(origins);
