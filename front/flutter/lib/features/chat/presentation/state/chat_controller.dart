@@ -119,7 +119,7 @@ class ChatController extends Notifier<ChatState> {
         sent: results[1],
       );
     } catch (e) {
-      state = state.copyWith(message: "귓속말 로드 실패: $e");
+      state = state.copyWith(message: "개인톡 로드 실패: $e");
     }
   }
 
@@ -142,17 +142,17 @@ class ChatController extends Notifier<ChatState> {
       state = state.copyWith(message: "받는 사용자 ID와 메시지를 확인해 주세요.");
       return;
     }
-    state = state.copyWith(sending: true, message: "귓속말 전송 중...");
+    state = state.copyWith(sending: true, message: "개인톡 전송 중...");
     try {
       await _repo.sendWhisper(toUserId: toUserId, message: text);
       state = state.copyWith(
         sending: false,
         whisperInput: "",
-        message: "귓속말 전송 완료",
+        message: "개인톡 전송 완료",
       );
       await loadWhispers();
     } catch (e) {
-      state = state.copyWith(sending: false, message: "귓속말 전송 실패: $e");
+      state = state.copyWith(sending: false, message: "개인톡 전송 실패: $e");
     }
   }
 

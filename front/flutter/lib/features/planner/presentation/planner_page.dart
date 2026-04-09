@@ -5,6 +5,7 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
 import "../../../core/router/main_shell.dart";
+import "../../../core/theme/kroaddy_colors.dart";
 import "../../../core/router/shell_back_handler.dart";
 import "../data/k_content_repository.dart";
 import "../data/planner_models.dart";
@@ -13,8 +14,8 @@ import "state/planner_controller.dart";
 import "state/user_content_controller.dart";
 
 // ── 색상 상수 ─────────────────────────────────────────────────
-const _primary = Color(0xFF7C3AED);
-const _primaryLight = Color(0xFFF3E8FF);
+const _primary = KroaddyColors.primary;
+const _primaryLight = KroaddyColors.brandWash;
 const _textPrimary = Color(0xFF1F2937);
 const _textSecondary = Color(0xFF6B7280);
 const _bgPage = Color(0xFFF8F7FF);
@@ -625,6 +626,18 @@ class _DestinationSelectorState extends State<_DestinationSelector> {
                   return _RegionTileCard(
                     emoji: city.emoji,
                     title: city.name,
+                    backgroundAssetPath: _metroCardBackgroundAsset(city.name),
+                    assetPath: switch (city.name) {
+                      "서울" => "icons/seoul.png",
+                      "부산" => "icons/busan.png",
+                      "대구" => "icons/daegu.png",
+                      "인천" => "icons/inchoen.png",
+                      "광주" => "icons/gwangju.png",
+                      "대전" => "icons/daejun.png",
+                      "울산" => "icons/ulsan.png",
+                      "세종" => "icons/sejong.png",
+                      _ => null,
+                    },
                     subtitle: subtitle,
                     hasDrill: group != null,
                     onTap: group != null
@@ -661,6 +674,20 @@ class _DestinationSelectorState extends State<_DestinationSelector> {
                 ..._provinceGroups.map((g) => _RegionTileCard(
                       emoji: g.items.first.emoji,
                       title: g.label,
+                      backgroundAssetPath: _provinceCardBackgroundAsset(g.label),
+                      assetPath: switch (g.label) {
+                        "경기 북부" => "icons/gyeongi.png",
+                        "경기 남부" => "icons/gyeongi2.png",
+                        "강원도" => "icons/gangwon.png",
+                        "충청남도" => "icons/chungnam-Photoroom.png",
+                        "충청북도" => "icons/chungbukk.png",
+                        "전라남도" => "icons/zunra-Photoroom.png",
+                        "전북" => "icons/zunbuk.png",
+                        "제주도" => "icons/zezudo-Photoroom.png",
+                        "경상남도" => "icons/gyeongnam.png",
+                        "경상북도" => "icons/gyeongbuk.png",
+                        _ => null,
+                      },
                       subtitle: g.subLabel,
                       hasDrill: true,
                       onTap: () => widget.onGroupTap(g),
@@ -675,20 +702,60 @@ class _DestinationSelectorState extends State<_DestinationSelector> {
   }
 }
 
+/// 광역시·특별시 카드 배경 (서울과 동일 스타일: `_RegionTileCard`)
+String? _metroCardBackgroundAsset(String cityName) {
+  return switch (cityName) {
+    "서울" => "icons/bg/seoul_bg.jpg",
+    "부산" => "icons/bg/busan_bg.jpg",
+    "대구" => "icons/bg/daegu_bg.jpg",
+    "인천" => "icons/bg/incheon_bg.jpg",
+    "광주" => "icons/bg/gwangu_bg.jpg",
+    "대전" => "icons/bg/daejun_bg.jpg",
+    "울산" => "icons/bg/ulsan_bg.jpg",
+    "세종" => "icons/bg/sejong_bg.jpg",
+    _ => null,
+  };
+}
+
+/// 도 단위 지역 카드 배경 (`_RegionTileCard`와 광역시와 동일 스타일)
+String? _provinceCardBackgroundAsset(String label) {
+  return switch (label) {
+    "경기 북부" => "icons/bg/gyungi1_bg.jpg",
+    "경기 남부" => "icons/bg/gyungi2_bg.jpg",
+    "강원도" => "icons/bg/gangwondo_bg.jpg",
+    "충청북도" => "icons/bg/chungju_bg.jpg",
+    "충청남도" => "icons/bg/chunan_bg.jpg",
+    "전북" => "icons/bg/junbuk_bg.jpg",
+    "전라남도" => "icons/bg/junam_bg.jpg",
+    "경상북도" => "icons/bg/gyungbuk_bg.jpg",
+    "경상남도" => "icons/bg/gyungnam_bg.jpg",
+    "제주도" => "icons/bg/jejudo_bg.jpg",
+    _ => null,
+  };
+}
+
 // ── 지역 선택 타일 카드 (이모지 + 지역명만) ─────────────────────
 class _RegionTileCard extends StatelessWidget {
   const _RegionTileCard({
     required this.emoji,
     required this.title,
     required this.onTap,
+    this.assetPath,
+    this.backgroundAssetPath,
     // subtitle·hasDrill 파라미터 유지 (호출부 변경 없이 무시)
     String subtitle = "",
     bool hasDrill = false,
   });
 
+  /// 배경 사진이 묻히지 않도록 높게 유지(그라데이션으로 글자만 보조)
+  static const double _bgImageOpacity = 0.92;
+
   final String emoji;
   final String title;
   final VoidCallback onTap;
+  final String? assetPath;
+  /// 지역 카드 뒤 풍경(예: 서울) — 흰색 위에 투명도·그라데이션으로 얹음
+  final String? backgroundAssetPath;
 
   @override
   Widget build(BuildContext context) {
@@ -696,7 +763,6 @@ class _RegionTileCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
@@ -706,19 +772,75 @@ class _RegionTileCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 40)),
-            const SizedBox(height: 6),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: _textPrimary,
+            const ColoredBox(color: Colors.white),
+            if (backgroundAssetPath != null) ...[
+              Positioned.fill(
+                child: Opacity(
+                  opacity: _bgImageOpacity,
+                  child: Image.asset(
+                    backgroundAssetPath!,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.center,
+                  ),
+                ),
               ),
-              textAlign: TextAlign.center,
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.22),
+                        Colors.white.withValues(alpha: 0.42),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (assetPath != null)
+                    Image.asset(
+                      assetPath!,
+                      width: 52,
+                      height: 52,
+                      fit: BoxFit.contain,
+                    )
+                  else
+                    Text(emoji, style: const TextStyle(fontSize: 40)),
+                  const SizedBox(height: 6),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: _textPrimary,
+                      shadows: backgroundAssetPath != null
+                          ? [
+                              Shadow(
+                                color: Colors.white.withValues(alpha: 0.95),
+                                blurRadius: 6,
+                              ),
+                              Shadow(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                blurRadius: 2,
+                              ),
+                            ]
+                          : null,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -1323,7 +1445,7 @@ class _PlannerWorkspace extends ConsumerWidget {
                                 padding: const EdgeInsets.only(top: 8),
                                 child: OutlinedButton(
                                   onPressed: () => context.push("/planner/schedule"),
-                                  child: const Text("✅ 저장됨 · 일정관리 보기"),
+                                  child: const Text("✅ 저장됨 · 마이플랜 보기"),
                                 ),
                               ),
                           ] else
@@ -1690,7 +1812,7 @@ class _PlannerWorkspace extends ConsumerWidget {
                     padding: const EdgeInsets.only(top: 8),
                     child: OutlinedButton(
                       onPressed: () => context.push("/planner/schedule"),
-                      child: const Text("✅ 저장됨 · 일정관리 보기"),
+                      child: const Text("✅ 저장됨 · 마이플랜 보기"),
                     ),
                   ),
               ],
@@ -1763,7 +1885,7 @@ class _RouteCard extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: selected
               ? const LinearGradient(
-                  colors: [Color(0xFF6366F1), Color(0xFF7C3AED)],
+                  colors: [KroaddyColors.accent, KroaddyColors.primary],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 )
@@ -2296,7 +2418,7 @@ class _UserRouteCard extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
+          colors: [KroaddyColors.primary, Color(0xFFEC4899)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -2353,7 +2475,7 @@ class _RouteDetailSheet extends StatelessWidget {
                                 errorBuilder: (_, _, _) => Container(
                                   decoration: const BoxDecoration(
                                     gradient: LinearGradient(
-                                      colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
+                                      colors: [KroaddyColors.primary, Color(0xFFEC4899)],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),
@@ -2364,7 +2486,7 @@ class _RouteDetailSheet extends StatelessWidget {
                               Container(
                                 decoration: const BoxDecoration(
                                   gradient: LinearGradient(
-                                    colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
+                                    colors: [KroaddyColors.primary, Color(0xFFEC4899)],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
@@ -2967,9 +3089,9 @@ class _KItem {
 
 const _kpopItems = [
   _KItem("KPOP_01", "HYBE Building", "HYBE Insight museum and label headquarters.", [Color(0xFFFF4D6D), Color(0xFFD63384)]),
-  _KItem("KPOP_02", "SM Entertainment", "SM Town and SM Entertainment building.", [Color(0xFF7C3AED), Color(0xFF9333EA)]),
+  _KItem("KPOP_02", "SM Entertainment", "SM Town and SM Entertainment building.", [KroaddyColors.primary, Color(0xFF9333EA)]),
   _KItem("KPOP_03", "Hongdae K-Pop Street", "Street performances, K-Pop stores.", [Color(0xFFD63384), Color(0xFFE11D74)]),
-  _KItem("KPOP_04", "K-Pop Store", "Official albums, merch, and photo cards.", [Color(0xFF4F46E5), Color(0xFF7C3AED)]),
+  _KItem("KPOP_04", "K-Pop Store", "Official albums, merch, and photo cards.", [Color(0xFF4F46E5), KroaddyColors.primary]),
 ];
 
 const _kdramaItems = [
@@ -2989,7 +3111,7 @@ const _kfoodItems = [
 const _kbeautyItems = [
   _KItem("KBEAUTY_01", "Olive Young", "K-Beauty flagship. Skincare and makeup.", [Color(0xFFEC4899), Color(0xFFE11D48)]),
   _KItem("KBEAUTY_02", "Myeongdong Beauty Street", "Density of beauty stores and brands.", [Color(0xFFD946EF), Color(0xFFEC4899)]),
-  _KItem("KBEAUTY_03", "K-Beauty Store", "Sheet masks, serums, cushion compacts.", [Color(0xFF7C3AED), Color(0xFF9333EA)]),
+  _KItem("KBEAUTY_03", "K-Beauty Store", "Sheet masks, serums, cushion compacts.", [KroaddyColors.primary, Color(0xFF9333EA)]),
   _KItem("KBEAUTY_04", "Skincare Experience Shop", "Facials and personalized skincare.", [Color(0xFFFB7185), Color(0xFFEC4899)]),
 ];
 
@@ -3045,7 +3167,7 @@ class _KContentTabState extends ConsumerState<_KContentTab> {
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
+              colors: [KroaddyColors.primary, Color(0xFFEC4899)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -3089,7 +3211,7 @@ class _KContentTabState extends ConsumerState<_KContentTab> {
                   onPressed: () => context.push("/planner/k-content/KPOP_01"),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF7C3AED),
+                    foregroundColor: KroaddyColors.primary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                     elevation: 0,

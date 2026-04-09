@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
 import "core/router/app_router.dart";
+import "core/theme/kroaddy_theme.dart";
 
 class KroaddyApp extends ConsumerWidget {
   const KroaddyApp({super.key});
@@ -14,10 +15,7 @@ class KroaddyApp extends ConsumerWidget {
       title: "Kroaddy",
       debugShowCheckedModeBanner: false,
       routerConfig: router,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF8A2BE2)),
-        useMaterial3: true,
-      ),
+      theme: KroaddyTheme.light(),
     );
   }
 }
