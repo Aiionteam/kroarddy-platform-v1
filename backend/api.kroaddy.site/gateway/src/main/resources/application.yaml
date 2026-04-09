@@ -76,10 +76,15 @@ spring:
               - RemoveResponseHeader=Access-Control-Max-Age
 
           # ── Planer 서비스 (8003) – Standard / User-Content / K-Content / Weather / Maps
+          # LLM 일정·루트 생성은 수십 초~수분 걸릴 수 있음. Guide와 동일하게 600초.
+          # (메타데이터 없으면 기본 프록시 타임아웃이 짧아 504 Gateway Timeout 발생 가능)
           - id: planer
             uri: ${AI_SERVICE_TOURPLANER_URL:http://planer:8003}
             predicates:
               - Path=/api/v1/planner/**,/api/v1/user-content/**,/api/v1/k-content/**,/api/v1/weather,/api/v1/weather/**,/api/v1/maps/**
+            metadata:
+              response-timeout: 600000
+              connect-timeout: 10000
             filters:
               - RemoveResponseHeader=Access-Control-Allow-Origin
               - RemoveResponseHeader=Access-Control-Allow-Methods

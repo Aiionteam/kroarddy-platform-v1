@@ -28,6 +28,8 @@ from app.agent.standard.nodes_common import (
 from app.agent.standard.nodes_schedule import (
     _build_date_list,
     _build_festival_block,
+    _format_web_search_block,
+    _gather_web_search_context,
     _generate_single_day,
     _geocode_item,
 )
@@ -449,8 +451,11 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
     nationality = (user_profile or {}).get("nationality", "")
     lang_code = nationality[:3].lower() if nationality else "ko"
     sched_transport_tag = req.transport_mode or "any"
-    # 일정은 항상 Search grounding 사용하므로 search_tag 불필요
-    sched_key = f"{location}:{req.route_name}:{req.start_date}:{req.end_date}:{lang_code}:{sched_transport_tag}"
+    search_tag = "s1" if req.use_search else "s0"
+    sched_key = (
+        f"{location}:{req.route_name}:{req.start_date}:{req.end_date}"
+        f":{lang_code}:{sched_transport_tag}:{search_tag}"
+    )
 
     cached_sched = _schedule_cache.get(sched_key)
     if cached_sched and time.time() - cached_sched[1] < _SCHEDULE_TTL:
@@ -520,6 +525,7 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
             "news_top10": news_top10,
             "weather_forecast": weather_forecast_s,
             "transport_mode": req.transport_mode,
+            "use_search": req.use_search,
         }
         try:
             result = await schedule_graph.ainvoke(state)
@@ -574,10 +580,10 @@ async def stream_schedule(
     nationality = (user_profile or {}).get("nationality", "")
     lang_code = nationality[:3].lower() if nationality else "ko"
     transport_tag = req.transport_mode or "any"
-    # 일정은 항상 Search grounding 사용하므로 search_tag 불필요
+    search_tag = "s1" if req.use_search else "s0"
     sched_key = (
         f"{location}:{req.route_name}:{req.start_date}:{req.end_date}"
-        f":{lang_code}:{transport_tag}"
+        f":{lang_code}:{transport_tag}:{search_tag}"
     )
 
     def _sse(obj: dict) -> str:
@@ -638,6 +644,19 @@ async def stream_schedule(
         transport_block = _build_transport_block(req.transport_mode or "")
         festival_block = _build_festival_block(festivals or [], lang=lang)
 
+        # 선행 웹 검색 1회(옵션) → Day별로는 일반 Gemini만 사용 (nodes_schedule과 동일)
+        web_search_block = ""
+        if req.use_search:
+            yield _sse({"type": "status", "message": "웹에서 최신 정보 수집 중…"})
+            raw_ctx = await _gather_web_search_context(
+                location_name=location_name,
+                route_name=req.route_name,
+                start_date=req.start_date,
+                end_date=req.end_date,
+                lang=lang,
+            )
+            web_search_block = _format_web_search_block(raw_ctx, lang)
+
         num_days = len(date_list)
         common_kwargs = dict(
             num_days=num_days,
@@ -650,6 +669,7 @@ async def stream_schedule(
             weather_block=weather_block,
             transport_block=transport_block,
             news_block=news_block,
+            web_search_block=web_search_block,
         )
 
         # ── Day별 병렬 생성 → 완료된 Day 즉시 스트리밍 + 즉시 Geocoding 시작 ──
@@ -686,7 +706,10 @@ async def stream_schedule(
                     })
                     # Day LLM 완료 즉시 해당 Day의 geocoding 시작
                     geo_fut = asyncio.ensure_future(
-                        asyncio.gather(*[_geocode_item(it) for it in items], return_exceptions=True)
+                        asyncio.gather(
+                            *[_geocode_item(it, location_name) for it in items],
+                            return_exceptions=True,
+                        )
                     )
                     geocode_futures.append((item_offset, geo_fut))
                     item_offset += len(items)
@@ -819,7 +842,9 @@ async def modify_plan(
         modified_titles = set(modified.get("modified_titles", []))
 
         async def _maybe_geocode(item: dict) -> dict:
-            return await _geocode_item(item) if item.get("title") in modified_titles else item
+            if item.get("title") not in modified_titles:
+                return item
+            return await _geocode_item(item, plan.location or "")
 
         geocoded_schedule = list(await asyncio.gather(*[_maybe_geocode(item) for item in new_schedule]))
         plan.schedule = geocoded_schedule
@@ -865,7 +890,7 @@ async def reroll_item(
         raise HTTPException(status_code=500, detail=f"리롤 실패: {e}")
 
     # 새 항목 지오코딩 보강
-    new_item = await _geocode_item(new_item)
+    new_item = await _geocode_item(new_item, location_name)
     if settings.naver_place_hours_enabled:
         try:
             enriched_one = await enrich_schedule_items_with_hours([new_item])

@@ -10,8 +10,11 @@ from langchain_core.messages import HumanMessage
 from app.agent.standard.nodes_common import (
     _build_transport_block,
     _build_user_profile_block,
+    _extract_text_from_response,
     _format_festival_date,
     _get_lang,
+    _get_llm,
+    _get_llm_search_context,
     _get_llm_with_search,
     _invoke,
     _lang_directive,
@@ -21,7 +24,7 @@ from app.agent.standard.nodes_common import (
 )
 from app.agent.standard.state import PlannerState
 from app.core.config import settings
-from app.services.naver_map_client import geocode
+from app.services.naver_map_client import geocode, keyword_search
 from app.services.naver_place_hours import enrich_schedule_items_with_hours
 from app.services.news_client import build_news_block_for_prompt
 from app.services.weather_client import build_weather_block_for_prompt
@@ -29,6 +32,84 @@ from app.services.weather_client import build_weather_block_for_prompt
 logger = logging.getLogger(__name__)
 
 _TRAVEL_DAYS_DEFAULT = 2
+# 웹 검색 선행 단계 응답 길이 상한 (토큰·지연 절약)
+_WEB_CONTEXT_MAX_CHARS = 2000
+# 선행 검색만 1분 미만으로 제한 (초과 시 빈 맥락으로 일정 생성 계속)
+_WEB_GATHER_TIMEOUT_SEC = 55.0
+
+
+def _format_web_search_block(raw: str, lang: str) -> str:
+    """선행 웹 검색 텍스트를 Day 생성 프롬프트에 넣을 블록으로 감싼다."""
+    t = (raw or "").strip()
+    if not t:
+        return ""
+    if lang == "Korean":
+        return "【웹 검색으로 확보한 최신 맥락 (일정에 우선 반영)】\n" + t + "\n\n"
+    return "【Fresh context from web search (prioritize in the itinerary)】\n" + t + "\n\n"
+
+
+async def _gather_web_search_context(
+    *,
+    location_name: str,
+    route_name: str,
+    start_date: str | None,
+    end_date: str | None,
+    lang: str,
+) -> str:
+    """Google Search grounding으로 여행지·기간·루트에 맞는 최신 맥락을 **한 번만** 수집한다.
+
+    일정은 이후 단계에서 일반 Gemini만 사용하므로, Day별로 검색 도구를 반복 호출하지 않는다.
+    """
+    date_clause = ""
+    if start_date and end_date:
+        date_clause = f"여행 기간: {start_date} ~ {end_date}.\n" if lang == "Korean" else f"Trip dates: {start_date} ~ {end_date}.\n"
+
+    if lang == "Korean":
+        task = (
+            f"목적지: {location_name}\n"
+            f"선택 루트/테마: {route_name}\n"
+            f"{date_clause}"
+            "Google 검색으로, 위 조건에 맞는 **실제 존재하는** 식당·카페·명소·이벤트·"
+            "최근 오픈·휴업·축제 등 검증 가능한 최신 정보를 조사하세요.\n"
+            "불릿 목록으로만 간결히 정리하세요. JSON 금지. 한국어. 약 1200자 이내.\n"
+            "출력은 본문만 (제목 없이)."
+        )
+    else:
+        task = (
+            f"Destination: {location_name}\n"
+            f"Route theme: {route_name}\n"
+            f"{date_clause}"
+            "Use Google Search to find verifiable, current places and events "
+            f"relevant to this trip within {location_name}. Bullet points only, no JSON, "
+            f"~1200 chars max, in {lang}."
+        )
+
+    # max_output_tokens=600 전용 LLM 사용 → GoogleSearchAPIWrapper(k=5)와 동일한 효과
+    # 검색 결과를 짧게 요약하므로 생성 토큰이 줄어 응답 시간이 단축된다.
+    llm = _get_llm_search_context()
+    t0 = perf_counter()
+    try:
+        response = await asyncio.wait_for(
+            _invoke(llm, [HumanMessage(content=task)], plain_fallback=True),
+            timeout=_WEB_GATHER_TIMEOUT_SEC,
+        )
+    except asyncio.TimeoutError:
+        logger.warning(
+            "웹 맥락 수집 타임아웃(%.0fs) – 맥락 없이 일정 생성 진행",
+            _WEB_GATHER_TIMEOUT_SEC,
+        )
+        return ""
+    except Exception as e:
+        logger.warning("웹 맥락 수집 실패: %s", e)
+        return ""
+
+    text = _extract_text_from_response(response).strip()
+    logger.info("웹 맥락 수집 완료: %d자 (%.2fs)", len(text), perf_counter() - t0)
+    if not text:
+        return ""
+    if len(text) > _WEB_CONTEXT_MAX_CHARS:
+        text = text[:_WEB_CONTEXT_MAX_CHARS] + "\n…(생략)"
+    return text
 
 
 def _build_date_list(start_date: str | None, end_date: str | None) -> list[str]:
@@ -77,6 +158,8 @@ class _SingleDayCommonKwargs(TypedDict):
     weather_block: str
     transport_block: str
     news_block: str
+    # use_search=True 이면 generate_schedule에서 선행 웹검색 후 채움 (Day 호출에는 검색 LLM 미사용)
+    web_search_block: str
 
 
 async def _generate_single_day(
@@ -93,6 +176,7 @@ async def _generate_single_day(
     weather_block: str,
     transport_block: str,
     news_block: str,
+    web_search_block: str = "",
     exclude_places: list[str] | None = None,
 ) -> tuple[list[dict[str, Any]], dict]:
     t0 = perf_counter()
@@ -134,6 +218,7 @@ async def _generate_single_day(
         f"Destination:{location_name} | Route:{route_name} | Day:{day_num} ({date_str})\n"
         f"⚠️ ALL places must be within '{location_name}'.\n"
         f"{excl_block}\n"
+        f"{web_search_block}"
         f"{user_block}{festival_block}{weather_block}{transport_block}{news_block}"
         f"Create 4 schedule items. time∈[{time_labels}]. "
         f"CLUSTER in same district. Order: {flow_hint}. "
@@ -142,8 +227,9 @@ async def _generate_single_day(
         "\nRespond ONLY with valid JSON:\n"
         f"{schema}"
     )
-    llm = _get_llm_with_search()
-    response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=True)
+    # 웹 검색은 상위 단계에서 1회만 수행. 여기서는 일반 Gemini만 사용.
+    llm = _get_llm()
+    response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=False)
     data = _parse_json(response)
     raw_items = data.get("items", [])
     day_total_str = data.get("day_total", "₩0")
@@ -152,85 +238,6 @@ async def _generate_single_day(
     per_day_cost = {"day": day_num, "total": day_total_str, "total_krw": day_total_krw}
     logger.info("일정 Day %d 생성 완료 (%s / %.2fs)", day_num, date_str, perf_counter() - t0)
     return items, per_day_cost
-
-
-async def _generate_two_days(
-    *,
-    day_pairs: list[tuple[int, str]],
-    num_days: int,
-    location_name: str,
-    route_name: str,
-    lang: str,
-    lang_dir: str,
-    user_block: str,
-    festival_block: str,
-    weather_block: str,
-    transport_block: str,
-    news_block: str,
-    exclude_places: list[str] | None = None,
-) -> list[tuple[list[dict[str, Any]], dict]]:
-    """2일치를 한 번의 LLM 호출로 생성해 호출 수를 절반으로 줄인다."""
-    t0 = perf_counter()
-    if lang == "Korean":
-        time_labels = "오전|점심|오후|저녁"
-        first_time = "오전"
-        flow_hint = "오전→점심→오후→저녁"
-    else:
-        time_labels = "morning|lunch|afternoon|evening"
-        first_time = "morning"
-        flow_hint = "morning→lunch→afternoon→evening"
-
-    days_desc = " & ".join(f"Day{d}({ds})" for d, ds in day_pairs)
-
-    if exclude_places:
-        excl_str = ", ".join(f'"{p}"' for p in exclude_places[:30])
-        if lang == "Korean":
-            excl_block = f"⛔ 다른 날 이미 포함된 장소 (절대 반복 금지): {excl_str}\n"
-        else:
-            excl_block = f"⛔ Already used in other days (NEVER repeat): {excl_str}\n"
-    else:
-        excl_block = ""
-
-    if lang == "Korean":
-        item_tpl = '"place":"장소명","address":"도로명주소","lat":37.5665,"lng":126.9780,"title":"활동명","description":"설명","tips":"팁","estimated_cost":"₩0"'
-    else:
-        item_tpl = '"place":"name","address":"street addr","lat":37.5665,"lng":126.9780,"title":"activity","description":"desc","tips":"tip","estimated_cost":"₩0"'
-    schema_days = ",".join(
-        f'{{"day":{d},"date":"{ds}","items":[{{"time":"{first_time}",{item_tpl}}}],"day_total":"₩0","day_total_krw":0}}'
-        for d, ds in day_pairs
-    )
-    schema = '{"days":[' + schema_days + "]}"
-
-    prompt = (
-        f"Destination:{location_name} | Route:{route_name} | {days_desc}\n"
-        f"⚠️ ALL places must be within '{location_name}'. Total days={num_days}.\n"
-        f"{excl_block}\n"
-        f"{user_block}{festival_block}{weather_block}{transport_block}{news_block}"
-        f"Create 4 schedule items per day for {days_desc}. "
-        f"time∈[{time_labels}]. Each day MUST use a COMPLETELY DIFFERENT district – "
-        "NO place may appear in more than one day. "
-        f"CLUSTER each day's items in same area. Order: {flow_hint}. "
-        "estimated_cost in KRW. address: exact street addr. lat/lng: WGS84.\n"
-        f"{lang_dir}"
-        "\nRespond ONLY with valid JSON:\n"
-        f"{schema}"
-    )
-    llm = _get_llm_with_search()
-    response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=True)
-    data = _parse_json(response)
-
-    raw_days: list[dict[str, Any]] = data.get("days", [])
-    results: list[tuple[list[dict[str, Any]], dict]] = []
-    for i, (day_num, date_str) in enumerate(day_pairs):
-        day_data = raw_days[i] if i < len(raw_days) else {}
-        raw_items = day_data.get("items", [])
-        day_total_str = day_data.get("day_total", "₩0")
-        day_total_krw = int(day_data.get("day_total_krw", 0) or 0)
-        items = [{"day": day_num, "date": date_str, **{k: v for k, v in it.items() if k not in ("day", "date")}} for it in raw_items]
-        results.append((items, {"day": day_num, "total": day_total_str, "total_krw": day_total_krw}))
-
-    logger.info("일정 2일묶음 생성 완료: %s (%s / %.2fs)", days_desc, location_name, perf_counter() - t0)
-    return results
 
 
 async def _fix_duplicate_days(
@@ -298,6 +305,7 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
     news_top10: list = state.get("news_top10") or []
     weather_forecast: dict | None = state.get("weather_forecast")
     transport_mode: str | None = state.get("transport_mode")
+    use_search: bool = bool(state.get("use_search"))
 
     lang = _get_lang(user_profile)
     lang_dir = _lang_directive(lang)
@@ -308,35 +316,36 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
     festival_block = _build_festival_block(festivals, lang=lang)
     date_list = _build_date_list(start_date, end_date)
 
+    # Google 웹 검색은 Day 생성 **이전에 1회만** (정확도 우선, Day별 검색 도구 반복 없음)
+    web_search_block = ""
+    if use_search:
+        raw_ctx = await _gather_web_search_context(
+            location_name=location_name,
+            route_name=route_name,
+            start_date=start_date,
+            end_date=end_date,
+            lang=lang,
+        )
+        web_search_block = _format_web_search_block(raw_ctx, lang)
+
     if date_list:
         num_days = len(date_list)
         common_kwargs: _SingleDayCommonKwargs = {
             "num_days": num_days, "location_name": location_name, "route_name": route_name,
             "lang": lang, "lang_dir": lang_dir, "user_block": user_block, "festival_block": festival_block,
             "weather_block": weather_block, "transport_block": transport_block, "news_block": news_block,
+            "web_search_block": web_search_block,
         }
 
-        # 3일 이상이면 2일씩 묶어 LLM 호출 수를 절반으로 줄인다.
-        if num_days >= 3:
-            pairs: list[list[tuple[int, str]]] = []
-            for i in range(0, len(date_list), 2):
-                pair = [(i + 1, date_list[i])]
-                if i + 1 < len(date_list):
-                    pair.append((i + 2, date_list[i + 1]))
-                pairs.append(pair)
-            batch_tasks = [_generate_two_days(day_pairs=p, **common_kwargs) for p in pairs]
-            batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)
-            # flatten: each batch result is list[tuple[items, cost]]
-            flat_results: list[tuple[list[dict[str, Any]], dict] | BaseException] = []
-            for br in batch_results:
-                if isinstance(br, BaseException):
-                    flat_results.append(br)
-                else:
-                    flat_results.extend(br)  # type: ignore[arg-type]
-            results = flat_results  # type: ignore[assignment]
-        else:
-            tasks = [_generate_single_day(day_num=i + 1, date_str=date_str, **common_kwargs) for i, date_str in enumerate(date_list)]
-            results = await asyncio.gather(*tasks, return_exceptions=True)  # type: ignore[assignment]
+        # 일(Day)별로 독립적으로 LLM 호출해 전부 병렬 실행한다.
+        # - 1일 여행: LLM 1회 호출
+        # - 3일 여행: LLM 3회 동시 호출 → 총 대기 시간 = max(day1, day2, day3)
+        # 2일씩 묶는 방식은 출력 토큰이 2배로 늘어 응답이 오히려 느려지므로 제거했다.
+        tasks = [
+            _generate_single_day(day_num=i + 1, date_str=date_str, **common_kwargs)
+            for i, date_str in enumerate(date_list)
+        ]
+        results = await asyncio.gather(*tasks, return_exceptions=True)  # type: ignore[assignment]
 
         merged_schedule: list[dict[str, Any]] = []
         per_day_costs: list[dict[str, Any]] = []
@@ -403,6 +412,7 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         f"Destination:{location_name} | Route:{route_name}\n"
         f"⚠️ GEOGRAPHIC CONSTRAINT (CRITICAL): ALL places must be physically located within '{location_name}'. "
         "Never use places from other cities or regions, even if names are similar.\n\n"
+        f"{web_search_block}"
         f"{user_block}{festival_block}{weather_block}{transport_block}{news_block}"
         f"Create a detailed travel itinerary ({num_days} days, 4 items per day).\n\n"
         "Rules:\n"
@@ -419,9 +429,9 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         "- MULTI-DAY: Assign DIFFERENT districts to different days.\n"
         f"{lang_dir}\nRespond ONLY with valid JSON (no explanation):\n{fb_schema}"
     )
-    llm = _get_llm_with_search()
     try:
-        response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=True)
+        llm = _get_llm()
+        response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=False)
         data = _parse_json(response)
         fb_schedule = data.get("schedule") or []
         if not isinstance(fb_schedule, list):
@@ -433,13 +443,21 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         return {**state, "schedule": [], "cost_summary": None, "error": str(e)}
 
 
-async def _geocode_item(item: dict[str, Any]) -> dict[str, Any]:
-    queries = []
-    if item.get("address"):
-        queries.append(item["address"])
-    if item.get("place"):
-        queries.append(item["place"])
-    for q in queries:
+async def _geocode_item(item: dict[str, Any], location_name: str = "") -> dict[str, Any]:
+    """네이버로 좌표·주소를 보강하고, 가능하면 ‘실제 등록된 장소’인지 검증한다.
+
+    1. Geocoding API: 도로명 주소 → 장소명 순 (공식 주소 DB)
+    2. 지역 검색 API: 「장소명 + 여행지」→ 장소명만 (네이버 장소/상호 인덱스)
+
+    Geocoding이 실패하거나 주소만 맞고 상호가 허구인 경우, 지역검색으로 POI를 찾으면
+    좌표·주소·naver_place_id를 채우고 ``naver_verified=True`` 로 표시한다.
+    끝까지 매칭되지 않으면 ``naver_verified=False`` (LLM이 넣은 lat/lng 유지).
+    """
+    place = (item.get("place") or "").strip()
+    address = (item.get("address") or "").strip()
+    region = (location_name or "").strip()
+
+    for q in [x for x in [address, place] if x]:
         result = await geocode(q)
         if result:
             return {
@@ -447,15 +465,41 @@ async def _geocode_item(item: dict[str, Any]) -> dict[str, Any]:
                 "lat": float(result["y"]),
                 "lng": float(result["x"]),
                 "address": result.get("road_address") or result.get("address") or item.get("address", ""),
+                "naver_verified": True,
+                "naver_source": "geocode",
             }
-    return item
+
+    if not place:
+        return {**item, "naver_verified": False, "naver_source": "none"}
+
+    local_queries = [f"{place} {region}", place] if region else [place]
+    for q in local_queries:
+        ks = await keyword_search(q)
+        if not ks:
+            continue
+        out: dict[str, Any] = {
+            **item,
+            "lat": float(ks["y"]),
+            "lng": float(ks["x"]),
+            "address": ks.get("address") or item.get("address", ""),
+            "naver_verified": True,
+            "naver_source": "local_search",
+        }
+        if ks.get("name"):
+            out["naver_place_name"] = ks["name"]
+        if ks.get("place_id"):
+            out["naver_place_id"] = ks["place_id"]
+        return out
+
+    return {**item, "naver_verified": False, "naver_source": "none"}
 
 
 async def geocode_schedule(state: PlannerState) -> PlannerState:
     schedule: list[dict[str, Any]] = state.get("schedule", [])
     if not schedule:
         return state
-    geocoded = list(await asyncio.gather(*[_geocode_item(item) for item in schedule]))
+    loc = str(state.get("location_name") or state.get("location") or "").strip()
+    geocoded = list(await asyncio.gather(*[_geocode_item(item, loc) for item in schedule]))
     days_map: dict[int, list[dict[str, Any]]] = {}
     for item in geocoded:
         d = item.get("day", 1)

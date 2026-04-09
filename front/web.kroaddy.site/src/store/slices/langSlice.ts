@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import i18n, { type Lang, NATIONALITY_TO_LANG } from "@/lib/i18n/config";
 
 interface LangState {
@@ -10,6 +9,27 @@ interface LangState {
   setLangByNationality: (nationality: string, options?: { source?: "user" | "profile" }) => void;
 }
 
+<<<<<<< HEAD
+/**
+ * 언어는 localStorage에 두지 않는다. DB `user_profiles.nationality`가 진실이며,
+ * 세션마다 `useAutoLocaleFromProfile` + 온보딩/설정에서만 동기화한다.
+ * (persist 시 계정 전환 후에도 이전 계정 언어가 남는 문제 방지)
+ */
+export const useLangStore = create<LangState>()((set) => ({
+  lang: "ko",
+
+  setLang: (lang) => {
+    i18n.changeLanguage(lang);
+    set({ lang });
+  },
+
+  setLangByNationality: (nationality) => {
+    const lang: Lang = NATIONALITY_TO_LANG[nationality] ?? "en";
+    i18n.changeLanguage(lang);
+    set({ lang });
+  },
+}));
+=======
 export const useLangStore = create<LangState>()(
   persist(
     (set, get) => ({
@@ -43,3 +63,4 @@ export const useLangStore = create<LangState>()(
     }
   )
 );
+>>>>>>> eac67b8546948d3c3f4113fce114a347d96206ba

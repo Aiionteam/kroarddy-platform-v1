@@ -44,6 +44,9 @@ _SEMAPHORE_WAIT_TIMEOUT = 10
 
 _llm_instance: "ChatGoogleGenerativeAI | None" = None
 _llm_search_instance: "ChatGoogleGenerativeAI | None" = None
+# 선행 웹 검색 전용 LLM – max_output_tokens 제한으로 빠른 불릿 요약 수집
+# JSON 생성에는 쓰지 않으므로 max_output_tokens를 사용해도 안전하다.
+_llm_search_ctx_instance: "ChatGoogleGenerativeAI | None" = None
 
 _TIME_SLOTS_KO = ["오전", "점심", "오후", "저녁"]
 _TIME_SLOTS_EN = ["morning", "lunch", "afternoon", "evening"]
@@ -133,6 +136,26 @@ def _get_llm_with_search():
         )
         _llm_search_instance = base.bind_tools([{"google_search": {}}])
     return _llm_search_instance
+
+
+def _get_llm_search_context():
+    """선행 웹 검색 전용 LLM 싱글턴.
+
+    메인 LLM과 동일한 모델이지만 max_output_tokens=600으로 응답 길이를 제한한다.
+    GoogleSearchAPIWrapper(k=5)가 LLM 입력 토큰을 줄이는 것과 같은 맥락으로,
+    여기서는 **출력 토큰** 상한을 걸어 생성 시간 자체를 단축한다.
+    JSON이 아닌 불릿 텍스트를 받으므로 max_output_tokens 사용이 안전하다.
+    """
+    global _llm_search_ctx_instance
+    if _llm_search_ctx_instance is None:
+        base = ChatGoogleGenerativeAI(
+            model="gemini-3-flash-preview",
+            temperature=0.2,          # 낮은 temperature → 군더더기 없는 사실 나열
+            max_output_tokens=600,    # 검색 요약은 짧을수록 빠름
+            google_api_key=settings.gemini_api_key,
+        )
+        _llm_search_ctx_instance = base.bind_tools([{"google_search": {}}])
+    return _llm_search_ctx_instance
 
 
 def _is_daily_quota(err: Exception) -> bool:
