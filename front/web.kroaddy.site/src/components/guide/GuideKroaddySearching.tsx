@@ -3,12 +3,8 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
-
-/** 가이드·경로 검색 중 (지도 등) */
-export const GUIDE_KROADDY_SEARCHING_TEXT = "Kroaddy가 최적의 장소를 찾는 중";
-
-/** 채팅 한 줄용 짧은 문구 */
-export const GUIDE_KROADDY_SEARCHING_CHAT_TEXT = "Kroaddy가 찾는 중";
+import "@/lib/i18n/config";
+import { useTranslation } from "react-i18next";
 
 /** 펄스 링 + 소프트 글로우 */
 function GuideSearchingPulse() {
@@ -45,6 +41,7 @@ const rowMotion = {
 };
 
 export function GuideKroaddySearchingChatRow() {
+  const { t } = useTranslation();
   return (
     <motion.li
       {...rowMotion}
@@ -58,13 +55,16 @@ export function GuideKroaddySearchingChatRow() {
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-3 text-[13px] leading-snug text-slate-600">
         <GuideSearchingPulse />
-        <span className="font-medium text-slate-700">{GUIDE_KROADDY_SEARCHING_CHAT_TEXT}</span>
+        <span className="font-medium text-slate-700">
+          {t("guide.searching.chat", { defaultValue: "Kroaddy is searching" })}
+        </span>
       </div>
     </motion.li>
   );
 }
 
 export function GuideKroaddySearchingMapOverlay() {
+  const { t } = useTranslation();
   return (
     <div
       className="pointer-events-none absolute inset-0 z-[12] flex items-center justify-center bg-slate-900/[0.04] p-4"
@@ -76,7 +76,7 @@ export function GuideKroaddySearchingMapOverlay() {
           <GuideSearchingPulse />
         </div>
         <p className="min-w-0 flex-1 text-sm font-bold leading-snug text-slate-900">
-          {GUIDE_KROADDY_SEARCHING_TEXT}
+          {t("guide.searching.map", { defaultValue: "Kroaddy is finding the best places" })}
         </p>
       </div>
     </div>

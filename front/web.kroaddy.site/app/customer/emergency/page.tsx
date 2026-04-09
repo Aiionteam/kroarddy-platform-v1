@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import { useLoginStore } from "@/store";
 import { fetchUserProfile } from "@/lib/api/userProfile";
+import { useTranslation } from "react-i18next";
 
 function PhoneIcon() {
   return (
@@ -179,34 +180,36 @@ function normalizeNationality(n: string | null | undefined) {
   return v;
 }
 
-function nationalityToLabel(n: string | null | undefined) {
+function nationalityToLabel(n: string | null | undefined, t: (key: string, options?: Record<string, unknown>) => string) {
   const v = normalizeNationality(n);
-  if (!v) return "알 수 없음";
-  const map: Record<string, string> = {
-    韓國: "한국",
-    한국: "한국",
-    USA: "미국",
-    日本: "일본",
-    中国: "중국",
-    "United Kingdom": "영국",
-    France: "프랑스",
-    Deutschland: "독일",
-    Canada: "캐나다",
-    Australia: "호주",
-    "Việt Nam": "베트남",
-    Thailand: "태국",
-    Philippines: "필리핀",
-    Indonesia: "인도네시아",
-    Singapore: "싱가포르",
-    Malaysia: "말레이시아",
-    India: "인도",
-    Other: "기타",
+  if (!v) return t("customer.emergency.consulate.unknown_nationality", { defaultValue: "알 수 없음" });
+  const map: Record<string, { key: string; fallback: string }> = {
+    韓國: { key: "options.nationality.korea", fallback: "Korea" },
+    한국: { key: "options.nationality.korea", fallback: "Korea" },
+    USA: { key: "options.nationality.usa", fallback: "USA" },
+    日本: { key: "options.nationality.japan", fallback: "Japan" },
+    中国: { key: "options.nationality.china", fallback: "China" },
+    "United Kingdom": { key: "options.nationality.uk", fallback: "United Kingdom" },
+    France: { key: "options.nationality.france", fallback: "France" },
+    Deutschland: { key: "options.nationality.germany", fallback: "Germany" },
+    Canada: { key: "options.nationality.canada", fallback: "Canada" },
+    Australia: { key: "options.nationality.australia", fallback: "Australia" },
+    "Việt Nam": { key: "options.nationality.vietnam", fallback: "Vietnam" },
+    Thailand: { key: "options.nationality.thailand", fallback: "Thailand" },
+    Philippines: { key: "options.nationality.philippines", fallback: "Philippines" },
+    Indonesia: { key: "options.nationality.indonesia", fallback: "Indonesia" },
+    Singapore: { key: "options.nationality.singapore", fallback: "Singapore" },
+    Malaysia: { key: "options.nationality.malaysia", fallback: "Malaysia" },
+    India: { key: "options.nationality.india", fallback: "India" },
+    Other: { key: "options.nationality.other", fallback: "Other" },
   };
-  return map[v] ?? v;
+  const mapped = map[v];
+  if (!mapped) return v;
+  return t(mapped.key, { defaultValue: mapped.fallback });
 }
 
-function buildEmbassySearchUrl(nationality: string | null) {
-  const label = nationalityToLabel(nationality);
+function buildEmbassySearchUrl(nationality: string | null, t: (key: string, options?: Record<string, unknown>) => string) {
+  const label = nationalityToLabel(nationality, t);
   if (!nationality || nationality === "한국") {
     return "https://www.google.com/search?q=%EC%98%81%EC%82%AC%EC%82%AC%EC%9D%B8%EC%9D%B4+%EB%8C%80%ED%95%9C+%EC%97%AC%ED%96%89+%EC%95%88%EB%82%B4";
   }
@@ -219,6 +222,7 @@ function buildEmbassySearchUrl(nationality: string | null) {
 export default function EmergencyPage() {
   const router = useRouter();
   const { isAuthenticated, logout } = useLoginStore();
+  const { t } = useTranslation();
 
   const [nationality, setNationality] = React.useState<string | null>(null);
   const [loadingProfile, setLoadingProfile] = React.useState(true);
@@ -252,13 +256,13 @@ export default function EmergencyPage() {
   }, [isAuthenticated]);
 
   const active = EMERGENCY_CATEGORIES.find((c) => c.id === activeId) ?? EMERGENCY_CATEGORIES[0];
-  const embassyUrl = buildEmbassySearchUrl(nationality);
-  const nationalityLabel = nationalityToLabel(nationality);
+  const embassyUrl = buildEmbassySearchUrl(nationality, t);
+  const nationalityLabel = nationalityToLabel(nationality, t);
 
   if (!isAuthenticated) return null;
 
   return (
-    <AppLayout onLogout={logout} mobileTitle="긴급 도움">
+    <AppLayout onLogout={logout} mobileTitle={t("customer.emergency.title_mobile", { defaultValue: "긴급 도움" })}>
       <main className="flex flex-1 flex-col overflow-y-auto">
         <header className="shrink-0 border-b border-gray-200 bg-white px-6 py-5">
           <div className="flex items-start justify-between gap-4">
@@ -267,13 +271,13 @@ export default function EmergencyPage() {
                 type="button"
                 onClick={() => router.back()}
                 className="rounded-lg px-2.5 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
-                aria-label="뒤로가기"
+                aria-label={t("common.back", { defaultValue: "뒤로가기" })}
               >
                 ←
               </button>
               <div>
-                <h1 className="text-xl font-bold text-gray-800">긴급 도움 및 여행 팁</h1>
-                <p className="mt-1 text-sm text-gray-500">외국인이 국내에서 겪을 수 있는 긴급 상황을 카테고리별로 안내합니다.</p>
+                <h1 className="text-xl font-bold text-gray-800">{t("customer.emergency.title", { defaultValue: "긴급 도움 및 여행 팁" })}</h1>
+                <p className="mt-1 text-sm text-gray-500">{t("customer.emergency.subtitle", { defaultValue: "외국인이 국내에서 겪을 수 있는 긴급 상황을 카테고리별로 안내합니다." })}</p>
               </div>
             </div>
             <button
@@ -282,7 +286,7 @@ export default function EmergencyPage() {
               className="inline-flex items-center gap-2 rounded-full bg-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-purple-700"
             >
               <span className="text-base">📣</span>
-              긴급상황 공유
+              {t("customer.emergency.share_button", { defaultValue: "긴급상황 공유" })}
             </button>
           </div>
         </header>
@@ -291,9 +295,9 @@ export default function EmergencyPage() {
           <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <div className="text-sm font-semibold text-gray-800">대사관/영사관 연결</div>
+                <div className="text-sm font-semibold text-gray-800">{t("customer.emergency.consulate.title", { defaultValue: "대사관/영사관 연결" })}</div>
                 <div className="mt-1 text-sm text-gray-600">
-                  국적: {loadingProfile ? "불러오는 중..." : nationalityLabel}
+                  {t("customer.emergency.consulate.nationality", { defaultValue: "국적" })}: {loadingProfile ? t("common.loading", { defaultValue: "불러오는 중..." }) : nationalityLabel}
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -304,20 +308,20 @@ export default function EmergencyPage() {
                   className="inline-flex items-center gap-2 rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700"
                 >
                   <PhoneIcon />
-                  영사관 연락처 찾기
+                  {t("customer.emergency.consulate.find_contact", { defaultValue: "영사관 연락처 찾기" })}
                 </a>
                 <a
                   href="tel:0232100404"
                   className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
                 >
-                  24시간 영사콜센터 02-3210-0404
+                  {t("customer.emergency.consulate.callcenter", { defaultValue: "24시간 영사콜센터 02-3210-0404" })}
                 </a>
               </div>
             </div>
           </section>
 
           <section className="mt-6">
-            <h2 className="mb-3 text-base font-semibold text-gray-800">긴급 상황 카테고리</h2>
+            <h2 className="mb-3 text-base font-semibold text-gray-800">{t("customer.emergency.categories.title", { defaultValue: "긴급 상황 카테고리" })}</h2>
             <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
               <ul className="divide-y divide-gray-100">
                 {EMERGENCY_CATEGORIES.map((c) => (
@@ -331,10 +335,14 @@ export default function EmergencyPage() {
                       <div className="mt-0.5 shrink-0 text-gray-800">{c.icon}</div>
                       <div className="min-w-0">
                         <div className="flex items-center justify-between gap-3">
-                          <p className="truncate text-sm font-semibold text-gray-900">{c.title}</p>
-                          <span className="shrink-0 text-xs text-gray-500">{activeId === c.id ? "선택됨" : "보기"}</span>
+                          <p className="truncate text-sm font-semibold text-gray-900">
+                            {t(`customer.emergency.categories.items.${c.id}.title`, { defaultValue: c.title })}
+                          </p>
+                          <span className="shrink-0 text-xs text-gray-500">{activeId === c.id ? t("customer.emergency.categories.selected", { defaultValue: "선택됨" }) : t("customer.emergency.categories.view", { defaultValue: "보기" })}</span>
                         </div>
-                        <p className="mt-1 line-clamp-1 text-sm text-gray-600">{c.short}</p>
+                        <p className="mt-1 line-clamp-1 text-sm text-gray-600">
+                          {t(`customer.emergency.categories.items.${c.id}.short`, { defaultValue: c.short })}
+                        </p>
                       </div>
                     </button>
                   </li>
@@ -347,16 +355,24 @@ export default function EmergencyPage() {
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex rounded-full bg-purple-100 px-2.5 py-1 text-xs font-semibold text-purple-700">대응 가이드</span>
-                  <h2 className="truncate text-base font-bold text-gray-900">{active?.title}</h2>
+                  <span className="inline-flex rounded-full bg-purple-100 px-2.5 py-1 text-xs font-semibold text-purple-700">{t("customer.emergency.detail.badge", { defaultValue: "대응 가이드" })}</span>
+                  <h2 className="truncate text-base font-bold text-gray-900">
+                    {active ? t(`customer.emergency.categories.items.${active.id}.title`, { defaultValue: active.title }) : ""}
+                  </h2>
                 </div>
-                <p className="mt-2 text-sm text-gray-600">{active?.short}</p>
+                <p className="mt-2 text-sm text-gray-600">
+                  {active ? t(`customer.emergency.categories.items.${active.id}.short`, { defaultValue: active.short }) : ""}
+                </p>
               </div>
             </div>
 
             <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm text-gray-700">
               {(active?.steps ?? []).map((s, idx) => (
-                <li key={idx}>{s}</li>
+                <li key={idx}>
+                  {active
+                    ? t(`customer.emergency.categories.items.${active.id}.steps.${idx + 1}`, { defaultValue: s })
+                    : s}
+                </li>
               ))}
             </ol>
 
@@ -365,19 +381,19 @@ export default function EmergencyPage() {
                 href="tel:112"
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white hover:bg-black"
               >
-                112 경찰
+                {t("customer.emergency.detail.call_police", { defaultValue: "112 경찰" })}
               </a>
               <a
                 href="tel:119"
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-700"
               >
-                119 응급
+                {t("customer.emergency.detail.call_119", { defaultValue: "119 응급" })}
               </a>
               <a
                 href="tel:1339"
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-3 text-sm font-semibold text-white hover:bg-teal-700"
               >
-                1339 질병관리(의료상담)
+                {t("customer.emergency.detail.call_1339", { defaultValue: "1339 질병관리(의료상담)" })}
               </a>
               <a
                 href={embassyUrl}
@@ -385,7 +401,7 @@ export default function EmergencyPage() {
                 rel="noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
               >
-                영사관 연락처
+                {t("customer.emergency.detail.call_consulate", { defaultValue: "영사관 연락처" })}
               </a>
             </div>
           </section>

@@ -2,17 +2,15 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import "@/lib/i18n/config";
+import { useTranslation } from "react-i18next";
 import { useLoginStore } from "@/store";
 import { useGuide } from "@/hooks/useGuide";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import { MapContainer, type MapMarker } from "@/components/guide/MapContainer";
 import { PlaceBottomSheet } from "@/components/guide/PlaceBottomSheet";
 import { ChatDrawer, type ChatMessage } from "@/components/guide/ChatDrawer";
-import {
-  CategoryChipBar,
-  CATEGORY_CHAT_PROMPTS,
-  type GuideCategoryId,
-} from "@/components/guide/CategoryChipBar";
+import { CategoryChipBar, type GuideCategoryId } from "@/components/guide/CategoryChipBar";
 import { fetchFestivals, type FestivalItem } from "@/lib/api/festival";
 import type { GuideNearbyPlaceItem, GuidePlaceMarker } from "@/lib/guide/types";
 import { parsePlaceLatLng } from "@/lib/guide/parsePlace";
@@ -23,15 +21,26 @@ import { postGuideDirections } from "@/lib/guide/guideClient";
 import type { GuideDirectionsResponse } from "@/lib/guide/types";
 
 /** 채팅창용 — 긴 answer 대신 장소 이름 목록만 */
-function buildPlacesAssistantSummary(places: GuidePlaceMarker[]): string {
+function buildPlacesAssistantSummary(
+  places: GuidePlaceMarker[],
+  t: (key: string, o?: Record<string, unknown>) => string,
+): string {
   const names = places.map((p) => (p.name || "").trim()).filter(Boolean);
   const count = names.length;
-  if (count === 0) return "추천 장소가 없습니다.";
+  if (count === 0) return t("guide.places_none", { defaultValue: "No places to recommend." });
   const maxShow = 4;
   const head = names.slice(0, maxShow);
   const listed = head.map((n) => `📍 ${n}`).join(", ");
-  const tail = count > maxShow ? ` 외 ${count - maxShow}곳` : "";
-  return `${listed}${tail} 등 총 ${count}곳을 추천했어요.\n지도에서 마커를 눌러 장소별 상세 가이드를 확인해 보세요.`;
+  const extra =
+    count > maxShow
+      ? t("guide.places_extra", { n: count - maxShow, defaultValue: ", and {{n}} more" })
+      : "";
+  return t("guide.places_summary", {
+    listed,
+    extra,
+    count,
+    defaultValue: "{{listed}}{{extra}} — {{count}} places recommended.\nTap a marker on the map for details.",
+  });
 }
 
 function parseFestivalCoord(v: string | number | null | undefined): number {
@@ -52,7 +61,11 @@ function normalizeFestivalLatLng(lat: number, lng: number): { lat: number; lng: 
   return { lat, lng };
 }
 
-function festivalItemsToMarkers(items: FestivalItem[]): MapMarker[] {
+function festivalItemsToMarkers(
+  items: FestivalItem[],
+  t: (key: string, o?: Record<string, unknown>) => string,
+): MapMarker[] {
+  const ev = t("guide.marker_event", { defaultValue: "Event" });
   return items
     .map((it, i) => {
       let lat = parseFestivalCoord(it.latitude);
@@ -62,10 +75,10 @@ function festivalItemsToMarkers(items: FestivalItem[]): MapMarker[] {
         id: `fest-${i}-${it.fstvlNm?.slice(0, 20) || i}`,
         lat,
         lng,
-        title: it.fstvlNm || "행사",
+        title: it.fstvlNm || ev,
         kind: "festival" as const,
         address: [it.rdnmadr, it.lnmadr].find((s) => s?.trim()) || it.opar || "",
-        category: "행사",
+        category: ev,
         description: it.fstvlCo || it.relateInfo || "",
         festival: {
           startDate: it.fstvlStartDate,
@@ -78,12 +91,16 @@ function festivalItemsToMarkers(items: FestivalItem[]): MapMarker[] {
     .filter((m) => isFinite(m.lat) && isFinite(m.lng) && !(m.lat === 0 && m.lng === 0));
 }
 
-function guidePlacesToMarkers(places: GuidePlaceMarker[]): MapMarker[] {
+function guidePlacesToMarkers(
+  places: GuidePlaceMarker[],
+  t: (key: string, o?: Record<string, unknown>) => string,
+): MapMarker[] {
+  const fallback = t("guide.marker_place", { defaultValue: "Place" });
   const out: MapMarker[] = [];
   places.forEach((p, i) => {
     const ll = parsePlaceLatLng(p.lat, p.lng);
     if (!ll) return;
-    const name = (p.name || "장소").trim() || "장소";
+    const name = (p.name || fallback).trim() || fallback;
     const img = typeof p.image_url === "string" && p.image_url.trim() ? p.image_url.trim() : undefined;
     const ps = p.photo_spot;
     const kw = Array.isArray(p.keywords) ? p.keywords.filter((x) => typeof x === "string" && x.trim()) : [];
@@ -128,11 +145,9 @@ function newId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-const GEMINI_NOTICE =
-  "사용자님의 평소 취향과 현재 환경을 분석해 AI가 새로운 장소를 추천합니다";
-
 export default function GuidePage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { isAuthenticated, logout } = useLoginStore();
   const { loading: guideLoading, ask, setError } = useGuide();
 
@@ -204,8 +219,9 @@ export default function GuidePage() {
         duration_ms: 0,
         toll_fare: 0,
         fuel_price: 0,
-        message:
-          "현재 위치를 확인할 수 없어 차량 경로를 안내할 수 없어요. 위치 권한을 허용한 뒤 다시 시도해 주세요.",
+        message: t("guide.directions_no_location", {
+          defaultValue: "We need your location for driving directions. Allow location and try again.",
+        }),
       });
       setDirectionsLoading(false);
       return;
@@ -230,7 +246,7 @@ export default function GuidePage() {
       cancelled = true;
       setDirectionsLoading(false);
     };
-  }, [directionsRequestToken, selId, goalLat, goalLng, userLat, userLng]);
+  }, [directionsRequestToken, selId, goalLat, goalLng, userLat, userLng, t]);
 
   const requestDrivingRoute = useCallback(() => {
     setDirectionsRequestToken((n) => n + 1);
@@ -276,12 +292,12 @@ export default function GuidePage() {
       try {
         const res = await ask(trimmed);
         const placesCount = Array.isArray(res.places) ? res.places.length : 0;
-        const markers = placesCount > 0 ? guidePlacesToMarkers(res.places) : [];
+        const markers = placesCount > 0 ? guidePlacesToMarkers(res.places, t) : [];
 
         if (placesCount === 0) {
           guideDebug("page.runGuideAsk.placesEmpty", {
             source: res.source,
-            message: "장소 정보를 불러오지 못했습니다",
+            message: "places_empty",
           });
         }
 
@@ -296,7 +312,7 @@ export default function GuidePage() {
             base.push({
               id: newId(),
               role: "assistant",
-              content: buildPlacesAssistantSummary(res.places),
+              content: buildPlacesAssistantSummary(res.places, t),
               at: Date.now(),
               assistantBodyFormat: "plain",
             });
@@ -305,12 +321,15 @@ export default function GuidePage() {
             const maxLen = 360;
             const clipped =
               raw.length > maxLen ? `${raw.slice(0, maxLen).trim()}…` : raw;
-            const hint =
-              "\n\n*지도에 표시할 좌표는 찾지 못했어요. 지명·구체적인 장소 이름을 넣어 다시 질문해 보세요.*";
+            const hint = `\n\n*${t("guide.coords_hint", {
+              defaultValue: "No mappable coordinates found. Try a clearer place name.",
+            })}*`;
             base.push({
               id: newId(),
               role: "assistant",
-              content: (clipped || "답변을 가져오지 못했습니다.") + hint,
+              content:
+                (clipped ||
+                  t("guide.answer_empty", { defaultValue: "Could not get an answer." })) + hint,
               at: Date.now(),
               assistantBodyFormat: "markdown",
             });
@@ -318,7 +337,10 @@ export default function GuidePage() {
           return base;
         });
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "가이드 응답을 가져오지 못했습니다.";
+        const msg =
+          e instanceof Error
+            ? e.message
+            : t("guide.guide_error", { defaultValue: "Could not get a guide response." });
         guideDebug("page.runGuideAsk.error", { message: msg });
         setMessages((prev) => [
           ...prev,
@@ -331,7 +353,7 @@ export default function GuidePage() {
         ]);
       }
     },
-    [ask, busy],
+    [ask, busy, t],
   );
 
   const handleCategorySelect = useCallback(async (id: GuideCategoryId) => {
@@ -345,7 +367,7 @@ export default function GuidePage() {
       setMapMarkers([]);
       try {
         const data = await fetchFestivals();
-        const markers = festivalItemsToMarkers(data.items || []);
+        const markers = festivalItemsToMarkers(data.items || [], t);
         setMapMarkers(markers);
         setSelectedPlace(null);
         setMessages((prev) => [
@@ -355,8 +377,15 @@ export default function GuidePage() {
             role: "assistant",
             content:
               markers.length > 0
-                ? `이번 달 행사 ${markers.length}곳을 지도에 표시했어요. (${data.year}년 ${data.month}월)`
-                : "표시할 좌표가 있는 행사가 없거나 API 응답이 비었습니다.",
+                ? t("guide.festival_on_map", {
+                    count: markers.length,
+                    year: data.year,
+                    month: data.month,
+                    defaultValue: "Showing {{count}} events on the map ({{year}}/{{month}}).",
+                  })
+                : t("guide.festival_map_empty", {
+                    defaultValue: "No events with coordinates, or the API returned nothing.",
+                  }),
             at: Date.now(),
           },
         ]);
@@ -368,7 +397,10 @@ export default function GuidePage() {
           {
             id: newId(),
             role: "assistant",
-            content: `행사 정보를 불러오지 못했습니다: ${e instanceof Error ? e.message : String(e)}`,
+            content: t("guide.festival_load_error", {
+              message: e instanceof Error ? e.message : String(e),
+              defaultValue: "Could not load events: {{message}}",
+            }),
             at: Date.now(),
           },
         ]);
@@ -386,11 +418,11 @@ export default function GuidePage() {
       return;
     }
 
-    const prompt = CATEGORY_CHAT_PROMPTS[id]?.trim();
+    const prompt = t(`guide.prompt.${id}`, { defaultValue: "" }).trim();
     if (prompt) {
       await runGuideAsk(prompt);
     }
-  }, [setError, runGuideAsk]);
+  }, [setError, runGuideAsk, t]);
 
   const handleMarkerClick = useCallback((m: MapMarker) => {
     setSelectedPlace(m);
@@ -408,7 +440,7 @@ export default function GuidePage() {
       lng: item.lng,
       title: item.name,
       address: item.address?.trim() || "",
-      category: item.category?.trim() || "맛집·카페",
+      category: item.category?.trim() || t("guide.nearby_category_fallback", { defaultValue: "Restaurant · café" }),
       description: "",
       kind: "place",
       imageUrl: item.imageUrl?.trim() || undefined,
@@ -416,7 +448,7 @@ export default function GuidePage() {
     setMapMarkers((prev) => (prev.some((p) => p.id === id) ? prev : [...prev, m]));
     setSelectedPlace(m);
     setMapCameraAnimation("smooth");
-  }, []);
+  }, [t]);
 
   const handleSend = useCallback(async () => {
     guideDebug("page.handleSend.invoked", { inputLen: input.trim().length });
@@ -426,12 +458,17 @@ export default function GuidePage() {
   if (!isAuthenticated) return null;
 
   return (
-    <AppLayout onLogout={logout} mobileTitle="장소 추천">
+    <AppLayout
+      onLogout={logout}
+      mobileTitle={t("guide.mobile_title", { defaultValue: "Discover" })}
+    >
       <div className="relative flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-slate-50 md:h-full">
         <div className="relative z-0 flex min-h-0 flex-1 flex-col">
           {showGeminiNotice && (
             <div className="pointer-events-none absolute left-3 right-3 top-3 z-[8] rounded-md border border-gray-200 bg-white/90 px-4 py-3 text-center text-xs font-bold text-guide shadow-sm backdrop-blur-md md:left-1/2 md:right-auto md:w-[min(92vw,28rem)] md:-translate-x-1/2 md:text-sm md:font-bold">
-              {GEMINI_NOTICE}
+              {t("guide.gemini_notice", {
+                defaultValue: "AI suggests new places based on your preferences and context.",
+              })}
             </div>
           )}
           <MapContainer
@@ -453,7 +490,7 @@ export default function GuidePage() {
           {festivalLoading && (
             <div className="pointer-events-none absolute inset-0 z-[5] flex items-center justify-center bg-black/10">
               <div className="rounded-md border border-gray-100 bg-white px-5 py-3 text-sm font-medium text-sky-700 shadow-md">
-                행사 정보 불러오는 중…
+                {t("guide.festival_loading_overlay", { defaultValue: "Loading events…" })}
               </div>
             </div>
           )}

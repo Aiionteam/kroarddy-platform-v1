@@ -1,0 +1,199 @@
+{
+  "title": "แพลนเนอร์ K-Content",
+  "subtitle": "สำรวจเกาหลีผ่าน K-Pop ละคร อาหาร และบิวตี้",
+  "hero_title": "แพลนเนอร์ K-Content",
+  "hero_subtitle": "สำรวจเกาหลีผ่าน K-Pop ละคร อาหาร และบิวตี้",
+  "hero_cta": "สร้างเส้นทาง AI",
+  "back": "กลับไปแพลนเนอร์",
+  "row_kpop": "K-POP",
+  "row_kdrama": "K-ดรามา / ภาพยนตร์",
+  "row_kfood": "K-Food",
+  "row_kbeauty": "K-Beauty",
+  "sample_itinerary": "ตัวอย่างกำหนดการ",
+  "search_bar": "ค้นหา",
+  "quick_selection": "เลือกด่วน",
+  "vibe_grid": "เลือกบรรยากาศ",
+  "date": "วันที่",
+  "generating": "กำลังสร้าง…",
+  "generate": "✨ สร้างกำหนดการ",
+  "ai_recommended": "กำหนดการแนะนำโดย AI",
+  "region_select": "เลือกภูมิภาค",
+  "traditional_market": "ตลาดดั้งเดิม",
+  "market_generate": "สร้างกำหนดการกินที่ตลาดนี้",
+  "cafe_question": "วันนี้อยากได้บรรยากาศแบบไหน?",
+  "cafe_hint": "เลือกบรรยากาศหรือพิมพ์ชื่อคาเฟ่เพื่อให้ AI สร้างคอร์ส",
+  "cafe_placeholder": "พิมพ์ชื่อคาเฟ่ (เช่น Seongsu Tongue Planet)",
+  "cafe_generate": "สร้างกำหนดการ AI",
+  "trending_items": "ไอเทมฮิตตอนนี้",
+  "my_recipe": "สูตรมิกซ์ของฉัน",
+  "convenience_q": "ตอนนี้ที่ร้านสะดวกซื้อหายากที่สุดคืออะไร?",
+  "trending_placeholder": "เช่น ขนมปังครีมนม Yonsei",
+  "recipe_q": "อยากลองผสมรสชาติแบบไหน?",
+  "extra_keywords": "คีย์เวิร์ดเพิ่ม",
+  "recipe_placeholder": "เช่น ชาเลนจ์เผ็ด ของหวานเค็ม",
+  "recipe_generate": "สร้างสูตรมิกซ์ AI",
+  "set_date_and_generate": "ตั้งวันที่แล้ว\nสร้างกำหนดการ",
+  "start_generate": "✨ เริ่มสร้างกำหนดการ",
+  "making_schedule": "AI กำลังสร้างกำหนดการ <b>{{title}}</b>…",
+  "recommended_schedule_title": "{{title}} — กำหนดการแนะนำ",
+  "save_plan": "💾 บันทึกกำหนดการ",
+  "total_cost": "ค่าใช้จ่ายโดยประมาณ",
+  "cost_per_day": "วันที่ {{day}} {{total}}",
+  "no_schedule": "ยังไม่มีกำหนดการ ลองอีกครั้ง",
+  "saved_goto_schedule": "บันทึกแล้ว · ไปปฏิทิน",
+  "find_nearby_store": "หาร้านที่ขายใกล้ๆ",
+  "recipe_hashtags": "#มอดิซูเมอร์ #ชาเลนจ์ร้านสะดวกซื้อ #สูตรAI",
+  "description_fallback": "จุดแนะนำให้ไปที่ {{place}}",
+  "challenge_location": "จุดชาเลนจ์",
+  "challenge_location_desc": "จุดชาเลนจ์ที่ AI เลือก (ภายใน 100 กม.) — โซนม้านั่งหน้าป่าโซลซองซู",
+  "subtotal": "ยอดรวมย่อย {{total}}",
+  "schedule_item_default": "กำหนดการ",
+  "schedule_load_fail": "โหลดกำหนดการไม่สำเร็จ",
+  "save_fail": "บันทึกไม่สำเร็จ",
+  "cafe_place_hint": "คำใบ้คาเฟ่/สถานที่",
+  "convenience_trending": "ไอเทมฮิตร้านสะดวกซื้อ",
+  "recipe_title_with_vibe": "ชาเลนจ์ {{vibe}} เวอร์ชัน 2026",
+  "recipe_title_default": "Mark set เวอร์ชัน 2026",
+  "region_tab.all": "ทั้งหมด",
+  "region_tab.seoul": "โซล",
+  "region_tab.gangwon": "คังวอน",
+  "region_tab.jeonla": "ชอลลา",
+  "region_tab.gyeongsang": "คย็องซัง",
+  "region_tab.jeju": "เชจู",
+  "cafe_vibe.industrial_raw.label": "อินดัสเทรียล/ดิบ",
+  "cafe_vibe.industrial_raw.description": "บรรยากาศคอนกรีตและเหล็กเท่ๆ",
+  "cafe_vibe.traditional_zen.label": "ดั้งเดิม/เซน",
+  "cafe_vibe.traditional_zen.description": "พักใจกับฮันอกและเนื้อไม้",
+  "cafe_vibe.nature_botanical.label": "ธรรมชาติ/พืช",
+  "cafe_vibe.nature_botanical.description": "พื้นที่เต็มไปด้วยต้นไม้และแสงแดด",
+  "cafe_vibe.retro_newtro.label": "เรโทร/นิวโทร",
+  "cafe_vibe.retro_newtro.description": "ความคิดถึงและตรอกวินเทจ",
+  "cafe_vibe.modern_minimal.label": "โมเดิร์น/มินิมอล",
+  "cafe_vibe.modern_minimal.description": "สีโทนเดียวเรียบหรู",
+  "brand.seveneleven": "7-Eleven",
+  "brand.emart24": "emart24",
+  "market": {
+    "SEOUL": {
+      "0": {
+        "name": "ตลาดควังจัง",
+        "description": "สวรรค์ของยูเคและแพนเค้กถั่ว."
+      },
+      "1": {
+        "name": "ตลาดมังวอน",
+        "description": "ตลาดเทรนด์ที่วัยรุ่นชอบ."
+      },
+      "2": {
+        "name": "ตลาดทงอิน",
+        "description": "ประสบการณ์กล่องข้าวเหรียญโบราณ."
+      }
+    },
+    "GANGWON": {
+      "0": {
+        "name": "ตลาดกลางยองวอล",
+        "description": "แพนเค้กบัควีทและบะหมี่."
+      },
+      "1": {
+        "name": "ตลาดท่องเที่ยวโซคโช",
+        "description": "ไก่ทอดเกาหลีและอาหารทะเลริมทาง."
+      }
+    },
+    "JEONLA": {
+      "0": {
+        "name": "ตลาดนัมบูชอนจู",
+        "description": "ไส้กรอกเลือดและซุปถั่วงอก."
+      },
+      "1": {
+        "name": "ตลาดสถานีซองจองกวางจู 1913",
+        "description": "บรรยากาศเรโทรนิวโทร."
+      }
+    },
+    "GYEONGSANG": {
+      "0": {
+        "name": "ตลาดกุกเจปูซาน",
+        "description": "ความทรงจำจากหนังและหมี่ผัด."
+      },
+      "1": {
+        "name": "ตลาดซอมุนแทกู",
+        "description": "ขนาดและรสชาติตลาดใหญ่สามอันดับ."
+      }
+    },
+    "JEJU": {
+      "0": {
+        "name": "ตลาดตงมุนเชจู",
+        "description": "ขนมโอเมกิและหมูดำทอด."
+      }
+    }
+  },
+  "fallback": {
+    "kfood": {
+      "KF_MARKET": {
+        "title": "ทัวร์ตลาดดั้งเดิมทั่วประเทศ",
+        "description": "สัมผัสรสท้องถิ่นอบอุ่นทั่วเกาหลี."
+      },
+      "KF_CAFE": {
+        "title": "ทัวร์ K-ของหวานและคาเฟ่",
+        "description": "เชื่อมคาเฟ่และร้านคัดสรรที่ตรงใจคุณ."
+      },
+      "KF_CONVENIENCE": {
+        "title": "ชาเลนจ์มิกซ์ร้านสะดวกซื้อ K",
+        "description": "จากของใหม่หมดสต็อกถึงสูตรลับ — เป็นมอดิซูเมอร์ตัวจริง!"
+      }
+    },
+    "kbeauty": {
+      "KBEAUTY_01": {
+        "title": "Olive Young Flagship",
+        "description": "เปรียบเทียบและช้อปเทรนด์สกินแคร์และเมคอัพ."
+      },
+      "KBEAUTY_02": {
+        "title": "ถนนบิวตี้เมียงดง",
+        "description": "สำรวจขายดีรอบร้านใหญ่."
+      },
+      "KBEAUTY_03": {
+        "title": "ร้านประสบการณ์สกินแคร์",
+        "description": "ดูแลเฉพาะบุคคลและกิจกรรมความงามแบบลงมือ."
+      }
+    }
+  },
+  "recipe_vibe.spicy_fire.label": "เผ็ดร้อน",
+  "recipe_vibe.spicy_fire.description": "ชาเลนจ์เผ็ดปลดปล่อยความเครียด",
+  "recipe_vibe.sweet_salty.label": "หวานเค็มคลาสสิก",
+  "recipe_vibe.sweet_salty.description": "สมดุลหวานและเค็ม",
+  "recipe_vibe.diet_healthy.label": "ไดเอตร้านสะดวกซื้อ",
+  "recipe_vibe.diet_healthy.description": "เบาแต่อิ่ม",
+  "recipe_vibe.night_snack.label": "ของกินก่อนนอน",
+  "recipe_vibe.night_snack.description": "สูตรของกินเล็กๆ ยามค่ำ",
+  "recipe_vibe.hangover.label": "แก้เมา",
+  "recipe_vibe.hangover.description": "คอมโบดูแลหลังปาร์ตี้",
+  "recipe_vibe.luxury_meal.label": "มื้อพรีเมียมคุ้มค่า",
+  "recipe_vibe.luxury_meal.description": "มื้อพรีเมียมจากร้านสะดวกซื้อ",
+  "shopping.ramen": "บะหมี่ถ้วย",
+  "shopping.tuna_kimbap": "ข้าวห่อสามเหลี่ยมทูน่ามายองเนส",
+  "shopping.string_cheese": "ชีสเส้น",
+  "shopping.sparkling_water": "น้ำโซดา",
+  "cooking.1": "เตรียมวัตถุดิบใส่ภาชนะไมโครเวฟได้",
+  "cooking.2": "ผสมซอส/ท็อปปิ้ง อุ่น 1 นาที 30 วินาที",
+  "cooking.3": "ใส่ท็อปปิ้งตามชอบแล้วถ่ายรูป",
+  "trending_card.1.title": "ขนมปังครีมนม Yonsei",
+  "trending_card.2.title": "ไฮบอลโค้กซีโร่แก้วน้ำแข็ง",
+  "trending_card.default_title": "ไอเทมฮิตที่ AI เลือก",
+  "trending_card.tag.new": "#ใหม่",
+  "trending_card.tag.soldout": "#หมดสต็อก",
+  "trending_card.tag.review": "#รีวิวแรง",
+  "trending_card.tag.repurchase": "#ซื้อซ้ำ",
+  "meta.kf_market.title_ko": "ทัวร์ตลาดดั้งเดิมทั่วประเทศ",
+  "meta.kf_cafe.title_ko": "ทัวร์ K-ของหวานและคาเฟ่",
+  "meta.kf_convenience.title_ko": "ชาเลนจ์มิกซ์ร้านสะดวกซื้อ K",
+  "meta.kf_market.tags": "ตลาดดั้งเดิม, อาหาร, ท้องถิ่น",
+  "meta.kf_cafe.tags": "คาเฟ่, ของหวาน, ร้านคัดสรร",
+  "meta.kf_convenience.tags": "ร้านสะดวกซื้อ, มิกซ์, มอดิซูเมอร์",
+  "empty.pick_market": "เลือกตลาดแล้วค่อยสร้างกำหนดการ",
+  "empty.pick_vibe_or_cafe": "เลือกบรรยากาศหรือชื่อคาเฟ่",
+  "empty.pick_tab_condition": "เลือกเงื่อนไขแท็บแล้วสร้าง",
+  "empty.pick_date": "เลือกวันที่แล้วสร้างกำหนดการ",
+  "empty.market_guide": "เลือกตลาดซ้าย แล้วกด [สร้างกำหนดการกินที่ตลาดนี้] หรือ ✨ ด้านบน",
+  "empty.cafe_guide": "เลือกบรรยากาศ/ชื่อคาเฟ่ซ้าย แล้วกด [สร้างกำหนดการ AI]",
+  "empty.convenience_guide": "เลือกโหมดแท็บบน ใส่คีย์เวิร์ดแล้วสร้าง",
+  "empty.default_guide": "กดปุ่ม ✨ สร้างกำหนดการด้านบน",
+  "shopping_list_title": "รายการซื้อของ",
+  "cooking_steps_title": "ขั้นตอนปรุง"
+}

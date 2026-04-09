@@ -22,6 +22,7 @@ import {
   DIETARY_OPTIONS,
   RELIGION_OPTIONS,
   NATIONALITY_OPTIONS,
+  toOptionI18nSlug,
 } from "@/lib/api/userProfile";
 import { AppLayout } from "@/components/organisms/AppLayout";
 
@@ -106,7 +107,12 @@ export default function SettingsPage() {
           });
         }
       } catch (_) {
-        if (!cancelled) setMessage({ type: "err", text: "사용자 정보를 불러올 수 없습니다." });
+        if (!cancelled) {
+          setMessage({
+            type: "err",
+            text: t("settings.error.load_user", { defaultValue: "사용자 정보를 불러올 수 없습니다." }),
+          });
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -128,12 +134,12 @@ export default function SettingsPage() {
         /* 투어스타 등 다른 페이지에서 쓰는 닉네임 캐시도 갱신 */
         const saved = nickname.trim();
         if (saved) sessionStorage.setItem("_tourstar_author", saved);
-        setMessage({ type: "ok", text: "저장되었습니다." });
+        setMessage({ type: "ok", text: t("settings.saved", { defaultValue: "저장되었습니다." }) });
       } else {
-        setMessage({ type: "err", text: res.message || "저장에 실패했습니다." });
+        setMessage({ type: "err", text: res.message || t("settings.error.save", { defaultValue: "저장에 실패했습니다." }) });
       }
     } catch (_) {
-      setMessage({ type: "err", text: "저장 중 오류가 발생했습니다." });
+      setMessage({ type: "err", text: t("settings.error.save_during", { defaultValue: "저장 중 오류가 발생했습니다." }) });
     } finally {
       setSaving(false);
     }
@@ -153,9 +159,9 @@ export default function SettingsPage() {
         religion:    profile.religion     || undefined,
         nationality: profile.nationality  || undefined,
       });
-      setProfileMsg({ type: "ok", text: "여행 프로필이 저장되었습니다." });
+      setProfileMsg({ type: "ok", text: t("settings.profile.saved", { defaultValue: "여행 프로필이 저장되었습니다." }) });
     } catch (_) {
-      setProfileMsg({ type: "err", text: "저장 중 오류가 발생했습니다." });
+      setProfileMsg({ type: "err", text: t("settings.error.save_during", { defaultValue: "저장 중 오류가 발생했습니다." }) });
     } finally {
       setProfileSaving(false);
     }
@@ -177,9 +183,9 @@ export default function SettingsPage() {
         router.replace("/");
         return;
       }
-      setMessage({ type: "err", text: res.message || "계정 탈퇴에 실패했습니다." });
+      setMessage({ type: "err", text: res.message || t("settings.withdraw.error", { defaultValue: "계정 탈퇴에 실패했습니다." }) });
     } catch (_) {
-      setMessage({ type: "err", text: "계정 탈퇴 중 오류가 발생했습니다." });
+      setMessage({ type: "err", text: t("settings.withdraw.error_during", { defaultValue: "계정 탈퇴 중 오류가 발생했습니다." }) });
     } finally {
       setWithdrawing(false);
     }
@@ -191,44 +197,49 @@ export default function SettingsPage() {
     <AppLayout onLogout={logout}>
       <div className="flex-1 overflow-y-auto p-4 md:p-8">
         <div className="mx-auto max-w-lg space-y-6">
-          <h1 className="text-2xl font-bold text-gray-800">설정</h1>
+          <h1 className="text-2xl font-bold text-gray-800">{t("settings.title", { defaultValue: "설정" })}</h1>
           {loading ? (
-            <p className="text-gray-500">로딩 중...</p>
+            <p className="text-gray-500">{t("common.loading", { defaultValue: "로딩 중..." })}</p>
           ) : (
             <>
               {/* 계정 설정 */}
               <form onSubmit={handleSave} className="space-y-4 rounded-xl bg-white p-6 shadow">
-                <h2 className="text-base font-semibold text-gray-700">계정 정보</h2>
+                <h2 className="text-base font-semibold text-gray-700">{t("settings.account.title", { defaultValue: "계정 정보" })}</h2>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">이메일</label>
+                  <label className="block text-sm font-medium text-gray-700">{t("settings.account.email", { defaultValue: "이메일" })}</label>
                   <p className="mt-1 text-gray-900">{user?.email ?? "-"}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">닉네임</label>
+                  <label className="block text-sm font-medium text-gray-700">{t("settings.account.nickname", { defaultValue: "닉네임" })}</label>
                   <input
                     type="text"
                     value={nickname}
                     onChange={(e) => setNickname(e.target.value)}
                     className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 placeholder:text-gray-400 outline-none focus:border-purple-500"
-                    placeholder={user?.name ? `${user.name} (기본값)` : "닉네임 미입력 시 이름으로 표시"}
+                    placeholder={user?.name ? `${user.name} ${t("settings.account.default", { defaultValue: "(기본값)" })}` : t("settings.account.nickname_placeholder", { defaultValue: "닉네임 미입력 시 이름으로 표시" })}
                   />
-                  <p className="mt-1 text-xs text-gray-500">미입력 시 이름으로 표시됩니다.</p>
+                  <p className="mt-1 text-xs text-gray-500">{t("settings.account.nickname_hint", { defaultValue: "미입력 시 이름으로 표시됩니다." })}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">명예도</label>
+                  <label className="block text-sm font-medium text-gray-700">{t("settings.account.honor", { defaultValue: "명예도" })}</label>
                   <p className="mt-1 text-gray-900">
-                    {user?.honor != null ? `${user.honor} 점` : "0 점"}
+                    {user?.honor != null ? `${user.honor} ${t("settings.account.point", { defaultValue: "점" })}` : `0 ${t("settings.account.point", { defaultValue: "점" })}`}
                     {user?.tier && (
                       <span className="ml-2 text-purple-600">
                         ({["SILVER", "GOLD", "PLATINUM", "DIAMOND"].indexOf(user.tier) >= 0
-                          ? { SILVER: "실버", GOLD: "골드", PLATINUM: "플래티넘", DIAMOND: "다이아" }[user.tier]
+                          ? {
+                              SILVER: t("chat.tier.silver", { defaultValue: "실버" }),
+                              GOLD: t("chat.tier.gold", { defaultValue: "골드" }),
+                              PLATINUM: t("chat.tier.platinum", { defaultValue: "플래티넘" }),
+                              DIAMOND: t("chat.tier.diamond", { defaultValue: "다이아" }),
+                            }[user.tier]
                           : user.tier})
                       </span>
                     )}
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">연동</label>
+                  <label className="block text-sm font-medium text-gray-700">{t("settings.account.provider", { defaultValue: "연동" })}</label>
                   <p className="mt-1 text-gray-900">{user?.provider ?? "-"}</p>
                 </div>
                 {message && (
@@ -239,18 +250,18 @@ export default function SettingsPage() {
                   disabled={saving}
                   className="rounded-lg bg-purple-600 px-4 py-2 text-white hover:bg-purple-700 disabled:opacity-50"
                 >
-                  {saving ? "저장 중..." : "저장"}
+                  {saving ? t("common.saving", { defaultValue: "저장 중..." }) : t("common.save", { defaultValue: "저장" })}
                 </button>
 
                 <div className="mt-8 border-t border-gray-200 pt-6">
-                  <p className="mb-2 text-sm font-medium text-gray-700">계정 탈퇴</p>
-                  <p className="mb-3 text-xs text-gray-500">탈퇴 시 계정 및 데이터가 삭제되며 복구할 수 없습니다.</p>
+                  <p className="mb-2 text-sm font-medium text-gray-700">{t("settings.withdraw.title", { defaultValue: "계정 탈퇴" })}</p>
+                  <p className="mb-3 text-xs text-gray-500">{t("settings.withdraw.desc", { defaultValue: "탈퇴 시 계정 및 데이터가 삭제되며 복구할 수 없습니다." })}</p>
                   <button
                     type="button"
                     onClick={handleWithdrawOpen}
                     className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                   >
-                    계정 탈퇴
+                    {t("settings.withdraw.button", { defaultValue: "계정 탈퇴" })}
                   </button>
                 </div>
               </form>
@@ -260,29 +271,40 @@ export default function SettingsPage() {
                 <div className="mb-5 flex items-center gap-2">
                   <span className="text-2xl">🗺️</span>
                   <div>
-                    <h2 className="text-base font-semibold text-gray-700">여행 프로필</h2>
-                    <p className="text-xs text-gray-400">AI 맞춤 여행 추천에 활용돼요</p>
+                    <h2 className="text-base font-semibold text-gray-700">{t("settings.profile.title", { defaultValue: "여행 프로필" })}</h2>
+                    <p className="text-xs text-gray-400">{t("settings.profile.subtitle", { defaultValue: "AI 맞춤 여행 추천에 활용돼요" })}</p>
                   </div>
                 </div>
 
                 <div className="space-y-5">
                   {/* 국가 / 국적 — 최상단 */}
                   <div>
-                    <p className="mb-2 text-sm font-medium text-gray-600">{t("onboarding.nationality.title")}</p>
+                    <p className="mb-2 text-sm font-medium text-gray-600">{t("onboarding.nationality.title", { defaultValue: "국가 / 국적" })}</p>
                     <div className="flex flex-wrap gap-2">
                       {NATIONALITY_OPTIONS.map((opt) => (
-                        <ProfileChip key={opt} label={opt} selected={profile.nationality === opt}
-                          onClick={() => { setProfile((p) => ({ ...p, nationality: p.nationality === opt ? "" : opt })); if (profile.nationality !== opt) setLangByNationality(opt); }} />
+                        <ProfileChip
+                          key={opt}
+                          label={t(`options.nationality.${toOptionI18nSlug(opt)}`, { defaultValue: opt })}
+                          selected={profile.nationality === opt}
+                          onClick={() => {
+                            // Always apply language immediately on selection for instant feedback
+                            setLangByNationality(opt);
+                            setProfile((p) => ({
+                              ...p,
+                              nationality: p.nationality === opt ? "" : opt,
+                            }));
+                          }}
+                        />
                       ))}
                     </div>
                   </div>
 
                   {/* 성별 */}
                   <div>
-                    <p className="mb-2 text-sm font-medium text-gray-600">{t("onboarding.gender.title")}</p>
+                    <p className="mb-2 text-sm font-medium text-gray-600">{t("onboarding.gender.title", { defaultValue: "성별" })}</p>
                     <div className="flex flex-wrap gap-2">
                       {GENDER_OPTIONS.map((opt) => (
-                        <ProfileChip key={opt} label={t(`options.gender.${opt}`, opt)} selected={profile.gender === opt}
+                        <ProfileChip key={opt} label={t(`options.gender.${toOptionI18nSlug(opt)}`, { defaultValue: opt })} selected={profile.gender === opt}
                           onClick={() => setProfile((p) => ({ ...p, gender: p.gender === opt ? "" : opt }))} />
                       ))}
                     </div>
@@ -290,10 +312,10 @@ export default function SettingsPage() {
 
                   {/* 나이대 */}
                   <div>
-                    <p className="mb-2 text-sm font-medium text-gray-600">{t("onboarding.age.title")}</p>
+                    <p className="mb-2 text-sm font-medium text-gray-600">{t("onboarding.age.title", { defaultValue: "나이대" })}</p>
                     <div className="flex flex-wrap gap-2">
                       {AGE_BAND_OPTIONS.map((opt) => (
-                        <ProfileChip key={opt} label={t(`options.age.${opt}`, opt)} selected={profile.age_band === opt}
+                        <ProfileChip key={opt} label={t(`options.age.${toOptionI18nSlug(opt)}`, { defaultValue: opt })} selected={profile.age_band === opt}
                           onClick={() => setProfile((p) => ({ ...p, age_band: p.age_band === opt ? "" : opt }))} />
                       ))}
                     </div>
@@ -301,10 +323,10 @@ export default function SettingsPage() {
 
                   {/* 식습관 */}
                   <div>
-                    <p className="mb-2 text-sm font-medium text-gray-600">{t("onboarding.diet.title")}</p>
+                    <p className="mb-2 text-sm font-medium text-gray-600">{t("onboarding.diet.title", { defaultValue: "식습관" })}</p>
                     <div className="flex flex-wrap gap-2">
                       {DIETARY_OPTIONS.map((opt) => (
-                        <ProfileChip key={opt} label={t(`options.diet.${opt}`, opt)} selected={profile.dietary_pref === opt}
+                        <ProfileChip key={opt} label={t(`options.diet.${toOptionI18nSlug(opt)}`, { defaultValue: opt })} selected={profile.dietary_pref === opt}
                           onClick={() => setProfile((p) => ({ ...p, dietary_pref: p.dietary_pref === opt ? "" : opt }))} />
                       ))}
                     </div>
@@ -312,10 +334,10 @@ export default function SettingsPage() {
 
                   {/* 종교 */}
                   <div>
-                    <p className="mb-2 text-sm font-medium text-gray-600">{t("onboarding.religion.title")}</p>
+                    <p className="mb-2 text-sm font-medium text-gray-600">{t("onboarding.religion.title", { defaultValue: "종교" })}</p>
                     <div className="flex flex-wrap gap-2">
                       {RELIGION_OPTIONS.map((opt) => (
-                        <ProfileChip key={opt} label={t(`options.religion.${opt}`, opt)} selected={profile.religion === opt}
+                        <ProfileChip key={opt} label={t(`options.religion.${toOptionI18nSlug(opt)}`, { defaultValue: opt })} selected={profile.religion === opt}
                           onClick={() => setProfile((p) => ({ ...p, religion: p.religion === opt ? "" : opt }))} />
                       ))}
                     </div>
@@ -334,7 +356,7 @@ export default function SettingsPage() {
                   disabled={profileSaving}
                   className="mt-5 rounded-lg bg-violet-500 px-4 py-2 text-white hover:bg-violet-600 disabled:opacity-50"
                 >
-                  {profileSaving ? "저장 중..." : "여행 프로필 저장"}
+                  {profileSaving ? t("common.saving", { defaultValue: "저장 중..." }) : t("settings.profile.save", { defaultValue: "여행 프로필 저장" })}
                 </button>
               </div>
             </>
@@ -343,13 +365,13 @@ export default function SettingsPage() {
           {withdrawModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="withdraw-dialog-title">
               <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
-                <h2 id="withdraw-dialog-title" className="mb-2 text-lg font-semibold text-gray-800">계정 탈퇴</h2>
-                <p className="mb-4 text-gray-600">정말 탈퇴하시겠습니까? 아래에 <strong>Delete account</strong> 를 입력하면 탈퇴가 진행됩니다.</p>
+                <h2 id="withdraw-dialog-title" className="mb-2 text-lg font-semibold text-gray-800">{t("settings.withdraw.title", { defaultValue: "계정 탈퇴" })}</h2>
+                <p className="mb-4 text-gray-600">{t("settings.withdraw.confirm_desc", { defaultValue: "정말 탈퇴하시겠습니까? 아래에 Delete account 를 입력하면 탈퇴가 진행됩니다." })}</p>
                 <input
                   type="text"
                   value={withdrawConfirmInput}
                   onChange={(e) => setWithdrawConfirmInput(e.target.value)}
-                  placeholder="Delete account"
+                  placeholder={t("settings.withdraw.placeholder", { defaultValue: "Delete account" })}
                   className="mb-4 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 placeholder:text-gray-400 outline-none focus:border-red-500"
                   autoFocus
                   disabled={withdrawing}
@@ -361,7 +383,7 @@ export default function SettingsPage() {
                     disabled={withdrawing}
                     className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                   >
-                    취소
+                    {t("common.cancel", { defaultValue: "취소" })}
                   </button>
                   <button
                     type="button"
@@ -369,7 +391,7 @@ export default function SettingsPage() {
                     disabled={withdrawConfirmInput.trim() !== DELETE_ACCOUNT_CONFIRM_TEXT || withdrawing}
                     className="rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700 disabled:opacity-50"
                   >
-                    {withdrawing ? "처리 중..." : "탈퇴하기"}
+                    {withdrawing ? t("common.processing", { defaultValue: "처리 중..." }) : t("settings.withdraw.submit", { defaultValue: "탈퇴하기" })}
                   </button>
                 </div>
               </div>

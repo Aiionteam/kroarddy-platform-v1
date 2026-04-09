@@ -1,0 +1,199 @@
+{
+  "title": "Perencana K-Content",
+  "subtitle": "Jelajahi Korea lewat K-Pop, drama, kuliner, dan kecantikan",
+  "hero_title": "Perencana K-Content",
+  "hero_subtitle": "Jelajahi Korea lewat K-Pop, drama, kuliner, dan kecantikan",
+  "hero_cta": "Buat rute AI",
+  "back": "Kembali ke perencana",
+  "row_kpop": "K-POP",
+  "row_kdrama": "K-Drama / Film",
+  "row_kfood": "K-Food",
+  "row_kbeauty": "K-Beauty",
+  "sample_itinerary": "Contoh itinerary",
+  "search_bar": "Cari",
+  "quick_selection": "Pilihan cepat",
+  "vibe_grid": "Pilih suasana",
+  "date": "Tanggal",
+  "generating": "Membuat…",
+  "generate": "✨ Buat jadwal",
+  "ai_recommended": "Jadwal rekomendasi AI",
+  "region_select": "Pilih wilayah",
+  "traditional_market": "Pasar tradisional",
+  "market_generate": "Buat itinerary kuliner pasar ini",
+  "cafe_question": "Suasana apa yang kamu inginkan hari ini?",
+  "cafe_hint": "Pilih suasana atau ketik nama kafe untuk membuat kursus AI.",
+  "cafe_placeholder": "Ketik nama kafe (mis. Seongsu Tongue Planet)",
+  "cafe_generate": "Buat itinerary AI",
+  "trending_items": "Item trending",
+  "my_recipe": "Resep mix andalan",
+  "convenience_q": "Apa yang paling sulit didapat di minimarket sekarang?",
+  "trending_placeholder": "mis. roti krim susu Yonsei",
+  "recipe_q": "Kombinasi rasa apa yang ingin kamu coba?",
+  "extra_keywords": "Kata kunci tambahan",
+  "recipe_placeholder": "mis. tantangan pedas, dessert asin-manis",
+  "recipe_generate": "Buat resep mix AI",
+  "set_date_and_generate": "Atur tanggal lalu\nbuat itinerary",
+  "start_generate": "✨ Mulai buat itinerary",
+  "making_schedule": "AI sedang membuat itinerary <b>{{title}}</b>…",
+  "recommended_schedule_title": "{{title}} — Itinerary rekomendasi",
+  "save_plan": "💾 Simpan itinerary",
+  "total_cost": "Perkiraan total biaya",
+  "cost_per_day": "Hari ke-{{day}} {{total}}",
+  "no_schedule": "Itinerary tidak terbuat. Coba lagi.",
+  "saved_goto_schedule": "Tersimpan · Ke jadwal",
+  "find_nearby_store": "Cari tempat jual terdekat",
+  "recipe_hashtags": "#modisumer #tantanganminimarket #resepAI",
+  "description_fallback": "Spot rekomendasi untuk dinikmati di {{place}}.",
+  "challenge_location": "Lokasi tantangan",
+  "challenge_location_desc": "Spot tantangan pilihan AI (dalam 100 km) — area bangku depan Hutan Seoul, Seongsu",
+  "subtotal": "Subtotal {{total}}",
+  "schedule_item_default": "Jadwal",
+  "schedule_load_fail": "Gagal memuat itinerary.",
+  "save_fail": "Gagal menyimpan.",
+  "cafe_place_hint": "Petunjuk kafe/tempat",
+  "convenience_trending": "Item trending minimarket",
+  "recipe_title_with_vibe": "Tantangan {{vibe}} ver. 2026",
+  "recipe_title_default": "Mark set ver. 2026",
+  "region_tab.all": "Semua",
+  "region_tab.seoul": "Seoul",
+  "region_tab.gangwon": "Gangwon",
+  "region_tab.jeonla": "Jeolla",
+  "region_tab.gyeongsang": "Gyeongsang",
+  "region_tab.jeju": "Jeju",
+  "cafe_vibe.industrial_raw.label": "Industrial/Kasar",
+  "cafe_vibe.industrial_raw.description": "Suasana beton dan baja yang keren.",
+  "cafe_vibe.traditional_zen.label": "Tradisional/Zen",
+  "cafe_vibe.traditional_zen.description": "Istirahat tenang dengan hanok dan kayu.",
+  "cafe_vibe.nature_botanical.label": "Alam/Botani",
+  "cafe_vibe.nature_botanical.description": "Ruang penuh hijau dan cahaya.",
+  "cafe_vibe.retro_newtro.label": "Retro/Newtro",
+  "cafe_vibe.retro_newtro.description": "Nostalgia dan gang vintage.",
+  "cafe_vibe.modern_minimal.label": "Modern/Minimal",
+  "cafe_vibe.modern_minimal.description": "Estetika monokrom yang halus.",
+  "brand.seveneleven": "7-Eleven",
+  "brand.emart24": "emart24",
+  "market": {
+    "SEOUL": {
+      "0": {
+        "name": "Pasar Gwangjang",
+        "description": "Ibu kota yukhoe dan bindaetteok."
+      },
+      "1": {
+        "name": "Pasar Mangwon",
+        "description": "Pasar trendi favorit generasi muda."
+      },
+      "2": {
+        "name": "Pasar Tongin",
+        "description": "Pengalaman kotak makan koin legendaris."
+      }
+    },
+    "GANGWON": {
+      "0": {
+        "name": "Pasar Yeongwol Jungang",
+        "description": "Pancake soba dan mie olchaengi."
+      },
+      "1": {
+        "name": "Pasar wisata Sokcho",
+        "description": "Ayam goreng Korea dan jajanan laut."
+      }
+    },
+    "JEONLA": {
+      "0": {
+        "name": "Pasar Selatan Jeonju",
+        "description": "Asal sundae dan sup tauge."
+      },
+      "1": {
+        "name": "Pasar Stasiun Songjeong Gwangju 1913",
+        "description": "Suasana retro-newtro."
+      }
+    },
+    "GYEONGSANG": {
+      "0": {
+        "name": "Pasar Gukje Busan",
+        "description": "Kenangan film dan bibim dangmyeon."
+      },
+      "1": {
+        "name": "Pasar Seomun Daegu",
+        "description": "Skala dan rasa pasar top 3 Korea."
+      }
+    },
+    "JEJU": {
+      "0": {
+        "name": "Pasar Dongmun Jeju",
+        "description": "Kue omegi dan gangjeong babi hitam."
+      }
+    }
+  },
+  "fallback": {
+    "kfood": {
+      "KF_MARKET": {
+        "title": "Tur kuliner pasar tradisional nasional",
+        "description": "Jelajahi rasa lokal hangat di seluruh Korea."
+      },
+      "KF_CAFE": {
+        "title": "Tur K-dessert & suasana kafe",
+        "description": "Rute emosional menghubungkan kafe dan toko pilihan."
+      },
+      "KF_CONVENIENCE": {
+        "title": "Tantangan combo minimarket K",
+        "description": "Dari barang baru habis hingga resep rahasia — jadi modisumer sejati!"
+      }
+    },
+    "kbeauty": {
+      "KBEAUTY_01": {
+        "title": "Flagship Olive Young",
+        "description": "Bandingkan dan beli tren skincare & makeup."
+      },
+      "KBEAUTY_02": {
+        "title": "Jalan kecantikan Myeongdong",
+        "description": "Jelajahi bestseller di sekitar toko utama."
+      },
+      "KBEAUTY_03": {
+        "title": "Toko pengalaman skincare",
+        "description": "Perawatan personal dan program kecantikan interaktif."
+      }
+    }
+  },
+  "recipe_vibe.spicy_fire.label": "Pedas menyala",
+  "recipe_vibe.spicy_fire.description": "Tantangan pedas untuk meluapkan stres.",
+  "recipe_vibe.sweet_salty.label": "Asin-manis klasik",
+  "recipe_vibe.sweet_salty.description": "Keseimbangan manis dan gurih.",
+  "recipe_vibe.diet_healthy.label": "Diet minimarket",
+  "recipe_vibe.diet_healthy.description": "Combo ringan tapi mengenyangkan.",
+  "recipe_vibe.night_snack.label": "Camilan malam",
+  "recipe_vibe.night_snack.description": "Resep camilan malam kecil.",
+  "recipe_vibe.hangover.label": "Combo mabuk",
+  "recipe_vibe.hangover.description": "Kombinasi untuk pemulihan.",
+  "recipe_vibe.luxury_meal.label": "Makan premium hemat",
+  "recipe_vibe.luxury_meal.description": "Makan premium dari minimarket.",
+  "shopping.ramen": "Mie cup",
+  "shopping.tuna_kimbap": "Onigiri segitiga tuna mayo",
+  "shopping.string_cheese": "Keju tarik",
+  "shopping.sparkling_water": "Air berkarbonasi",
+  "cooking.1": "Siapkan bahan, masukkan wadah microwave.",
+  "cooking.2": "Campur saus/topping, masak 1 menit 30 detik.",
+  "cooking.3": "Tambah topping sesuai selera, foto verifikasi.",
+  "trending_card.1.title": "Roti krim susu Yonsei",
+  "trending_card.2.title": "Highball cola zero cup es",
+  "trending_card.default_title": "Item trending pilihan AI",
+  "trending_card.tag.new": "#baru",
+  "trending_card.tag.soldout": "#habis",
+  "trending_card.tag.review": "#viral",
+  "trending_card.tag.repurchase": "#belilagi",
+  "meta.kf_market.title_ko": "Tur kuliner pasar tradisional nasional",
+  "meta.kf_cafe.title_ko": "Tur K-dessert & suasana kafe",
+  "meta.kf_convenience.title_ko": "Tantangan combo minimarket K",
+  "meta.kf_market.tags": "pasar tradisional, kuliner, lokal",
+  "meta.kf_cafe.tags": "kafe, dessert, toko pilihan",
+  "meta.kf_convenience.tags": "minimarket, combo, modisumer",
+  "empty.pick_market": "Pilih pasar lalu buat jadwal",
+  "empty.pick_vibe_or_cafe": "Pilih suasana atau nama kafe",
+  "empty.pick_tab_condition": "Pilih kondisi tab lalu buat",
+  "empty.pick_date": "Pilih tanggal lalu buat jadwal",
+  "empty.market_guide": "Pilih pasar di kiri, klik [Buat itinerary pasar] atau ✨ atas",
+  "empty.cafe_guide": "Pilih suasana/nama kafe di kiri, klik [Buat itinerary AI]",
+  "empty.convenience_guide": "Pilih tab mode atas, masukkan kata kunci, buat",
+  "empty.default_guide": "Klik tombol ✨ buat jadwal di atas",
+  "shopping_list_title": "Daftar belanja",
+  "cooking_steps_title": "Langkah memasak"
+}

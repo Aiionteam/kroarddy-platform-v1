@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import "@/lib/i18n/config";
+import { useTranslation } from "react-i18next";
 
 const NAVER_CLIENT_ID =
   process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID || "8cy39wy7um";
@@ -29,22 +31,19 @@ interface RouteSummary {
 
 const MODE_CONFIG: Record<
   TransportMode,
-  { label: string; icon: string; color: string; stroke: string }
+  { icon: string; color: string; stroke: string }
 > = {
   car: {
-    label: "차량",
     icon: "🚗",
     color: "bg-indigo-500",
     stroke: "#6366f1",
   },
   walk: {
-    label: "도보",
     icon: "🚶",
     color: "bg-emerald-500",
     stroke: "#10b981",
   },
   transit: {
-    label: "대중교통",
     icon: "🚌",
     color: "bg-sky-500",
     stroke: "#0ea5e9",
@@ -215,10 +214,14 @@ function formatDistance(m: number): string {
   return `${(m / 1000).toFixed(1)}km`;
 }
 
-function formatDuration(ms: number): string {
+function formatDuration(ms: number, t: (key: string, options?: Record<string, unknown>) => string): string {
   const min = Math.round(ms / 60000);
-  if (min < 60) return `약 ${min}분`;
-  return `약 ${Math.floor(min / 60)}시간 ${min % 60}분`;
+  if (min < 60) return t("map.duration_min", { min, defaultValue: "약 {{min}}분" });
+  return t("map.duration_hour_min", {
+    hour: Math.floor(min / 60),
+    min: min % 60,
+    defaultValue: "약 {{hour}}시간 {{min}}분",
+  });
 }
 
 function buildNaverTransitUrl(
@@ -239,6 +242,7 @@ export function NaverRouteMapModal({
   planName,
   onClose,
 }: NaverRouteMapModalProps) {
+  const { t } = useTranslation();
   const mapRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -255,6 +259,15 @@ export function NaverRouteMapModal({
 
   const validPlaces = places.filter((p) => p.name?.trim());
   const cfg = MODE_CONFIG[mode];
+  const modeLabel = (m: TransportMode) =>
+    t(`map.mode.${m}`, {
+      defaultValue:
+        m === "car"
+          ? "차량"
+          : m === "walk"
+            ? "도보"
+            : "대중교통",
+    });
 
   const renderRoute = useCallback(
     async (coords: RouteCoord[]) => {
@@ -471,14 +484,14 @@ export function NaverRouteMapModal({
             <div className="min-w-0">
               <p className="truncate text-sm font-bold text-white">{planName}</p>
               <p className="text-[11px] text-white/70">
-                전체 경로 · {validPlaces.length}개 경유지
+                {t("map.total_route_stops", { defaultValue: "전체 경로 · {{count}}개 경유지", count: validPlaces.length })}
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="닫기"
+            aria-label={t("common.close", { defaultValue: "닫기" })}
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors"
           >
             <svg
@@ -512,7 +525,7 @@ export function NaverRouteMapModal({
                 }`}
               >
                 <span>{c.icon}</span>
-                <span>{c.label}</span>
+                <span>{modeLabel(m)}</span>
               </button>
             );
           })}
@@ -524,10 +537,10 @@ export function NaverRouteMapModal({
             <span className="h-3 w-3 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent" />
             <p className="text-xs text-indigo-700">
               {phase === "geocoding"
-                ? `위치 검색 중… ${resolved} / ${validPlaces.length}`
+                ? t("map.searching_locations", { defaultValue: "위치 검색 중… {{resolved}} / {{total}}", resolved, total: validPlaces.length })
                 : mode === "car"
-                ? "실제 도로 경로 계산 중…"
-                : "경로 그리는 중…"}
+                ? t("map.routing_car", { defaultValue: "실제 도로 경로 계산 중…" })
+                : t("map.drawing_route", { defaultValue: "경로 그리는 중…" })}
             </p>
           </div>
         )}
@@ -542,8 +555,8 @@ export function NaverRouteMapModal({
               <>
                 <span className="opacity-50">·</span>
                 <span>
-                  ⏱ {formatDuration(summary.duration)}
-                  {mode === "car" ? " (차량 예상)" : " (도보 예상)"}
+                  ⏱ {formatDuration(summary.duration, t)}
+                  {mode === "car" ? ` ${t("map.car_estimate", { defaultValue: "(차량 예상)" })}` : ` ${t("map.walk_estimate", { defaultValue: "(도보 예상)" })}`}
                 </span>
               </>
             )}
@@ -557,7 +570,7 @@ export function NaverRouteMapModal({
           {status === "error" && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-50">
               <span className="text-4xl">🗺️</span>
-              <p className="text-sm text-gray-500">경로를 표시할 수 없습니다</p>
+              <p className="text-sm text-gray-500">{t("map.route_failed", { defaultValue: "경로를 표시할 수 없습니다" })}</p>
             </div>
           )}
 
@@ -581,8 +594,8 @@ export function NaverRouteMapModal({
                   : buildNaverSearchUrl(p.name);
               const naverLabel =
                 mode === "transit" && prevCoord && currCoord
-                  ? `${idx}→${idx + 1} 경로`
-                  : "지도 보기";
+                  ? t("map.segment_route", { defaultValue: "{{from}}→{{to}} 경로", from: idx, to: idx + 1 })
+                  : t("map.view_map", { defaultValue: "지도 보기" });
               const naverIcon = mode === "transit" ? "🚌" : "📍";
 
               return (
@@ -609,7 +622,7 @@ export function NaverRouteMapModal({
                       </p>
                       {isDuplicate && (
                         <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
-                          📌 동일 위치
+                          {t("map.same_place", { defaultValue: "📌 동일 위치" })}
                         </span>
                       )}
                     </div>
@@ -632,7 +645,7 @@ export function NaverRouteMapModal({
                           ? "bg-sky-50 text-sky-600 hover:bg-sky-100"
                           : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                       }`}
-                      title={`${p.name} 네이버 지도로 보기`}
+                      title={t("map.open_in_naver_title", { defaultValue: "{{name}} 네이버 지도로 보기", name: p.name })}
                     >
                       <span>{naverIcon}</span>
                       <span>{naverLabel}</span>

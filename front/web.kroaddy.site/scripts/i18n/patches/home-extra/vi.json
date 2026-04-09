@@ -1,0 +1,62 @@
+{
+  "common": {
+    "view_all": "Xem tất cả",
+    "more": "Thêm"
+  },
+  "home": {
+    "kcontent": {
+      "title": "🎭 Chuyến đi theo chủ đề K-content",
+      "theme_kpop": "K-POP",
+      "theme_kdrama": "K-DRAMA",
+      "theme_kfood": "K-FOOD",
+      "theme_kbeauty": "K-BEAUTY"
+    },
+    "news": {
+      "prev": "Trước",
+      "next": "Sau",
+      "page_n": "Trang {{page}}",
+      "nationwide": "Toàn quốc",
+      "analyzing": "Phân tích AI vẫn đang được thực hiện.",
+      "error": "Không tải được tin tức."
+    },
+    "rebate": {
+      "city_route_title": "Lộ trình & lịch trình {{name}} (Trình lập kế hoạch chuẩn)",
+      "province": {
+        "강원": "Gangwon",
+        "충북": "Chungbuk",
+        "전북": "Jeonbuk",
+        "전남": "Jeonnam",
+        "경남": "Gyeongnam",
+        "gangwon": "Gangwon",
+        "chungbuk": "Chungbuk",
+        "jeonbuk": "Jeonbuk",
+        "jeonnam": "Jeonnam",
+        "gyeongnam": "Gyeongnam"
+      },
+      "period": "2026.4 ~ 6 · Chương trình thí điểm",
+      "title": "🎫 Hoàn tối đa 50% cho chuyến đi nông thôn được chỉ định",
+      "desc": "Nhận lại một nửa chi phí du lịch dưới dạng phiếu quà tặng địa phương trên điện thoại. Tối đa 100.000 KRW/người, tối đa 200.000 KRW cho nhóm từ 2 người trở lên.",
+      "visit_korea": "Visit Korea",
+      "fold": "Thu gọn hướng dẫn",
+      "expand": "Cách dùng · Khu vực đủ điều kiện",
+      "step1": "Đăng ký trước — kiểm tra khu vực đủ điều kiện tại visitkorea.or.kr và được phê duyệt trước khi đi.",
+      "step2": "Du lịch — chi tiêu tại khu vực được phê duyệt (ăn uống, lưu trú, v.v.) và giữ biên lai.",
+      "step3": "Nộp chứng từ — sau chuyến đi, nộp biên lai theo hướng dẫn của chính quyền địa phương.",
+      "step4": "Hoàn tiền — sau khi xác minh, 50% chi tiêu được trả bằng phiếu quà tặng địa phương trên điện thoại.",
+      "step5": "Sử dụng — dùng trong năm tại nhà hàng, quán cà phê, trung tâm thương mại trực tuyến của khu vực đó.",
+      "notice": "Lưu ý: Bắt buộc đăng ký và được phê duyệt trước. Có thể kết thúc sớm do hạn ngân sách. Chi tiết khác nhau theo địa phương; hãy kiểm tra trang chính thức đầu tháng 4.",
+      "targets": "16 khu vực đủ điều kiện · Xem lộ trình trong trình lập kế hoạch hoặc hướng dẫn chính thức"
+    },
+    "popular": {
+      "title": "📍 Điểm đến phổ biến"
+    },
+    "shortcuts": {
+      "planner": "Lập kế hoạch chuyến đi",
+      "kcontent": "K-content",
+      "schedule": "Lịch trình",
+      "standard": "Khám phá địa điểm",
+      "user": "Lộ trình người dùng",
+      "group": "Chat nhóm"
+    }
+  }
+}

@@ -4,29 +4,30 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
 import { AppLayout } from "@/components/organisms/AppLayout";
+import { useTranslation } from "react-i18next";
 
 const MODE_OPTIONS = [
   {
     id: "standard",
-    label: "스탠다드",
+    label: "planner.modes.standard.title",
     emoji: "🗺️",
-    desc: "AI가 추천하는 여행 루트와 일정",
+    desc: "planner.modes.standard.desc",
     available: true,
     path: "/planner/standard",
   },
   {
     id: "k-content",
-    label: "K컨텐츠",
+    label: "planner.modes.kcontent.title",
     emoji: "🎬",
-    desc: "드라마·영화 촬영지 여행",
+    desc: "planner.modes.kcontent.desc",
     available: true,
     path: "/planner/k-content",
   },
   {
     id: "user-content",
-    label: "유저 컨텐츠",
+    label: "planner.modes.usercontent.title",
     emoji: "👥",
-    desc: "여행자들이 만든 추천 코스",
+    desc: "planner.modes.usercontent.desc",
     available: true,
     path: "/planner/user-content",
   },
@@ -35,6 +36,7 @@ const MODE_OPTIONS = [
 export default function PlannerPage() {
   const router = useRouter();
   const { isAuthenticated, logout } = useLoginStore();
+  const { t } = useTranslation();
 
   React.useEffect(() => {
     if (!isAuthenticated) router.replace("/");
@@ -47,9 +49,9 @@ export default function PlannerPage() {
       <main className="flex flex-1 flex-col items-center justify-center bg-gray-100 px-4 py-8 md:px-8 md:py-12">
         <div className="mb-10 text-center">
           <h2 className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-3xl font-bold text-transparent">
-            여행 플래너
+            {t("planner.title", { defaultValue: "여행 플래너" })}
           </h2>
-          <p className="mt-2 text-sm text-gray-500">원하는 여행 스타일을 선택해 주세요</p>
+          <p className="mt-2 text-sm text-gray-500">{t("planner.subtitle", { defaultValue: "원하는 여행 스타일을 선택해 주세요" })}</p>
         </div>
         <div className="flex w-full max-w-lg flex-col gap-4">
           {MODE_OPTIONS.map((opt) => (
@@ -66,14 +68,14 @@ export default function PlannerPage() {
               <span className="text-4xl leading-none">{opt.emoji}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-gray-800">{opt.label}</span>
+                  <span className="font-semibold text-gray-800">{t(opt.label, { defaultValue: opt.id === "standard" ? "스탠다드" : opt.id === "k-content" ? "K컨텐츠" : "유저 컨텐츠" })}</span>
                   {!opt.available && (
                     <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-400">
-                      준비 중
+                      {t("common.coming_soon", { defaultValue: "준비 중" })}
                     </span>
                   )}
                 </div>
-                <p className="mt-0.5 text-sm text-gray-400">{opt.desc}</p>
+                <p className="mt-0.5 text-sm text-gray-400">{t(opt.desc, { defaultValue: opt.id === "standard" ? "AI가 추천하는 여행 루트와 일정" : opt.id === "k-content" ? "드라마·영화 촬영지 여행" : "여행자들이 만든 추천 코스" })}</p>
               </div>
               {opt.available && (
                 <span className="shrink-0 text-gray-300 text-lg">→</span>

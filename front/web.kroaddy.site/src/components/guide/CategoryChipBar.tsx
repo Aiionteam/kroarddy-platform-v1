@@ -13,6 +13,8 @@ import {
   UtensilsCrossed,
   type LucideIcon,
 } from "lucide-react";
+import "@/lib/i18n/config";
+import { useTranslation } from "react-i18next";
 
 export type GuideCategoryId =
   | "all"
@@ -24,19 +26,31 @@ export type GuideCategoryId =
   | "restaurant"
   | "cafe";
 
-export const GUIDE_CATEGORIES: {
-  id: GuideCategoryId;
-  label: string;
-}[] = [
-  { id: "all", label: "전체" },
-  { id: "festival", label: "행사" },
-  { id: "activity", label: "K-액티비티" },
-  { id: "historic", label: "역사/유적" },
-  { id: "culture", label: "로컬문화" },
-  { id: "nature", label: "자연/힐링" },
-  { id: "restaurant", label: "맛집" },
-  { id: "cafe", label: "카페" },
+export const GUIDE_CATEGORY_IDS: GuideCategoryId[] = [
+  "all",
+  "festival",
+  "activity",
+  "historic",
+  "culture",
+  "nature",
+  "restaurant",
+  "cafe",
 ];
+
+/** @deprecated Use GUIDE_CATEGORY_IDS + i18n `guide.category.*` */
+export const GUIDE_CATEGORIES = GUIDE_CATEGORY_IDS.map((id) => ({ id, label: id }));
+
+/** i18n 미초기화·누락 키 시에도 키 문자열 대신 표시용 영문 라벨 */
+export const GUIDE_CATEGORY_LABEL_DEFAULTS: Record<GuideCategoryId, string> = {
+  all: "All",
+  festival: "Events",
+  activity: "K-Activities",
+  historic: "History & heritage",
+  culture: "Local culture",
+  nature: "Nature & healing",
+  restaurant: "Restaurants",
+  cafe: "Cafés",
+};
 
 const CATEGORY_ICONS: Record<GuideCategoryId, LucideIcon> = {
   all: LayoutGrid,
@@ -64,25 +78,29 @@ export function CategoryChipBar({
   onSelect,
   disabled = false,
 }: CategoryChipBarProps) {
+  const { t } = useTranslation();
   return (
     <div className="pointer-events-none absolute left-0 right-0 top-0 z-10 pt-2 md:pt-3">
       <div className="pointer-events-auto px-4 md:px-6">
         <div
           className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           role="tablist"
-          aria-label="가이드 카테고리"
+          aria-label={t("guide.category_tabs_aria", { defaultValue: "Guide categories" })}
         >
-          {GUIDE_CATEGORIES.map((c) => {
-            const active = activeCategory === c.id;
-            const Icon = CATEGORY_ICONS[c.id];
+          {GUIDE_CATEGORY_IDS.map((id) => {
+            const active = activeCategory === id;
+            const Icon = CATEGORY_ICONS[id];
+            const label = t(`guide.category.${id}`, {
+              defaultValue: GUIDE_CATEGORY_LABEL_DEFAULTS[id],
+            });
             return (
               <motion.button
-                key={c.id}
+                key={id}
                 type="button"
                 role="tab"
                 aria-selected={active}
                 disabled={disabled}
-                onClick={() => onSelect(c.id)}
+                onClick={() => onSelect(id)}
                 whileTap={disabled ? undefined : { scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 520, damping: 28 }}
                 className={[
@@ -100,7 +118,7 @@ export function CategoryChipBar({
                   aria-hidden
                   strokeWidth={2}
                 />
-                {c.label}
+                {label}
               </motion.button>
             );
           })}
@@ -109,14 +127,3 @@ export function CategoryChipBar({
     </div>
   );
 }
-
-/** 행사 외 칩 클릭 시 입력창에 넣을 검색/질문 프롬프트 */
-export const CATEGORY_CHAT_PROMPTS: Partial<Record<GuideCategoryId, string>> = {
-  all: "",
-  activity: "K-액티비티로 즐길 만한 여행지를 추천해줘",
-  historic: "한국의 역사·유적 명소를 추천해줘",
-  culture: "로컬 문화를 체험할 수 있는 곳을 추천해줘",
-  nature: "자연과 힐링을 즐길 수 있는 여행지를 추천해줘",
-  restaurant: "지역 맛집을 추천해줘",
-  cafe: "분위기 좋은 카페를 추천해줘",
-};

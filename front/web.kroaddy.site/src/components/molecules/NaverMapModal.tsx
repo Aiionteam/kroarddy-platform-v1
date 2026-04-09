@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import "@/lib/i18n/config";
+import { useTranslation } from "react-i18next";
 
 const NAVER_CLIENT_ID =
   process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID || "8cy39wy7um";
@@ -32,6 +34,7 @@ function buildStaticMapUrl(lng: number, lat: number, level: number): string {
 }
 
 export function NaverMapModal({ placeName, lat, lng, onClose }: NaverMapModalProps) {
+  const { t } = useTranslation();
   const overlayRef = useRef<HTMLDivElement>(null);
   const [status, setStatus]       = useState<"loading" | "ok" | "error">("loading");
   const [coords, setCoords]       = useState<{ lat: number; lng: number } | null>(null);
@@ -105,7 +108,7 @@ export function NaverMapModal({ placeName, lat, lng, onClose }: NaverMapModalPro
           <button
             type="button"
             onClick={onClose}
-            aria-label="닫기"
+            aria-label={t("common.close", { defaultValue: "닫기" })}
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -119,7 +122,7 @@ export function NaverMapModal({ placeName, lat, lng, onClose }: NaverMapModalPro
           {status === "loading" && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-50">
               <span className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-400 border-t-transparent" />
-              <p className="text-xs text-gray-500">지도를 불러오는 중…</p>
+              <p className="text-xs text-gray-500">{t("map.loading", { defaultValue: "지도를 불러오는 중…" })}</p>
             </div>
           )}
 
@@ -136,16 +139,16 @@ export function NaverMapModal({ placeName, lat, lng, onClose }: NaverMapModalPro
           {status === "error" && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gray-50 p-6 text-center">
               <span className="text-3xl">🗺️</span>
-              <p className="text-sm font-medium text-gray-600">정적 지도를 불러올 수 없습니다</p>
+              <p className="text-sm font-medium text-gray-600">{t("map.static_failed", { defaultValue: "정적 지도를 불러올 수 없습니다" })}</p>
               <a
                 href={`https://map.naver.com/v5/search/${encodeURIComponent(placeName)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-600 transition-colors"
               >
-                <span>🗺️</span> 네이버지도에서 보기
+                <span>🗺️</span> {t("map.open_in_naver", { defaultValue: "네이버지도에서 보기" })}
               </a>
-              <p className="text-xs text-gray-400">새로 생성한 일정은 지도가 자동 표시됩니다</p>
+              <p className="text-xs text-gray-400">{t("map.note_new_schedule", { defaultValue: "새로 생성한 일정은 지도가 자동 표시됩니다" })}</p>
             </div>
           )}
 
@@ -156,7 +159,7 @@ export function NaverMapModal({ placeName, lat, lng, onClose }: NaverMapModalPro
                 type="button"
                 onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z + 1))}
                 disabled={zoom >= ZOOM_MAX}
-                aria-label="확대"
+                aria-label={t("map.zoom_in", { defaultValue: "확대" })}
                 className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/90 text-gray-700 shadow-md hover:bg-white disabled:opacity-30 transition-colors text-lg font-bold leading-none"
               >
                 +
@@ -165,7 +168,7 @@ export function NaverMapModal({ placeName, lat, lng, onClose }: NaverMapModalPro
                 type="button"
                 onClick={() => setZoom((z) => Math.max(ZOOM_MIN, z - 1))}
                 disabled={zoom <= ZOOM_MIN}
-                aria-label="축소"
+                aria-label={t("map.zoom_out", { defaultValue: "축소" })}
                 className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/90 text-gray-700 shadow-md hover:bg-white disabled:opacity-30 transition-colors text-lg font-bold leading-none"
               >
                 −
@@ -173,7 +176,7 @@ export function NaverMapModal({ placeName, lat, lng, onClose }: NaverMapModalPro
               <button
                 type="button"
                 onClick={() => setZoom(ZOOM_DEFAULT)}
-                aria-label="기본 배율"
+                aria-label={t("map.zoom_reset", { defaultValue: "기본 배율" })}
                 className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/90 text-gray-700 shadow-md hover:bg-white transition-colors text-[10px] font-semibold"
               >
                 ⊙
@@ -194,7 +197,7 @@ export function NaverMapModal({ placeName, lat, lng, onClose }: NaverMapModalPro
               rel="noopener noreferrer"
               className="shrink-0 rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-100 transition-colors"
             >
-              네이버지도로 열기 ↗
+              {t("map.open_in_naver_with_arrow", { defaultValue: "네이버지도로 열기 ↗" })}
             </a>
           </div>
         )}

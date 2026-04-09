@@ -1,3 +1,5 @@
+import i18n from "@/lib/i18n/config";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export interface NewsItem {
@@ -29,7 +31,7 @@ export async function fetchNews(
     `${API_BASE}/api/v1/news?category=${category}&limit=${limit}`,
     { cache: "no-store", credentials: "include" }
   );
-  if (!res.ok) throw new Error(`뉴스 API 오류: ${res.status}`);
+  if (!res.ok) throw new Error(`${i18n.t("news.api.error", { defaultValue: "뉴스 API 오류" })}: ${res.status}`);
   return res.json();
 }
 
@@ -74,14 +76,20 @@ export async function fetchProcessedNews(
     `${API_BASE}/api/v1/news/processed?limit_rest=${limitRest}`,
     { cache: "no-store", credentials: "include" }
   );
-  if (!res.ok) throw new Error(`뉴스 API 오류: ${res.status}`);
+  if (!res.ok) throw new Error(`${i18n.t("news.api.error", { defaultValue: "뉴스 API 오류" })}: ${res.status}`);
   return res.json();
 }
 
 export function timeAgo(isoString: string): string {
-  const diff = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
-  if (diff < 60) return `${diff}초 전`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
-  return `${Math.floor(diff / 86400)}일 전`;
+  const publishedAt = new Date(isoString).getTime();
+  if (!Number.isFinite(publishedAt)) return "";
+  const diffSec = Math.floor((Date.now() - publishedAt) / 1000);
+  const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "always" });
+  if (Math.abs(diffSec) < 60) return rtf.format(-diffSec, "second");
+  const diffMin = Math.floor(diffSec / 60);
+  if (Math.abs(diffMin) < 60) return rtf.format(-diffMin, "minute");
+  const diffHour = Math.floor(diffMin / 60);
+  if (Math.abs(diffHour) < 24) return rtf.format(-diffHour, "hour");
+  const diffDay = Math.floor(diffHour / 24);
+  return rtf.format(-diffDay, "day");
 }

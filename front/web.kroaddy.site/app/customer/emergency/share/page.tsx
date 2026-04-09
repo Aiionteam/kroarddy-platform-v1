@@ -4,6 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import { useLoginStore } from "@/store";
+import { useTranslation } from "react-i18next";
 
 type Reason = {
   id: string;
@@ -49,32 +50,35 @@ function PhoneIcon() {
   );
 }
 
-const EMERGENCY_REASONS: Reason[] = [
-  {
-    id: "location",
-    label: "위치/안전 도움 필요",
-    description: "현재 위치 기반으로 도움을 요청할 수 있어요.",
-    icon: <PinIcon />,
-  },
-  {
-    id: "medical",
-    label: "의료 도움 필요",
-    description: "질병/부상 등 응급 의료 지원이 필요해요.",
-    icon: <MedicalCrossIcon />,
-  },
-  {
-    id: "danger",
-    label: "긴급 위험 상황",
-    description: "폭력/사기/협박 등 즉시 안전이 필요해요.",
-    icon: <AlertIcon />,
-  },
-];
-
 type PhotoItem = { id: string; file: File; url: string };
 
 export default function EmergencySharePage() {
   const router = useRouter();
   const { isAuthenticated, logout } = useLoginStore();
+  const { t } = useTranslation();
+  const emergencyReasons = React.useMemo<Reason[]>(
+    () => [
+      {
+        id: "location",
+        label: t("customer.emergency.share.reason.location.label", { defaultValue: "위치/안전 도움 필요" }),
+        description: t("customer.emergency.share.reason.location.desc", { defaultValue: "현재 위치 기반으로 도움을 요청할 수 있어요." }),
+        icon: <PinIcon />,
+      },
+      {
+        id: "medical",
+        label: t("customer.emergency.share.reason.medical.label", { defaultValue: "의료 도움 필요" }),
+        description: t("customer.emergency.share.reason.medical.desc", { defaultValue: "질병/부상 등 응급 의료 지원이 필요해요." }),
+        icon: <MedicalCrossIcon />,
+      },
+      {
+        id: "danger",
+        label: t("customer.emergency.share.reason.danger.label", { defaultValue: "긴급 위험 상황" }),
+        description: t("customer.emergency.share.reason.danger.desc", { defaultValue: "폭력/사기/협박 등 즉시 안전이 필요해요." }),
+        icon: <AlertIcon />,
+      },
+    ],
+    [t]
+  );
 
   const [selectedReasons, setSelectedReasons] = React.useState<Set<string>>(new Set(["location"]));
 
@@ -181,7 +185,7 @@ export default function EmergencySharePage() {
       }, 1000);
     } catch {
       setRecordingState("idle");
-      alert("오디오 녹음 권한을 확인해 주세요.");
+      alert(t("customer.emergency.share.alert.audio_permission", { defaultValue: "오디오 녹음 권한을 확인해 주세요." }));
     }
   };
 
@@ -206,22 +210,27 @@ export default function EmergencySharePage() {
     }
 
     if (selectedReasons.size === 0) {
-      alert("긴급 상황 유형을 하나 이상 선택해 주세요.");
+      alert(t("customer.emergency.share.alert.select_reason", { defaultValue: "긴급 상황 유형을 하나 이상 선택해 주세요." }));
       return;
     }
     if (photos.length === 0 && !audioUrl) {
-      alert("사진 또는 오디오를 첨부해 주세요.");
+      alert(t("customer.emergency.share.alert.attach_required", { defaultValue: "사진 또는 오디오를 첨부해 주세요." }));
       return;
     }
 
     // TODO: API 연동 지점 (현재는 데모)
-    const reasonList = Array.from(selectedReasons.values());
-    alert(`긴급 상황 공유를 시작합니다. (데모)\n선택: ${reasonList.join(", ")}`);
+    const reasonList = emergencyReasons.filter((r) => selectedReasons.has(r.id)).map((r) => r.label).join(", ");
+    alert(
+      t("customer.emergency.share.alert.start_demo", {
+        selected: reasonList,
+        defaultValue: "긴급 상황 공유를 시작합니다. (데모)\n선택: {{selected}}",
+      })
+    );
     router.push("/customer/emergency");
   };
 
   return (
-    <AppLayout onLogout={logout} mobileTitle="긴급상황 공유">
+    <AppLayout onLogout={logout} mobileTitle={t("customer.emergency.share.title_mobile", { defaultValue: "긴급상황 공유" })}>
       <main className="flex flex-1 flex-col overflow-y-auto">
         <header className="shrink-0 border-b border-gray-200 bg-white px-6 py-5">
           <div className="flex items-center justify-between gap-3">
@@ -233,25 +242,25 @@ export default function EmergencySharePage() {
               >
                 ←
               </button>
-              <h1 className="text-xl font-bold text-gray-800">긴급상황 대외 공유</h1>
+              <h1 className="text-xl font-bold text-gray-800">{t("customer.emergency.share.title", { defaultValue: "긴급상황 대외 공유" })}</h1>
             </div>
             <button
               type="button"
               onClick={() => router.push("/customer/emergency")}
               className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
             >
-              닫기
+              {t("common.close", { defaultValue: "닫기" })}
             </button>
           </div>
         </header>
 
         <div className="mx-auto w-full max-w-3xl px-6 py-8">
           <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <h2 className="text-base font-semibold text-gray-800">긴급 상황 유형</h2>
-            <p className="mt-1 text-sm text-gray-500">아래 유형을 선택하고 사진/오디오를 첨부해 즉시 공유할 수 있어요.</p>
+            <h2 className="text-base font-semibold text-gray-800">{t("customer.emergency.share.type_title", { defaultValue: "긴급 상황 유형" })}</h2>
+            <p className="mt-1 text-sm text-gray-500">{t("customer.emergency.share.type_subtitle", { defaultValue: "아래 유형을 선택하고 사진/오디오를 첨부해 즉시 공유할 수 있어요." })}</p>
 
             <div className="mt-4 space-y-3">
-              {EMERGENCY_REASONS.map((r) => (
+              {emergencyReasons.map((r) => (
                 <label
                   key={r.id}
                   className="flex cursor-pointer items-start justify-between gap-4 rounded-xl border border-gray-200 bg-gray-50 p-4"
@@ -270,7 +279,7 @@ export default function EmergencySharePage() {
                       checked={selectedReasons.has(r.id)}
                       onChange={() => toggleReason(r.id)}
                       className="h-4 w-4 accent-purple-600"
-                      aria-label={`${r.label} 선택`}
+                      aria-label={t("customer.emergency.share.aria.select_reason", { id: r.label, defaultValue: "{{id}} 선택" })}
                     />
                   </span>
                 </label>
@@ -279,21 +288,21 @@ export default function EmergencySharePage() {
           </section>
 
           <section className="mt-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <h2 className="text-base font-semibold text-gray-800">첨부</h2>
-            <p className="mt-1 text-sm text-gray-500">사진 또는 오디오를 첨부하면 공유가 더 빨라져요.</p>
+            <h2 className="text-base font-semibold text-gray-800">{t("customer.emergency.share.attach_title", { defaultValue: "첨부" })}</h2>
+            <p className="mt-1 text-sm text-gray-500">{t("customer.emergency.share.attach_subtitle", { defaultValue: "사진 또는 오디오를 첨부하면 공유가 더 빨라져요." })}</p>
 
             <div className="mt-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <span className="text-gray-700">🖼️</span>
-                  <h3 className="text-sm font-semibold text-gray-800">사진 첨부</h3>
+                  <h3 className="text-sm font-semibold text-gray-800">{t("customer.emergency.share.photo_section", { defaultValue: "사진 첨부" })}</h3>
                 </div>
                 <button
                   type="button"
                   className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  사진 선택
+                  {t("customer.emergency.share.photo_pick", { defaultValue: "사진 선택" })}
                 </button>
               </div>
               <input
@@ -320,14 +329,14 @@ export default function EmergencySharePage() {
                         }}
                         className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-1 text-xs font-semibold text-white hover:bg-black/70"
                       >
-                        삭제
+                        {t("common.delete", { defaultValue: "삭제" })}
                       </button>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="mt-3 rounded-xl border border-dashed border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-500">
-                  사진을 선택해 주세요.
+                  {t("customer.emergency.share.photo_empty", { defaultValue: "사진을 선택해 주세요." })}
                 </div>
               )}
             </div>
@@ -336,14 +345,14 @@ export default function EmergencySharePage() {
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <span className="text-gray-700">🎙️</span>
-                  <h3 className="text-sm font-semibold text-gray-800">오디오 녹음</h3>
+                  <h3 className="text-sm font-semibold text-gray-800">{t("customer.emergency.share.audio_section", { defaultValue: "오디오 녹음" })}</h3>
                 </div>
                 {recordingState === "recording" ? (
-                  <span className="text-xs font-semibold text-red-600">녹음 중: {recordingSeconds}s</span>
+                  <span className="text-xs font-semibold text-red-600">{t("customer.emergency.share.recording", { s: recordingSeconds, defaultValue: "녹음 중: {{s}}s" })}</span>
                 ) : audioUrl ? (
-                  <span className="text-xs font-semibold text-gray-500">녹음 완료</span>
+                  <span className="text-xs font-semibold text-gray-500">{t("customer.emergency.share.record_ready", { defaultValue: "녹음 완료" })}</span>
                 ) : (
-                  <span className="text-xs font-semibold text-gray-500">선택사항</span>
+                  <span className="text-xs font-semibold text-gray-500">{t("customer.emergency.share.optional", { defaultValue: "선택사항" })}</span>
                 )}
               </div>
 
@@ -354,7 +363,7 @@ export default function EmergencySharePage() {
                     onClick={startRecording}
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-3 text-sm font-semibold text-white hover:bg-purple-700"
                   >
-                    <span>●</span> 녹음 시작
+                    <span>●</span> {t("customer.emergency.share.audio_start", { defaultValue: "녹음 시작" })}
                   </button>
                 ) : (
                   <button
@@ -362,7 +371,7 @@ export default function EmergencySharePage() {
                     onClick={stopRecording}
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-700"
                   >
-                    ■ 중지
+                    ■ {t("customer.emergency.share.audio_stop", { defaultValue: "중지" })}
                   </button>
                 )}
 
@@ -376,11 +385,11 @@ export default function EmergencySharePage() {
                     }}
                     className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
                   >
-                    오디오 삭제
+                    {t("customer.emergency.share.audio_delete", { defaultValue: "오디오 삭제" })}
                   </button>
                 ) : (
                   <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-center text-xs text-gray-500 sm:text-left">
-                    녹음 권한이 필요할 수 있어요.
+                    {t("customer.emergency.share.audio_perm", { defaultValue: "녹음 권한이 필요할 수 있어요." })}
                   </div>
                 )}
               </div>
@@ -396,15 +405,15 @@ export default function EmergencySharePage() {
           <section className="mt-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h2 className="text-base font-semibold text-gray-800">바로 공유</h2>
-                <p className="mt-1 text-sm text-gray-500">데모 UI입니다. 버튼 클릭 시 실제 전송 대신 확인 알림이 표시됩니다.</p>
+                <h2 className="text-base font-semibold text-gray-800">{t("customer.emergency.share.now_title", { defaultValue: "바로 공유" })}</h2>
+                <p className="mt-1 text-sm text-gray-500">{t("customer.emergency.share.now_subtitle", { defaultValue: "데모 UI입니다. 버튼 클릭 시 실제 전송 대신 확인 알림이 표시됩니다." })}</p>
               </div>
               <a
                 href="tel:112"
                 className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
               >
                 <PhoneIcon />
-                긴급전화
+                {t("customer.emergency.share.call_emergency", { defaultValue: "긴급전화" })}
               </a>
             </div>
 
@@ -413,7 +422,7 @@ export default function EmergencySharePage() {
               onClick={onStartShare}
               className="mt-4 w-full rounded-xl bg-blue-600 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60"
             >
-              긴급 상황 공유 시작
+              {t("customer.emergency.share.start_button", { defaultValue: "긴급 상황 공유 시작" })}
             </button>
           </section>
         </div>

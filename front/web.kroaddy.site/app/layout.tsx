@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Kroaddy",
-  description: "Kroaddy - AI 여행 플래너",
+  description: "Kroaddy - AI Trip Planner",
   icons: {
     icon: "/logo/logo_no_background.png",
     shortcut: "/logo/logo_no_background.png",

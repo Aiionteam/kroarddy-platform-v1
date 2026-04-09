@@ -13,31 +13,51 @@ import {
   type ProcessedNewsItem,
   type ProcessedNewsResponse,
 } from "@/lib/api/news";
+import { useTranslation } from "react-i18next";
 
 const SKIP_KEY = "onboarding_skipped";
 
-const CATEGORY_STYLE: Record<string, { bg: string; text: string; emoji: string }> = {
-  "공연/콘서트": { bg: "bg-pink-100",   text: "text-pink-700",   emoji: "🎤" },
-  "드라마/영화": { bg: "bg-purple-100", text: "text-purple-700", emoji: "🎬" },
-  "K-pop/아이돌":{ bg: "bg-rose-100",   text: "text-rose-700",   emoji: "⭐" },
-  "축제/전시":   { bg: "bg-amber-100",  text: "text-amber-700",  emoji: "🎨" },
-  "장소/핫플":   { bg: "bg-green-100",  text: "text-green-700",  emoji: "📍" },
-  "기타":        { bg: "bg-gray-100",   text: "text-gray-600",   emoji: "📰" },
+type NewsCategoryCode = "performance" | "drama" | "idol" | "festival" | "place" | "other";
+
+const CATEGORY_STYLE: Record<NewsCategoryCode, { bg: string; text: string; emoji: string }> = {
+  performance: { bg: "bg-pink-100", text: "text-pink-700", emoji: "🎤" },
+  drama: { bg: "bg-purple-100", text: "text-purple-700", emoji: "🎬" },
+  idol: { bg: "bg-rose-100", text: "text-rose-700", emoji: "⭐" },
+  festival: { bg: "bg-amber-100", text: "text-amber-700", emoji: "🎨" },
+  place: { bg: "bg-green-100", text: "text-green-700", emoji: "📍" },
+  other: { bg: "bg-gray-100", text: "text-gray-600", emoji: "📰" },
 };
 
+function getCategoryCode(raw: string): NewsCategoryCode {
+  const v = raw.trim().toLowerCase();
+  if (v === "공연/콘서트" || v === "performance/concert") return "performance";
+  if (v === "드라마/영화" || v === "drama/movie") return "drama";
+  if (v === "k-pop/아이돌" || v === "k-pop/idol") return "idol";
+  if (v === "축제/전시" || v === "festival/exhibition") return "festival";
+  if (v === "장소/핫플" || v === "place/hotspot") return "place";
+  if (v === "기타" || v === "other") return "other";
+  return "other";
+}
+
 function getCatStyle(cat: string) {
-  return CATEGORY_STYLE[cat] ?? CATEGORY_STYLE["기타"]!;
+  return CATEGORY_STYLE[getCategoryCode(cat)];
+}
+
+function isNationwideLocation(location: string, t: (key: string, options?: Record<string, unknown>) => string) {
+  const value = location.trim().toLowerCase();
+  const nationwideLocalized = t("home.news.nationwide", { defaultValue: "전국" }).trim().toLowerCase();
+  return value === "전국" || value === "nationwide" || value === nationwideLocalized;
 }
 
 // ── 바로가기 메뉴 ──────────────────────────────────────────
 const SHORTCUTS = [
-  { label: "여행 플래너",  emoji: "🗺️",  path: "/planner" },
-  { label: "K-콘텐츠",    emoji: "🎵",  path: "/planner/k-content" },
-  { label: "일정 관리",   emoji: "📅",  path: "/planner/schedule" },
-  { label: "장소 추천",   emoji: "📍",  path: "/planner/standard" },
-  { label: "유저 루트",   emoji: "👥",  path: "/planner/user-content" },
-  { label: "단체 채팅",   emoji: "💬",  path: "/group-chat" },
-];
+  { key: "home.shortcuts.planner",  defaultLabel: "여행 플래너",  emoji: "🗺️",  path: "/planner" },
+  { key: "home.shortcuts.kcontent", defaultLabel: "K-콘텐츠",    emoji: "🎵",  path: "/planner/k-content" },
+  { key: "home.shortcuts.schedule", defaultLabel: "일정 관리",   emoji: "📅",  path: "/planner/schedule" },
+  { key: "home.shortcuts.standard", defaultLabel: "장소 추천",   emoji: "📍",  path: "/planner/standard" },
+  { key: "home.shortcuts.user",     defaultLabel: "유저 루트",   emoji: "👥",  path: "/planner/user-content" },
+  { key: "home.shortcuts.group",    defaultLabel: "단체 채팅",   emoji: "💬",  path: "/group-chat" },
+] as const;
 
 // ── 인기 여행지 (slug은 planner-data.ts의 SLUG_TO_NAME 키와 일치해야 함) ──
 const POPULAR_DESTINATIONS = [
@@ -49,28 +69,36 @@ const POPULAR_DESTINATIONS = [
   { name: "전주",   slug: "jeonju",  emoji: "🎎",  gradient: "from-yellow-400 to-amber-500" },
 ];
 
-// ── K-콘텐츠 테마 ─────────────────────────────────────────
+// ── K-콘텐츠 테마 (라벨: home.kcontent.theme_*) ─────────────────────────
 const K_THEMES = [
-  { label: "K-POP",    emoji: "🎤",  color: "bg-rose-50 border-rose-200 text-rose-600",   path: "/planner/k-content" },
-  { label: "K-DRAMA",  emoji: "🎬",  color: "bg-purple-50 border-purple-200 text-purple-600", path: "/planner/k-content" },
-  { label: "K-FOOD",   emoji: "🍜",  color: "bg-amber-50 border-amber-200 text-amber-600",  path: "/planner/k-content" },
-  { label: "K-BEAUTY", emoji: "💄",  color: "bg-pink-50 border-pink-200 text-pink-600",    path: "/planner/k-content" },
-];
+  { themeKey: "kpop" as const, emoji: "🎤", color: "bg-rose-50 border-rose-200 text-rose-600", path: "/planner/k-content" },
+  { themeKey: "kdrama" as const, emoji: "🎬", color: "bg-purple-50 border-purple-200 text-purple-600", path: "/planner/k-content" },
+  { themeKey: "kfood" as const, emoji: "🍜", color: "bg-amber-50 border-amber-200 text-amber-600", path: "/planner/k-content" },
+  { themeKey: "kbeauty" as const, emoji: "💄", color: "bg-pink-50 border-pink-200 text-pink-600", path: "/planner/k-content" },
+] as const;
+
+const K_THEME_LABEL_DEFAULT: Record<(typeof K_THEMES)[number]["themeKey"], string> = {
+  kpop: "K-POP",
+  kdrama: "K-DRAMA",
+  kfood: "K-FOOD",
+  kbeauty: "K-BEAUTY",
+};
 
 /** 2026 상반기 시범 – 시골 지역 여행 시 지출의 50%를 지역 상품권으로 환급 (공식 안내: visitkorea.or.kr) */
 const VISIT_KOREA_URL = "https://www.visitkorea.or.kr";
 
 /** planner-data.ts SLUG_TO_NAME과 동일 slug → 표준 플래너(/planner/standard/[slug]) 루트·일정 API 재사용 */
-const RURAL_REBATE_REGIONS: { province: string; emoji: string; cities: { name: string; plannerSlug: string }[] }[] = [
-  { province: "강원", emoji: "🏔️", cities: [
+const RURAL_REBATE_REGIONS: { province: string; provinceSlug: string; emoji: string; cities: { name: string; plannerSlug: string }[] }[] = [
+  { province: "강원", provinceSlug: "gangwon", emoji: "🏔️", cities: [
     { name: "평창", plannerSlug: "pyeongchang" },
     { name: "영월", plannerSlug: "yeongwol" },
     { name: "횡성", plannerSlug: "hoengseong" },
   ] },
-  { province: "충북", emoji: "🌾", cities: [{ name: "제천", plannerSlug: "jecheon" }] },
-  { province: "전북", emoji: "🎎", cities: [{ name: "고창", plannerSlug: "gochang" }] },
+  { province: "충북", provinceSlug: "chungbuk", emoji: "🌾", cities: [{ name: "제천", plannerSlug: "jecheon" }] },
+  { province: "전북", provinceSlug: "jeonbuk", emoji: "🎎", cities: [{ name: "고창", plannerSlug: "gochang" }] },
   {
     province: "전남",
+    provinceSlug: "jeonnam",
     emoji: "🌊",
     cities: [
       { name: "강진", plannerSlug: "gangjin" },
@@ -83,6 +111,7 @@ const RURAL_REBATE_REGIONS: { province: string; emoji: string; cities: { name: s
   },
   {
     province: "경남",
+    provinceSlug: "gyeongnam",
     emoji: "🌸",
     cities: [
       { name: "밀양", plannerSlug: "miryang" },
@@ -99,6 +128,7 @@ export default function HomePage() {
   const { setNewsTop10 } = useNewsStore();
   const router = useRouter();
   const appUserId = typeof window !== "undefined" ? Number(sessionStorage.getItem("app_user_id")) || null : null;
+  const { t } = useTranslation();
 
   const [showBanner, setShowBanner]         = useState(false);
   const [profileChecked, setProfileChecked] = useState(false);
@@ -160,10 +190,10 @@ export default function HomePage() {
         {/* ── 온보딩 배너 ── */}
         {profileChecked && showBanner && (
           <div className="mx-4 mt-4 flex items-center justify-between gap-4 rounded-2xl border border-violet-200 bg-violet-50 px-5 py-3">
-            <p className="text-sm font-bold text-violet-800">✨ 여행 프로필을 완성하면 맞춤 추천을 받을 수 있어요</p>
+            <p className="text-sm font-bold text-violet-800">{t("home.banner.title", { defaultValue: "✨ 여행 프로필을 완성하면 맞춤 추천을 받을 수 있어요" })}</p>
             <div className="flex shrink-0 gap-2">
-              <button type="button" onClick={() => setShowBanner(false)} className="text-xs text-violet-400 hover:text-violet-600">닫기</button>
-              <button type="button" onClick={() => router.push("/profile/onboarding")} className="rounded-lg bg-violet-500 px-3 py-1.5 text-xs font-bold text-white">설정하기</button>
+              <button type="button" onClick={() => setShowBanner(false)} className="text-xs text-violet-400 hover:text-violet-600">{t("common.close", { defaultValue: "닫기" })}</button>
+              <button type="button" onClick={() => router.push("/profile/onboarding")} className="rounded-lg bg-violet-500 px-3 py-1.5 text-xs font-bold text-white">{t("home.banner.setup", { defaultValue: "설정하기" })}</button>
             </div>
           </div>
         )}
@@ -176,13 +206,13 @@ export default function HomePage() {
           {!loading && error && (
             <div className="flex flex-col items-center py-16 gap-3 text-gray-400">
               <span className="text-4xl">📡</span>
-              <p className="text-sm">뉴스를 불러오지 못했습니다.</p>
-              <button type="button" onClick={loadNews} className="text-xs text-purple-500 hover:underline">다시 시도</button>
+              <p className="text-sm">{t("home.news.error", { defaultValue: "뉴스를 불러오지 못했습니다." })}</p>
+              <button type="button" onClick={loadNews} className="text-xs text-purple-500 hover:underline">{t("common.retry", { defaultValue: "다시 시도" })}</button>
             </div>
           )}
           {!loading && data && (
             data.top10.length === 0
-              ? <div className="mx-4 mt-4 rounded-2xl bg-gray-100 p-8 text-center text-sm text-gray-400">아직 AI 분석이 진행 중입니다.</div>
+              ? <div className="mx-4 mt-4 rounded-2xl bg-gray-100 p-8 text-center text-sm text-gray-400">{t("home.news.analyzing", { defaultValue: "아직 AI 분석이 진행 중입니다." })}</div>
               : <NewsBanner items={data.top10} />
           )}
         </div>
@@ -204,7 +234,7 @@ export default function HomePage() {
                   <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-gray-100 flex items-center justify-center text-2xl group-hover:bg-purple-50 group-hover:border-purple-200 group-hover:shadow-md transition-all">
                     {s.emoji}
                   </div>
-                  <span className="text-[10px] text-gray-600 font-medium text-center leading-tight">{s.label}</span>
+                  <span className="text-[10px] text-gray-600 font-medium text-center leading-tight">{t(s.key, { defaultValue: s.defaultLabel })}</span>
                 </button>
               ))}
             </div>
@@ -216,11 +246,10 @@ export default function HomePage() {
           <section className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 via-white to-teal-50/60 p-4 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">2026.4 ~ 6 · 시범사업</p>
-                <h2 className="mt-0.5 text-sm font-bold text-gray-900">🎫 지정 시골 지역 여행 시 최대 50% 환급</h2>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">{t("home.rebate.period", { defaultValue: "2026.4 ~ 6 · 시범사업" })}</p>
+                <h2 className="mt-0.5 text-sm font-bold text-gray-900">{t("home.rebate.title", { defaultValue: "🎫 지정 시골 지역 여행 시 최대 50% 환급" })}</h2>
                 <p className="mt-1 text-xs leading-relaxed text-gray-600">
-                  여행 지출의 <span className="font-semibold text-emerald-700">절반</span>을 모바일 지역사랑 상품권으로 돌려받을 수 있어요.
-                  개인 최대 <span className="font-semibold">10만 원</span>, 2인 이상 단체 최대 <span className="font-semibold">20만 원</span>.
+                  {t("home.rebate.desc", { defaultValue: "여행 지출의 절반을 모바일 지역사랑 상품권으로 돌려받을 수 있어요. 개인 최대 10만 원, 2인 이상 단체 최대 20만 원." })}
                 </p>
               </div>
               <div className="flex shrink-0 flex-col gap-2 sm:items-end">
@@ -230,7 +259,7 @@ export default function HomePage() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-emerald-700"
                 >
-                  대한민국 구석구석
+                  {t("home.rebate.visit_korea", { defaultValue: "대한민국 구석구석" })}
                   <span className="opacity-90">↗</span>
                 </a>
                 <button
@@ -238,7 +267,9 @@ export default function HomePage() {
                   onClick={() => setRebateOpen((o) => !o)}
                   className="text-[11px] font-semibold text-emerald-700 underline-offset-2 hover:underline"
                 >
-                  {rebateOpen ? "이용 방법 접기" : "이용 방법 · 대상 지역 보기"}
+                  {rebateOpen
+                    ? t("home.rebate.fold", { defaultValue: "이용 방법 접기" })
+                    : t("home.rebate.expand", { defaultValue: "이용 방법 · 대상 지역 보기" })}
                 </button>
               </div>
             </div>
@@ -248,35 +279,35 @@ export default function HomePage() {
                 <ol className="space-y-2 text-[11px] text-gray-700">
                   <li className="flex gap-2">
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-200 text-[10px] font-bold text-emerald-900">1</span>
-                    <span><strong className="text-gray-900">사전 신청</strong> — <a href={VISIT_KOREA_URL} target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline">visitkorea.or.kr</a>에서 대상 지역 확인 후 여행 전 승인을 받으세요.</span>
+                    <span>{t("home.rebate.step1", { defaultValue: "사전 신청 — visitkorea.or.kr에서 대상 지역 확인 후 여행 전 승인을 받으세요." })}</span>
                   </li>
                   <li className="flex gap-2">
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-200 text-[10px] font-bold text-emerald-900">2</span>
-                    <span><strong className="text-gray-900">여행</strong> — 승인 지역에서 식비·숙박 등 지출 (영수증 보관).</span>
+                    <span>{t("home.rebate.step2", { defaultValue: "여행 — 승인 지역에서 식비·숙박 등 지출 (영수증 보관)." })}</span>
                   </li>
                   <li className="flex gap-2">
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-200 text-[10px] font-bold text-emerald-900">3</span>
-                    <span><strong className="text-gray-900">증빙 제출</strong> — 여행 후 지자체 안내에 따라 영수증 등 제출.</span>
+                    <span>{t("home.rebate.step3", { defaultValue: "증빙 제출 — 여행 후 지자체 안내에 따라 영수증 등 제출." })}</span>
                   </li>
                   <li className="flex gap-2">
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-200 text-[10px] font-bold text-emerald-900">4</span>
-                    <span><strong className="text-gray-900">환급</strong> — 확인 후 지출의 50%를 모바일 지역사랑 상품권으로 지급.</span>
+                    <span>{t("home.rebate.step4", { defaultValue: "환급 — 확인 후 지출의 50%를 모바일 지역사랑 상품권으로 지급." })}</span>
                   </li>
                   <li className="flex gap-2">
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-200 text-[10px] font-bold text-emerald-900">5</span>
-                    <span><strong className="text-gray-900">사용</strong> — 해당 지역 식당·카페·온라인몰 등에서 올해 안에 사용.</span>
+                    <span>{t("home.rebate.step5", { defaultValue: "사용 — 해당 지역 식당·카페·온라인몰 등에서 올해 안에 사용." })}</span>
                   </li>
                 </ol>
                 <div className="rounded-xl bg-amber-50/90 px-3 py-2 text-[10px] leading-relaxed text-amber-900">
-                  <strong>주의</strong> 사전 신청·승인 필수 · 예산 한도로 조기 마감될 수 있음 · 세부는 지자체마다 다를 수 있으니 4월 초 공식 사이트를 꼭 확인하세요.
+                  {t("home.rebate.notice", { defaultValue: "주의 사전 신청·승인 필수 · 예산 한도로 조기 마감될 수 있음 · 세부는 지자체마다 다를 수 있으니 4월 초 공식 사이트를 꼭 확인하세요." })}
                 </div>
                 <div>
-                  <p className="mb-2 text-[11px] font-bold text-gray-800">대상 지역 16곳 · 플래너로 루트 보기 또는 공식 안내</p>
+                  <p className="mb-2 text-[11px] font-bold text-gray-800">{t("home.rebate.targets", { defaultValue: "대상 지역 16곳 · 플래너로 루트 보기 또는 공식 안내" })}</p>
                   <div className="space-y-3">
                     {RURAL_REBATE_REGIONS.map((block) => (
                       <div key={block.province}>
                         <p className="mb-1.5 text-[10px] font-semibold text-gray-500">
-                          {block.emoji} {block.province}
+                          {block.emoji} {t(`home.rebate.province.${block.provinceSlug}`, { defaultValue: block.province })}
                         </p>
                         <div className="flex flex-wrap gap-1.5">
                           {block.cities.map((c) => (
@@ -285,9 +316,9 @@ export default function HomePage() {
                               type="button"
                               onClick={() => router.push(`/planner/standard/${c.plannerSlug}`)}
                               className="rounded-lg border border-emerald-200/90 bg-white/90 px-2.5 py-1 text-[11px] font-medium text-gray-800 shadow-sm transition-all hover:border-emerald-400 hover:bg-emerald-50"
-                              title={`${c.name} 여행 루트·일정 (표준 플래너)`}
+                              title={t("home.rebate.city_route_title", { name: t(`planner.dest.${c.plannerSlug}.name`, { defaultValue: c.name }), defaultValue: "{{name}} 여행 루트·일정 (표준 플래너)" })}
                             >
-                              {c.name}
+                              {t(`planner.dest.${c.plannerSlug}.name`, { defaultValue: c.name })}
                               <span className="ml-0.5 text-[9px] text-emerald-600">🗺️</span>
                             </button>
                           ))}
@@ -304,17 +335,19 @@ export default function HomePage() {
               3. K-콘텐츠 테마
           ══════════════════════════════════════════════════ */}
           <section>
-            <SectionHeader title="🎭 K-콘텐츠 테마 여행" action={{ label: "전체 보기", path: "/planner/k-content" }} onAction={() => router.push("/planner/k-content")} />
+            <SectionHeader title={t("home.kcontent.title", { defaultValue: "🎭 K-콘텐츠 테마 여행" })} action={{ label: t("common.view_all", { defaultValue: "전체 보기" }), path: "/planner/k-content" }} onAction={() => router.push("/planner/k-content")} />
             <div className="grid grid-cols-4 gap-2">
-              {K_THEMES.map((t) => (
+              {K_THEMES.map((theme) => (
                 <button
-                  key={t.label}
+                  key={theme.themeKey}
                   type="button"
-                  onClick={() => router.push(t.path)}
-                  className={`flex flex-col items-center gap-2 rounded-2xl border py-4 ${t.color} hover:opacity-80 transition-opacity`}
+                  onClick={() => router.push(theme.path)}
+                  className={`flex flex-col items-center gap-2 rounded-2xl border py-4 ${theme.color} hover:opacity-80 transition-opacity`}
                 >
-                  <span className="text-2xl">{t.emoji}</span>
-                  <span className="text-[11px] font-bold">{t.label}</span>
+                  <span className="text-2xl">{theme.emoji}</span>
+                  <span className="text-[11px] font-bold">
+                    {t(`home.kcontent.theme_${theme.themeKey}`, { defaultValue: K_THEME_LABEL_DEFAULT[theme.themeKey] })}
+                  </span>
                 </button>
               ))}
             </div>
@@ -324,7 +357,7 @@ export default function HomePage() {
               4. 인기 여행지
           ══════════════════════════════════════════════════ */}
           <section>
-            <SectionHeader title="📍 인기 여행지" action={{ label: "더 보기", path: "/planner" }} onAction={() => router.push("/planner")} />
+            <SectionHeader title={t("home.popular.title", { defaultValue: "📍 인기 여행지" })} action={{ label: t("common.more", { defaultValue: "더 보기" }), path: "/planner" }} onAction={() => router.push("/planner")} />
             <div className="grid grid-cols-3 gap-2.5">
               {POPULAR_DESTINATIONS.map((dest) => (
                 <button
@@ -334,7 +367,7 @@ export default function HomePage() {
                   className={`relative rounded-2xl bg-gradient-to-br ${dest.gradient} h-24 flex flex-col items-center justify-center gap-1 shadow-sm hover:scale-[1.03] hover:shadow-md transition-all overflow-hidden`}
                 >
                   <span className="text-3xl drop-shadow">{dest.emoji}</span>
-                  <span className="text-sm font-bold text-white drop-shadow">{dest.name}</span>
+                  <span className="text-sm font-bold text-white drop-shadow">{t(`planner.dest.${dest.slug}.name`, { defaultValue: dest.name })}</span>
                 </button>
               ))}
             </div>
@@ -385,6 +418,7 @@ const CARD_GRADIENTS = [
 ];
 
 function NewsBanner({ items }: { items: ProcessedNewsItem[] }) {
+  const { t } = useTranslation();
   const [offset, setOffset] = useState(0);   // 슬라이드 이동 인덱스 (카드 단위)
   const touchStartX = useRef<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -485,7 +519,7 @@ function NewsBanner({ items }: { items: ProcessedNewsItem[] }) {
 
                 {/* 하단 텍스트 */}
                 <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 z-10">
-                  {item.location && item.location !== "전국" && (
+                  {item.location && !isNationwideLocation(item.location, t) && (
                     <p className="text-[10px] text-white/70 mb-0.5">📍 {item.location}</p>
                   )}
                   <h3 className="text-xs font-bold text-white leading-snug line-clamp-2 drop-shadow mb-1">
@@ -516,7 +550,7 @@ function NewsBanner({ items }: { items: ProcessedNewsItem[] }) {
                 onClick={() => { setOffset(pi * STEP > maxOffset ? maxOffset : pi * STEP); resetTimer(); }}
                 className={`rounded-full transition-all duration-200
                   ${active ? "w-5 h-1.5 bg-purple-500" : "w-1.5 h-1.5 bg-gray-300 hover:bg-purple-300"}`}
-                aria-label={`${pi + 1}페이지`}
+                aria-label={t("home.news.page_n", { page: pi + 1, defaultValue: "{{page}}페이지" })}
               />
             );
           })}
@@ -527,11 +561,11 @@ function NewsBanner({ items }: { items: ProcessedNewsItem[] }) {
 
         {/* 화살표 버튼 */}
         <div className="flex gap-1.5">
-          <button type="button" onClick={prev} aria-label="이전"
+          <button type="button" onClick={prev} aria-label={t("home.news.prev", { defaultValue: "이전" })}
             className="w-7 h-7 rounded-full bg-gray-100 text-gray-500 hover:bg-purple-100 hover:text-purple-600 flex items-center justify-center text-base font-bold shadow-sm transition-colors">
             ‹
           </button>
-          <button type="button" onClick={next} aria-label="다음"
+          <button type="button" onClick={next} aria-label={t("home.news.next", { defaultValue: "다음" })}
             className="w-7 h-7 rounded-full bg-gray-100 text-gray-500 hover:bg-purple-100 hover:text-purple-600 flex items-center justify-center text-base font-bold shadow-sm transition-colors">
             ›
           </button>

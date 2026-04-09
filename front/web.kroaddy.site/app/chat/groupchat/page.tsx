@@ -17,26 +17,39 @@ import { voteHonor } from "@/lib/api/user";
 import { sendFriendRequest } from "@/lib/api/friends";
 import { sendWhisper } from "@/lib/api/whisper";
 import { AppLayout } from "@/components/organisms/AppLayout";
+import { useTranslation } from "react-i18next";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-const ROOM_LABELS: Record<string, string> = {
-  SILVER: "실버",
-  GOLD: "골드",
-  PLATINUM: "플래티넘",
-  DIAMOND: "다이아",
-};
+function getTierLabel(
+  t: (key: string, options?: Record<string, unknown>) => string,
+  roomType: string,
+) {
+  switch (roomType) {
+    case "SILVER":
+      return t("chat.tier.silver", { defaultValue: "실버" });
+    case "GOLD":
+      return t("chat.tier.gold", { defaultValue: "골드" });
+    case "PLATINUM":
+      return t("chat.tier.platinum", { defaultValue: "플래티넘" });
+    case "DIAMOND":
+      return t("chat.tier.diamond", { defaultValue: "다이아" });
+    default:
+      return t(`chat.tier.${String(roomType).toLowerCase()}`, { defaultValue: roomType });
+  }
+}
 
 /** API 404/오류 시 사용하는 기본 방 목록 (필요 명예도: 실버 0, 골드 100, 플래티넘 500, 다이아 1000) */
 const FALLBACK_ROOMS: ChatRoomInfo[] = [
-  { roomType: "SILVER", label: "실버", minHonor: 0, accessible: true },
-  { roomType: "GOLD", label: "골드", minHonor: 100, accessible: true },
-  { roomType: "PLATINUM", label: "플래티넘", minHonor: 500, accessible: true },
-  { roomType: "DIAMOND", label: "다이아", minHonor: 1000, accessible: true },
+  { roomType: "SILVER", label: "SILVER", minHonor: 0, accessible: true },
+  { roomType: "GOLD", label: "GOLD", minHonor: 100, accessible: true },
+  { roomType: "PLATINUM", label: "PLATINUM", minHonor: 500, accessible: true },
+  { roomType: "DIAMOND", label: "DIAMOND", minHonor: 1000, accessible: true },
 ];
 
 export default function GroupChatPage() {
   const router = useRouter();
   const { isAuthenticated, logout, restoreAuthState } = useLoginStore();
+  const { t } = useTranslation();
   // SSE URL에 전달할 토큰 (HttpOnly 쿠키 기반이므로 SSE 연결 시 refresh로 취득)
   const sseTokenRef = useRef<string | null>(null);
   const [rooms, setRooms] = useState<ChatRoomInfo[] | null>(null);
@@ -101,10 +114,10 @@ export default function GroupChatPage() {
         if (last?.id) lastMessageIdRef.current = last.id;
       } else if (response.code !== 401 && response.code !== 403) {
         // 401/403은 쿠키 인증 타이밍 문제로 일시적으로 발생할 수 있음 — SSE 재연결에서 처리
-        setError(response.message || "메시지를 불러올 수 없습니다.");
+        setError(response.message || t("chat.group.error_load_messages", { defaultValue: "메시지를 불러올 수 없습니다." }));
       }
     } catch (err: any) {
-      setError(err.message || "메시지 로드 중 오류가 발생했습니다.");
+      setError(err.message || t("chat.group.error_load_messages_runtime", { defaultValue: "메시지 로드 중 오류가 발생했습니다." }));
     } finally {
       setIsLoadingMessages(false);
     }
@@ -145,7 +158,7 @@ export default function GroupChatPage() {
     if (!freshToken) {
       // 세션 만료는 restoreAuthState/client.ts 401 핸들러가 처리하므로
       // 여기서 logout()을 호출하면 REVOKED 마커 → 재로그인 차단의 악순환이 발생함
-      setError("채팅 연결을 위한 인증에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+      setError(t("chat.group.error_auth_sse", { defaultValue: "채팅 연결을 위한 인증에 실패했습니다. 잠시 후 다시 시도해 주세요." }));
       return;
     }
 
@@ -236,10 +249,10 @@ export default function GroupChatPage() {
           });
         }
       } else {
-        setError(response.message || "전송에 실패했습니다.");
+        setError(response.message || t("chat.group.error_send", { defaultValue: "전송에 실패했습니다." }));
       }
     } catch (err: any) {
-      setError(err.message || "전송 중 오류가 발생했습니다.");
+      setError(err.message || t("chat.group.error_send_runtime", { defaultValue: "전송 중 오류가 발생했습니다." }));
     } finally {
       setIsLoading(false);
     }
@@ -256,10 +269,10 @@ export default function GroupChatPage() {
         setWhisperTarget(null);
         setWhisperText("");
       } else {
-        setError(res.message || "귓속말 전송에 실패했습니다.");
+        setError(res.message || t("chat.group.error_whisper_send", { defaultValue: "귓속말 전송에 실패했습니다." }));
       }
     } catch (err: any) {
-      setError(err.message || "귓속말 전송 중 오류가 발생했습니다.");
+      setError(err.message || t("chat.group.error_whisper_send_runtime", { defaultValue: "귓속말 전송 중 오류가 발생했습니다." }));
     } finally {
       setWhisperSending(false);
     }
@@ -272,7 +285,7 @@ export default function GroupChatPage() {
       setActionMessage({ type: res.code === 200 ? "ok" : "err", text: res.message ?? "" });
       if (res.code === 200) setTimeout(() => setActionMessage(null), 2500);
     } catch (_) {
-      setActionMessage({ type: "err", text: "요청 처리에 실패했습니다." });
+      setActionMessage({ type: "err", text: t("chat.group.action_failed", { defaultValue: "요청 처리에 실패했습니다." }) });
     }
   };
 
@@ -283,7 +296,7 @@ export default function GroupChatPage() {
       setActionMessage({ type: res.code === 200 ? "ok" : "err", text: res.message ?? "" });
       if (res.code === 200) setTimeout(() => setActionMessage(null), 2500);
     } catch (_) {
-      setActionMessage({ type: "err", text: "친구 요청에 실패했습니다." });
+      setActionMessage({ type: "err", text: t("chat.group.friend_failed", { defaultValue: "친구 요청에 실패했습니다." }) });
     }
   };
 
@@ -293,8 +306,8 @@ export default function GroupChatPage() {
       id: -(Date.now()),
       roomType,
       userId: 999,
-      username: "테스트유저",
-      message: "여행 같이 갈 사람 귓 주세요! (테스트 메시지 — 클릭해 보세요)",
+      username: t("chat.group.test_user", { defaultValue: "테스트유저" }),
+      message: t("chat.group.test_message", { defaultValue: "여행 같이 갈 사람 귓 주세요! (테스트 메시지 — 클릭해 보세요)" }),
       lookingForBuddy: false,
       createdAt: new Date().toISOString(),
     };
@@ -358,7 +371,12 @@ export default function GroupChatPage() {
       <div className="flex flex-1 flex-col overflow-hidden bg-white">
         <header className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <h1 className="text-lg font-semibold text-gray-800">
-            {showRoomList ? "단체채팅 목록" : `단체채팅 - ${ROOM_LABELS[roomType] ?? roomType}방`}
+            {(() => {
+              const roomName = getTierLabel(t, roomType);
+              return showRoomList
+                ? t("chat.group.title_list", { defaultValue: "단체채팅 목록" })
+                : t("chat.group.title_room", { room: roomName, defaultValue: "단체채팅 - {{room}}방" });
+            })()}
           </h1>
           {!showRoomList && (
             <button
@@ -366,7 +384,7 @@ export default function GroupChatPage() {
               onClick={() => setShowRoomList(true)}
               className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
             >
-              방 목록
+              {t("chat.group.back_to_list", { defaultValue: "방 목록" })}
             </button>
           )}
         </header>
@@ -374,19 +392,19 @@ export default function GroupChatPage() {
         {showRoomList ? (
           <div className="flex-1 overflow-y-auto px-6 py-6">
             {rooms === null ? (
-              <p className="text-gray-500">목록 불러오는 중...</p>
+              <p className="text-gray-500">{t("chat.group.loading_rooms", { defaultValue: "목록 불러오는 중..." })}</p>
             ) : (
               <>
                 <p className="mb-4 text-sm text-gray-600">
-                  명예도에 따라 입장 가능한 방이 달라집니다. 상위 등급은 하위 방에도 입장할 수 있습니다.
+                  {t("chat.group.rooms_hint", { defaultValue: "명예도에 따라 입장 가능한 방이 달라집니다. 상위 등급은 하위 방에도 입장할 수 있습니다." })}
                 </p>
                 <div className="overflow-hidden rounded-xl border border-gray-200">
                   <table className="w-full min-w-[360px] text-left">
                     <thead>
                       <tr className="border-b border-gray-200 bg-gray-50">
-                        <th className="px-4 py-3 text-sm font-semibold text-gray-700">방 이름</th>
-                        <th className="px-4 py-3 text-sm font-semibold text-gray-700">필요 명예도</th>
-                        <th className="px-4 py-3 text-sm font-semibold text-gray-700">입장 가능</th>
+                        <th className="px-4 py-3 text-sm font-semibold text-gray-700">{t("chat.group.table.room", { defaultValue: "방 이름" })}</th>
+                        <th className="px-4 py-3 text-sm font-semibold text-gray-700">{t("chat.group.table.honor", { defaultValue: "필요 명예도" })}</th>
+                        <th className="px-4 py-3 text-sm font-semibold text-gray-700">{t("chat.group.table.access", { defaultValue: "입장 가능" })}</th>
                         <th className="px-4 py-3 text-sm font-semibold text-gray-700"></th>
                       </tr>
                     </thead>
@@ -399,16 +417,21 @@ export default function GroupChatPage() {
                           }`}
                         >
                           <td className="px-4 py-3">
-                            <span className="font-medium text-gray-800">{room.label}방</span>
+                            <span className="font-medium text-gray-800">
+                              {t("chat.group.room_label", {
+                                label: getTierLabel(t, room.roomType),
+                                defaultValue: "{{label}}방",
+                              })}
+                            </span>
                           </td>
                           <td className="px-4 py-3 text-gray-600">
-                            <span className="font-medium">{room.minHonor}</span> 이상
+                            <span className="font-medium">{room.minHonor}</span> {t("chat.group.or_more", { defaultValue: "이상" })}
                           </td>
                           <td className="px-4 py-3">
                             {room.accessible ? (
-                              <span className="text-green-600 font-medium">가능</span>
+                              <span className="text-green-600 font-medium">{t("chat.group.access_yes", { defaultValue: "가능" })}</span>
                             ) : (
-                              <span className="text-red-600 font-medium">명예도 부족</span>
+                              <span className="text-red-600 font-medium">{t("chat.group.access_no", { defaultValue: "명예도 부족" })}</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
@@ -426,7 +449,7 @@ export default function GroupChatPage() {
                                   : "cursor-not-allowed bg-gray-200 text-gray-500"
                               }`}
                             >
-                              입장
+                              {t("chat.group.enter", { defaultValue: "입장" })}
                             </button>
                           </td>
                         </tr>
@@ -441,7 +464,7 @@ export default function GroupChatPage() {
         <>
         <div className="flex-1 overflow-y-auto px-4 py-4">
           {isLoadingMessages ? (
-            <p className="text-center text-gray-500">메시지 불러오는 중...</p>
+            <p className="text-center text-gray-500">{t("chat.group.loading_messages", { defaultValue: "메시지 불러오는 중..." })}</p>
           ) : (
             <ul className="space-y-3">
               {uniqueMessages.map((msg, index) => {
@@ -464,7 +487,9 @@ export default function GroupChatPage() {
                           x: e.clientX,
                           y: e.clientY,
                           userId: uid,
-                          username: msg.username ?? `사용자 ${msg.userId}`,
+                          username:
+                            msg.username ??
+                            t("chat.group.user_fallback", { id: String(msg.userId), defaultValue: "사용자 {{id}}" }),
                         });
                       }}
                       onKeyDown={(e) => {
@@ -476,7 +501,9 @@ export default function GroupChatPage() {
                             x: rect.left + rect.width / 2,
                             y: rect.bottom,
                             userId: Number(msg.userId),
-                            username: msg.username ?? `사용자 ${msg.userId}`,
+                            username:
+                              msg.username ??
+                              t("chat.group.user_fallback", { id: String(msg.userId), defaultValue: "사용자 {{id}}" }),
                           });
                         }
                       }}
@@ -488,7 +515,7 @@ export default function GroupChatPage() {
                     >
                       {!isMine && (
                         <span className="block text-xs font-medium text-purple-600 mb-0.5">
-                          {msg.username ?? `사용자 ${msg.userId}`}
+                          {msg.username ?? t("chat.group.user_fallback", { id: String(msg.userId), defaultValue: "사용자 {{id}}" })}
                         </span>
                       )}
                       {sharedPostId && sharedPreview ? (
@@ -518,7 +545,7 @@ export default function GroupChatPage() {
                                 {sharedPreview.location}
                               </p>
                               <p className={`mt-1 text-[10px] ${isMine ? "text-purple-200" : "text-purple-600"}`}>
-                                Tourstar 게시글 보기
+                                {t("chat.group.open_tourstar", { defaultValue: "Tourstar 게시글 보기" })}
                               </p>
                             </div>
                           </div>
@@ -530,7 +557,7 @@ export default function GroupChatPage() {
                         <span
                           className={`block text-xs mt-0.5 ${isMine ? "text-purple-200" : "text-gray-400"}`}
                         >
-                          {new Date(msg.createdAt).toLocaleString("ko-KR")}
+                          {new Date(msg.createdAt).toLocaleString(undefined)}
                         </span>
                       )}
                     </div>
@@ -566,28 +593,28 @@ export default function GroupChatPage() {
                 setContextMenu(null);
               }}
             >
-              귓속말 보내기
+              {t("chat.group.menu.whisper", { defaultValue: "귓속말 보내기" })}
             </button>
             <button
               type="button"
               className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
               onClick={() => handleHonorVote(contextMenu.userId, "UP")}
             >
-              명예도 올리기
+              {t("chat.group.menu.honor_up", { defaultValue: "명예도 올리기" })}
             </button>
             <button
               type="button"
               className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
               onClick={() => handleHonorVote(contextMenu.userId, "DOWN")}
             >
-              명예도 내리기
+              {t("chat.group.menu.honor_down", { defaultValue: "명예도 내리기" })}
             </button>
             <button
               type="button"
               className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
               onClick={() => handleFriendAdd(contextMenu.userId)}
             >
-              친구추가
+              {t("chat.group.menu.add_friend", { defaultValue: "친구추가" })}
             </button>
           </div>
         )}
@@ -607,7 +634,7 @@ export default function GroupChatPage() {
                 onChange={(e) => setInput(e.target.value)}
                 onFocus={() => { inputWasFocused.current = true; }}
                 onBlur={() => { inputWasFocused.current = false; }}
-                placeholder="메시지를 입력하세요..."
+                placeholder={t("chat.group.input_placeholder", { defaultValue: "메시지를 입력하세요..." })}
                 className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-gray-900 placeholder:text-gray-400 outline-none focus:border-purple-500"
                 disabled={isLoading}
               />
@@ -616,7 +643,7 @@ export default function GroupChatPage() {
                 disabled={!input.trim() || isLoading}
                 className="rounded-lg bg-purple-600 px-4 py-2 text-white hover:bg-purple-700 disabled:opacity-50"
               >
-                전송
+                {t("chat.group.send", { defaultValue: "전송" })}
               </button>
             </div>
             {process.env.NODE_ENV === "development" && (
@@ -625,7 +652,7 @@ export default function GroupChatPage() {
                 onClick={addTestOtherMessage}
                 className="self-start rounded border border-amber-400 bg-amber-50 px-2 py-1 text-xs text-amber-800 hover:bg-amber-100"
               >
-                테스트: 상대 메시지 추가
+                {t("chat.group.dev_add_dummy", { defaultValue: "테스트: 상대 메시지 추가" })}
               </button>
             )}
           </form>
@@ -637,13 +664,15 @@ export default function GroupChatPage() {
       {whisperTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
-            <h2 className="mb-2 text-lg font-semibold text-gray-800">귓속말 보내기</h2>
-            <p className="mb-4 text-sm text-gray-600">받는 사람: {whisperTarget.username}</p>
+            <h2 className="mb-2 text-lg font-semibold text-gray-800">{t("chat.group.whisper.title", { defaultValue: "귓속말 보내기" })}</h2>
+            <p className="mb-4 text-sm text-gray-600">
+              {t("chat.group.whisper.to", { username: whisperTarget.username, defaultValue: "받는 사람: {{username}}" })}
+            </p>
             <form onSubmit={handleWhisperSubmit} className="space-y-3">
               <textarea
                 value={whisperText}
                 onChange={(e) => setWhisperText(e.target.value)}
-                placeholder="메시지를 입력하세요..."
+                placeholder={t("chat.group.input_placeholder", { defaultValue: "메시지를 입력하세요..." })}
                 rows={3}
                 className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-purple-500"
                 disabled={whisperSending}
@@ -655,14 +684,14 @@ export default function GroupChatPage() {
                   disabled={whisperSending}
                   className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50"
                 >
-                  취소
+                  {t("common.cancel", { defaultValue: "취소" })}
                 </button>
                 <button
                   type="submit"
                   disabled={!whisperText.trim() || whisperSending}
                   className="rounded-lg bg-purple-600 px-4 py-2 text-white hover:bg-purple-700 disabled:opacity-50"
                 >
-                  {whisperSending ? "전송 중..." : "보내기"}
+                  {whisperSending ? t("chat.group.sending", { defaultValue: "전송 중..." }) : t("chat.group.submit", { defaultValue: "보내기" })}
                 </button>
               </div>
             </form>

@@ -1,3 +1,5 @@
+import i18n from "@/lib/i18n/config";
+
 /**
  * API Client - 로컬: http://localhost:8080 / 배포: NEXT_PUBLIC_API_URL 필수
  * Vercel 배포 시 환경 변수에 NEXT_PUBLIC_API_URL 을 게이트웨이 URL 로 설정하세요.
@@ -57,14 +59,20 @@ class ApiClient {
       return response;
     } catch (error: any) {
       clearTimeout(timeoutId);
-      if (error.name === "AbortError") throw new Error("요청 시간이 초과되었습니다.");
+      if (error.name === "AbortError") {
+        throw new Error(i18n.t("api.timeout", { defaultValue: "요청 시간이 초과되었습니다." }));
+      }
       if (error instanceof TypeError && error.message === "Failed to fetch") {
         const msg =
           typeof window !== "undefined" &&
           process.env.NODE_ENV === "production" &&
           (API_BASE_URL === "http://localhost:8080" || !process.env.NEXT_PUBLIC_API_URL)
-            ? "백엔드가 연결되지 않았습니다. 배포 후에는 Vercel 환경 변수에 NEXT_PUBLIC_API_URL 을 설정하세요."
-            : "서버에 연결할 수 없습니다. 네트워크와 백엔드 실행 여부를 확인해 주세요.";
+            ? i18n.t("api.backend_not_connected", {
+                defaultValue: "백엔드가 연결되지 않았습니다. 배포 후에는 Vercel 환경 변수에 NEXT_PUBLIC_API_URL 을 설정하세요.",
+              })
+            : i18n.t("api.server_unreachable", {
+                defaultValue: "서버에 연결할 수 없습니다. 네트워크와 백엔드 실행 여부를 확인해 주세요.",
+              });
         throw new Error(msg);
       }
       throw error;

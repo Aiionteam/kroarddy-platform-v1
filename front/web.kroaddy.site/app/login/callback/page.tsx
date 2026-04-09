@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useEffect, useState, Suspense } from "react";
+import "@/lib/i18n/config";
+import i18n from "@/lib/i18n/config";
+import { useTranslation } from "react-i18next";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLoginStore } from "@/store";
 import { handleOAuthCallback, extractOAuthParams } from "@/service";
@@ -13,6 +16,7 @@ function OAuthCallbackContent() {
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (isProcessing) return;
@@ -70,7 +74,7 @@ function OAuthCallbackContent() {
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-50 to-blue-50">
         <div className="text-center">
           <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-pink-500 border-r-transparent" />
-          <p className="text-lg text-gray-700">로그인 처리 중...</p>
+          <p className="text-lg text-gray-700">{t("auth.oauth_processing", { defaultValue: "로그인 처리 중..." })}</p>
         </div>
       </div>
     );
@@ -80,13 +84,13 @@ function OAuthCallbackContent() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-50 to-blue-50">
         <div className="text-center">
-          <p className="mb-4 text-lg font-semibold text-red-600">로그인 실패</p>
+          <p className="mb-4 text-lg font-semibold text-red-600">{t("auth.login_failed", { defaultValue: "로그인 실패" })}</p>
           <p className="mb-6 text-gray-700">{errorMessage}</p>
           <button
             onClick={() => router.push("/")}
             className="rounded-lg bg-pink-500 px-6 py-2 text-white hover:bg-pink-600"
           >
-            로그인 페이지로 돌아가기
+            {t("auth.back_to_login", { defaultValue: "로그인 페이지로 돌아가기" })}
           </button>
         </div>
       </div>
@@ -96,8 +100,8 @@ function OAuthCallbackContent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-50 to-blue-50">
       <div className="text-center">
-        <p className="mb-4 text-lg font-semibold text-green-600">로그인 성공!</p>
-        <p className="text-gray-700">홈으로 이동 중...</p>
+        <p className="mb-4 text-lg font-semibold text-green-600">{t("auth.login_success", { defaultValue: "로그인 성공!" })}</p>
+        <p className="text-gray-700">{t("auth.redirecting_home", { defaultValue: "홈으로 이동 중..." })}</p>
       </div>
     </div>
   );
@@ -110,7 +114,9 @@ export default function OAuthCallbackPage() {
         <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-pink-50 to-blue-50">
           <div className="text-center">
             <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-pink-500 border-r-transparent" />
-            <p className="text-lg text-gray-700">로딩 중...</p>
+            <p className="text-lg text-gray-700">
+              {i18n.t("common.loading", { defaultValue: "로딩 중..." })}
+            </p>
           </div>
         </div>
       }
