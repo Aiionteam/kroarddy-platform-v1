@@ -1,6 +1,8 @@
 /**
  * User Profile API – Java 게이트웨이(8080) /api/v1/user-profile 경유
  */
+import i18n from "@/lib/i18n/config";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export interface UserProfile {
@@ -37,13 +39,62 @@ export const NATIONALITY_OPTIONS = [
   "Other",
 ] as const;
 
+const OPTION_SLUG_MAP: Record<string, string> = {
+  "남성": "male",
+  "여성": "female",
+  "기타": "other",
+  "무응답": "no_answer",
+  "10대": "teens",
+  "20대": "twenties",
+  "30대": "thirties",
+  "40대": "forties",
+  "50대": "fifties",
+  "60대이상": "sixties_plus",
+  "일반": "normal",
+  "채식": "vegetarian",
+  "비건": "vegan",
+  "할랄": "halal",
+  "알레르기있음": "allergy",
+  "없음": "none",
+  "기독교": "christian",
+  "불교": "buddhist",
+  "천주교": "catholic",
+  "이슬람": "islam",
+  "한국": "korea",
+  "日本": "japan",
+  "中国": "china",
+  "United Kingdom": "united_kingdom",
+  "France": "france",
+  "Deutschland": "germany",
+  "Canada": "canada",
+  "Australia": "australia",
+  "Việt Nam": "vietnam",
+  "Thailand": "thailand",
+  "Philippines": "philippines",
+  "Indonesia": "indonesia",
+  "Singapore": "singapore",
+  "Malaysia": "malaysia",
+  "India": "india",
+  "Other": "other",
+  "USA": "usa",
+};
+
+export function toOptionI18nSlug(value: string): string {
+  if (OPTION_SLUG_MAP[value]) return OPTION_SLUG_MAP[value];
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
 export async function fetchUserProfile(userId: number): Promise<UserProfile | null> {
   try {
     const res = await fetch(`${API_BASE}/api/v1/user-profile/${userId}`, {
       cache: "no-store",
     });
     if (res.status === 404) return null;
-    if (!res.ok) throw new Error(`프로필 조회 오류: ${res.status}`);
+    if (!res.ok) throw new Error(`${i18n.t("userprofile.api.fetch_error", { defaultValue: "프로필 조회 오류" })}: ${res.status}`);
     return res.json();
   } catch {
     return null;
@@ -71,6 +122,6 @@ export async function upsertUserProfile(data: {
     }),
     cache: "no-store",
   });
-  if (!res.ok) throw new Error(`프로필 저장 오류: ${res.status}`);
+  if (!res.ok) throw new Error(`${i18n.t("userprofile.api.save_error", { defaultValue: "프로필 저장 오류" })}: ${res.status}`);
   return res.json();
 }

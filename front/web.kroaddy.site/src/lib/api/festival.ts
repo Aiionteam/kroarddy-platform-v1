@@ -8,6 +8,7 @@
  *   - STALE_TTL(30분): stale 캐시, 즉시 표시 후 백그라운드 갱신
  *   - 페이지 새로고침 후에도 sessionStorage에서 즉시 복원
  */
+import i18n from "@/lib/i18n/config";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -148,7 +149,7 @@ export async function fetchFestivals(
     next: { revalidate: 300 }, // 5분
   } as RequestInit);
 
-  if (!res.ok) throw new Error(`행사 API 오류: ${res.status}`);
+  if (!res.ok) throw new Error(`${i18n.t("festival.api.error", { defaultValue: "행사 API 오류" })}: ${res.status}`);
   const data: FestivalsResponse = await res.json();
   setCache(y, m, data);
   return data;

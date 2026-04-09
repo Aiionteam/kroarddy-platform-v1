@@ -1,0 +1,171 @@
+{
+  "top": {
+    "title": "K-कंटेंट प्लानर",
+    "subtitle": "K-Pop, ड्रामा, भोजन और ब्यूटी के ज़रिए कोरिया खोजें",
+    "hero_title": "K-कंटेंट प्लानर",
+    "hero_subtitle": "K-Pop, ड्रामा, भोजन और ब्यूटी के ज़रिए कोरिया खोजें",
+    "hero_cta": "AI मार्ग बनाएँ",
+    "back": "प्लानर पर वापस जाएँ",
+    "row_kpop": "K-POP",
+    "row_kdrama": "K-ड्रामा / फ़िल्म",
+    "row_kfood": "K-Food",
+    "row_kbeauty": "K-Beauty",
+    "sample_itinerary": "नमूना यात्रा कार्यक्रम",
+    "search_bar": "खोजें",
+    "quick_selection": "त्वरित चयन",
+    "vibe_grid": "माहौल चुनें",
+    "date": "तारीख",
+    "generating": "बन रहा है…",
+    "generate": "✨ कार्यक्रम बनाएँ",
+    "ai_recommended": "AI अनुशंसित कार्यक्रम",
+    "region_select": "क्षेत्र चुनें",
+    "traditional_market": "पारंपरिक बाज़ार",
+    "market_generate": "इस बाज़ार का खान-पान कार्यक्रम बनाएँ",
+    "cafe_question": "आज आप कैसा माहौल चाहते हैं?",
+    "cafe_hint": "माहौल चुनें या कैफ़े का नाम लिखें ताकि AI मार्ग बना सके।",
+    "cafe_placeholder": "कैफ़े का नाम लिखें (जैसे Seongsu Tongue Planet)",
+    "cafe_generate": "AI कार्यक्रम बनाएँ",
+    "trending_items": "अभी ट्रेंडिंग",
+    "my_recipe": "मेरा कॉम्बो रेसिपी",
+    "convenience_q": "अभी कन्वीनियंस स्टोर पर सबसे मुश्किल क्या मिलता है?",
+    "trending_placeholder": "जैसे Yonsei Milk Cream Bread",
+    "recipe_q": "कौन सा फ़्लेवर कॉम्बो आज़माना चाहेंगे?",
+    "extra_keywords": "अतिरिक्त कीवर्ड",
+    "recipe_placeholder": "जैसे मसालेदार चुनौती, मीठा-नमकीन डेज़र्ट",
+    "recipe_generate": "AI कॉम्बो रेसिपी बनाएँ",
+    "set_date_and_generate": "तारीख सेट करें और\nकार्यक्रम बनाएँ",
+    "start_generate": "✨ कार्यक्रम बनाना शुरू करें",
+    "making_schedule": "AI <b>{{title}}</b> का कार्यक्रम बना रहा है…",
+    "recommended_schedule_title": "{{title}} — अनुशंसित कार्यक्रम",
+    "save_plan": "💾 कार्यक्रम सहेजें",
+    "total_cost": "अनुमानित कुल लागत",
+    "cost_per_day": "दिन {{day}} {{total}}",
+    "no_schedule": "कोई कार्यक्रम नहीं बना। फिर से कोशिश करें।",
+    "saved_goto_schedule": "सहेजा गया · शेड्यूल पर जाएँ",
+    "find_nearby_store": "पास बेचने वाली जगहें खोजें",
+    "recipe_hashtags": "#मोडिशूमर #कन्वीनियंसचैलेंज #AIरेसिपी",
+    "description_fallback": "{{place}} पर आनंद लेने के लिए अनुशंसित स्थल।",
+    "challenge_location": "चुनौती स्थल",
+    "challenge_location_desc": "AI द्वारा चुना सर्वोत्तम स्थल (100 किमी के भीतर) — सियोल फ़ॉरेस्ट, सियोंग्सू के सामने बेंच ज़ोन",
+    "subtotal": "उप-योग {{total}}",
+    "schedule_item_default": "कार्यक्रम",
+    "schedule_load_fail": "कार्यक्रम लोड नहीं हो सका।",
+    "save_fail": "सहेजना विफल।",
+    "cafe_place_hint": "कैफ़े/स्थल संकेत",
+    "convenience_trending": "कन्वीनियंस ट्रेंडिंग आइटम",
+    "recipe_title_with_vibe": "{{vibe}} चैलेंज 2026 संस्करण",
+    "recipe_title_default": "मार्क सेट 2026 संस्करण",
+    "region_tab.all": "सभी",
+    "region_tab.seoul": "सियोल",
+    "region_tab.gangwon": "गंगवॉन",
+    "region_tab.jeonla": "जेओल्ला",
+    "region_tab.gyeongsang": "ग्येओंगसांग",
+    "region_tab.jeju": "जेजू",
+    "cafe_vibe.industrial_raw.label": "इंडस्ट्रियल/कच्चा",
+    "cafe_vibe.industrial_raw.description": "कंक्रीट और स्टील का कूल माहौल।",
+    "cafe_vibe.traditional_zen.label": "पारंपरिक/ज़ेन",
+    "cafe_vibe.traditional_zen.description": "हानोक और लकड़ी की बनावट के साथ शांति।",
+    "cafe_vibe.nature_botanical.label": "प्रकृति/बॉटानिकल",
+    "cafe_vibe.nature_botanical.description": "हरियाली और धूप से भरा स्थान।",
+    "cafe_vibe.retro_newtro.label": "रेट्रो/न्यूट्रो",
+    "cafe_vibe.retro_newtro.description": "नॉस्टैल्जिया और विंटेज गली टूर।",
+    "cafe_vibe.modern_minimal.label": "मॉडर्न/मिनिमल",
+    "cafe_vibe.modern_minimal.description": "परिष्कृत मोनोक्रोम सौंदर्यशास्त्र।",
+    "brand.seveneleven": "7-Eleven",
+    "brand.emart24": "emart24",
+    "recipe_vibe.spicy_fire.label": "तीखा मसाला",
+    "recipe_vibe.spicy_fire.description": "तनाव उतारने के लिए मसालेदार चुनौती।",
+    "recipe_vibe.sweet_salty.label": "मीठा-नमकीन क्लासिक",
+    "recipe_vibe.sweet_salty.description": "मिठास और नमकीन संतुलन।",
+    "recipe_vibe.diet_healthy.label": "कन्वीनियंस डाइट",
+    "recipe_vibe.diet_healthy.description": "हल्का लेकिन संतोषजनक हेल्दी कॉम्बो।",
+    "recipe_vibe.night_snack.label": "रात का नाश्ता",
+    "recipe_vibe.night_snack.description": "छोटी खुशी रात के नाश्ते की रेसिपी।",
+    "recipe_vibe.hangover.label": "हैंगओवर कॉम्बो",
+    "recipe_vibe.hangover.description": "हैंगओवर देखभाल के लिए विशेष।",
+    "recipe_vibe.luxury_meal.label": "वैल्यू प्रीमियम भोजन",
+    "recipe_vibe.luxury_meal.description": "कन्वीनियंस स्टोर का प्रीमियम भोजन।",
+    "shopping.ramen": "कप नूडल्स",
+    "shopping.tuna_kimbap": "टूना मेयो त्रिकोण किम्बाप",
+    "shopping.string_cheese": "स्ट्रिंग चीज़",
+    "shopping.sparkling_water": "स्पार्कलिंग पानी",
+    "cooking.1": "सभी सामग्री तैयार कर माइक्रोवेव-सुरक्षित बर्तन में रखें।",
+    "cooking.2": "सॉस/टॉपिंग मिलाएँ और 1 मिनट 30 सेकंड पकाएँ।",
+    "cooking.3": "पसंद अनुसार टॉपिंग जोड़ें और फोटो लें।",
+    "trending_card.1.title": "Yonsei Milk Cream Bread",
+    "trending_card.2.title": "Zero Cola Ice-cup Highball",
+    "trending_card.default_title": "AI चुना ट्रेंडिंग आइटम",
+    "trending_card.tag.new": "#नया",
+    "trending_card.tag.soldout": "#स्टॉकखत्म",
+    "trending_card.tag.review": "#रिव्यूबज़",
+    "trending_card.tag.repurchase": "#दोबाराखरीद",
+    "meta.kf_market.title_ko": "राष्ट्रव्यापी पारंपरिक बाज़ार खानपान यात्रा",
+    "meta.kf_cafe.title_ko": "K-डेज़र्ट और कैफ़े वाइब टूर",
+    "meta.kf_convenience.title_ko": "K-कन्वीनियंस कॉम्बो चैलेंज",
+    "meta.kf_market.tags": "पारंपरिक बाज़ार, खाना, स्थानीय भोजन",
+    "meta.kf_cafe.tags": "कैफ़े, डेज़र्ट, सेलेक्ट शॉप",
+    "meta.kf_convenience.tags": "कन्वीनियंस स्टोर, कॉम्बो, मोडिशूमर",
+    "empty.pick_market": "बाज़ार चुनें फिर कार्यक्रम बनाएँ",
+    "empty.pick_vibe_or_cafe": "माहौल या कैफ़े नाम चुनें",
+    "empty.pick_tab_condition": "टैब शर्तें चुनें और बनाएँ",
+    "empty.pick_date": "तारीख चुनें और कार्यक्रम बनाएँ",
+    "empty.market_guide": "बाएँ बाज़ार चुनें, [बाज़ार खानपान कार्यक्रम] या ऊपर ✨ दबाएँ",
+    "empty.cafe_guide": "बाएँ माहौल/कैफ़े चुनें, [AI कार्यक्रम] दबाएँ",
+    "empty.convenience_guide": "ऊपर टैब से मोड चुनें, कीवर्ड दर्ज कर बनाएँ",
+    "empty.default_guide": "ऊपर ✨ कार्यक्रम बटन दबाएँ",
+    "shopping_list_title": "खरीदारी सूची",
+    "cooking_steps_title": "पकाने के चरण"
+  },
+  "market": {
+    "SEOUL": {
+      "0": { "name": "ग्वांगजांग बाज़ार", "description": "युखो और बिंदेट्टोक का केंद्र।" },
+      "1": { "name": "मांगवॉन बाज़ार", "description": "MZ पीढ़ी का पसंदीदा ट्रेंडी बाज़ार।" },
+      "2": { "name": "तोंगिन बाज़ार", "description": "प्रसिद्ध सिक्का लंचबॉक्स अनुभव।" }
+    },
+    "GANGWON": {
+      "0": { "name": "योंगवोल जुंगांग बाज़ार", "description": "बकवीट जियॉनब्योंग और नूडल्स।" },
+      "1": { "name": "सोक्चो पर्यटन मछली बाज़ार", "description": "डकगैंगजोंग और समुद्री स्ट्रीट फ़ूड।" }
+    },
+    "JEONLA": {
+      "0": { "name": "जेओनजू नाम्बू बाज़ार", "description": "ब्लड सॉसेज और स्प्राउट सूप की जन्मभूमि।" },
+      "1": { "name": "ग्वांगजू 1913 सोंगजोंग स्टेशन बाज़ार", "description": "रेट्रो-न्यूट्रो माहौल।" }
+    },
+    "GYEONGSANG": {
+      "0": { "name": "बुसान गुक्जे बाज़ार", "description": "फ़िल्म यादें और बिबिम दांगम्योन।" },
+      "1": { "name": "दाएगू सोमुन बाज़ार", "description": "कोरिया के शीर्ष 3 बाज़ारों में से एक।" }
+    },
+    "JEJU": {
+      "0": { "name": "जेजू डोंगमुन बाज़ार", "description": "द्वीपीय स्वाद: ओमेगी राइस केक और काले सूअर का गैंगजोंग।" }
+    }
+  },
+  "fallback": {
+    "kfood": {
+      "KF_MARKET": {
+        "title": "राष्ट्रव्यापी पारंपरिक बाज़ार खानपान यात्रा",
+        "description": "पूरे कोरिया में स्थानीय स्वाद और ऊर्जा से भरपूर बाज़ार यात्रा।"
+      },
+      "KF_CAFE": {
+        "title": "K-डेज़र्ट और कैफ़े वाइब टूर",
+        "description": "आपके स्वाद के अनुरूप कैफ़े और सेलेक्ट शॉप जोड़ता मार्ग।"
+      },
+      "KF_CONVENIENCE": {
+        "title": "K-कन्वीनियंस स्टोर कॉम्बो चैलेंज",
+        "description": "नए सोल्ड-आउट आइटम से गुप्त रेसिपी तक — असली मोडिशूमर बनें!"
+      }
+    },
+    "kbeauty": {
+      "KBEAUTY_01": {
+        "title": "Olive Young फ़्लैगशिप",
+        "description": "स्कincare और मेकअप ट्रेंड एक जगह तुलना व खरीदारी।"
+      },
+      "KBEAUTY_02": {
+        "title": "म्येओंगडोंग ब्यूटी स्ट्रीट",
+        "description": "मुख्य रोड शॉप के आसपास बेस्टसेलर।"
+      },
+      "KBEAUTY_03": {
+        "title": "स्कincare अनुभव दुकान",
+        "description": "त्वचा विश्लेषण पर आधारित कस्टम केयर और प्रोग्राम।"
+      }
+    }
+  }
+}

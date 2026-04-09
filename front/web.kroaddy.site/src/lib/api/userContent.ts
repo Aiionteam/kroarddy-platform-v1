@@ -1,6 +1,8 @@
 /**
  * User Content API – 유저 공유 루트 CRUD + AI 폴리시 + S3 이미지 업로드
  */
+import i18n from "@/lib/i18n/config";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export interface RouteItemInput {
@@ -67,7 +69,10 @@ export async function validateImageAndGetUploadUrl(
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `이미지 검증 오류: ${res.status}`);
+    throw new Error(
+      err.detail ||
+        `${i18n.t("usercontent.api.validate_image_error", { defaultValue: "이미지 검증 오류" })}: ${res.status}`
+    );
   }
   return res.json();
 }
@@ -85,7 +90,7 @@ export async function uploadImageToS3(
     body: file,
   });
   if (!res.ok) {
-    throw new Error(`S3 업로드 실패: ${res.status}`);
+    throw new Error(`${i18n.t("usercontent.api.s3_upload_error", { defaultValue: "S3 업로드 실패" })}: ${res.status}`);
   }
 }
 
@@ -119,7 +124,10 @@ export async function polishRoute(params: {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `AI 폴리시 오류: ${res.status}`);
+    throw new Error(
+      err.detail ||
+        `${i18n.t("usercontent.api.ai_polish_error", { defaultValue: "AI 폴리시 오류" })}: ${res.status}`
+    );
   }
   return res.json();
 }
@@ -144,7 +152,7 @@ export async function saveUserRoute(params: {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `저장 오류: ${res.status}`);
+    throw new Error(err.detail || `${i18n.t("usercontent.api.save_error", { defaultValue: "저장 오류" })}: ${res.status}`);
   }
   return res.json();
 }
@@ -167,7 +175,7 @@ export async function fetchUserRoutes(
     `${API_BASE}/api/v1/user-content/routes?${params}`,
     { cache: "no-store" }
   );
-  if (!res.ok) throw new Error(`피드 로드 오류: ${res.status}`);
+  if (!res.ok) throw new Error(`${i18n.t("usercontent.api.feed_load_error", { defaultValue: "피드 로드 오류" })}: ${res.status}`);
   const data = await res.json();
   return data.routes ?? [];
 }
@@ -180,7 +188,7 @@ export async function likeUserRoute(
     `${API_BASE}/api/v1/user-content/routes/${routeId}/like?user_id=${userId}`,
     { method: "POST", cache: "no-store" }
   );
-  if (!res.ok) throw new Error(`좋아요 오류: ${res.status}`);
+  if (!res.ok) throw new Error(`${i18n.t("usercontent.api.like_error", { defaultValue: "좋아요 오류" })}: ${res.status}`);
   return res.json();
 }
 
@@ -191,6 +199,6 @@ export async function deleteUserRoute(routeId: number, userId: number): Promise<
   );
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `삭제 오류: ${res.status}`);
+    throw new Error(err.detail || `${i18n.t("usercontent.api.delete_error", { defaultValue: "삭제 오류" })}: ${res.status}`);
   }
 }

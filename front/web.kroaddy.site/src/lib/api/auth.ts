@@ -1,4 +1,5 @@
 import apiClient from "./client";
+import i18n from "@/lib/i18n/config";
 
 export const logout = async (): Promise<void> => {
   await apiClient.post("/api/auth/logout");
@@ -28,7 +29,7 @@ export const refreshAccessToken = async (): Promise<string> => {
     .post<{ access_token: string }>("/api/auth/refresh")
     .then(({ data }) => {
       if (!data?.access_token?.trim())
-        throw new Error("Refresh Token이 만료되었거나 유효하지 않습니다. 다시 로그인해주세요.");
+        throw new Error(i18n.t("auth.api.refresh_token_invalid", { defaultValue: "Refresh Token이 만료되었거나 유효하지 않습니다. 다시 로그인해주세요." }));
       return data.access_token;
     })
     .finally(() => {

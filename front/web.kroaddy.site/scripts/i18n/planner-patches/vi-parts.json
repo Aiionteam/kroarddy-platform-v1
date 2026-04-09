@@ -1,0 +1,171 @@
+{
+  "top": {
+    "title": "Kế hoạch K-Content",
+    "subtitle": "Khám phá Hàn Quốc qua K-Pop, drama, ẩm thực và làm đẹp",
+    "hero_title": "Kế hoạch K-Content",
+    "hero_subtitle": "Khám phá Hàn Quốc qua K-Pop, drama, ẩm thực và làm đẹp",
+    "hero_cta": "Tạo lộ trình AI",
+    "back": "Quay lại trang lập kế hoạch",
+    "row_kpop": "K-POP",
+    "row_kdrama": "K-Drama / Phim",
+    "row_kfood": "K-Food",
+    "row_kbeauty": "K-Beauty",
+    "sample_itinerary": "Lịch trình mẫu",
+    "search_bar": "Tìm kiếm",
+    "quick_selection": "Chọn nhanh",
+    "vibe_grid": "Chọn vibe",
+    "date": "Ngày",
+    "generating": "Đang tạo…",
+    "generate": "✨ Tạo lịch trình",
+    "ai_recommended": "Lịch trình gợi ý bởi AI",
+    "region_select": "Chọn khu vực",
+    "traditional_market": "Chợ truyền thống",
+    "market_generate": "Tạo lịch ẩm thực chợ này",
+    "cafe_question": "Hôm nay bạn muốn vibe như thế nào?",
+    "cafe_hint": "Chọn vibe hoặc nhập tên quán cà phê để AI tạo lộ trình.",
+    "cafe_placeholder": "Nhập tên quán (vd: Seongsu Tongue Planet)",
+    "cafe_generate": "Tạo lịch trình AI",
+    "trending_items": "Món đang hot",
+    "my_recipe": "Công thức mix của tôi",
+    "convenience_q": "Hiện tại khó mua nhất ở cửa hàng tiện lợi là gì?",
+    "trending_placeholder": "vd: bánh kem sữa Yonsei",
+    "recipe_q": "Bạn muốn thử mix hương vị nào?",
+    "extra_keywords": "Từ khóa thêm",
+    "recipe_placeholder": "vd: thử thách cay, món tráng miệng mặn-ngọt",
+    "recipe_generate": "Tạo công thức mix AI",
+    "set_date_and_generate": "Chọn ngày rồi\ntạo lịch trình",
+    "start_generate": "✨ Bắt đầu tạo lịch",
+    "making_schedule": "AI đang tạo lịch <b>{{title}}</b>…",
+    "recommended_schedule_title": "{{title}} — Lịch đề xuất",
+    "save_plan": "💾 Lưu lịch trình",
+    "total_cost": "Chi phí ước tính",
+    "cost_per_day": "Ngày {{day}} {{total}}",
+    "no_schedule": "Chưa tạo được lịch. Vui lòng thử lại.",
+    "saved_goto_schedule": "Đã lưu · Xem lịch",
+    "find_nearby_store": "Tìm nơi bán gần đây",
+    "recipe_hashtags": "#modisumer #thửtháchCVS #AIrecipe",
+    "description_fallback": "Điểm đề xuất để trải nghiệm tại {{place}}.",
+    "challenge_location": "Địa điểm thử thách",
+    "challenge_location_desc": "Điểm thử thách do AI chọn (trong 100km) — khu ghế trước Seoul Forest, Seongsu",
+    "subtotal": "Tạm tính {{total}}",
+    "schedule_item_default": "Lịch trình",
+    "schedule_load_fail": "Không tải được lịch trình.",
+    "save_fail": "Lưu thất bại.",
+    "cafe_place_hint": "Gợi ý quán/địa điểm",
+    "convenience_trending": "Món hot cửa hàng tiện lợi",
+    "recipe_title_with_vibe": "Thử thách {{vibe}} bản 2026",
+    "recipe_title_default": "Mark set bản 2026",
+    "region_tab.all": "Tất cả",
+    "region_tab.seoul": "Seoul",
+    "region_tab.gangwon": "Gangwon",
+    "region_tab.jeonla": "Jeolla",
+    "region_tab.gyeongsang": "Gyeongsang",
+    "region_tab.jeju": "Jeju",
+    "cafe_vibe.industrial_raw.label": "Công nghiệm/Thô",
+    "cafe_vibe.industrial_raw.description": "Không gian bê tông và kim loại đầy cá tính.",
+    "cafe_vibe.traditional_zen.label": "Truyền thống/Zen",
+    "cafe_vibe.traditional_zen.description": "Khoảng lặng với hanok và gỗ.",
+    "cafe_vibe.nature_botanical.label": "Thiên nhiên/Thực vật",
+    "cafe_vibe.nature_botanical.description": "Không gian xanh và ánh sáng.",
+    "cafe_vibe.retro_newtro.label": "Retro/Newtro",
+    "cafe_vibe.retro_newtro.description": "Hoài niệm và hẻm vintage.",
+    "cafe_vibe.modern_minimal.label": "Hiện đại/Tối giản",
+    "cafe_vibe.modern_minimal.description": "Thẩm mỹ đơn sắc tinh tế.",
+    "brand.seveneleven": "7-Eleven",
+    "brand.emart24": "emart24",
+    "recipe_vibe.spicy_fire.label": "Cay nồng",
+    "recipe_vibe.spicy_fire.description": "Thử thách cay để xả stress.",
+    "recipe_vibe.sweet_salty.label": "Mặn-ngọt kinh điển",
+    "recipe_vibe.sweet_salty.description": "Cân bằng ngọt và mặn.",
+    "recipe_vibe.diet_healthy.label": "Ăn healthy CVS",
+    "recipe_vibe.diet_healthy.description": "Combo nhẹ mà no.",
+    "recipe_vibe.night_snack.label": "Ăn đêm",
+    "recipe_vibe.night_snack.description": "Công thức ăn đêm vui nhỏ.",
+    "recipe_vibe.hangover.label": "Giải rượu",
+    "recipe_vibe.hangover.description": "Combo cho ngày khó chịu sau tiệc.",
+    "recipe_vibe.luxury_meal.label": "Bữa premium giá hời",
+    "recipe_vibe.luxury_meal.description": "Bữa cao cấp từ cửa hàng tiện lợi.",
+    "shopping.ramen": "Mì cốc",
+    "shopping.tuna_kimbap": "Cơm tam giác cá ngừ sốt mayo",
+    "shopping.string_cheese": "Phô mai sợi",
+    "shopping.sparkling_water": "Nước có ga",
+    "cooking.1": "Chuẩn bị nguyên liệu, cho vào hộp dùng được trong lò vi sóng.",
+    "cooking.2": "Trộn sốt/topping, quay 1 phút 30 giây.",
+    "cooking.3": "Thêm topping theo ý và chụp ảnh check-in.",
+    "trending_card.1.title": "Bánh kem sữa Yonsei",
+    "trending_card.2.title": "Highball cốc đá Coca Zero",
+    "trending_card.default_title": "Món hot do AI chọn",
+    "trending_card.tag.new": "#mới",
+    "trending_card.tag.soldout": "#hếthàng",
+    "trending_card.tag.review": "#reviewnổi",
+    "trending_card.tag.repurchase": "#mualại",
+    "meta.kf_market.title_ko": "Tour ẩm thực chợ truyền thống cả nước",
+    "meta.kf_cafe.title_ko": "Tour K-dessert & vibe quán cà phê",
+    "meta.kf_convenience.title_ko": "Thử thách mix cửa hàng tiện lợi K",
+    "meta.kf_market.tags": "chợ truyền thống, ẩm thực, địa phương",
+    "meta.kf_cafe.tags": "cà phê, tráng miệng, select shop",
+    "meta.kf_convenience.tags": "cửa hàng tiện lợi, mix, modisumer",
+    "empty.pick_market": "Chọn chợ rồi tạo lịch",
+    "empty.pick_vibe_or_cafe": "Chọn vibe hoặc nhập tên quán",
+    "empty.pick_tab_condition": "Chọn điều kiện tab rồi tạo",
+    "empty.pick_date": "Chọn ngày rồi tạo lịch",
+    "empty.market_guide": "Chọn chợ bên trái, bấm [Tạo lịch ẩm thực chợ] hoặc ✨ phía trên",
+    "empty.cafe_guide": "Chọn vibe/tên quán bên trái, bấm [Tạo lịch AI]",
+    "empty.convenience_guide": "Chọn tab trên cùng, nhập từ khóa rồi tạo",
+    "empty.default_guide": "Bấm nút ✨ tạo lịch phía trên",
+    "shopping_list_title": "Danh sách mua",
+    "cooking_steps_title": "Bước chế biến"
+  },
+  "market": {
+    "SEOUL": {
+      "0": { "name": "Chợ Gwangjang", "description": "Thiên đường yukhoe và bánh đậu." },
+      "1": { "name": "Chợ Mangwon", "description": "Chợ trendy được Gen Z yêu thích." },
+      "2": { "name": "Chợ Tongin", "description": "Trải nghiệm hộp cơm xu nổi tiếng." }
+    },
+    "GANGWON": {
+      "0": { "name": "Chợ trung tâm Yeongwol", "description": "Bánh kiều mạch và mì olchaengi." },
+      "1": { "name": "Chợ hải sản Sokcho", "description": "Gà sốt và đồ ăn đường phố hải sản." }
+    },
+    "JEONLA": {
+      "0": { "name": "Chợ Nam Jeonju", "description": "Tiết canh và súp giá đỗ." },
+      "1": { "name": "Chợ ga Songjeong Gwangju 1913", "description": "Không khí retro-newtro." }
+    },
+    "GYEONGSANG": {
+      "0": { "name": "Chợ Gukje Busan", "description": "Kỷ niệm phim và mì trộn." },
+      "1": { "name": "Chợ Seomun Daegu", "description": "Quy mô và hương vị top 3 Hàn." }
+    },
+    "JEJU": {
+      "0": { "name": "Chợ Đông Môn Jeju", "description": "Bánh omegi và heo đen chiên giòn." }
+    }
+  },
+  "fallback": {
+    "kfood": {
+      "KF_MARKET": {
+        "title": "Tour ẩm thực chợ truyền thống cả nước",
+        "description": "Hành trình khám phá hương vị địa phương khắp Hàn Quốc."
+      },
+      "KF_CAFE": {
+        "title": "Tour K-dessert & vibe quán cà phê",
+        "description": "Lộ trình nối quán cà phê và select shop đúng gu bạn."
+      },
+      "KF_CONVENIENCE": {
+        "title": "Thử thách mix cửa hàng tiện lợi K",
+        "description": "Từ món mới cháy hàng đến công thức bí mật — trở thành modisumer!"
+      }
+    },
+    "kbeauty": {
+      "KBEAUTY_01": {
+        "title": "Cửa hàng flagship Olive Young",
+        "description": "So sánh và mua xu hướng skincare & makeup."
+      },
+      "KBEAUTY_02": {
+        "title": "Phố beauty Myeongdong",
+        "description": "Khám phá bestseller quanh các cửa hàng chính."
+      },
+      "KBEAUTY_03": {
+        "title": "Cửa hàng trải nghiệm skincare",
+        "description": "Chăm sóc cá nhân và workshop dựa trên phân tích da."
+      }
+    }
+  }
+}

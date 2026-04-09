@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
 import { AppLayout } from "@/components/organisms/AppLayout";
+import { useTranslation } from "react-i18next";
 import { NaverMapModal } from "@/components/molecules/NaverMapModal";
 import { NaverRouteMapModal } from "@/components/molecules/NaverRouteMapModal";
 import {
@@ -21,6 +22,28 @@ import {
   getSlotWeather,
   type WeatherDay,
 } from "@/lib/api/weather";
+
+function localizeServerReason(
+  t: (key: string, options?: Record<string, unknown>) => string,
+  reason: string
+): string {
+  const raw = String(reason || "").trim();
+  if (!raw) return raw;
+
+  // If backend already returns an i18n-like key, translate it (fallback to raw).
+  if (/^[a-z0-9_.-]+$/i.test(raw) && raw.includes(".")) {
+    return t(raw, { defaultValue: raw });
+  }
+
+  // Normalize a few common Korean reasons (extend as we observe more).
+  const normalized: Record<string, { key: string; defaultValue: string }> = {
+    "위치 정보 없음": { key: "weather.reason.no_location", defaultValue: "위치 정보 없음" },
+  };
+  const hit = normalized[raw];
+  if (hit) return t(hit.key, { defaultValue: hit.defaultValue });
+
+  return raw;
+}
 
 // ── 플랜별 컬러 팔레트 ────────────────────────────────────────
 const COLORS = [
@@ -41,7 +64,7 @@ const planColor = (idx: number): PlanColor => COLORS[idx % COLORS.length];
 function toNum(d: string) { return parseInt(d.replace(/-/g, ""), 10); }
 
 function formatDateKo(iso: string) {
-  return new Date(iso).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
+  return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
 }
 
 function addDays(base: string, n: number): string {
@@ -99,6 +122,7 @@ function PlanCalendar({
   onPrevMonth: () => void;
   onNextMonth: () => void;
 }) {
+  const { t } = useTranslation();
   const today = new Date().toISOString().slice(0, 10);
   const firstDay = new Date(year, month - 1, 1).getDay();
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -117,18 +141,18 @@ function PlanCalendar({
           type="button"
           onClick={onPrevMonth}
           className="rounded-full p-1.5 text-white/80 hover:bg-white/20 transition-colors"
-          aria-label="이전 달"
+          aria-label={t("planner.schedule.prev_month", { defaultValue: "이전 달" })}
         >
           ◀
         </button>
         <span className="text-base font-bold text-white">
-          {year}년 {month}월
+          {t("planner.schedule.year_month", { year, month, defaultValue: "{{year}}년 {{month}}월" })}
         </span>
         <button
           type="button"
           onClick={onNextMonth}
           className="rounded-full p-1.5 text-white/80 hover:bg-white/20 transition-colors"
-          aria-label="다음 달"
+          aria-label={t("planner.schedule.next_month", { defaultValue: "다음 달" })}
         >
           ▶
         </button>
@@ -143,7 +167,7 @@ function PlanCalendar({
               i === 0 ? "text-rose-400" : i === 6 ? "text-sky-400" : "text-gray-500"
             }`}
           >
-            {w}
+            {t(`calendar.weekday.${i}`, { defaultValue: w })}
           </div>
         ))}
       </div>
@@ -202,10 +226,11 @@ function PlanCalendar({
 
 // ── 플랜 범례 ─────────────────────────────────────────────────
 function PlanLegend({ plans }: { plans: TravelPlanRecord[] }) {
+  const { t } = useTranslation();
   if (!plans.length) return null;
   return (
     <div className="mt-3 rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-      <p className="mb-2 text-xs font-semibold text-gray-400">플랜 범례</p>
+      <p className="mb-2 text-xs font-semibold text-gray-400">{t("planner.schedule.legend", { defaultValue: "플랜 범례" })}</p>
       <ul className="space-y-1.5">
         {plans.map((plan, idx) => {
           const c = planColor(idx);
@@ -246,6 +271,7 @@ function DayPlanGroup({
   dayWeather?: WeatherDay | null;
   onScheduleChange: (planId: number, schedule: ScheduleItem[]) => void;
 }) {
+  const { t } = useTranslation();
   const c = planColor(planIdx);
   const [rerollingIdx, setRerollingIdx] = useState<number | null>(null);
   const [rerolledIdx,  setRerolledIdx]  = useState<number | null>(null);
@@ -278,7 +304,7 @@ function DayPlanGroup({
       setRerolledIdx(flatIdx);
       setTimeout(() => setRerolledIdx(null), 3000);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "리롤에 실패했습니다.");
+      alert(err instanceof Error ? err.message : t("planner.schedule.reroll_fail", { defaultValue: "리롤에 실패했습니다." }));
     } finally {
       setRerollingIdx(null);
     }
@@ -298,11 +324,14 @@ function DayPlanGroup({
       onScheduleChange(plan.id, res.schedule);
       setPrompt("");
       if (res.reason) {
-        setModifyResult({ notPossible: res.not_possible ?? false, reason: res.reason });
+        setModifyResult({
+          notPossible: res.not_possible ?? false,
+          reason: localizeServerReason(t, res.reason),
+        });
         setTimeout(() => setModifyResult(null), 8000);
       }
     } catch (err) {
-      setModifyError(err instanceof Error ? err.message : "수정에 실패했습니다.");
+      setModifyError(err instanceof Error ? err.message : t("planner.schedule.modify_fail", { defaultValue: "수정에 실패했습니다." }));
     } finally {
       setModifying(false);
     }
@@ -327,16 +356,16 @@ function DayPlanGroup({
           type="button"
           onClick={() => setRouteMapOpen(true)}
           className={`shrink-0 rounded-lg border ${c.border} bg-white px-2 py-0.5 text-[11px] font-medium ${c.text} hover:opacity-80 transition-opacity`}
-          title="전체 경유지 경로 보기"
+          title={t("planner.schedule.view_all_route", { defaultValue: "전체 경유지 경로 보기" })}
         >
-          🗺️ 전체 경로
+          {t("planner.schedule.all_route", { defaultValue: "🗺️ 전체 경로" })}
         </button>
       </div>
 
       {/* 일정 목록 */}
       <div className="bg-white px-3 py-2">
         {localItems.length === 0 ? (
-          <p className={`py-2 text-xs ${c.text} opacity-60`}>여행 기간 중입니다</p>
+          <p className={`py-2 text-xs ${c.text} opacity-60`}>{t("planner.schedule.in_trip_period", { defaultValue: "여행 기간 중입니다" })}</p>
         ) : (
           <ol className="space-y-2">
             {localItems.map(({ item, flatIdx }, i) => {
@@ -350,7 +379,7 @@ function DayPlanGroup({
                 }`}>
                   {isRerolled && (
                     <span className="mb-1 inline-block rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700">
-                      🔄 새로 생성됨
+                      {t("planner.schedule.rerolled", { defaultValue: "🔄 새로 생성됨" })}
                     </span>
                   )}
                   <div className="flex items-start justify-between gap-2">
@@ -375,7 +404,7 @@ function DayPlanGroup({
                         ) : null;
                       })()}
                       <span className="truncate text-sm font-semibold text-gray-800">
-                        {isRerolling ? "생성 중…" : item.title}
+                        {isRerolling ? t("planner.schedule.generating", { defaultValue: "생성 중…" }) : item.title}
                       </span>
                     </div>
                     {/* 리롤 버튼 */}
@@ -384,7 +413,7 @@ function DayPlanGroup({
                         type="button"
                         onClick={() => handleReroll(flatIdx)}
                         disabled={rerollingIdx !== null || modifying}
-                        title="이 일정 다시 생성"
+                        title={t("planner.schedule.reroll_this_item", { defaultValue: "이 일정 다시 생성" })}
                         className={`shrink-0 flex h-6 w-6 items-center justify-center rounded-full border transition-all ${
                           isRerolling
                             ? "border-indigo-300 bg-indigo-100 text-indigo-500"
@@ -409,7 +438,7 @@ function DayPlanGroup({
                           type="button"
                           onClick={() => item.place && setMapPlace({ name: item.place, lat: item.lat, lng: item.lng })}
                           className="flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600 hover:underline transition-colors text-left"
-                          title="지도에서 보기"
+                          title={t("planner.schedule.view_on_map", { defaultValue: "지도에서 보기" })}
                         >
                           📍 {item.place}
                         </button>
@@ -460,7 +489,7 @@ function DayPlanGroup({
       {userId && (
         <div className="border-t border-gray-100 bg-gray-50 px-3 py-2.5">
           <p className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-gray-500">
-            <span>✏️</span> AI에게 일정 수정 요청
+            <span>✏️</span> {t("planner.schedule.ask_ai_modify", { defaultValue: "AI에게 일정 수정 요청" })}
           </p>
           <form onSubmit={handleModify} className="flex gap-2">
             <textarea
@@ -468,7 +497,7 @@ function DayPlanGroup({
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder='예) "창덕궁 후원 투어 다른 곳으로 바꿔줘"'
+              placeholder={t("planner.schedule.modify_placeholder", { defaultValue: '예) "창덕궁 후원 투어 다른 곳으로 바꿔줘"' })}
               rows={2}
               disabled={modifying || rerollingIdx !== null}
               className="flex-1 resize-none rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-indigo-300 disabled:opacity-60"
@@ -544,6 +573,7 @@ function DayPanel({
   onScheduleChange: (planId: number, schedule: ScheduleItem[]) => void;
   onClear: () => void;
 }) {
+  const { t } = useTranslation();
   const matched = getPlansOnDate(date, plans);
   const [d] = date.split("T");
   const [y, m, day] = d.split("-");
@@ -585,10 +615,10 @@ function DayPanel({
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold text-gray-800">
-              {parseInt(y)}년 {parseInt(m)}월 {parseInt(day)}일
+              {t("planner.schedule.date_ymd", { year: parseInt(y), month: parseInt(m), day: parseInt(day), defaultValue: "{{year}}년 {{month}}월 {{day}}일" })}
             </span>
             <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">
-              {matched.reduce((acc, { items }) => acc + items.length, 0)}개 일정
+              {t("planner.schedule.item_count", { count: matched.reduce((acc, { items }) => acc + items.length, 0), defaultValue: "{{count}}개 일정" })}
             </span>
           </div>
           {weather && <WeatherBadge weather={weather} />}
@@ -598,14 +628,14 @@ function DayPanel({
           onClick={onClear}
           className="text-xs text-gray-400 hover:text-gray-600 underline shrink-0"
         >
-          전체 보기
+          {t("common.show_all", { defaultValue: "전체 보기" })}
         </button>
       </div>
 
       <div className="px-4 py-3 space-y-4">
         {matched.length === 0 && (
           <p className="py-12 text-center text-sm text-gray-400">
-            이 날 등록된 일정이 없습니다
+            {t("planner.schedule.no_items_on_day", { defaultValue: "이 날 등록된 일정이 없습니다" })}
           </p>
         )}
         {matched.map(({ planIdx, plan, items }) => (
@@ -638,6 +668,7 @@ function PlanCard({
   onDelete: (id: number) => void;
   onScheduleChange: (planId: number, schedule: ScheduleItem[]) => void;
 }) {
+  const { t } = useTranslation();
   const c = planColor(planIdx);
   const [expanded, setExpanded] = useState(false);
   const [schedule, setSchedule] = useState<ScheduleItem[]>(plan.schedule);
@@ -677,7 +708,7 @@ function PlanCard({
   }, [plan.id, plan.start_date, plan.end_date, plan.schedule]);
 
   async function handleDelete() {
-    if (!confirm("이 플랜을 삭제하시겠어요?")) return;
+    if (!confirm(t("planner.schedule.delete_confirm", { defaultValue: "이 플랜을 삭제하시겠어요?" }))) return;
     setDeleting(true);
     onDelete(plan.id);
   }
@@ -698,7 +729,10 @@ function PlanCard({
       setPrompt("");
       // 이유 표시 (불가능 여부 포함)
       if (res.reason) {
-        setModifyResult({ notPossible: res.not_possible ?? false, reason: res.reason });
+        setModifyResult({
+          notPossible: res.not_possible ?? false,
+          reason: localizeServerReason(t, res.reason),
+        });
         setTimeout(() => setModifyResult(null), 8000);
       }
       if (!res.not_possible) {
@@ -706,7 +740,7 @@ function PlanCard({
         setTimeout(() => setHighlightedTitles(new Set()), 3000);
       }
     } catch (err) {
-      setModifyError(err instanceof Error ? err.message : "수정에 실패했습니다.");
+      setModifyError(err instanceof Error ? err.message : t("planner.schedule.modify_fail", { defaultValue: "수정에 실패했습니다." }));
     } finally {
       setModifying(false);
     }
@@ -724,7 +758,7 @@ function PlanCard({
       setRerolledIdx(flatIdx);
       setTimeout(() => setRerolledIdx(null), 3000);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "리롤에 실패했습니다.");
+      alert(err instanceof Error ? err.message : t("planner.schedule.reroll_fail", { defaultValue: "리롤에 실패했습니다." }));
     } finally {
       setRerollingIdx(null);
     }
@@ -759,17 +793,17 @@ function PlanCard({
               {plan.location} · {plan.route_name}
             </p>
             <p className="text-[11px] text-gray-400">
-              저장일 {formatDateKo(plan.created_at)}
+              {t("planner.schedule.saved_at", { date: formatDateKo(plan.created_at), defaultValue: "저장일 {{date}}" })}
               {plan.start_date && ` · ${plan.start_date}${plan.end_date ? ` ~ ${plan.end_date}` : ""}`}
             </p>
             {/* 여행 기간 날씨 미니 요약 */}
             {(weatherLoading || Object.keys(planWeather).length > 0) && (
               <div className="mt-1.5">
-                <p className="mb-1 text-[10px] text-gray-400">🌤 날씨 예보 <span className="text-gray-300">· 5일 이내</span></p>
+                <p className="mb-1 text-[10px] text-gray-400">{t("planner.schedule.weather_forecast", { defaultValue: "🌤 날씨 예보" })} <span className="text-gray-300">{t("planner.schedule.within_5days", { defaultValue: "· 5일 이내" })}</span></p>
                 {weatherLoading ? (
                   <span className="inline-flex items-center gap-1 text-[10px] text-gray-300">
                     <span className="h-2.5 w-2.5 animate-spin rounded-full border border-gray-300 border-t-transparent" />
-                    불러오는 중…
+                    {t("common.loading", { defaultValue: "불러오는 중…" })}
                   </span>
                 ) : (
                   <div className="flex flex-wrap gap-1">
@@ -797,7 +831,7 @@ function PlanCard({
             onClick={() => setExpanded((v) => !v)}
             className={`rounded-lg border ${c.border} bg-white px-2.5 py-1 text-xs font-medium ${c.text} hover:opacity-80 transition-opacity`}
           >
-            {expanded ? "접기" : "일정 보기"}
+            {expanded ? t("common.fold", { defaultValue: "접기" }) : t("planner.schedule.view_schedule", { defaultValue: "일정 보기" })}
           </button>
           <button
             type="button"
@@ -805,7 +839,7 @@ function PlanCard({
             disabled={deleting}
             className="rounded-lg border border-red-200 bg-white px-2.5 py-1 text-xs font-medium text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
           >
-            {deleting ? "…" : "삭제"}
+            {deleting ? "…" : t("common.delete", { defaultValue: "삭제" })}
           </button>
         </div>
       </div>
@@ -839,9 +873,9 @@ function PlanCard({
                     type="button"
                     onClick={() => setRouteMapDay(Number(day))}
                     className={`ml-auto rounded-lg border ${c.border} bg-white px-2 py-0.5 text-[11px] font-medium ${c.text} hover:opacity-80 transition-opacity`}
-                    title={`Day ${day} 경로 보기`}
+                    title={t("planner.schedule.view_day_route", { day, defaultValue: "Day {{day}} 경로 보기" })}
                   >
-                    🗺️ 경로
+                    {t("planner.schedule.route", { defaultValue: "🗺️ 경로" })}
                   </button>
                 </h3>
                 <ol className="relative border-l-2 border-gray-100 pl-4 space-y-2">
@@ -868,12 +902,12 @@ function PlanCard({
                           {/* 상태 뱃지 */}
                           {isRerolled && (
                             <span className="mb-1 inline-block rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700">
-                              🔄 새로 생성됨
+                              {t("planner.schedule.rerolled", { defaultValue: "🔄 새로 생성됨" })}
                             </span>
                           )}
                           {isModified && (
                             <span className="mb-1 inline-block rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">
-                              ✨ AI 수정됨
+                              {t("planner.schedule.ai_modified", { defaultValue: "✨ AI 수정됨" })}
                             </span>
                           )}
 
@@ -898,7 +932,7 @@ function PlanCard({
                                 ) : null;
                               })()}
                               <span className="truncate text-sm font-semibold text-gray-800">
-                                {isRerolling ? "생성 중…" : item.title}
+                                {isRerolling ? t("planner.schedule.generating", { defaultValue: "생성 중…" }) : item.title}
                               </span>
                             </div>
 
@@ -908,7 +942,7 @@ function PlanCard({
                                 type="button"
                                 onClick={() => handleReroll(flatIdx)}
                                 disabled={rerollingIdx !== null || modifying}
-                                title="이 일정 다시 생성"
+                                title={t("planner.schedule.reroll_this_item", { defaultValue: "이 일정 다시 생성" })}
                                 className={`shrink-0 flex h-6 w-6 items-center justify-center rounded-full border transition-all ${
                                   isRerolling
                                     ? "border-indigo-300 bg-indigo-100 text-indigo-500"
@@ -934,7 +968,7 @@ function PlanCard({
                                   type="button"
                                   onClick={() => item.place && setMapPlace({ name: item.place, lat: item.lat, lng: item.lng })}
                                   className="flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600 hover:underline transition-colors text-left"
-                                  title="지도에서 보기"
+                                  title={t("planner.schedule.view_on_map", { defaultValue: "지도에서 보기" })}
                                 >
                                   📍 {item.place}
                                 </button>
@@ -969,7 +1003,7 @@ function PlanCard({
           {/* AI 수정 프롬프트 */}
           <div className="border-t border-gray-100 bg-gray-50 px-4 py-3">
             <p className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-gray-500">
-              <span>✏️</span> AI에게 일정 수정 요청
+              <span>✏️</span> {t("planner.schedule.ask_ai_modify", { defaultValue: "AI에게 일정 수정 요청" })}
             </p>
             <form onSubmit={handleModify} className="flex gap-2">
               <textarea
@@ -977,7 +1011,7 @@ function PlanCard({
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder='예) "창덕궁 후원 투어 다른 곳으로 바꿔줘"'
+                placeholder={t("planner.schedule.modify_placeholder", { defaultValue: '예) "창덕궁 후원 투어 다른 곳으로 바꿔줘"' })}
                 rows={2}
                 disabled={modifying || rerollingIdx !== null || !userId}
                 className="flex-1 resize-none rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-indigo-300 disabled:opacity-60"
@@ -997,8 +1031,8 @@ function PlanCard({
                 )}
               </button>
             </form>
-            {modifying && <p className="mt-1 text-xs text-indigo-500 animate-pulse">AI가 수정 중…</p>}
-            {rerollingIdx !== null && <p className="mt-1 text-xs text-sky-500 animate-pulse">항목 새로 생성 중…</p>}
+            {modifying && <p className="mt-1 text-xs text-indigo-500 animate-pulse">{t("planner.schedule.ai_modifying", { defaultValue: "AI가 수정 중…" })}</p>}
+            {rerollingIdx !== null && <p className="mt-1 text-xs text-sky-500 animate-pulse">{t("planner.schedule.item_regenerating", { defaultValue: "항목 새로 생성 중…" })}</p>}
             {modifyError && <p className="mt-1 text-xs text-red-500">{modifyError}</p>}
             {modifyResult && (
               <div className={`mt-2 flex items-start gap-2 rounded-xl px-3 py-2.5 text-xs ${
@@ -1012,7 +1046,7 @@ function PlanCard({
                 <p className="leading-relaxed">{modifyResult.reason}</p>
               </div>
             )}
-            {!userId && <p className="mt-1 text-xs text-gray-400">로그인 후 수정 기능 이용 가능</p>}
+            {!userId && <p className="mt-1 text-xs text-gray-400">{t("planner.schedule.modify_login_needed", { defaultValue: "로그인 후 수정 기능 이용 가능" })}</p>}
           </div>
         </>
       )}
@@ -1043,6 +1077,7 @@ function PlanCard({
 export default function SchedulePage() {
   const router = useRouter();
   const { isAuthenticated, logout } = useLoginStore();
+  const { t } = useTranslation();
   const appUserId = typeof window !== "undefined" ? Number(sessionStorage.getItem("app_user_id")) || null : null;
 
   const now = new Date();
@@ -1073,7 +1108,7 @@ export default function SchedulePage() {
       }
     } catch (e) {
       if ((e as Error)?.name === "AbortError") return;
-      setError(e instanceof Error ? e.message : "플랜 목록을 불러오지 못했습니다.");
+      setError(e instanceof Error ? e.message : t("planner.schedule.load_fail", { defaultValue: "플랜 목록을 불러오지 못했습니다." }));
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
@@ -1092,7 +1127,7 @@ export default function SchedulePage() {
       await deletePlan(planId, appUserId);
       setPlans((prev) => prev.filter((p) => p.id !== planId));
     } catch (e) {
-      alert(e instanceof Error ? e.message : "삭제에 실패했습니다.");
+      alert(e instanceof Error ? e.message : t("planner.schedule.delete_fail", { defaultValue: "삭제에 실패했습니다." }));
     }
   }, [appUserId]);
 
@@ -1125,11 +1160,11 @@ export default function SchedulePage() {
         {/* ── 헤더 ── */}
         <header className="shrink-0 border-b border-gray-200 bg-white/90 backdrop-blur-sm px-4 py-3 flex items-center justify-between gap-2 md:px-6 md:py-3.5">
           <div className="min-w-0">
-            <h1 className="text-base font-bold text-gray-800 md:text-lg">일정 관리</h1>
+            <h1 className="text-base font-bold text-gray-800 md:text-lg">{t("planner.schedule.title", { defaultValue: "일정 관리" })}</h1>
             <p className="truncate text-xs text-gray-400">
               {appUserId
-                ? `저장된 플랜 ${plans.length}개 · 날짜를 클릭하면 그날의 일정을 볼 수 있어요`
-                : "로그인 후 이용 가능"}
+                ? t("planner.schedule.subtitle_with_count", { count: plans.length, defaultValue: "저장된 플랜 {{count}}개 · 날짜를 클릭하면 그날의 일정을 볼 수 있어요" })
+                : t("common.login_required", { defaultValue: "로그인 후 이용 가능" })}
             </p>
           </div>
           <button
@@ -1137,7 +1172,7 @@ export default function SchedulePage() {
             onClick={() => router.push("/planner")}
             className="shrink-0 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 px-3 py-2 text-xs font-semibold text-white shadow hover:opacity-90 transition-opacity md:px-4 md:text-sm"
           >
-            + 새 루트
+            {t("planner.schedule.new_route", { defaultValue: "+ 새 루트" })}
           </button>
         </header>
 
@@ -1191,7 +1226,7 @@ export default function SchedulePage() {
                   {error}
                   <button type="button" onClick={() => loadPlans()}
                     className="ml-3 underline text-red-500 hover:text-red-700">
-                    다시 시도
+                    {t("common.retry", { defaultValue: "다시 시도" })}
                   </button>
                 </div>
               </div>
@@ -1201,8 +1236,8 @@ export default function SchedulePage() {
             {!loading && !error && !appUserId && (
               <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
                 <span className="text-5xl">🔐</span>
-                <p className="text-base font-medium text-gray-600">로그인이 필요합니다</p>
-                <p className="text-sm text-gray-400">SNS 로그인 후 여행 플랜이 자동으로 저장됩니다</p>
+                <p className="text-base font-medium text-gray-600">{t("common.login_needed", { defaultValue: "로그인이 필요합니다" })}</p>
+                <p className="text-sm text-gray-400">{t("planner.schedule.login_note", { defaultValue: "SNS 로그인 후 여행 플랜이 자동으로 저장됩니다" })}</p>
               </div>
             )}
 
@@ -1215,14 +1250,14 @@ export default function SchedulePage() {
                   <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" />
                   <line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
-                <p className="text-base font-medium text-gray-600">저장된 플랜이 없습니다</p>
+                <p className="text-base font-medium text-gray-600">{t("planner.schedule.empty_title", { defaultValue: "저장된 플랜이 없습니다" })}</p>
                 <p className="text-sm text-gray-400">
-                  여행플래너에서 루트를 선택하면<br />AI 일정이 자동으로 저장됩니다
+                  {t("planner.schedule.empty_desc", { defaultValue: "여행플래너에서 루트를 선택하면\nAI 일정이 자동으로 저장됩니다" })}
                 </p>
                 <button type="button" onClick={() => router.push("/planner")}
                   className="rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 px-5 py-2.5
                              text-sm font-semibold text-white shadow hover:opacity-90 transition-opacity">
-                  여행플래너로 이동
+                  {t("planner.schedule.go_planner", { defaultValue: "여행플래너로 이동" })}
                 </button>
               </div>
             )}
@@ -1242,7 +1277,7 @@ export default function SchedulePage() {
             {!loading && !error && plans.length > 0 && !selectedDate && (
               <div className="p-5 space-y-4">
                 <p className="text-xs text-gray-400">
-                  전체 플랜 목록 · 날짜를 클릭하면 해당일 일정만 볼 수 있어요
+                  {t("planner.schedule.list_hint", { defaultValue: "전체 플랜 목록 · 날짜를 클릭하면 해당일 일정만 볼 수 있어요" })}
                 </p>
                 {plans.map((plan, idx) => (
                   <PlanCard

@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
 import { AppLayout } from "@/components/organisms/AppLayout";
+import { useTranslation } from "react-i18next";
 import {
   fetchFestivals,
   formatFestivalDate,
@@ -44,6 +45,7 @@ function getFestivalsForDay(
 export default function EventPage() {
   const router = useRouter();
   const { isAuthenticated, logout } = useLoginStore();
+  const { t } = useTranslation();
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -108,13 +110,13 @@ export default function EventPage() {
         raw.includes("서버에 연결할 수 없습니다");
       setError(
         isConnectionError
-          ? "행사 정보를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요."
-          : (raw || "행사 목록을 불러오지 못했습니다.")
+          ? t("guide.event.error.connection", { defaultValue: "행사 정보를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요." })
+          : (raw || t("guide.event.error.load", { defaultValue: "행사 목록을 불러오지 못했습니다." }))
       );
     } finally {
       setLoading(false);
     }
-  }, [year, month]);
+  }, [year, month, t]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -152,9 +154,9 @@ export default function EventPage() {
         <header className="shrink-0 border-b border-gray-200 bg-white px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-gray-800">행사추천</h1>
+              <h1 className="text-xl font-bold text-gray-800">{t("guide.event.title", { defaultValue: "행사추천" })}</h1>
               <p className="mt-0.5 text-sm text-gray-500">
-                전국문화축제표준데이터 기반 · 날짜를 클릭하면 그날의 행사를 볼 수 있어요
+                {t("guide.event.subtitle", { defaultValue: "전국문화축제표준데이터 기반 · 날짜를 클릭하면 그날의 행사를 볼 수 있어요" })}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -162,18 +164,18 @@ export default function EventPage() {
                 type="button"
                 onClick={goPrev}
                 className="rounded-full border border-gray-300 bg-white p-2 text-gray-600 shadow-sm hover:bg-gray-50 focus:outline-none"
-                aria-label="이전 달"
+                aria-label={t("guide.event.prev_month", { defaultValue: "이전 달" })}
               >
                 ←
               </button>
               <span className="min-w-[6rem] text-center text-base font-semibold text-gray-800">
-                {year}년 {month}월
+                {t("guide.event.year_month", { y: year, m: month, defaultValue: "{{y}}년 {{m}}월" })}
               </span>
               <button
                 type="button"
                 onClick={goNext}
                 className="rounded-full border border-gray-300 bg-white p-2 text-gray-600 shadow-sm hover:bg-gray-50 focus:outline-none"
-                aria-label="다음 달"
+                aria-label={t("guide.event.next_month", { defaultValue: "다음 달" })}
               >
                 →
               </button>
@@ -194,7 +196,7 @@ export default function EventPage() {
             />
             {!loading && allItems.length > 0 && (
               <p className="mt-2 text-right text-xs text-gray-400">
-                ● 행사 있음 · 날짜 클릭 시 해당일 행사만 표시
+                {t("guide.event.legend_hint", { defaultValue: "● 행사 있음 · 날짜 클릭 시 해당일 행사만 표시" })}
               </p>
             )}
           </div>
@@ -205,11 +207,11 @@ export default function EventPage() {
             <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-3">
               <span className="text-sm font-medium text-gray-700">
                 {selectedDay
-                  ? `${year}년 ${month}월 ${selectedDay}일 행사`
-                  : `${year}년 ${month}월 전체 행사`}
+                  ? t("guide.event.list_title_day", { y: year, m: month, d: selectedDay, defaultValue: "{{y}}년 {{m}}월 {{d}}일 행사" })
+                  : t("guide.event.list_title_all", { y: year, m: month, defaultValue: "{{y}}년 {{m}}월 전체 행사" })}
               </span>
               <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
-                {loading ? "…" : `${dayItems.length}건`}
+                {loading ? "…" : t("guide.event.count", { count: dayItems.length, defaultValue: "{{count}}건" })}
               </span>
               {selectedDay && (
                 <button
@@ -217,7 +219,7 @@ export default function EventPage() {
                   onClick={() => setSelectedDay(null)}
                   className="ml-2 text-xs text-gray-400 underline hover:text-gray-600"
                 >
-                  전체 보기
+                  {t("guide.event.show_all", { defaultValue: "전체 보기" })}
                 </button>
               )}
             </div>
@@ -254,10 +256,10 @@ export default function EventPage() {
               {!loading && dayItems.length === 0 && (
                 <p className="py-8 text-center text-sm text-gray-400">
                   {data?.noData
-                    ? "해당 기간에 등록된 행사가 없습니다."
+                    ? t("guide.event.no_data_period", { defaultValue: "해당 기간에 등록된 행사가 없습니다." })
                     : selectedDay
-                    ? "이 날 진행 중인 행사가 없습니다."
-                    : "행사가 없습니다."}
+                    ? t("guide.event.no_data_day", { defaultValue: "이 날 진행 중인 행사가 없습니다." })
+                    : t("guide.event.no_data", { defaultValue: "행사가 없습니다." })}
                 </p>
               )}
               {!loading && (
@@ -276,6 +278,7 @@ export default function EventPage() {
 }
 
 function FestivalCard({ item }: { item: FestivalItem }) {
+  const { t } = useTranslation();
   const start = formatFestivalDate(item.fstvlStartDate);
   const end = formatFestivalDate(item.fstvlEndDate);
 
@@ -287,7 +290,7 @@ function FestivalCard({ item }: { item: FestivalItem }) {
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="truncate font-semibold text-gray-900">
-            {item.fstvlNm || "(제목 없음)"}
+            {item.fstvlNm || t("guide.event.untitled", { defaultValue: "(제목 없음)" })}
           </h3>
           {(start || end) && (
             <p className="mt-0.5 text-xs text-indigo-600">
@@ -320,7 +323,7 @@ function FestivalCard({ item }: { item: FestivalItem }) {
                 rel="noopener noreferrer"
                 className="text-xs font-medium text-indigo-500 hover:underline"
               >
-                홈페이지 →
+                {t("guide.event.homepage", { defaultValue: "홈페이지" })} →
               </a>
             )}
             {item.phoneNumber && (
@@ -330,7 +333,7 @@ function FestivalCard({ item }: { item: FestivalItem }) {
             )}
             {item.mnnstNm && (
               <span className="text-xs text-gray-400">
-                주관: {item.mnnstNm}
+                {t("guide.event.hosted_by", { name: item.mnnstNm, defaultValue: "주관: {{name}}" })}
               </span>
             )}
           </div>

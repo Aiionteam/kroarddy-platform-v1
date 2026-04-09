@@ -4,8 +4,10 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import { useLoginStore } from "@/store";
+import { useTranslation } from "react-i18next";
+import { dateLocaleForI18n } from "@/lib/i18n/dateLocale";
 
-type NoticeType = "점검" | "배포" | "업데이트";
+type NoticeType = "maintenance" | "release" | "update";
 
 type Notice = {
   id: number;
@@ -18,63 +20,9 @@ type Notice = {
   content: string;
 };
 
-const SEED_NOTICES: Notice[] = [
-  {
-    id: 7,
-    type: "배포",
-    title: "v1.0.3 배포 안내 (성능 개선 및 버그 수정)",
-    author: "운영팀",
-    createdAt: Date.now() - 1000 * 60 * 60 * 10,
-    views: 52,
-    isNew: true,
-    content:
-      "이번 배포에서는 화면 로딩 속도 개선과 일부 오류 수정이 포함되어 있습니다.\n업데이트 후에도 문제가 지속되면 고객센터로 문의해 주세요.",
-  },
-  {
-    id: 6,
-    type: "점검",
-    title: "서버 정기 점검 안내 (예정)",
-    author: "운영팀",
-    createdAt: Date.now() - 1000 * 60 * 60 * 28,
-    views: 18,
-    content:
-      "정기 점검으로 인해 일부 기능이 일시 중단될 수 있습니다.\n점검 시간 및 영향 범위는 공지 하단을 확인해 주세요.",
-  },
-  {
-    id: 5,
-    type: "업데이트",
-    title: "공지사항 필터 기능 업데이트 안내",
-    author: "운영팀",
-    createdAt: Date.now() - 1000 * 60 * 60 * 52,
-    views: 31,
-    content:
-      "공지사항 화면에서 유형/검색 필터가 적용됩니다.\n보다 빠르게 필요한 공지를 찾을 수 있어요.",
-  },
-  {
-    id: 4,
-    type: "점검",
-    title: "점검사항: 일부 이미지 업로드 지연 해결",
-    author: "운영팀",
-    createdAt: Date.now() - 1000 * 60 * 60 * 72,
-    views: 24,
-    content:
-      "특정 환경에서 이미지 업로드가 지연되던 이슈를 수정했습니다.\n재시도 후에도 문제가 있으면 문의해 주세요.",
-  },
-  {
-    id: 3,
-    type: "배포",
-    title: "v1.0.2 배포 안내 (문의하기 UX 개선)",
-    author: "운영팀",
-    createdAt: Date.now() - 1000 * 60 * 60 * 96,
-    views: 44,
-    content:
-      "문의하기/문의 내역 UI 탭 전환이 추가되었습니다.\n보다 편리하게 내 문의를 확인할 수 있습니다.",
-  },
-];
-
-function formatDate(ts: number) {
+function formatDate(ts: number, locale: string) {
   try {
-    return new Date(ts).toLocaleString("ko-KR", {
+    return new Date(ts).toLocaleString(locale, {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
@@ -89,10 +37,64 @@ function formatDate(ts: number) {
 export default function NoticesPage() {
   const router = useRouter();
   const { isAuthenticated, logout } = useLoginStore();
+  const { t, i18n } = useTranslation();
+  const dateLocale = dateLocaleForI18n(i18n.language);
 
   const [query, setQuery] = React.useState("");
   const [selectedIds, setSelectedIds] = React.useState<Set<number>>(new Set());
   const [selectedNotice, setSelectedNotice] = React.useState<Notice | null>(null);
+  const seedNowRef = React.useRef(Date.now());
+  const seedNotices = React.useMemo<Notice[]>(
+    () => [
+      {
+        id: 7,
+        type: "release",
+        title: t("customer.notices.seed.7.title", { defaultValue: "v1.0.3 배포 안내 (성능 개선 및 버그 수정)" }),
+        author: t("customer.notices.seed.author.ops", { defaultValue: "운영팀" }),
+        createdAt: seedNowRef.current - 1000 * 60 * 60 * 10,
+        views: 52,
+        isNew: true,
+        content: t("customer.notices.seed.7.content", { defaultValue: "이번 배포에서는 화면 로딩 속도 개선과 일부 오류 수정이 포함되어 있습니다.\n업데이트 후에도 문제가 지속되면 고객센터로 문의해 주세요." }),
+      },
+      {
+        id: 6,
+        type: "maintenance",
+        title: t("customer.notices.seed.6.title", { defaultValue: "서버 정기 점검 안내 (예정)" }),
+        author: t("customer.notices.seed.author.ops", { defaultValue: "운영팀" }),
+        createdAt: seedNowRef.current - 1000 * 60 * 60 * 28,
+        views: 18,
+        content: t("customer.notices.seed.6.content", { defaultValue: "정기 점검으로 인해 일부 기능이 일시 중단될 수 있습니다.\n점검 시간 및 영향 범위는 공지 하단을 확인해 주세요." }),
+      },
+      {
+        id: 5,
+        type: "update",
+        title: t("customer.notices.seed.5.title", { defaultValue: "공지사항 필터 기능 업데이트 안내" }),
+        author: t("customer.notices.seed.author.ops", { defaultValue: "운영팀" }),
+        createdAt: seedNowRef.current - 1000 * 60 * 60 * 52,
+        views: 31,
+        content: t("customer.notices.seed.5.content", { defaultValue: "공지사항 화면에서 유형/검색 필터가 적용됩니다.\n보다 빠르게 필요한 공지를 찾을 수 있어요." }),
+      },
+      {
+        id: 4,
+        type: "maintenance",
+        title: t("customer.notices.seed.4.title", { defaultValue: "점검사항: 일부 이미지 업로드 지연 해결" }),
+        author: t("customer.notices.seed.author.ops", { defaultValue: "운영팀" }),
+        createdAt: seedNowRef.current - 1000 * 60 * 60 * 72,
+        views: 24,
+        content: t("customer.notices.seed.4.content", { defaultValue: "특정 환경에서 이미지 업로드가 지연되던 이슈를 수정했습니다.\n재시도 후에도 문제가 있으면 문의해 주세요." }),
+      },
+      {
+        id: 3,
+        type: "release",
+        title: t("customer.notices.seed.3.title", { defaultValue: "v1.0.2 배포 안내 (문의하기 UX 개선)" }),
+        author: t("customer.notices.seed.author.ops", { defaultValue: "운영팀" }),
+        createdAt: seedNowRef.current - 1000 * 60 * 60 * 96,
+        views: 44,
+        content: t("customer.notices.seed.3.content", { defaultValue: "문의하기/문의 내역 UI 탭 전환이 추가되었습니다.\n보다 편리하게 내 문의를 확인할 수 있습니다." }),
+      },
+    ],
+    [t]
+  );
 
   React.useEffect(() => {
     if (!isAuthenticated) router.replace("/");
@@ -101,7 +103,7 @@ export default function NoticesPage() {
   if (!isAuthenticated) return null;
 
   const normalized = query.trim().toLowerCase();
-  const filtered = SEED_NOTICES.filter((n) => {
+  const filtered = seedNotices.filter((n) => {
     if (!normalized) return true;
     return n.title.toLowerCase().includes(normalized) || n.content.toLowerCase().includes(normalized);
   });
@@ -126,7 +128,10 @@ export default function NoticesPage() {
   };
 
   return (
-    <AppLayout onLogout={logout} mobileTitle="공지사항">
+    <AppLayout
+      onLogout={logout}
+      mobileTitle={t("customer.notices.title", { defaultValue: "공지사항" })}
+    >
       <main className="flex flex-1 flex-col overflow-y-auto">
         <header className="shrink-0 border-b border-gray-200 bg-white px-6 py-5">
           <div className="flex items-start justify-between gap-4">
@@ -135,21 +140,31 @@ export default function NoticesPage() {
                 type="button"
                 onClick={() => router.back()}
                 className="rounded-lg px-2.5 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
-                aria-label="뒤로가기"
+                aria-label={t("common.back", { defaultValue: "뒤로가기" })}
               >
                 ←
               </button>
               <div>
-                <h1 className="text-xl font-bold text-gray-800">공지사항</h1>
-                <p className="mt-1 text-sm text-gray-500">공지사항을 확인하세요.</p>
+                <h1 className="text-xl font-bold text-gray-800">
+                  {t("customer.notices.title", { defaultValue: "공지사항" })}
+                </h1>
+                <p className="mt-1 text-sm text-gray-500">
+                  {t("customer.notices.subtitle", { defaultValue: "공지사항을 확인하세요." })}
+                </p>
               </div>
             </div>
             <button
               type="button"
-              onClick={() => alert("추후 ‘새 공지사항 작성’ 기능을 추가할게요.")}
+              onClick={() =>
+                alert(
+                  t("customer.notices.new_button_alert", {
+                    defaultValue: "추후 ‘새 공지사항 작성’ 기능을 추가할게요.",
+                  })
+                )
+              }
               className="rounded-full border border-blue-200 bg-white px-5 py-3 text-sm font-semibold text-blue-600 shadow-sm hover:bg-blue-50"
             >
-              새 공지사항 작성
+              {t("customer.notices.new_button", { defaultValue: "새 공지사항 작성" })}
             </button>
           </div>
         </header>
@@ -163,7 +178,7 @@ export default function NoticesPage() {
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="공지사항 검색 (제목/내용)"
+                    placeholder={t("customer.notices.search_placeholder", { defaultValue: "공지사항 검색 (제목/내용)" })}
                     className="w-72 rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
                   />
                   <button
@@ -171,13 +186,15 @@ export default function NoticesPage() {
                     onClick={() => {}}
                     className="rounded-lg bg-purple-600 px-3 py-2 text-sm font-semibold text-white hover:bg-purple-700"
                   >
-                    검색
+                    {t("customer.notices.search_button", { defaultValue: "검색" })}
                   </button>
                 </div>
               </div>
 
               <div className="flex items-center gap-2 text-xs text-gray-500">
-                <span>총 {filtered.length}건</span>
+                <span>
+                  {t("customer.notices.count", { count: filtered.length, defaultValue: "총 {{count}}건" })}
+                </span>
               </div>
             </div>
 
@@ -190,14 +207,24 @@ export default function NoticesPage() {
                         type="checkbox"
                         checked={allSelected}
                         onChange={toggleAll}
-                        aria-label="전체선택"
+                        aria-label={t("customer.notices.aria.select_all", { defaultValue: "전체선택" })}
                       />
                     </th>
-                    <th className="w-20 px-3 py-3 font-semibold text-gray-700">번호</th>
-                    <th className="px-3 py-3 font-semibold text-gray-700">제목</th>
-                    <th className="w-28 px-3 py-3 font-semibold text-gray-700">작성자</th>
-                    <th className="w-32 px-3 py-3 font-semibold text-gray-700">작성일</th>
-                    <th className="w-20 px-3 py-3 font-semibold text-gray-700">조회</th>
+                    <th className="w-20 px-3 py-3 font-semibold text-gray-700">
+                      {t("customer.notices.table.no", { defaultValue: "번호" })}
+                    </th>
+                    <th className="px-3 py-3 font-semibold text-gray-700">
+                      {t("customer.notices.table.title", { defaultValue: "제목" })}
+                    </th>
+                    <th className="w-28 px-3 py-3 font-semibold text-gray-700">
+                      {t("customer.notices.table.author", { defaultValue: "작성자" })}
+                    </th>
+                    <th className="w-32 px-3 py-3 font-semibold text-gray-700">
+                      {t("customer.notices.table.date", { defaultValue: "작성일" })}
+                    </th>
+                    <th className="w-20 px-3 py-3 font-semibold text-gray-700">
+                      {t("customer.notices.table.views", { defaultValue: "조회" })}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -208,7 +235,7 @@ export default function NoticesPage() {
                           type="checkbox"
                           checked={selectedIds.has(n.id)}
                           onChange={() => toggleOne(n.id)}
-                          aria-label={`공지 ${n.id} 선택`}
+                          aria-label={t("customer.notices.aria.select_row", { id: n.id, defaultValue: "공지 {{id}} 선택" })}
                         />
                       </td>
                       <td className="px-3 py-3 text-gray-700">{n.id}</td>
@@ -224,14 +251,14 @@ export default function NoticesPage() {
                         </button>
                       </td>
                       <td className="px-3 py-3 text-gray-700">{n.author}</td>
-                      <td className="px-3 py-3 text-gray-700">{formatDate(n.createdAt)}</td>
+                      <td className="px-3 py-3 text-gray-700">{formatDate(n.createdAt, dateLocale)}</td>
                       <td className="px-3 py-3 text-gray-700">{n.views}</td>
                     </tr>
                   ))}
                   {filtered.length === 0 && (
                     <tr>
                       <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-500">
-                        검색 결과가 없습니다.
+                        {t("customer.notices.no_results", { defaultValue: "검색 결과가 없습니다." })}
                       </td>
                     </tr>
                   )}
@@ -264,7 +291,11 @@ export default function NoticesPage() {
                 <div className="min-w-0">
                   <h2 className="mt-2 truncate text-lg font-bold text-gray-900">{selectedNotice.title}</h2>
                   <p className="mt-1 text-sm text-gray-500">
-                    작성자 {selectedNotice.author} · {formatDate(selectedNotice.createdAt)}
+                    {t("customer.notices.modal.meta", {
+                      author: selectedNotice.author,
+                      date: formatDate(selectedNotice.createdAt, dateLocale),
+                      defaultValue: "작성자 {{author}} · {{date}}",
+                    })}
                   </p>
                 </div>
                 <button
@@ -272,7 +303,7 @@ export default function NoticesPage() {
                   onClick={() => setSelectedNotice(null)}
                   className="rounded-lg px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
                 >
-                  닫기
+                  {t("customer.notices.modal.close", { defaultValue: "닫기" })}
                 </button>
               </div>
               <div className="p-5">

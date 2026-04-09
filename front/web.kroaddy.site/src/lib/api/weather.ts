@@ -4,6 +4,8 @@
  *
  * lat/lon 을 직접 넘기면 geocoding 없이 즉시 좌표 기반 예보 반환.
  */
+import i18n from "@/lib/i18n/config";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 /** 3시간 슬롯 단위 날씨 (KST 시각 기준, key: "09"|"12"|"15"|"18"|"21") */
@@ -37,6 +39,24 @@ const TIME_TO_SLOT: Record<string, string> = {
   밤:   "21",
 };
 
+function parseHourFromLabel(label: string): number | null {
+  const raw = String(label || "").trim();
+  if (!raw) return null;
+
+  // Accept "10", "10:00", "10:30"
+  const m = raw.match(/^(\d{1,2})(?::(\d{2}))?$/);
+  if (m) {
+    const h = Number(m[1]);
+    if (Number.isFinite(h) && h >= 0 && h <= 23) return h;
+  }
+
+  // Accept Korean time labels
+  const slot = TIME_TO_SLOT[raw];
+  if (slot) return parseInt(slot, 10);
+
+  return null;
+}
+
 /**
  * 일정 time 레이블(오전/점심/오후/저녁)에 해당하는 슬롯 날씨를 반환.
  * 정확한 키가 없을 때는 가장 가까운 슬롯으로 fallback.
@@ -48,11 +68,12 @@ export function getSlotWeather(
   const slots = day.time_slots;
   if (!slots || Object.keys(slots).length === 0) return null;
 
-  const targetKey = TIME_TO_SLOT[timeLabel];
+  const raw = String(timeLabel || "").trim();
+  const targetKey = TIME_TO_SLOT[raw];
   if (targetKey && slots[targetKey]) return slots[targetKey];
 
   // fallback: 가장 가까운 슬롯
-  const targetHour = targetKey ? parseInt(targetKey) : 12;
+  const targetHour = parseHourFromLabel(raw) ?? 12;
   const closest = Object.entries(slots).sort(
     (a, b) => Math.abs(parseInt(a[0]) - targetHour) - Math.abs(parseInt(b[0]) - targetHour),
   )[0];
@@ -74,7 +95,11 @@ export async function fetchWeather(
   } else if (typeof latOrLocation === "string" && latOrLocation) {
     params.set("location", latOrLocation);
   } else {
-    return { available: false, reason: "위치 정보 없음", dates: {} };
+    return {
+      available: false,
+      reason: i18n.t("weather.reason.no_location", { defaultValue: "위치 정보 없음" }),
+      dates: {},
+    };
   }
 
   const res = await fetch(`${API_BASE}/api/v1/weather?${params}`, {
@@ -93,13 +118,26 @@ export async function fetchWeather(
 
 /** 날씨 상태 → 이모지 */
 export function weatherEmoji(condition: string): string {
-  if (condition.includes("천둥")) return "⛈️";
-  if (condition.includes("눈")) return "❄️";
-  if (condition.includes("비")) return "🌧️";
-  if (condition.includes("이슬")) return "🌦️";
-  if (condition.includes("구름")) return "⛅";
-  if (condition.includes("안개") || condition.includes("연무") || condition.includes("황사")) return "🌫️";
-  if (condition.includes("맑")) return "☀️";
+  const c = String(condition || "");
+  const cl = c.toLowerCase();
+
+  // Korean (common)
+  if (c.includes("천둥")) return "⛈️";
+  if (c.includes("눈")) return "❄️";
+  if (c.includes("비")) return "🌧️";
+  if (c.includes("이슬")) return "🌦️";
+  if (c.includes("구름")) return "⛅";
+  if (c.includes("안개") || c.includes("연무") || c.includes("황사")) return "🌫️";
+  if (c.includes("맑")) return "☀️";
+
+  // English (OpenWeatherMap-style)
+  if (cl.includes("thunder")) return "⛈️";
+  if (cl.includes("snow")) return "❄️";
+  if (cl.includes("rain")) return "🌧️";
+  if (cl.includes("drizzle")) return "🌦️";
+  if (cl.includes("cloud")) return "⛅";
+  if (cl.includes("fog") || cl.includes("mist") || cl.includes("haze") || cl.includes("sand") || cl.includes("dust")) return "🌫️";
+  if (cl.includes("clear")) return "☀️";
   return "🌤️";
 }
 

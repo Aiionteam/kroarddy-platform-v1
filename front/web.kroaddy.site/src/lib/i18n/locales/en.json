@@ -1,34 +1,2536 @@
 {
-  "app": { "name": "Kroaddy" },
-  "common": { "save": "Save", "cancel": "Cancel", "next": "Next", "skip": "Skip", "done": "Done", "loading": "Loading...", "error": "Something went wrong", "logout": "Logout" },
+  "app": {
+    "name": "Kroaddy"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "next": "Next",
+    "skip": "Skip",
+    "done": "Done",
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "processing": "Processing...",
+    "error": "Something went wrong",
+    "logout": "Logout",
+    "menu_open": "Open menu",
+    "search": "Search",
+    "show_all": "Show all",
+    "back": "Back",
+    "close": "Close",
+    "retry": "Retry",
+    "view_all": "View all",
+    "more": "More",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "edit": "Edit",
+    "submit": "Submit",
+    "share": "Share",
+    "go_back": "Go back",
+    "confirm": "Confirm",
+    "coming_soon": "Coming soon",
+    "accept": "Accept",
+    "login_needed": "Login required.",
+    "login_required": "Login required",
+    "not_found": {
+      "message": "We couldn't find the page you requested.",
+      "back_home": "Go back home"
+    }
+  },
   "onboarding": {
     "title": "Travel Preferences",
     "subtitle": "Help us personalize your AI travel recommendations",
     "later": "Later",
     "saving": "Saving...",
-    "nationality": { "title": "Country / Nationality", "hint": "The app will switch to your preferred language" },
-    "gender":  { "title": "Gender" },
-    "age":     { "title": "Age Group" },
-    "diet":    { "title": "Dietary Preferences" },
-    "religion":{ "title": "Religion" }
+    "nationality": {
+      "title": "Country / Nationality",
+      "hint": "The app will switch to your preferred language"
+    },
+    "gender": {
+      "title": "Gender"
+    },
+    "age": {
+      "title": "Age Group"
+    },
+    "diet": {
+      "title": "Dietary Preferences"
+    },
+    "religion": {
+      "title": "Religion"
+    }
+  },
+  "auth": {
+    "api": {
+      "naver_auth_url_fail": "Failed to get Naver login URL.",
+      "naver_auth_url_missing": "Did not receive Naver login URL.",
+      "kakao_auth_url_fail": "Failed to get Kakao login URL.",
+      "kakao_auth_url_missing": "Did not receive Kakao login URL.",
+      "google_auth_url_fail": "Failed to get Google login URL.",
+      "google_auth_url_missing": "Did not receive Google login URL.",
+      "refresh_token_invalid": "Refresh token is expired or invalid. Please log in again."
+    }
+  },
+  "weather": {
+    "reason": {
+      "no_location": "No location info"
+    }
+  },
+  "planner.standard": {
+    "title": "Choose destination",
+    "subtitle": "Pick a place and AI will recommend a tailored route",
+    "mode_label": "Standard",
+    "date": "Date",
+    "mode_car": "🚗 Car",
+    "mode_transit": "🚇 Transit",
+    "mode_walk": "🚶 Walk",
+    "generating_loading": "Searching for accurate info…",
+    "generate_route": "✨ Generate route",
+    "ai_recommended_routes": "AI recommended routes",
+    "set_date_and_generate": "Set dates and\ngenerate a route",
+    "start_generate": "✨ Start generating routes",
+    "pick_route": "Please select a route",
+    "range_hint": "AI will create an itinerary for {{start}} ~ {{end}}",
+    "select_date_then_generate": "Select dates and generate a route",
+    "generate_hint": "Click the ✨ Generate route button on the top-left",
+    "making_schedule": "AI is creating the itinerary for <b>{{name}}</b>…",
+    "recommended_schedule_title": "{{name}} — Recommended itinerary",
+    "saved_goto_schedule": "✅ Saved · Open schedule manager",
+    "save_plan": "💾 Save",
+    "total_cost": "Estimated total cost",
+    "cost_per_day": "Day{{day}} {{total}}",
+    "search_placeholder": "Search city/spot (e.g., Gangneung, Hanok Village)",
+    "search_result": "“{{query}}” results {{count}} items",
+    "no_results": "No results",
+    "reset": "Reset",
+    "metro_quick": "Quick access (Metro cities)",
+    "metro_quick_sub": "Jump to popular metro cities; browse detailed regions below.",
+    "metro_detail": "Metro city regions",
+    "metro_detail_sub": "For city‑based trips like Seoul/Busan/Daegu/Ulsan, see fine‑grained areas.",
+    "province": "Provinces",
+    "province_sub": "Compare regions like Gyeonggi, Chungcheong, Jeolla, Gyeongsang, Gangwon, Jeju.",
+    "image_pending": "Image coming soon",
+    "popular": "POPULAR",
+    "route_load_fail": "Failed to load routes.",
+    "schedule_load_fail": "Failed to load schedule.",
+    "save_fail": "Failed to save.",
+    "subtotal": "Subtotal {{total}}",
+    "theme": {
+      "event": "Event",
+      "food": "Food",
+      "spot": "Attraction",
+      "luxury": "Luxury",
+      "value": "Value",
+      "family": "Family",
+      "couple": "Couple"
+    },
+    "highlight": {
+      "gyeongbokgung": "Gyeongbokgung",
+      "hongdae": "Hongdae",
+      "hangang_park": "Hangang Park",
+      "cheongwadae": "Cheongwadae",
+      "insadong": "Insadong",
+      "myeongdong_cathedral": "Myeongdong Cathedral",
+      "euljiro_alley": "Euljiro Alley",
+      "national_museum_of_korea": "National Museum of Korea",
+      "itaewon": "Itaewon",
+      "haeundae": "Haeundae",
+      "haeundae_beach": "Haeundae Beach",
+      "gamcheon_village": "Gamcheon Village",
+      "jagalchi_market": "Jagalchi Market",
+      "biff_square": "BIFF Square",
+      "dongseongro": "Dongseong-ro",
+      "kim_gwangseok_street": "Kim Gwangseok Street",
+      "suseong_lake": "Suseong Lake",
+      "songdo": "Songdo",
+      "chinatown": "Chinatown",
+      "gangneung": "Gangneung",
+      "gyeongpo": "Gyeongpo Pavilion",
+      "anmok_coffee_street": "Anmok Coffee Street",
+      "ojukheon": "Ojukheon",
+      "sokcho": "Sokcho",
+      "seoraksan": "Seoraksan",
+      "central_market": "Central Market",
+      "hallasan": "Hallasan",
+      "seongsan_ilchulbong": "Seongsan Ilchulbong"
+    }
+  },
+  "planner.dest": {
+    "seoul": {
+      "name": "Seoul",
+      "highlight1": "Gyeongbokgung",
+      "highlight2": "Hangang Park"
+    },
+    "busan": {
+      "name": "Busan",
+      "highlight1": "Haeundae Beach",
+      "highlight2": "Jagalchi Market"
+    },
+    "daegu": {
+      "name": "Daegu",
+      "highlight1": "Dongseong-ro",
+      "highlight2": "Suseong Lake"
+    },
+    "incheon": {
+      "name": "Incheon",
+      "highlight1": "Songdo",
+      "highlight2": "Chinatown"
+    },
+    "gwangju": {
+      "name": "Gwangju",
+      "highlight1": "ACC (Asia Culture Center)",
+      "highlight2": "Yangnim-dong"
+    },
+    "daejeon": {
+      "name": "Daejeon",
+      "highlight1": "Seongsimdang",
+      "highlight2": "Expo Park"
+    },
+    "ulsan": {
+      "name": "Ulsan",
+      "highlight1": "Ganjeolgot",
+      "highlight2": "Daewangam Park"
+    },
+    "sejong": {
+      "name": "Sejong",
+      "highlight1": "Sejong Lake Park",
+      "highlight2": "National Arboretum"
+    },
+    "jongno": {
+      "name": "Jongno & Gwanghwamun",
+      "highlight1": "Gyeongbokgung",
+      "highlight2": "Insadong"
+    },
+    "myeongdong": {
+      "name": "Myeongdong & Euljiro",
+      "highlight1": "Myeongdong Cathedral",
+      "highlight2": "Euljiro Alley"
+    },
+    "yongsan": {
+      "name": "Yongsan & Itaewon",
+      "highlight1": "National Museum of Korea",
+      "highlight2": "Itaewon"
+    },
+    "hongdae": {
+      "name": "Hongdae & Mapo",
+      "highlight1": "Hongdae",
+      "highlight2": "Yeonnam-dong"
+    },
+    "bukchon": {
+      "name": "Bukchon & Samcheong",
+      "highlight1": "Bukchon Hanok Village",
+      "highlight2": "Samcheong-dong"
+    },
+    "nowon": {
+      "name": "Nowon & Dobong"
+    },
+    "gangnam": {
+      "name": "Gangnam & Seocho",
+      "highlight1": "COEX",
+      "highlight2": "Apgujeong Rodeo"
+    },
+    "jamsil": {
+      "name": "Jamsil & Songpa",
+      "highlight1": "Lotte World",
+      "highlight2": "Olympic Park"
+    },
+    "seongsu": {
+      "name": "Seongsu & Hannam",
+      "highlight1": "Seongsu Cafe Street",
+      "highlight2": "Hannam-dong"
+    },
+    "goyang": {
+      "name": "Goyang"
+    },
+    "paju": {
+      "name": "Paju",
+      "highlight1": "Heyri Art Village",
+      "highlight2": "Imjingak"
+    },
+    "gimpo": {
+      "name": "Gimpo"
+    },
+    "uijeongbu": {
+      "name": "Uijeongbu"
+    },
+    "namyangju": {
+      "name": "Namyangju",
+      "highlight1": "Dumulmeori",
+      "highlight2": "Dasan-gil"
+    },
+    "guri": {
+      "name": "Guri"
+    },
+    "gapyeong": {
+      "name": "Gapyeong",
+      "highlight1": "Nami Island",
+      "highlight2": "Jara Island"
+    },
+    "yangpyeong": {
+      "name": "Yangpyeong",
+      "highlight1": "Dumulmeori",
+      "highlight2": "Yongmunsan"
+    },
+    "pocheon": {
+      "name": "Pocheon",
+      "highlight1": "Sanjeong Lake",
+      "highlight2": "Herb Island"
+    },
+    "yangju": {
+      "name": "Yangju"
+    },
+    "dongducheon": {
+      "name": "Dongducheon"
+    },
+    "suwon": {
+      "name": "Suwon",
+      "highlight1": "Hwaseong Haenggung",
+      "highlight2": "Haengnidan-gil"
+    },
+    "hwaseong": {
+      "name": "Hwaseong"
+    },
+    "ansan": {
+      "name": "Ansan"
+    },
+    "siheung": {
+      "name": "Siheung"
+    },
+    "anyang": {
+      "name": "Anyang"
+    },
+    "gunpo": {
+      "name": "Gunpo"
+    },
+    "pyeongtaek": {
+      "name": "Pyeongtaek"
+    },
+    "yongin": {
+      "name": "Yongin",
+      "highlight1": "Everland",
+      "highlight2": "Korean Folk Village"
+    },
+    "seongnam": {
+      "name": "Seongnam"
+    },
+    "hanam": {
+      "name": "Hanam"
+    },
+    "icheon": {
+      "name": "Icheon",
+      "highlight1": "Ceramics Village",
+      "highlight2": "Icheon Rice"
+    },
+    "yeoju": {
+      "name": "Yeoju"
+    },
+    "anseong": {
+      "name": "Anseong"
+    },
+    "osan": {
+      "name": "Osan"
+    },
+    "uiwang": {
+      "name": "Uiwang"
+    },
+    "gwacheon": {
+      "name": "Gwacheon"
+    },
+    "bucheon": {
+      "name": "Bucheon"
+    },
+    "gwangmyeong": {
+      "name": "Gwangmyeong"
+    },
+    "chuncheon": {
+      "name": "Chuncheon",
+      "highlight1": "Nami Island",
+      "highlight2": "Dakgalbi Alley"
+    },
+    "wonju": {
+      "name": "Wonju",
+      "highlight1": "Museum SAN",
+      "highlight2": "Sogeumsan Suspension Bridge"
+    },
+    "pyeongchang": {
+      "name": "Pyeongchang",
+      "highlight1": "Daegwallyeong Sheep Ranch",
+      "highlight2": "Odaesan"
+    },
+    "yeongwol": {
+      "name": "Yeongwol"
+    },
+    "hoengseong": {
+      "name": "Hoengseong"
+    },
+    "jeongseon": {
+      "name": "Jeongseon"
+    },
+    "inje": {
+      "name": "Inje"
+    },
+    "taebaek": {
+      "name": "Taebaek"
+    },
+    "gangneung": {
+      "name": "Gangneung",
+      "highlight1": "Gyeongpo Pavilion",
+      "highlight2": "Anmok Coffee Street"
+    },
+    "sokcho": {
+      "name": "Sokcho",
+      "highlight1": "Seoraksan",
+      "highlight2": "Central Market"
+    },
+    "yangyang": {
+      "name": "Yangyang",
+      "highlight1": "Surfyy Beach",
+      "highlight2": "Naksansa"
+    },
+    "donghae": {
+      "name": "Donghae"
+    },
+    "samcheok": {
+      "name": "Samcheok"
+    },
+    "goseong-gw": {
+      "name": "Goseong"
+    },
+    "cheongju": {
+      "name": "Cheongju"
+    },
+    "chungju": {
+      "name": "Chungju"
+    },
+    "jecheon": {
+      "name": "Jecheon",
+      "highlight1": "Cheongpung Lake",
+      "highlight2": "Uirimji"
+    },
+    "danyang": {
+      "name": "Danyang",
+      "highlight1": "Danyang Palgyeong",
+      "highlight2": "Dodamsambong"
+    },
+    "gongju": {
+      "name": "Gongju",
+      "highlight1": "Gongsanseong Fortress",
+      "highlight2": "Tomb of King Muryeong"
+    },
+    "buyeo": {
+      "name": "Buyeo",
+      "highlight1": "Busosanseong Fortress",
+      "highlight2": "Baekje Cultural Land"
+    },
+    "asan": {
+      "name": "Asan"
+    },
+    "cheonan": {
+      "name": "Cheonan"
+    },
+    "nonsan": {
+      "name": "Nonsan"
+    },
+    "boryeong": {
+      "name": "Boryeong",
+      "highlight1": "Mud Festival",
+      "highlight2": "Daecheon Beach"
+    },
+    "taean": {
+      "name": "Taean",
+      "highlight1": "Anmyeondo",
+      "highlight2": "Kkotji Beach"
+    },
+    "seosan": {
+      "name": "Seosan"
+    },
+    "dangjin": {
+      "name": "Dangjin"
+    },
+    "jeonju": {
+      "name": "Jeonju",
+      "highlight1": "Hanok Village",
+      "highlight2": "Makgeolli Alley"
+    },
+    "gunsan": {
+      "name": "Gunsan",
+      "highlight1": "Modern History Street",
+      "highlight2": "Lee Seongdang"
+    },
+    "iksan": {
+      "name": "Iksan"
+    },
+    "gochang": {
+      "name": "Gochang"
+    },
+    "jeongeup": {
+      "name": "Jeongeup"
+    },
+    "namwon": {
+      "name": "Namwon"
+    },
+    "gimje": {
+      "name": "Gimje"
+    },
+    "yeosu": {
+      "name": "Yeosu",
+      "highlight1": "Maritime Cable Car",
+      "highlight2": "Odongdo"
+    },
+    "suncheon": {
+      "name": "Suncheon",
+      "highlight1": "Suncheon Bay National Garden",
+      "highlight2": "Naganeupseong Folk Village"
+    },
+    "mokpo": {
+      "name": "Mokpo",
+      "highlight1": "Maritime Cable Car",
+      "highlight2": "Yudalsan"
+    },
+    "wando": {
+      "name": "Wando"
+    },
+    "gangjin": {
+      "name": "Gangjin"
+    },
+    "yeonggwang": {
+      "name": "Yeonggwang"
+    },
+    "haenam": {
+      "name": "Haenam"
+    },
+    "goheung": {
+      "name": "Goheung"
+    },
+    "yeongam": {
+      "name": "Yeongam"
+    },
+    "damyang": {
+      "name": "Damyang",
+      "highlight1": "Juknokwon",
+      "highlight2": "Metasequoia Road"
+    },
+    "gwangyang": {
+      "name": "Gwangyang"
+    },
+    "boseong": {
+      "name": "Boseong",
+      "highlight1": "Green Tea Fields",
+      "highlight2": "Yulpo Beach"
+    },
+    "naju": {
+      "name": "Naju"
+    },
+    "haeundae": {
+      "name": "Haeundae",
+      "highlight1": "Haeundae Beach",
+      "highlight2": "Dongbaekseom"
+    },
+    "gwangalli": {
+      "name": "Gwangalli & Suyeong",
+      "highlight1": "Gwangandaegyo Bridge",
+      "highlight2": "Gwangalli Beach"
+    },
+    "gijang": {
+      "name": "Gijang",
+      "highlight1": "Jukseong Dream Cathedral",
+      "highlight2": "Daebyeon Port"
+    },
+    "songjeong": {
+      "name": "Songjeong & Cheongsapo"
+    },
+    "nampo": {
+      "name": "Nampo & Jung-gu",
+      "highlight1": "Jagalchi Market",
+      "highlight2": "BIFF Square"
+    },
+    "seomyeon": {
+      "name": "Seomyeon & Bujeon"
+    },
+    "gamcheon": {
+      "name": "Gamcheon Culture Village",
+      "highlight1": "Gamcheon Village",
+      "highlight2": "Skywalk"
+    },
+    "yeongdo": {
+      "name": "Yeongdo"
+    },
+    "geumjeong": {
+      "name": "Geumjeong & Oncheonjang"
+    },
+    "gangseo-bs": {
+      "name": "Gangseo & Gadeokdo"
+    },
+    "dadaepo": {
+      "name": "Saha & Dadaepo"
+    },
+    "dongseongno": {
+      "name": "Dongseongno & Jung-gu",
+      "highlight1": "Dongseong-ro",
+      "highlight2": "Seomun Market"
+    },
+    "gimgwangseok": {
+      "name": "Kim Gwangseok Street",
+      "highlight1": "Kim Gwangseok Street",
+      "highlight2": "Bangcheon Market"
+    },
+    "suseongmot": {
+      "name": "Suseong Lake & Beomeo",
+      "highlight1": "Suseong Lake",
+      "highlight2": "Suseong Resort"
+    },
+    "palgongsan": {
+      "name": "Palgongsan",
+      "highlight1": "Donghwasa",
+      "highlight2": "Gatbawi"
+    },
+    "dalseong": {
+      "name": "Biseulsan & Dalseong",
+      "highlight1": "Biseulsan Royal Azaleas",
+      "highlight2": "Dalseong Wetlands"
+    },
+    "gunwi": {
+      "name": "Gunwi"
+    },
+    "ganjeolgot": {
+      "name": "Ganjeolgot",
+      "highlight1": "Ganjeolgot Lighthouse",
+      "highlight2": "Sunrise Spot"
+    },
+    "daewangam": {
+      "name": "Daewangam",
+      "highlight1": "Daewangam Park",
+      "highlight2": "Ilsan Beach"
+    },
+    "taehwagang": {
+      "name": "Taehwagang"
+    },
+    "bangudae": {
+      "name": "Bangudae"
+    },
+    "gyeongju": {
+      "name": "Gyeongju",
+      "highlight1": "Hwangnidan-gil",
+      "highlight2": "Bulguksa"
+    },
+    "andong": {
+      "name": "Andong",
+      "highlight1": "Hahoe Village",
+      "highlight2": "Dosanseowon"
+    },
+    "yeongju": {
+      "name": "Yeongju"
+    },
+    "mungyeong": {
+      "name": "Mungyeong"
+    },
+    "pohang": {
+      "name": "Pohang",
+      "highlight1": "Homigot",
+      "highlight2": "Space Walk"
+    },
+    "yeongdeok": {
+      "name": "Yeongdeok"
+    },
+    "uljin": {
+      "name": "Uljin"
+    },
+    "dokdo": {
+      "name": "Dokdo & Ulleungdo",
+      "highlight1": "Dokdo",
+      "highlight2": "Ulleungdo"
+    },
+    "gumi": {
+      "name": "Gumi"
+    },
+    "gimcheon": {
+      "name": "Gimcheon"
+    },
+    "yeongcheon": {
+      "name": "Yeongcheon"
+    },
+    "sangju": {
+      "name": "Sangju"
+    },
+    "gyeongsan": {
+      "name": "Gyeongsan"
+    },
+    "tongyeong": {
+      "name": "Tongyeong",
+      "highlight1": "Luge",
+      "highlight2": "Dongpirang Village"
+    },
+    "geoje": {
+      "name": "Geoje",
+      "highlight1": "Windy Hill",
+      "highlight2": "Oedo"
+    },
+    "namhae": {
+      "name": "Namhae",
+      "highlight1": "German Village",
+      "highlight2": "Darangyi Village"
+    },
+    "goseong-gn": {
+      "name": "Goseong"
+    },
+    "jinju": {
+      "name": "Jinju",
+      "highlight1": "Lantern Festival",
+      "highlight2": "Jinjuseong Fortress"
+    },
+    "changwon": {
+      "name": "Changwon"
+    },
+    "hapcheon": {
+      "name": "Hapcheon"
+    },
+    "miryang": {
+      "name": "Miryang"
+    },
+    "hamyang": {
+      "name": "Hamyang"
+    },
+    "sancheong": {
+      "name": "Sancheong"
+    },
+    "hadong": {
+      "name": "Hadong",
+      "highlight1": "Hwagae Market",
+      "highlight2": "Ssanggyesa"
+    },
+    "geochang": {
+      "name": "Geochang"
+    },
+    "gimhae": {
+      "name": "Gimhae"
+    },
+    "yangsan": {
+      "name": "Yangsan"
+    },
+    "changnyeong": {
+      "name": "Changnyeong"
+    },
+    "uiryeong": {
+      "name": "Uiryeong"
+    },
+    "jeju": {
+      "name": "Jeju City",
+      "highlight1": "Hallasan",
+      "highlight2": "Seongsan Ilchulbong"
+    },
+    "seogwipo": {
+      "name": "Seogwipo",
+      "highlight1": "Cheonjiyeon Falls",
+      "highlight2": "Olle Trail"
+    }
+  },
+  "planner.region": {
+    "seoul-areas": {
+      "label": "Seoul",
+      "subLabel": "Key areas by district"
+    },
+    "gyeonggi-north": {
+      "label": "Northern Gyeonggi",
+      "subLabel": "Goyang, Paju, Uijeongbu, Namyangju, etc."
+    },
+    "gyeonggi-south": {
+      "label": "Southern Gyeonggi",
+      "subLabel": "Suwon, Yongin, Seongnam, Pyeongtaek, etc."
+    },
+    "gangwon": {
+      "label": "Gangwon-do",
+      "subLabel": "Gangwon Special Self-Governing Province"
+    },
+    "chungbuk": {
+      "label": "Chungcheongbuk-do",
+      "subLabel": "Cheongju, Chungju, Jecheon, Danyang"
+    },
+    "chungnam": {
+      "label": "Chungcheongnam-do",
+      "subLabel": "Gongju, Buyeo, Boryeong, Taean, etc."
+    },
+    "jeonbuk": {
+      "label": "Jeonbuk",
+      "subLabel": "Jeonbuk Special Self-Governing Province"
+    },
+    "jeonnam": {
+      "label": "Jeollanam-do",
+      "subLabel": "Yeosu, Suncheon, Mokpo, Damyang, etc."
+    },
+    "busan": {
+      "label": "Busan",
+      "subLabel": "Busan Metropolitan City"
+    },
+    "daegu": {
+      "label": "Daegu",
+      "subLabel": "Daegu Metropolitan City"
+    },
+    "ulsan": {
+      "label": "Ulsan",
+      "subLabel": "Ulsan Metropolitan City"
+    },
+    "gyeongbuk": {
+      "label": "Gyeongsangbuk-do",
+      "subLabel": "Gyeongju, Pohang, Andong, etc."
+    },
+    "gyeongnam": {
+      "label": "Gyeongsangnam-do",
+      "subLabel": "Tongyeong, Geoje, Jinju, Changwon, etc."
+    },
+    "jeju": {
+      "label": "Jeju-do",
+      "subLabel": "Jeju Special Self-Governing Province"
+    }
   },
   "home": {
     "subtitle": "Create your perfect trip with AI",
-    "planner":  { "label": "Trip Planner",   "desc": "AI-recommended routes & itineraries" },
-    "schedule": { "label": "My Plans",        "desc": "View your saved travel plans" },
-    "guide":    { "label": "Discover",        "desc": "Restaurants & events in one place" },
-    "kcontent": { "label": "K-Content Planner", "desc": "Plan trips inspired by K-content" },
-    "banner":   { "title": "Set your preferences for better AI recommendations!", "sub": "Add gender, age, diet & religion for personalized routes.", "setup": "Set up", "close": "Close" }
+    "planner": {
+      "label": "Trip Planner",
+      "desc": "AI-recommended routes & itineraries"
+    },
+    "schedule": {
+      "label": "My Plans",
+      "desc": "View your saved travel plans"
+    },
+    "guide": {
+      "label": "Discover",
+      "desc": "Restaurants & events in one place"
+    },
+    "kcontent": {
+      "label": "K-Content Planner",
+      "desc": "Plan trips inspired by K-content",
+      "title": "K-content Theme Trips",
+      "theme_kpop": "K-POP",
+      "theme_kdrama": "K-DRAMA",
+      "theme_kfood": "K-FOOD",
+      "theme_kbeauty": "K-BEAUTY"
+    },
+    "news": {
+      "prev": "Previous",
+      "next": "Next",
+      "page_n": "Page {{page}}",
+      "nationwide": "Nationwide",
+      "analyzing": "AI analysis is still in progress.",
+      "error": "Failed to load news."
+    },
+    "rebate": {
+      "city_route_title": "{{name}} travel route/schedule (Standard Planner)",
+      "province": {
+        "강원": "Gangwon",
+        "충북": "Chungbuk",
+        "전북": "Jeonbuk",
+        "전남": "Jeonnam",
+        "경남": "Gyeongnam",
+        "gangwon": "Gangwon",
+        "chungbuk": "Chungbuk",
+        "jeonbuk": "Jeonbuk",
+        "jeonnam": "Jeonnam",
+        "gyeongnam": "Gyeongnam"
+      },
+      "period": "2026.4 ~ 6 · Pilot Program",
+      "title": "Up to 50% rebate for selected rural trips",
+      "desc": "Get half of your travel spending back as mobile local gift certificates. Up to KRW 100,000 per person, up to KRW 200,000 for groups of 2+.",
+      "visit_korea": "Visit Korea",
+      "fold": "Hide how to use",
+      "expand": "How to use · Eligible regions",
+      "step1": "Apply in advance — check eligible regions at visitkorea.or.kr and get approval before travel.",
+      "step2": "Travel — spend in approved regions (food, lodging, etc.) and keep receipts.",
+      "step3": "Submit proof — submit receipts after travel according to local government guidance.",
+      "step4": "Rebate — after verification, 50% of spending is paid as mobile local gift certificates.",
+      "step5": "Use — spend within the year at local stores/cafes/online malls in that region.",
+      "notice": "Note: Pre-application/approval is required. It may close early due to budget limits. Details may vary by local government; check the official site in early April.",
+      "targets": "16 eligible regions · View routes in Planner or check the official guide"
+    },
+    "banner": {
+      "title": "Set your preferences for better AI recommendations!",
+      "sub": "Add gender, age, diet & religion for personalized routes.",
+      "setup": "Set up",
+      "close": "Close"
+    },
+    "popular": {
+      "title": "Popular Destinations"
+    },
+    "shortcuts": {
+      "planner": "Trip Planner",
+      "kcontent": "K-content",
+      "schedule": "Schedule",
+      "standard": "Discover Places",
+      "user": "User Routes",
+      "group": "Group Chat"
+    }
   },
   "sidebar": {
-    "tourstar": "TourStar", "planner": "Trip Planner", "schedule": "My Plans",
-    "guide": "Discover", "groupchat": "Group Chat", "friends": "Friends",
-    "whisper": "Whisper", "profile": "My Profile", "customer": "Customer Center", "logout": "Logout"
+    "tourstar": "TourStar",
+    "planner": "Trip Planner",
+    "schedule": "My Plans",
+    "guide": "Discover",
+    "groupchat": "Group Chat",
+    "friends": "Friends",
+    "whisper": "Whisper",
+    "profile": "My Profile",
+    "customer": "Customer Center",
+    "logout": "Logout"
+  },
+  "settings": {
+    "title": "Settings",
+    "account": {
+      "title": "Account",
+      "email": "Email",
+      "nickname": "Nickname",
+      "default": "(default)",
+      "nickname_placeholder": "If empty, your name will be shown",
+      "nickname_hint": "If empty, your name will be shown.",
+      "honor": "Honor",
+      "point": "pts",
+      "provider": "Provider"
+    },
+    "withdraw": {
+      "title": "Delete account",
+      "desc": "Deleting your account removes your data and cannot be undone.",
+      "button": "Delete account",
+      "confirm_desc": "Are you sure? Type Delete account below to proceed.",
+      "placeholder": "Delete account",
+      "submit": "Delete"
+    },
+    "profile": {
+      "title": "Travel profile",
+      "subtitle": "Used for AI personalized recommendations",
+      "save": "Save travel profile"
+    }
+  },
+  "customer": {
+    "subscription": {
+      "title_mobile": "Subscription",
+      "title": "Subscription",
+      "subtitle": "Choose a plan after a free trial.",
+      "safety": "Secure payment · Cancel anytime",
+      "free": {
+        "kicker": "Start free today",
+        "note": "After 7 days free, it switches to the selected plan automatically."
+      },
+      "plan_monthly": {
+        "title": "Monthly plan",
+        "badge": "Basic",
+        "price": "₩5,900 / month",
+        "note": "Billed monthly",
+        "features": {
+          "1": "Expert recommendation summaries",
+          "2": "Priority replies for inquiries/guide",
+          "3": "Includes latest feature updates"
+        }
+      },
+      "plan_yearly": {
+        "title": "Yearly plan",
+        "badge": "Recommended",
+        "price": "₩46,800 / year",
+        "note": "Billed yearly",
+        "oldPrice": "About ₩7,000/month equivalent",
+        "features": {
+          "1": "All monthly benefits included",
+          "2": "Discount applied for the year",
+          "3": "Priority support and stability"
+        }
+      },
+      "cta_monthly": "Start monthly subscription",
+      "cta_yearly": "Start yearly subscription",
+      "selected": {
+        "title": "Selected plan",
+        "compare": "Compare ",
+        "includes": "Benefits included"
+      },
+      "agree": {
+        "service_title": "Agree to service use",
+        "service_desc": "Required for subscription payment and usage.",
+        "billing_title": "Agree to billing notice",
+        "billing_desc": "Notice about automatic switch and billing cycle."
+      },
+      "demo_alert": "(Demo UI) Actual payment API will be integrated next.",
+      "demo_note": "This is a demo screen. Real payment/auto-switch works in production."
+    },
+    "emergency": {
+      "title_mobile": "Emergency Help",
+      "title": "Emergency Help & Travel Tips",
+      "subtitle": "Category-based guidance for emergencies foreigners may face in Korea.",
+      "share_button": "Share Emergency",
+      "consulate": {
+        "title": "Embassy/Consulate",
+        "nationality": "Nationality",
+        "find_contact": "Find consulate contact",
+        "callcenter": "24h Consular Call Center 02-3210-0404",
+        "unknown_nationality": "Unknown"
+      },
+      "categories": {
+        "title": "Emergency categories",
+        "selected": "Selected",
+        "view": "View",
+        "items": {
+          "passport": {
+            "title": "Passport / Visa & Stay Help",
+            "short": "When you lose your passport or need visa/stay support",
+            "steps": {
+              "1": "If possible, secure a copy/photo of your passport first, then confirm the loss with nearby support (lodging/police).",
+              "2": "Contact your embassy/consulate for reissue or temporary document procedures.",
+              "3": "Prepare local police/case number if required."
+            }
+          },
+          "lost": {
+            "title": "Lost / Theft Report",
+            "short": "If you lost your wallet, phone, or important belongings",
+            "steps": {
+              "1": "If your phone/account may be compromised, stop authentication immediately and change passwords.",
+              "2": "Report to a nearby police station/lost-and-found center and secure a case number.",
+              "3": "If passport/cards are also lost, contact your embassy/consulate for urgent action."
+            }
+          },
+          "safety": {
+            "title": "Crime / Violence / Safety Threat",
+            "short": "When facing scams, assault, threats, or nearby danger",
+            "steps": {
+              "1": "Move to a safe place immediately and ask nearby people/staff for help.",
+              "2": "If injured, call 119 (medical) or 112 (police).",
+              "3": "Record incident details (time/place) and keep evidence (photos/messages)."
+            }
+          },
+          "medical": {
+            "title": "Emergency Medical / Accident & Injury",
+            "short": "For sudden illness or injuries from accidents",
+            "steps": {
+              "1": "Call 119 or 112 as needed and receive first aid.",
+              "2": "If interpretation is needed at the hospital, ask embassy/consulate support.",
+              "3": "Share allergy/medication/chronic condition information with medical staff."
+            }
+          },
+          "disaster": {
+            "title": "Fire / Disaster & Evacuation",
+            "short": "How to respond in fire, heavy rain, blackout, or other disasters",
+            "steps": {
+              "1": "Follow alarms/guidance and move to a safe evacuation route.",
+              "2": "If there are injured people, secure safety first, then request rescue.",
+              "3": "Share your location and situation with embassy/lodging for help."
+            }
+          },
+          "immigration": {
+            "title": "Immigration / Deportation & Stay Issues",
+            "short": "Administrative issues like overstay or deportation risk",
+            "steps": {
+              "1": "Do not respond alone; keep photos of documents/notices and contact your embassy quickly.",
+              "2": "Request guidance for legal/interpreter support if needed.",
+              "3": "Avoid unauthorized actions that may affect immigration procedures."
+            }
+          },
+          "interpreter": {
+            "title": "Consulate / Interpreter Contact Request",
+            "short": "When language barriers make it hard to ask for help",
+            "steps": {
+              "1": "Summarize the situation briefly (when/where/what) and share it with your consulate.",
+              "2": "Prepare a reachable phone number, address, and lodging info.",
+              "3": "You may need to call emergency lines (police/medical) in parallel."
+            }
+          }
+        }
+      },
+      "detail": {
+        "badge": "Response Guide",
+        "call_police": "112 Police",
+        "call_119": "119 Emergency",
+        "call_1339": "1339 KCDC (medical help)",
+        "call_consulate": "Consulate contact"
+      },
+      "share": {
+        "title_mobile": "Share Emergency",
+        "title": "Public Emergency Share",
+        "type_title": "Emergency types",
+        "type_subtitle": "Select types and attach photo/audio to share immediately.",
+        "aria": {
+          "select_reason": "Select {{id}}"
+        },
+        "attach_title": "Attachments",
+        "attach_subtitle": "Adding photo or audio speeds up sharing.",
+        "photo_section": "Add photos",
+        "photo_pick": "Choose photos",
+        "photo_empty": "Please choose photos.",
+        "audio_section": "Audio recording",
+        "recording": "Recording: {{s}}s",
+        "record_ready": "Ready",
+        "optional": "Optional",
+        "audio_start": "Start recording",
+        "audio_stop": "Stop",
+        "audio_delete": "Delete audio",
+        "audio_perm": "Recording permission may be required.",
+        "now_title": "Share now",
+        "now_subtitle": "Demo UI: This shows a confirmation instead of actual sending.",
+        "call_emergency": "Emergency call",
+        "start_button": "Start sharing emergency",
+        "reason": {
+          "location": {
+            "label": "Need location/safety help",
+            "desc": "Request help based on your current location."
+          },
+          "medical": {
+            "label": "Need medical help",
+            "desc": "Emergency medical support is needed due to illness or injury."
+          },
+          "danger": {
+            "label": "Urgent danger situation",
+            "desc": "Immediate safety help is needed due to violence/scam/threat."
+          }
+        },
+        "alert": {
+          "audio_permission": "Please check audio recording permission.",
+          "select_reason": "Please select at least one emergency type.",
+          "attach_required": "Please attach a photo or audio.",
+          "start_demo": "Starting emergency share. (Demo)\nSelected: {{selected}}"
+        }
+      }
+    },
+    "notices": {
+      "title": "Notices",
+      "subtitle": "Check the latest notices.",
+      "new_button": "Write new notice",
+      "new_button_alert": "New notice creation will be available soon.",
+      "search_placeholder": "Search notices (title/content)",
+      "search_button": "Search",
+      "count": "{{count}} items",
+      "no_results": "No results found.",
+      "seed": {
+        "author": {
+          "ops": "Operations Team"
+        },
+        "3": {
+          "title": "Service Maintenance Notice",
+          "content": "Scheduled maintenance will occur this weekend. Some features may be temporarily unavailable."
+        },
+        "4": {
+          "title": "Planner Performance Improvements",
+          "content": "We deployed updates to improve route generation speed and stability."
+        },
+        "5": {
+          "title": "Customer Center Update",
+          "content": "Inquiry and emergency help flows were improved for faster support."
+        },
+        "6": {
+          "title": "Tourstar Policy Reminder",
+          "content": "Please review community guidelines before posting public content."
+        },
+        "7": {
+          "title": "New Features Preview",
+          "content": "More localization and smarter AI recommendations are coming soon."
+        }
+      },
+      "table": {
+        "no": "No.",
+        "title": "Title",
+        "author": "Author",
+        "date": "Date",
+        "views": "Views"
+      },
+      "aria": {
+        "select_all": "Select all",
+        "select_row": "Select notice {{id}}"
+      },
+      "modal": {
+        "meta": "by {{author}} · {{date}}",
+        "close": "Close"
+      }
+    },
+    "inquiry": {
+      "title": "Contact Us",
+      "tabs": {
+        "write": "1:1 Inquiry",
+        "list": "My Inquiries"
+      },
+      "form": {
+        "subject": "Subject",
+        "subject_placeholder": "Enter a subject",
+        "content": "Message",
+        "content_placeholder": "Please provide details",
+        "attachments": "Attachments",
+        "attachment_help": "Images (GIF, PNG, JPG) up to 10MB each, max 3 files",
+        "privacy_agree": "Consent to collection and use of personal information",
+        "sending": "Sending...",
+        "submit": "Submit"
+      },
+      "list": {
+        "search_label": "Search",
+        "search_placeholder": "Search by title/content/status",
+        "no_results": "No results found."
+      },
+      "status": {
+        "answered": "Answered",
+        "pending": "In progress"
+      },
+      "submit_done": "Your inquiry has been submitted.",
+      "seed": {
+        "10001": {
+          "title": "Cannot upload profile image",
+          "content": "I tried several times but upload fails after selecting an image."
+        },
+        "10002": {
+          "title": "How to modify my schedule?",
+          "content": "I want to change only one day in my saved itinerary.",
+          "answer": "Open Schedule, pick a date, then use reroll or AI modify to adjust specific items."
+        }
+      }
+    },
+    "inquiries": {
+      "title": "My Inquiries",
+      "mobile_title": "Inquiry History",
+      "subtitle": "Review your submitted inquiries and answers.",
+      "my_list": "My inquiry list",
+      "write": "Write inquiry",
+      "search_placeholder": "Search by title/content/status",
+      "no_results": "No results found.",
+      "status": {
+        "answered": "Answered",
+        "pending": "In progress"
+      },
+      "seed": {
+        "10001": {
+          "title": "Cannot upload profile image",
+          "content": "I tried several times but upload fails after selecting an image."
+        },
+        "10002": {
+          "title": "How to modify my schedule?",
+          "content": "I want to change only one day in my saved itinerary.",
+          "answer": "Open Schedule, pick a date, then use reroll or AI modify to adjust specific items."
+        }
+      },
+      "detail": {
+        "title": "Inquiry detail",
+        "mobile_title": "Inquiry detail",
+        "back_to_list": "Back to list",
+        "received_at": "Received at",
+        "content": "Content",
+        "attachments": "Attachments",
+        "no_attachments": "No attachments",
+        "answer": "Answer",
+        "answer_pending": "Awaiting answer",
+        "not_found": "Inquiry not found"
+      }
+    },
+    "faq": {
+      "count": "{{count}} items",
+      "items": {
+        "login_help": {
+          "category": "Inquiry",
+          "question": "What should I do if I cannot log in?",
+          "answer": "Refresh the app and try again. If it keeps failing, contact customer support."
+        },
+        "first_steps": {
+          "category": "Guide",
+          "question": "I am new. Which feature should I check first?",
+          "answer": "Start with Trip Planner and Discover from Home, then use Schedule management."
+        },
+        "update_notes": {
+          "category": "Notices",
+          "question": "Where can I see update notes?",
+          "answer": "You can check the latest changes in the Notices category of Customer Center."
+        },
+        "refund_flow": {
+          "category": "Payments & Service",
+          "question": "How does a payment cancellation (refund) work?",
+          "answer": "Submit an inquiry with your payment details and order number, and we will guide you in order."
+        },
+        "emergency_help": {
+          "category": "Emergency Help & Travel Tips",
+          "question": "What help can I get during an emergency while traveling?",
+          "answer": "Check emergency contacts and basic response guides first, then contact customer support immediately if needed."
+        }
+      },
+      "title": "Frequently Asked Questions",
+      "no_results": "No search results found."
+    },
+    "center": {
+      "title": "Customer Center",
+      "subtitle": "Find the help you need quickly."
+    },
+    "search": {
+      "label": "How can we help you?",
+      "placeholder": "Enter a search keyword"
+    },
+    "categories": {
+      "title": "Categories",
+      "items": {
+        "inquiry": {
+          "title": "Inquiry",
+          "desc": "General questions about account, features, and errors"
+        },
+        "guide": {
+          "title": "User Guide",
+          "desc": "How to use the service and getting started"
+        },
+        "notices": {
+          "title": "Notices",
+          "desc": "Maintenance, releases, and change updates"
+        },
+        "payment": {
+          "title": "Payments & Service",
+          "desc": "Payment, refund, and subscription guidance"
+        },
+        "emergency": {
+          "title": "Emergency Help & Travel Tips",
+          "desc": "Emergency response and travel safety tips"
+        }
+      }
+    },
+    "guide": {
+      "title": "User Guide",
+      "subtitle": "A quick overview of 5 core features you can start from Home.",
+      "hero": {
+        "kicker": "Start your first trip like this",
+        "title": "Create route -> organize schedule -> share and chat when needed",
+        "steps": {
+          "planner": "Trip Planner",
+          "schedule": "Schedule",
+          "guide": "Discover",
+          "social": "Tourstar / Group Chat"
+        },
+        "cta_planner": "Start Trip Planner",
+        "cta_groupchat": "Explore Group Chat"
+      },
+      "cards": {
+        "tourstar": {
+          "title": "Tourstar",
+          "subtitle": "Create and share travel posts and reviews in one place.",
+          "cta": "Go to Tourstar",
+          "items": {
+            "1": {
+              "title": "1) Prepare photos/travel notes",
+              "body": "Upload photos and AI helps with title/summary for faster writing."
+            },
+            "2": {
+              "title": "2) Choose visibility",
+              "body": "Post as public/private depending on your needs."
+            },
+            "3": {
+              "title": "3) Get reactions",
+              "body": "Exchange tips through likes/comments and connect with friends."
+            }
+          },
+          "tip": {
+            "title": "Tip",
+            "body": "Keep titles short and write in order: when/where/what was great."
+          }
+        },
+        "planner": {
+          "title": "Trip Planner",
+          "subtitle": "AI recommends routes and schedules for your travel style.",
+          "cta": "Go to Trip Planner",
+          "items": {
+            "1": {
+              "label": "Standard / K-content / User content",
+              "body": "Choose one to start."
+            },
+            "2": {
+              "label": "Select destination (or theme)",
+              "body": ": AI recommendations become more accurate when route context is clear."
+            },
+            "3": {
+              "body": "Recommended schedules are auto-saved and can be refined in Schedule."
+            }
+          }
+        },
+        "schedule": {
+          "title": "Schedule",
+          "subtitle": "Check saved plans in calendar and reroll/modify with AI.",
+          "cta": "Open Schedule",
+          "items": {
+            "1": {
+              "title": "1) Select date in calendar",
+              "body": "Click a date to see that day's plan."
+            },
+            "2": {
+              "title": "2) Reroll for another version",
+              "body": "Regenerate only the parts you do not like."
+            },
+            "3": {
+              "title": "3) Ask AI to modify",
+              "body": "Use prompts to adjust your schedule."
+            }
+          },
+          "tip": {
+            "title": "Map / Weather",
+            "body": "Check map view and weather summary directly in schedule cards."
+          }
+        },
+        "discover": {
+          "title": "Discover",
+          "subtitle": "Find local recommendations like restaurants and events on one screen.",
+          "cta": "Go to Discover",
+          "items": {
+            "1": {
+              "title": "1) Choose a guide",
+              "body": ": Select restaurant or event recommendation tab."
+            },
+            "2": {
+              "title": "2) Explore cards/list",
+              "body": ": Open places you are interested in for details."
+            },
+            "3": {
+              "body": "If you want to add it to plan, tune it in Planner/Schedule with your route."
+            }
+          }
+        },
+        "groupchat": {
+          "title": "Group Chat",
+          "subtitle": "Join rooms by honor level and share travel stories.",
+          "cta": "Go to Group Chat",
+          "items": {
+            "1": {
+              "title": "1) Enter from room list",
+              "body": ": Entry availability can vary by honor level."
+            },
+            "2": {
+              "title": "2) Send messages",
+              "body": ": Type in chat input and send in real-time."
+            },
+            "3": {
+              "title": "3) Friend/whisper/honor actions",
+              "body": ": Use message menu for whisper, add friend, and honor actions."
+            }
+          }
+        }
+      }
+    }
+  },
+  "planner": {
+    "title": "Trip Planner",
+    "subtitle": "Pick the travel style you want",
+    "modes": {
+      "standard": {
+        "title": "Standard",
+        "desc": "AI-recommended routes and itineraries"
+      },
+      "kcontent": {
+        "title": "K-Content",
+        "desc": "Trips to drama/movie filming locations"
+      },
+      "usercontent": {
+        "title": "User Content",
+        "desc": "Recommended courses by travelers"
+      }
+    },
+    "schedule": {
+      "title": "My Plans",
+      "subtitle_with_count": "{{count}} saved plans · Click a date to view that day",
+      "new_route": "+ New route",
+      "prev_month": "Previous month",
+      "next_month": "Next month",
+      "year_month": "{{year}}-{{month}}",
+      "legend": "Plan legend",
+      "reroll_fail": "Failed to regenerate.",
+      "modify_fail": "Failed to modify.",
+      "view_all_route": "View route for all stops",
+      "all_route": "🗺️ Full route",
+      "in_trip_period": "Within trip period",
+      "rerolled": "🔄 Regenerated",
+      "generating": "Generating…",
+      "reroll_this_item": "Regenerate this item",
+      "view_on_map": "View on map",
+      "ask_ai_modify": "Ask AI to modify the itinerary",
+      "modify_placeholder": "e.g. \"Replace Changdeokgung Secret Garden tour with another spot\"",
+      "ai_modifying": "AI is modifying…",
+      "item_regenerating": "Regenerating item…",
+      "modify_login_needed": "Login required to use modify feature",
+      "date_ymd": "{{year}}-{{month}}-{{day}}",
+      "item_count": "{{count}} items",
+      "no_items_on_day": "No items scheduled for this day",
+      "delete_confirm": "Delete this plan?",
+      "saved_at": "Saved {{date}}",
+      "weather_forecast": "🌤 Weather forecast",
+      "within_5days": "· within 5 days",
+      "view_schedule": "View itinerary",
+      "view_day_route": "View Day {{day}} route",
+      "route": "🗺️ Route",
+      "ai_modified": "✨ AI modified",
+      "load_fail": "Failed to load plans.",
+      "delete_fail": "Failed to delete.",
+      "login_note": "Travel plans are saved automatically after SNS login",
+      "login_needed": "Login required",
+      "empty_title": "No saved plans",
+      "empty_desc": "Choose a route in Trip Planner\nand AI plans will be saved automatically",
+      "go_planner": "Open Trip Planner",
+      "list_hint": "All plans · Click a date to view that day"
+    },
+    "kcontent": {
+      "title": "K-Content Planner",
+      "subtitle": "Explore Korea through K-Pop, dramas, food, and beauty",
+      "hero_title": "K-Content Planner",
+      "hero_subtitle": "Explore Korea through K-Pop, dramas, food, and beauty",
+      "hero_cta": "Generate AI Route",
+      "back": "Back to planner",
+      "row_kpop": "K-Pop",
+      "row_kdrama": "K-Drama / Movie",
+      "row_kfood": "K-Food",
+      "row_kbeauty": "K-Beauty",
+      "sample_itinerary": "Sample itinerary",
+      "search_bar": "Search",
+      "quick_selection": "Quick selection",
+      "vibe_grid": "Vibe selection",
+      "date": "Date",
+      "generating": "Generating…",
+      "generate": "✨ Generate schedule",
+      "ai_recommended": "AI recommended schedule",
+      "region_select": "Select region",
+      "traditional_market": "Traditional market",
+      "market_generate": "Generate this market food itinerary",
+      "cafe_question": "What vibe fits your day today?",
+      "cafe_hint": "Choose a vibe or enter a cafe name to generate an AI course.",
+      "cafe_placeholder": "Type a cafe name directly (e.g. Seongsu Tongue Planet)",
+      "cafe_generate": "Generate AI itinerary",
+      "trending_items": "Trending items now",
+      "my_recipe": "My combo recipe",
+      "convenience_q": "What is hardest to get at convenience stores now?",
+      "trending_placeholder": "e.g. Yonsei Milk Cream Bread",
+      "recipe_q": "What flavor combo do you want to try?",
+      "extra_keywords": "Extra keywords",
+      "recipe_placeholder": "e.g. Spicy challenge, sweet-salty dessert",
+      "recipe_generate": "Generate AI combo recipe",
+      "set_date_and_generate": "Set your dates and generate an itinerary",
+      "start_generate": "✨ Start itinerary generation",
+      "making_schedule": "AI is creating a <b>{{title}}</b> itinerary…",
+      "recommended_schedule_title": "{{title}} — Recommended itinerary",
+      "save_plan": "💾 Save itinerary",
+      "total_cost": "Estimated total cost",
+      "cost_per_day": "Day {{day}} {{total}}",
+      "no_schedule": "No itinerary was generated. Please try again.",
+      "saved_goto_schedule": "Saved · Go to schedule",
+      "find_nearby_store": "Find nearby places selling this",
+      "recipe_hashtags": "#modisumer #conveniencechallenge #AIrecipe",
+      "description_fallback": "A recommended spot to enjoy at {{place}}.",
+      "challenge_location": "Challenge Location",
+      "challenge_location_desc": "AI-picked best challenge spot (within 100km) — bench zone in front of Seoul Forest, Seongsu",
+      "subtotal": "Subtotal {{total}}",
+      "schedule_item_default": "Schedule",
+      "schedule_load_fail": "Failed to load schedule.",
+      "save_fail": "Failed to save.",
+      "cafe_place_hint": "Cafe/place hint",
+      "convenience_trending": "Convenience trending items",
+      "recipe_title_with_vibe": "{{vibe}} Challenge 2026 Ver.",
+      "recipe_title_default": "Mark set 2026 Ver.",
+      "region_tab.all": "All",
+      "region_tab.seoul": "Seoul",
+      "region_tab.gangwon": "Gangwon",
+      "region_tab.jeonla": "Jeolla",
+      "region_tab.gyeongsang": "Gyeongsang",
+      "region_tab.jeju": "Jeju",
+      "cafe_vibe.industrial_raw.label": "Industrial/Raw",
+      "cafe_vibe.industrial_raw.description": "A hip vibe of rough concrete and steel.",
+      "cafe_vibe.traditional_zen.label": "Traditional/Zen",
+      "cafe_vibe.traditional_zen.description": "A calm break with hanok and wood textures.",
+      "cafe_vibe.nature_botanical.label": "Nature/Botanical",
+      "cafe_vibe.nature_botanical.description": "A space filled with greenery and sunlight.",
+      "cafe_vibe.retro_newtro.label": "Retro/Newtro",
+      "cafe_vibe.retro_newtro.description": "Reply-style nostalgia and vintage alley tour.",
+      "cafe_vibe.modern_minimal.label": "Modern/Minimal",
+      "cafe_vibe.modern_minimal.description": "Refined monochrome and modern aesthetics.",
+      "brand.seveneleven": "7-Eleven",
+      "brand.emart24": "emart24",
+      "market": {
+        "SEOUL": {
+          "0": {
+            "name": "Gwangjang Market",
+            "description": "The mecca of yukhoe and bindaetteok."
+          },
+          "1": {
+            "name": "Mangwon Market",
+            "description": "A trendy market loved by the MZ generation."
+          },
+          "2": {
+            "name": "Tongin Market",
+            "description": "A place to enjoy the famous yeopjeon lunchbox experience."
+          }
+        },
+        "GANGWON": {
+          "0": {
+            "name": "Yeongwol Jungang Market",
+            "description": "Home of buckwheat jeonbyeong and olchaengi noodles."
+          },
+          "1": {
+            "name": "Sokcho Tourist & Fishery Market",
+            "description": "A paradise of dakgangjeong and seafood street food."
+          }
+        },
+        "JEONLA": {
+          "0": {
+            "name": "Jeonju Nambu Market",
+            "description": "The birthplace of blood sausage and bean sprout soup."
+          },
+          "1": {
+            "name": "Gwangju 1913 Songjeong Station Market",
+            "description": "A market full of retro-newtro vibes."
+          }
+        },
+        "GYEONGSANG": {
+          "0": {
+            "name": "Busan Gukje Market",
+            "description": "Movie-scene memories and bibim dangmyeon."
+          },
+          "1": {
+            "name": "Daegu Seomun Market",
+            "description": "Huge scale and flavors of one of Korea's top 3 markets."
+          }
+        },
+        "JEJU": {
+          "0": {
+            "name": "Jeju Dongmun Market",
+            "description": "Island flavors with omegi rice cakes and black pork gangjeong."
+          }
+        }
+      },
+      "fallback": {
+        "kfood": {
+          "KF_MARKET": {
+            "title": "Nationwide Traditional Market Food Tour",
+            "description": "A market conquest tour packed with warm local flavors and energy across Korea."
+          },
+          "KF_CAFE": {
+            "title": "K-Dessert & Cafe Vibe Tour",
+            "description": "An emotional route connecting cafes and select shops that match your taste."
+          },
+          "KF_CONVENIENCE": {
+            "title": "K-Convenience Store Combo Challenge",
+            "description": "From sold-out new items to secret recipes, become a true convenience-store modisumer!"
+          }
+        },
+        "kbeauty": {
+          "KBEAUTY_01": {
+            "title": "Olive Young Flagship",
+            "description": "Compare and shop skincare and makeup trends in one place."
+          },
+          "KBEAUTY_02": {
+            "title": "Myeongdong Beauty Street",
+            "description": "Quickly explore bestsellers around major beauty road shops."
+          },
+          "KBEAUTY_03": {
+            "title": "Skincare Experience Shop",
+            "description": "Customized care and hands-on beauty programs based on skin diagnosis."
+          }
+        },
+        "kpop": {
+          "KPOP_01": {
+            "title": "BTS: Eternal HYYH",
+            "description": "BTS, ARMY, Gangnam, HYBE"
+          },
+          "KPOP_02": {
+            "title": "BLACKPINK: Hip & Luxury",
+            "description": "BLACKPINK, YG, Luxury, Trend"
+          },
+          "KPOP_03": {
+            "title": "SEVENTEEN & Stray Kids: Performance Energy",
+            "description": "SEVENTEEN, Stray Kids, JYP, Performance"
+          },
+          "KPOP_04": {
+            "title": "NewJeans & IVE: High-Teen Seoul",
+            "description": "NewJeans, IVE, Y2K, Seongsu, Hannam"
+          },
+          "KPOP_05": {
+            "title": "SM: Kwangya Express",
+            "description": "SM, aespa, NCT, Kwangya, Seongsu"
+          },
+          "KPOP_06": {
+            "title": "Hands-on Idol Experience",
+            "description": "Experience, Dance, Recording, Idol life"
+          },
+          "KPOP_07": {
+            "title": "Hongdae: Center of Fandom Culture",
+            "description": "Hongdae, Busking, Album, Fans"
+          },
+          "KPOP_08": {
+            "title": "K-OST & Emotional Healing Seoul",
+            "description": "IU, OST, Healing, Retro, Seoul"
+          }
+        },
+        "kdrama": {
+          "KD_01": {
+            "title": "Goblin",
+            "description": "Goblin · #GongYoo #Fantasy #Romance"
+          },
+          "KD_02": {
+            "title": "Squid Game",
+            "description": "Squid Game · #Netflix #Survival #Thriller"
+          },
+          "KD_03": {
+            "title": "Crash Landing on You",
+            "description": "Crash Landing on You · #HyunBin #SonYeJin #Romance"
+          },
+          "KD_04": {
+            "title": "Kingdom",
+            "description": "Kingdom · #Zombies #Historical #Horror"
+          },
+          "KD_05": {
+            "title": "Parasite",
+            "description": "Parasite · #Oscar #BongJoonHo #SocialIssues"
+          },
+          "KD_06": {
+            "title": "Lovely Runner",
+            "description": "Lovely Runner · #ByeonWooSeok #TimeSlip #Youth"
+          },
+          "KD_07": {
+            "title": "Hotel Del Luna",
+            "description": "Hotel Del Luna · #IU #Fantasy #Mystery"
+          },
+          "KD_08": {
+            "title": "King the Land",
+            "description": "King the Land · #JunHo #Yoona #Luxury"
+          },
+          "KD_09": {
+            "title": "Mr. Sunshine",
+            "description": "Mr. Sunshine · #History #LeeByungHun #KimTaeri"
+          },
+          "KD_10": {
+            "title": "Descendants of the Sun",
+            "description": "Descendants of the Sun · #SongJoongKi #SongHyeKyo #Military"
+          },
+          "KD_11": {
+            "title": "Queen of Tears",
+            "description": "Queen of Tears · #KimSooHyun #KimJiWon #Chaebol"
+          },
+          "KD_12": {
+            "title": "The Man Who Lives with the King",
+            "description": "The Man Who Lives with the King · #GangDongWon #YooHaeJin #History"
+          }
+        }
+      },
+      "recipe_vibe.spicy_fire.label": "Fiery spice",
+      "recipe_vibe.spicy_fire.description": "A spicy challenge to blow off stress.",
+      "recipe_vibe.sweet_salty.label": "Sweet & salty classic",
+      "recipe_vibe.sweet_salty.description": "Balanced sweetness and savoriness.",
+      "recipe_vibe.diet_healthy.label": "Convenience diet",
+      "recipe_vibe.diet_healthy.description": "Light but satisfying healthy combo.",
+      "recipe_vibe.night_snack.label": "Late-night snack",
+      "recipe_vibe.night_snack.description": "Small-joy night snack recipe.",
+      "recipe_vibe.hangover.label": "Hangover combo",
+      "recipe_vibe.hangover.description": "A combo specialized for hangover care.",
+      "recipe_vibe.luxury_meal.label": "Value premium meal",
+      "recipe_vibe.luxury_meal.description": "A premium convenience-store meal.",
+      "shopping.ramen": "Cup ramen",
+      "shopping.tuna_kimbap": "Tuna mayo triangle kimbap",
+      "shopping.string_cheese": "String cheese",
+      "shopping.sparkling_water": "Sparkling water",
+      "cooking.1": "Prepare all ingredients and put them in a microwave-safe container.",
+      "cooking.2": "Mix sauce/toppings and cook for 1 minute 30 seconds.",
+      "cooking.3": "Add toppings to taste and take a verification photo.",
+      "trending_card.1.title": "Yonsei Milk Cream Bread",
+      "trending_card.2.title": "Zero Cola Ice-cup Highball",
+      "trending_card.default_title": "AI-picked trending item",
+      "trending_card.tag.new": "#new",
+      "trending_card.tag.soldout": "#soldout-alert",
+      "trending_card.tag.review": "#review-buzz",
+      "trending_card.tag.repurchase": "#repurchase",
+      "meta.kf_market.title_ko": "Nationwide traditional market food tour",
+      "meta.kf_cafe.title_ko": "K-dessert & cafe vibe tour",
+      "meta.kf_convenience.title_ko": "K-convenience combo challenge",
+      "meta.kf_market.tags": "traditional market, food, local food",
+      "meta.kf_cafe.tags": "cafe, dessert, select shop, vibe tour",
+      "meta.kf_convenience.tags": "convenience store, combos, modisumer, challenge",
+      "empty.pick_market": "Pick a market and then generate a schedule.",
+      "empty.pick_vibe_or_cafe": "Choose a vibe or enter a cafe name.",
+      "empty.pick_tab_condition": "Select tab conditions and generate.",
+      "empty.pick_date": "Pick dates and generate a schedule.",
+      "empty.market_guide": "Choose a market on the left, then click [Generate market food schedule] or top ✨ Generate.",
+      "empty.cafe_guide": "Choose vibe/cafe on the left, then click [Generate AI schedule].",
+      "empty.convenience_guide": "Choose a mode tab on top, enter keywords, and generate.",
+      "empty.default_guide": "Click the top ✨ Generate schedule button.",
+      "shopping_list_title": "Shopping List",
+      "cooking_steps_title": "Cooking Steps"
+    },
+    "usercontent": {
+      "title": "User Content",
+      "subtitle": "Routes shared by travelers",
+      "upload": "Upload my route",
+      "tab_all": "All routes",
+      "tab_mine": "My routes",
+      "search_placeholder": "Search by nickname...",
+      "search_result": "{{count}} results found",
+      "empty_all_title": "No shared routes yet.",
+      "empty_all_sub": "Be the first to upload your own route!",
+      "empty_mine_title": "You have not uploaded any routes yet.",
+      "empty_mine_sub": "Share your route and gather likes!",
+      "cta_first_upload": "Upload first route",
+      "cta_share_first": "Share your first route",
+      "already_liked": "Already liked",
+      "like": "Like",
+      "delete": "Delete",
+      "delete_my_route": "Delete my route",
+      "shared_route": "Shared route",
+      "schedule_save_fail": "Failed to save schedule.",
+      "route": "Route",
+      "added_to_schedule": "Added to my schedule",
+      "go_schedule": "Go to schedule manager",
+      "add_to_schedule": "Add to my schedule",
+      "login_required": "Available after login.",
+      "no_places_to_save": "No places to save.",
+      "when_trip": "When are you planning to visit?",
+      "date_applied": "The selected date will be applied to your schedule.",
+      "visit_date": "Visit date",
+      "add_with_this_date": "Add with this date",
+      "image_validate_fail": "Image validation failed",
+      "ai_polish_fail": "AI polish failed",
+      "save_fail": "Save failed",
+      "step_photo": "Select photo",
+      "step_form": "Enter route",
+      "step_polish": "AI polish",
+      "upload_my_route": "Upload my route",
+      "upload_photo_hint": "Drag or click to upload a photo",
+      "upload_photo_types": "Supports JPG, PNG, WEBP",
+      "remove_photo": "Remove photo",
+      "image_validated": "Image validation complete",
+      "validating": "Validating...",
+      "continue_without_photo": "Continue without photo",
+      "import_saved_schedule": "Import from saved schedules",
+      "select_saved_schedule": "Select a saved schedule",
+      "no_saved_schedule": "No saved schedules.",
+      "place_count": " · {{count}} places",
+      "route_title_required": "Route title *",
+      "route_title_placeholder": "e.g. Gangneung one-day emotional trip",
+      "destination_required": "Destination *",
+      "destination_placeholder": "e.g. Gangneung, Gyeongpo Beach",
+      "one_line_intro_optional": "One-line intro (optional)",
+      "one_line_intro_placeholder": "Briefly describe this route (AI will polish it)",
+      "place_list_required": "Places *",
+      "max_per_day": "(up to {{max}} per day)",
+      "day_n": "Day {{day}}",
+      "add_place": "+ Add place",
+      "place_name_placeholder": "Place name (e.g. Anmok Beach Cafe Street)",
+      "memo_optional_placeholder": "Short memo (optional)",
+      "add_day_n": "+ Add day {{day}}",
+      "ai_polish": "Polish with AI",
+      "ai_polishing": "AI is polishing your route",
+      "ai_polishing_sub": "Adding a vivid intro and travel tips...",
+      "re_enter": "Edit again",
+      "share": "Share",
+      "shared_success": "Route shared!",
+      "shared_success_sub": "Check your route in the feed",
+      "delete_confirm": "Do you want to delete this route?",
+      "delete_fail": "Failed to delete."
+    },
+    "standard": {
+      "title": "Choose destination",
+      "subtitle": "Select a destination and AI will recommend a tailored route.",
+      "search_placeholder": "Search city/landmark (e.g., Gangneung, Hanok Village)",
+      "search_result": "\"{{query}}\" search results: {{count}} places",
+      "no_results": "No search results found",
+      "reset": "Reset",
+      "metro_quick": "Metro/major city quick access",
+      "metro_quick_sub": "Pick popular major cities quickly, then explore detailed areas below.",
+      "metro_detail": "Detailed metro areas",
+      "metro_detail_sub": "Cities like Seoul, Busan, Daegu, and Ulsan are shown by sub-areas.",
+      "province": "Province regions",
+      "province_sub": "Compare destinations by wider regions like Gyeonggi, Chungcheong, Jeolla, Gyeongsang, Gangwon, and Jeju.",
+      "image_pending": "Image coming soon",
+      "popular": "Popular",
+      "mode_label": "Standard",
+      "date": "Date",
+      "mode_car": "Car",
+      "mode_transit": "Transit",
+      "mode_walk": "Walk",
+      "generate_route": "Generate route",
+      "generating_loading": "Searching for accurate information...",
+      "ai_recommended_routes": "AI Recommended Routes",
+      "set_date_and_generate": "Set your date and generate a route",
+      "start_generate": "Start generating route",
+      "route_load_fail": "Failed to load routes.",
+      "pick_route": "Please select a route",
+      "range_hint": "AI will build a schedule from {{start}} to {{end}}",
+      "select_date_then_generate": "Select date then generate route",
+      "generate_hint": "Click the top-left Generate Route button",
+      "making_schedule": "AI is building a schedule for {{name}}...",
+      "schedule_load_fail": "Failed to load schedule.",
+      "recommended_schedule_title": "{{name}} - Recommended Schedule",
+      "saved_goto_schedule": "Saved ? Go to Schedule",
+      "save_plan": "Save Plan",
+      "save_fail": "Failed to save.",
+      "total_cost": "Estimated total cost",
+      "cost_per_day": "Day {{day}} {{total}}",
+      "subtotal": "Subtotal {{total}}"
+    },
+    "region": {
+      "seoul-areas": {
+        "label": "Seoul",
+        "subLabel": "Key areas by district"
+      },
+      "gyeonggi-north": {
+        "label": "Northern Gyeonggi",
+        "subLabel": "Goyang, Paju, Uijeongbu, Namyangju, etc."
+      },
+      "gyeonggi-south": {
+        "label": "Southern Gyeonggi",
+        "subLabel": "Suwon, Yongin, Seongnam, Pyeongtaek, etc."
+      },
+      "gangwon": {
+        "label": "Gangwon-do",
+        "subLabel": "Gangwon Special Self-Governing Province"
+      },
+      "chungbuk": {
+        "label": "Chungcheongbuk-do",
+        "subLabel": "Cheongju, Chungju, Jecheon, Danyang"
+      },
+      "chungnam": {
+        "label": "Chungcheongnam-do",
+        "subLabel": "Gongju, Buyeo, Boryeong, Taean, etc."
+      },
+      "jeonbuk": {
+        "label": "Jeonbuk",
+        "subLabel": "Jeonbuk Special Self-Governing Province"
+      },
+      "jeonnam": {
+        "label": "Jeollanam-do",
+        "subLabel": "Yeosu, Suncheon, Mokpo, Damyang, etc."
+      },
+      "busan": {
+        "label": "Busan",
+        "subLabel": "Busan Metropolitan City"
+      },
+      "daegu": {
+        "label": "Daegu",
+        "subLabel": "Daegu Metropolitan City"
+      },
+      "ulsan": {
+        "label": "Ulsan",
+        "subLabel": "Ulsan Metropolitan City"
+      },
+      "gyeongbuk": {
+        "label": "Gyeongsangbuk-do",
+        "subLabel": "Gyeongju, Pohang, Andong, etc."
+      },
+      "gyeongnam": {
+        "label": "Gyeongsangnam-do",
+        "subLabel": "Tongyeong, Geoje, Jinju, Changwon, etc."
+      },
+      "jeju": {
+        "label": "Jeju-do",
+        "subLabel": "Jeju Special Self-Governing Province"
+      }
+    },
+    "dest": {
+      "seoul": {
+        "name": "Seoul",
+        "highlight1": "Gyeongbokgung",
+        "highlight2": "Hongdae",
+        "highlight3": "Hangang Park"
+      },
+      "busan": {
+        "name": "Busan",
+        "highlight1": "Haeundae Beach",
+        "highlight2": "Gamcheon Village",
+        "highlight3": "Jagalchi Market"
+      },
+      "daegu": {
+        "name": "Daegu",
+        "highlight1": "Dongseong-ro",
+        "highlight2": "Kim Gwangseok Street",
+        "highlight3": "Suseong Lake"
+      },
+      "incheon": {
+        "name": "Incheon",
+        "highlight1": "Songdo",
+        "highlight2": "Ganghwa Island",
+        "highlight3": "Chinatown"
+      },
+      "gwangju": {
+        "name": "Gwangju",
+        "highlight1": "ACC (Asia Culture Center)",
+        "highlight2": "Yangnim-dong"
+      },
+      "daejeon": {
+        "name": "Daejeon",
+        "highlight1": "Seongsimdang",
+        "highlight2": "Expo Park",
+        "highlight3": "Yuseong Hot Springs"
+      },
+      "ulsan": {
+        "name": "Ulsan",
+        "highlight1": "Ganjeolgot",
+        "highlight2": "Daewangam Park",
+        "highlight3": "Taehwa River"
+      },
+      "sejong": {
+        "name": "Sejong",
+        "highlight1": "Sejong Lake Park",
+        "highlight2": "National Arboretum"
+      },
+      "jongno": {
+        "name": "Jongno / Gwanghwamun",
+        "highlight1": "Gyeongbokgung",
+        "highlight2": "Cheong Wa Dae",
+        "highlight3": "Insadong"
+      },
+      "myeongdong": {
+        "name": "Myeongdong / Euljiro",
+        "highlight1": "Myeongdong Cathedral",
+        "highlight2": "Euljiro Alley"
+      },
+      "yongsan": {
+        "name": "Yongsan / Itaewon",
+        "highlight1": "National Museum of Korea",
+        "highlight2": "Itaewon"
+      },
+      "gangnam": {
+        "name": "Gangnam / Seocho",
+        "highlight1": "COEX",
+        "highlight2": "Apgujeong Rodeo",
+        "highlight3": "Dosan Park"
+      },
+      "jamsil": {
+        "name": "Jamsil / Songpa",
+        "highlight1": "Lotte World",
+        "highlight2": "Olympic Park",
+        "highlight3": "Seokchon Lake"
+      },
+      "seongsu": {
+        "name": "Seongsu / Hannam",
+        "highlight1": "Seongsu Cafe Street",
+        "highlight2": "Hannam-dong Galleries"
+      },
+      "hongdae": {
+        "name": "Hongdae / Mapo",
+        "highlight1": "Hongdae Clubs",
+        "highlight2": "Yeonnam-dong",
+        "highlight3": "Gyeongui Line Forest"
+      },
+      "bukchon": {
+        "name": "Bukchon / Samcheong",
+        "highlight1": "Bukchon Hanok Village",
+        "highlight2": "Samcheong-dong Cafes"
+      },
+      "nowon": {
+        "name": "Nowon / Dobong",
+        "highlight1": "Suraksan",
+        "highlight2": "Dobongsan",
+        "highlight3": "Bulamsan"
+      },
+      "haeundae": {
+        "name": "Haeundae",
+        "highlight1": "Haeundae Beach",
+        "highlight2": "Dongbaek Island",
+        "highlight3": "Dalmaji-gil"
+      },
+      "gwangalli": {
+        "name": "Gwangalli / Suyeong",
+        "highlight1": "Gwangandaegyo Bridge",
+        "highlight2": "Gwangalli Beach"
+      },
+      "gijang": {
+        "name": "Gijang",
+        "highlight1": "Jukseong Dream Church",
+        "highlight2": "Daebyeon Port",
+        "highlight3": "Aquarium"
+      },
+      "songjeong": {
+        "name": "Songjeong / Cheongsapo",
+        "highlight1": "Songjeong Beach",
+        "highlight2": "Cheongsapo Viewpoint"
+      },
+      "nampo": {
+        "name": "Nampo / Jung-gu",
+        "highlight1": "Jagalchi Market",
+        "highlight2": "BIFF Square",
+        "highlight3": "Bosu-dong Book Alley"
+      },
+      "seomyeon": {
+        "name": "Seomyeon / Bujeon",
+        "highlight1": "Seomyeon Street",
+        "highlight2": "Judys Taehwa",
+        "highlight3": "Bujeon Market"
+      },
+      "gamcheon": {
+        "name": "Gamcheon Culture Village",
+        "highlight1": "Gamcheon Culture Village",
+        "highlight2": "Sky Road"
+      },
+      "yeongdo": {
+        "name": "Yeongdo",
+        "highlight1": "Taejongdae",
+        "highlight2": "Huinnyeoul Culture Village",
+        "highlight3": "Bongnaesan"
+      },
+      "geumjeong": {
+        "name": "Geumjeong / Oncheonjang",
+        "highlight1": "Geumjeongsanseong",
+        "highlight2": "Beomeosa",
+        "highlight3": "Oncheonjang"
+      },
+      "gangseo-bs": {
+        "name": "Gangseo / Gaekdo",
+        "highlight1": "Eulsukdo",
+        "highlight2": "Gaekdo Tidal Flat"
+      },
+      "dadaepo": {
+        "name": "Saha / Dadaepo",
+        "highlight1": "Dadaepo Beach",
+        "highlight2": "Nakdong Estuary"
+      },
+      "dongseongno": {
+        "name": "Dongseongno / Jung-gu",
+        "highlight1": "Dongseong-ro",
+        "highlight2": "Seomun Market",
+        "highlight3": "Yakjeon Market"
+      },
+      "gimgwangseok": {
+        "name": "Kim Gwangseok Street",
+        "highlight1": "Kim Gwangseok Street",
+        "highlight2": "Bangcheon Market"
+      },
+      "suseongmot": {
+        "name": "Suseongmot / Beomeo",
+        "highlight1": "Suseong Lake",
+        "highlight2": "Suseong Resort"
+      },
+      "palgongsan": {
+        "name": "Palgongsan",
+        "highlight1": "Donghwasa",
+        "highlight2": "Gatbawi",
+        "highlight3": "Palgong Skyline"
+      },
+      "dalseong": {
+        "name": "Bisulsan / Dalseong",
+        "highlight1": "Bisulsan Cherry Blossoms",
+        "highlight2": "Dalseong Wetland"
+      },
+      "gunwi": {
+        "name": "Gunwi",
+        "highlight1": "Samguk Yusa Theme Park",
+        "highlight2": "Hwasan Fortress"
+      },
+      "ganjeolgot": {
+        "name": "Ganjeolgot",
+        "highlight1": "Ganjeolgot Lighthouse",
+        "highlight2": "New Year Sunrise"
+      },
+      "daewangam": {
+        "name": "Daewangam",
+        "highlight1": "Daewangam Park",
+        "highlight2": "Ilsan Beach"
+      },
+      "taehwagang": {
+        "name": "Taehwa River",
+        "highlight1": "Taehwa National Garden",
+        "highlight2": "Sipri Daesup Bamboo"
+      },
+      "bangudae": {
+        "name": "Bangudae",
+        "highlight1": "Bangudae Petroglyphs",
+        "highlight2": "Jipcheongjeong"
+      },
+      "jeju": {
+        "name": "Jeju City",
+        "highlight1": "Hallasan",
+        "highlight2": "Seongsan Ilchulbong",
+        "highlight3": "Hyeopjae Beach"
+      },
+      "gyeongju": {
+        "name": "Gyeongju",
+        "highlight1": "Hwangridan-gil",
+        "highlight2": "Cheomseongdae",
+        "highlight3": "Bulguksa"
+      },
+      "gangneung": {
+        "name": "Gangneung",
+        "highlight1": "Gyeongpo Beach",
+        "highlight2": "Anmok Coffee Street",
+        "highlight3": "Ojukheon"
+      },
+      "jeonju": {
+        "name": "Jeonju",
+        "highlight1": "Hanok Village",
+        "highlight2": "Makgeolli Alley"
+      }
+    }
+  },
+  "guide": {
+    "title": "Discover",
+    "subtitle": "Pick Restaurants or Events in one place.",
+    "restaurant": {
+      "title": "Restaurants",
+      "soon": "Restaurant recommendations will be available soon."
+    },
+    "event": {
+      "title": "Events",
+      "subtitle": "Based on National Culture Festival data · Click a date to see events for that day",
+      "prev_month": "Previous month",
+      "next_month": "Next month",
+      "legend_hint": "● Has events · Click a date to filter that day",
+      "list_title_day": "{{y}}-{{m}}-{{d}} Events",
+      "list_title_all": "{{y}}-{{m}} All events",
+      "count": "{{count}} items",
+      "show_all": "Show all",
+      "no_data_period": "No events registered for the period.",
+      "no_data_day": "No events running on this day.",
+      "no_data": "No events.",
+      "hosted_by": "Hosted by: {{name}}",
+      "year_month": "{{m}}/{{y}}",
+      "untitled": "(Untitled)",
+      "homepage": "Homepage",
+      "error": {
+        "load": "Failed to load event list.",
+        "connection": "Unable to load event information. Please try again shortly."
+      }
+    },
+    "tabs": {
+      "restaurant": {
+        "label": "Restaurant Picks",
+        "description": "Explore restaurants by region"
+      },
+      "event": {
+        "label": "Event Picks",
+        "description": "Nationwide cultural festival calendar"
+      }
+    }
+  },
+  "chat": {
+    "tier": {
+      "silver": "Silver",
+      "gold": "Gold",
+      "platinum": "Platinum",
+      "diamond": "Diamond"
+    },
+    "group": {
+      "title_list": "Group Chat Rooms",
+      "title_room": "Group Chat - {{room}}",
+      "back_to_list": "Room list",
+      "loading_rooms": "Loading rooms...",
+      "rooms_hint": "Available rooms depend on honor level. Higher ranks can enter lower rooms too.",
+      "table": {
+        "room": "Room",
+        "honor": "Required honor",
+        "access": "Accessible"
+      },
+      "room_label": "{{label}} Room",
+      "or_more": "or more",
+      "access_yes": "Yes",
+      "access_no": "Not enough honor",
+      "enter": "Enter",
+      "loading_messages": "Loading messages...",
+      "user_fallback": "User {{id}}",
+      "open_tourstar": "Open Tourstar post",
+      "menu": {
+        "whisper": "Send whisper",
+        "honor_up": "Vote honor up",
+        "honor_down": "Vote honor down",
+        "add_friend": "Add friend"
+      },
+      "input_placeholder": "Type a message...",
+      "send": "Send",
+      "dev_add_dummy": "Dev: add other’s test message",
+      "whisper": {
+        "title": "Send whisper",
+        "to": "To: {{username}}"
+      },
+      "sending": "Sending...",
+      "submit": "Send",
+      "action_failed": "Request failed.",
+      "friend_failed": "Friend request failed."
+    },
+    "whisper": {
+      "user_fallback": "User {{id}}",
+      "title": "Whisper",
+      "new_chat": "New conversation",
+      "no_conversations": "No conversations",
+      "start": "Send whisper",
+      "blocked_user": "Blocked user",
+      "delete_conv": "Delete conversation",
+      "unblock": "Unblock",
+      "block": "Block user",
+      "empty_thread": "Start a conversation with {{name}}",
+      "view_tourstar": "View Tourstar post",
+      "read": "Read",
+      "cannot_send_blocked": "You cannot send messages to a blocked user.",
+      "input_placeholder": "Type a message... (Enter to send, Shift+Enter for newline)",
+      "pick_or_start": "Select a conversation or start a new whisper",
+      "new_whisper": "+ New whisper",
+      "new_whisper_title": "New whisper",
+      "no_friends": "No friends.",
+      "add_friend": "Add friends",
+      "delete_confirm": "Delete all conversations with {{name}}?\\nThis action cannot be undone."
+    },
+    "friends": {
+      "title": "Friends",
+      "whisper_box": "Whisper Inbox",
+      "error_list": "Unable to load the list.",
+      "list_title": "Friends ({{count}})",
+      "empty": "No friends added yet. Click a message in Group Chat to send a friend request.",
+      "pending_title": "Received Requests ({{count}})",
+      "pending_empty": "No pending requests.",
+      "whisper": "Whisper",
+      "remove_title": "Remove friend",
+      "block_title": "Block user",
+      "whisper_to_suffix": " whisper to",
+      "whisper_placeholder": "Type your whisper message...",
+      "counter_send_hint": "{{len}} / 500 ? Send with Ctrl+Enter",
+      "sending": "Sending...",
+      "send": "Send",
+      "honor": "Honor {{value}}",
+      "user_fallback": "User {{id}}",
+      "accept_ok": "Friend request accepted.",
+      "accept_fail": "Failed to accept request.",
+      "accept_err": "Failed while processing accept request.",
+      "remove_confirm": "Remove {{name}} from your friends?",
+      "remove_ok": "Removed {{name}} from friends.",
+      "remove_fail": "Failed to remove friend.",
+      "remove_err": "Failed to remove friend.",
+      "block_confirm": "Block {{name}}?\nThey will be removed from friends and cannot send whispers.",
+      "block_ok": "Blocked {{name}}.",
+      "block_fail": "Failed to block user.",
+      "block_err": "Failed to block user.",
+      "whisper_ok": "Sent a whisper to {{name}}.",
+      "whisper_fail": "Failed to send whisper.",
+      "whisper_err": "Failed to send whisper."
+    }
+  },
+  "tourstar": {
+    "title": "TourStar",
+    "subtitle": "AI picks your best travel photos; add short comments to post beautifully.",
+    "new_post": "New Post",
+    "back_to_feed_title": "Back to all feed",
+    "friend_badge": "Friend",
+    "author": {
+      "self_caption": "Record and share your precious travel moments",
+      "other_caption": "Posts from this user"
+    },
+    "stats": {
+      "posts": "Posts",
+      "scraps": "Scraps",
+      "friends": "Friends"
+    },
+    "search": {
+      "all": "All",
+      "author": "Username",
+      "title": "Title",
+      "content": "Body",
+      "tags": "Tags",
+      "location": "Location",
+      "placeholder": "Type to search..."
+    },
+    "tabs": {
+      "all": "All",
+      "mine": "My posts",
+      "friends": "Friends’ posts",
+      "bookmarked": "Scraps"
+    },
+    "sort": {
+      "latest": "Latest",
+      "likes": "Most likes",
+      "comments": "Most comments"
+    },
+    "empty": {
+      "author": "No posts from {{name}}",
+      "mine": "You haven’t posted yet",
+      "bookmarked": "No scraped posts",
+      "friends": "No posts from friends",
+      "search": "No results",
+      "none": "No trips recorded yet",
+      "help_bookmarked": "Press the bookmark button on others’ posts",
+      "help_friends": "Add friends to see their travel records",
+      "help_new": "Use the “New Post” button above to record your first trip",
+      "cta": "Record a trip"
+    },
+    "ai_banner": {
+      "title": "AI automatically selects your best photos",
+      "body": "Upload travel photos and AI suggests the good ones; add short comments to post nicely."
+    },
+    "status": {
+      "photo_queued": "AI photo analysis queued...",
+      "photo_running": "AI photo analysis running...",
+      "photo_failed": "AI analysis failed",
+      "photo_done_pick": "AI analysis complete (check ranking and select photos)",
+      "comment_draft_running": "AI analysis complete (generating comment draft...)",
+      "comment_draft_done": "AI analysis complete (comment draft ready)",
+      "photo_done": "AI analysis complete",
+      "upload_failed": "Upload failed",
+      "checking_metadata": "Checking shot-date metadata...",
+      "no_photo_in_range": "No photos in selected range",
+      "filtered_uploading": "{{excludedCount}} excluded by date filter, auto-uploading {{filteredCount}} photos...",
+      "uploading_count": "Uploading {{count}} photos...",
+      "post_generating": "Generating AI post...",
+      "post_generated": "AI post generated",
+      "post_save_failed": "Failed to save post"
+    },
+    "create": {
+      "title": "Create new travel record",
+      "subtitle": "Upload photos and AI will pick the best shots automatically ✨",
+      "file_upload": "File upload",
+      "photo_selected_count": "Photos ({{selected}}/{{total}} selected)",
+      "date_filter_note": "If you enter dates, only photos taken in that period are auto-uploaded. (No OpenAI used)",
+      "start_date": "Start date",
+      "end_date": "End date",
+      "include_unknown_shot_date": "Include photos without shot-date metadata",
+      "style_preset": "Style preset (MBTI)",
+      "user_template_optional": "User template (optional)",
+      "style_auto": "Auto (default)",
+      "style_group": {
+        "nt": "Analyst/Strategist (NT)",
+        "nf": "Diplomat/Emotional (NF)",
+        "sj": "Manager/Practical (SJ)",
+        "sp": "Explorer/Spontaneous (SP)"
+      },
+      "checking_shot_date": "Checking shot date...",
+      "uploading": "Uploading...",
+      "upload_files": "+ Upload photo files",
+      "filter_by_date": "Auto-filter by shot date (metadata)",
+      "location_optional": "Location (optional)",
+      "location_placeholder": "e.g. Gangnam Seoul, Haeundae Busan (AI estimates if empty)",
+      "one_line_comment": "One-line comment",
+      "comment_placeholder": "Leave a short comment and it will be posted nicely",
+      "style_template_placeholder": "e.g. calm tone with spacing, 3 hashtags",
+      "generated_title": "AI recommended travel record {{date}}",
+      "location_empty": "No destination entered",
+      "comment_default": "Recording precious travel moments.",
+      "generating": "Generating...",
+      "submit": "Post"
+    },
+    "error": {
+      "upload_photo": "Failed to upload photos. Please check if the tourstar server is running.",
+      "upload_photo_simple": "Failed to upload photos.",
+      "like_failed": "Failed to process like. Please try again shortly.",
+      "cannot_delete_no_login": "Unable to verify login info, so the post cannot be deleted.",
+      "delete_failed": "Deletion failed. Check if this is your post or try again later.",
+      "delete_retry": "Deletion failed. Please try again shortly.",
+      "edit_failed_with_detail": "Failed to edit post.\n{{detail}}",
+      "author_not_found": "Could not find account for {{name}}.",
+      "friend_request_failed": "Failed to send friend request.",
+      "friend_request_failed_with_detail": "Failed to send friend request.\n{{detail}}",
+      "friends_only": "Friends only.",
+      "no_photo_for_period": "No photos found for the selected period.\n(No metadata: {{unknownCount}}, excluded: {{excludedCount}})"
+    },
+    "confirm": {
+      "delete_post": "Delete this post? This cannot be undone."
+    },
+    "share": {
+      "copied": "Share link copied. Paste it in chat.",
+      "copy_prompt": "Copy the link below and share it in chat."
+    },
+    "edit": {
+      "title": "Edit post",
+      "field_title": "Title",
+      "title_placeholder": "Enter a title",
+      "field_location": "Location",
+      "location_placeholder": "e.g. Gangnam Seoul, Haeundae Busan",
+      "field_body": "Body",
+      "body_placeholder": "Enter post body",
+      "photo_edit": "Edit photos",
+      "add_photo": "+ Add photos",
+      "click_to_remove": "Click to remove from list.",
+      "new": "New",
+      "photo_help": "Click existing photos to keep/remove. Click new photos to remove.",
+      "tags_label": "Tags (comma or spaces separated)",
+      "tags_placeholder": "e.g. winterwalk, healing, travelrecord",
+      "deleting": "Deleting...",
+      "delete_post": "Delete post",
+      "saving": "Saving..."
+    },
+    "placeholder": {
+      "location_unknown": "Location unknown",
+      "anonymous": "Anonymous"
+    },
+    "time": {
+      "now": "just now",
+      "minutes_ago": "{{count}}m ago",
+      "hours_ago": "{{count}}h ago",
+      "days_ago": "{{count}}d ago"
+    },
+    "bookmarked": "Bookmarked",
+    "bookmark": "Bookmark",
+    "comments_count": "{{count}} comments",
+    "photos_count": "{{count}} photos",
+    "first_comment": "Be the first to comment.",
+    "comment_placeholder": "Enter a comment",
+    "copy_share_link": "Copy share link",
+    "friend_request_sent": "Sent friend request to {{name}}.",
+    "already_friend": "This user is already your friend.",
+    "requesting": "Requesting...",
+    "send_friend_request": "Send friend request",
+    "view_posts": "View posts",
+    "cancel_bookmark": "Remove bookmark",
+    "my_post": "My post",
+    "change_profile_photo": "Change profile photo"
+  },
+  "calendar": {
+    "weekday": {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat"
+    }
+  },
+  "map": {
+    "mode": {
+      "car": "Car",
+      "walk": "Walk",
+      "transit": "Transit"
+    },
+    "duration_min": "about {{min}} min",
+    "duration_hour_min": "about {{hour}}h {{min}}m",
+    "total_route_stops": "Full route · {{count}} stops",
+    "searching_locations": "Searching locations… {{resolved}} / {{total}}",
+    "routing_car": "Calculating road route…",
+    "drawing_route": "Drawing route…",
+    "car_estimate": "(car estimate)",
+    "walk_estimate": "(walk estimate)",
+    "route_failed": "Unable to display the route",
+    "segment_route": "Route {{from}}→{{to}}",
+    "view_map": "View map",
+    "same_place": "📌 Same place",
+    "open_in_naver_title": "View {{name}} in Naver Map",
+    "loading": "Loading map…",
+    "static_failed": "Unable to load static map",
+    "open_in_naver": "View in Naver Map",
+    "note_new_schedule": "Newly generated schedules show the map automatically",
+    "zoom_in": "Zoom in",
+    "zoom_out": "Zoom out",
+    "zoom_reset": "Reset zoom",
+    "open_in_naver_with_arrow": "Open in Naver Map ↗"
   },
   "options": {
-    "gender":   { "남성": "Male", "여성": "Female", "기타": "Other", "무응답": "Prefer not to say" },
-    "age":      { "10대": "Teens", "20대": "20s", "30대": "30s", "40대": "40s", "50대": "50s", "60대이상": "60+" },
-    "diet":     { "일반": "Regular", "채식": "Vegetarian", "비건": "Vegan", "할랄": "Halal", "알레르기있음": "Allergies" },
-    "religion": { "없음": "None", "기독교": "Christian", "불교": "Buddhist", "천주교": "Catholic", "이슬람": "Muslim", "기타": "Other" }
+    "gender": {
+      "male": "Male",
+      "female": "Female",
+      "other": "Other",
+      "no_answer": "Prefer not to say"
+    },
+    "age": {
+      "teens": "Teens",
+      "twenties": "20s",
+      "thirties": "30s",
+      "forties": "40s",
+      "fifties": "50s",
+      "sixties_plus": "60+"
+    },
+    "diet": {
+      "normal": "Regular",
+      "vegetarian": "Vegetarian",
+      "vegan": "Vegan",
+      "halal": "Halal",
+      "allergy": "Allergies"
+    },
+    "religion": {
+      "none": "None",
+      "christian": "Christian",
+      "buddhist": "Buddhist",
+      "catholic": "Catholic",
+      "islam": "Muslim",
+      "other": "Other"
+    },
+    "nationality": {
+      "korea": "Korea",
+      "japan": "Japan",
+      "china": "China",
+      "usa": "USA",
+      "united_kingdom": "United Kingdom",
+      "france": "France",
+      "germany": "Germany",
+      "canada": "Canada",
+      "australia": "Australia",
+      "vietnam": "Vietnam",
+      "thailand": "Thailand",
+      "philippines": "Philippines",
+      "indonesia": "Indonesia",
+      "singapore": "Singapore",
+      "malaysia": "Malaysia",
+      "india": "India",
+      "other": "Other"
+    }
   }
 }

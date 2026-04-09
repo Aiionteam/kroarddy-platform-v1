@@ -1,0 +1,62 @@
+{
+  "common": {
+    "view_all": "Tout voir",
+    "more": "Plus"
+  },
+  "home": {
+    "kcontent": {
+      "title": "🎭 Voyages thématiques K-content",
+      "theme_kpop": "K-POP",
+      "theme_kdrama": "K-DRAMA",
+      "theme_kfood": "K-FOOD",
+      "theme_kbeauty": "K-BEAUTY"
+    },
+    "news": {
+      "prev": "Précédent",
+      "next": "Suivant",
+      "page_n": "Page {{page}}",
+      "nationwide": "National",
+      "analyzing": "L’analyse IA est encore en cours.",
+      "error": "Impossible de charger les actualités."
+    },
+    "rebate": {
+      "city_route_title": "Itinéraire et planning {{name}} (planificateur standard)",
+      "province": {
+        "강원": "Gangwon",
+        "충북": "Chungbuk",
+        "전북": "Jeonbuk",
+        "전남": "Jeonnam",
+        "경남": "Gyeongnam",
+        "gangwon": "Gangwon",
+        "chungbuk": "Chungbuk",
+        "jeonbuk": "Jeonbuk",
+        "jeonnam": "Jeonnam",
+        "gyeongnam": "Gyeongnam"
+      },
+      "period": "2026.4 ~ 6 · Programme pilote",
+      "title": "🎫 Jusqu’à 50 % de remboursement pour des séjours ruraux éligibles",
+      "desc": "Récupérez la moitié de vos dépenses de voyage sous forme de bons régionaux mobiles. Jusqu’à 100 000 KRW par personne, 200 000 KRW pour les groupes de 2 personnes ou plus.",
+      "visit_korea": "Visit Korea",
+      "fold": "Masquer le mode d’emploi",
+      "expand": "Mode d’emploi · Régions éligibles",
+      "step1": "Demande préalable — vérifiez les zones éligibles sur visitkorea.or.kr et obtenez une approbation avant le voyage.",
+      "step2": "Voyage — dépensez dans les zones approuvées (restauration, hébergement, etc.) et conservez les reçus.",
+      "step3": "Justificatifs — après le voyage, soumettez les reçus selon les instructions des autorités locales.",
+      "step4": "Remboursement — après vérification, 50 % des dépenses sont versés en bons régionaux mobiles.",
+      "step5": "Utilisation — dépensez dans l’année dans les commerces, cafés ou boutiques en ligne de la région.",
+      "notice": "Remarque : demande et approbation préalables obligatoires. Clôture anticipée possible selon le budget. Les détails varient ; consultez le site officiel début avril.",
+      "targets": "16 régions éligibles · Voir les itinéraires dans le planificateur ou le guide officiel"
+    },
+    "popular": {
+      "title": "📍 Destinations populaires"
+    },
+    "shortcuts": {
+      "planner": "Planificateur",
+      "kcontent": "K-content",
+      "schedule": "Agenda",
+      "standard": "Découvrir des lieux",
+      "user": "Parcours utilisateurs",
+      "group": "Discussion de groupe"
+    }
+  }
+}

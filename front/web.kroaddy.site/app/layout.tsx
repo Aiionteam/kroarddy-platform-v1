@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Kroaddy",
-  description: "Kroaddy - AI 여행 플래너",
+  description: "Kroaddy - AI Trip Planner",
 };
 
 export const viewport: Viewport = {

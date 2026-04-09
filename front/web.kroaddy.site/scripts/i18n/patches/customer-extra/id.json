@@ -1,0 +1,210 @@
+{
+  "subscription": {
+    "title_mobile": "Langganan",
+    "title": "Layanan langganan",
+    "subtitle": "Setelah masa uji coba gratis, pilih paket yang Anda inginkan.",
+    "safety": "Pembayaran aman · Batal kapan saja",
+    "free": {
+      "kicker": "Mulai gratis hari ini",
+      "note": "Setelah 7 hari gratis, akan beralih otomatis ke paket yang dipilih."
+    },
+    "plan_monthly": {
+      "title": "Paket bulanan",
+      "badge": "Dasar",
+      "price": "₩5.900 / bulan",
+      "note": "Ditagih bulanan",
+      "features": {
+        "1": "Ringkasan rekomendasi ahli",
+        "2": "Balasan prioritas untuk pertanyaan/panduan",
+        "3": "Termasuk pembaruan fitur terbaru"
+      }
+    },
+    "plan_yearly": {
+      "title": "Paket tahunan",
+      "badge": "Direkomendasikan",
+      "price": "₩46.800 / tahun",
+      "note": "Ditagih tahunan",
+      "oldPrice": "Setara sekitar ₩7.000/bulan",
+      "features": {
+        "1": "Semua manfaat paket bulanan",
+        "2": "Diskon untuk periode setahun",
+        "3": "Dukungan prioritas dan stabilitas lebih baik"
+      }
+    },
+    "cta_monthly": "Mulai langganan bulanan",
+    "cta_yearly": "Mulai langganan tahunan",
+    "selected": {
+      "title": "Paket terpilih",
+      "compare": "Bandingkan: ",
+      "includes": "Manfaat yang termasuk"
+    },
+    "agree": {
+      "service_title": "Setuju penggunaan layanan",
+      "service_desc": "Diperlukan untuk pembayaran dan penggunaan langganan.",
+      "billing_title": "Setuju pemberitahuan penagihan",
+      "billing_desc": "Informasi tentang pergantian otomatis dan siklus penagihan."
+    },
+    "demo_alert": "(UI demo) API pembayaran nyata akan diintegrasikan berikutnya.",
+    "demo_note": "Ini layar demo. Pembayaran/ pergantian otomatis nyata di produksi."
+  },
+  "emergency": {
+    "title_mobile": "Bantuan darurat",
+    "title": "Bantuan darurat & tips perjalanan",
+    "subtitle": "Panduan per kategori untuk keadaan darurat yang mungkin dialami orang asing di Korea.",
+    "share_button": "Bagikan keadaan darurat",
+    "consulate": {
+      "title": "Kedutaan / Konsulat",
+      "nationality": "Kewarganegaraan",
+      "find_contact": "Cari kontak konsulat",
+      "callcenter": "Pusat panggilan konsuler 24 jam 02-3210-0404",
+      "unknown_nationality": "Tidak diketahui"
+    },
+    "categories": {
+      "title": "Kategori darurat",
+      "selected": "Dipilih",
+      "view": "Lihat",
+      "items": {
+        "passport": {
+          "title": "Paspor / visa & tinggal",
+          "short": "Kehilangan paspor atau butuh bantuan visa/tinggal",
+          "steps": {
+            "1": "Jika bisa, siapkan salinan/foto dan konfirmasi kehilangan di penginapan/polisi.",
+            "2": "Hubungi kedutaan/konsulat untuk penggantian atau dokumen sementara.",
+            "3": "Siapkan nomor laporan polisi jika diperlukan."
+          }
+        },
+        "lost": {
+          "title": "Laporan kehilangan / pencurian",
+          "short": "Dompet, ponsel, atau barang penting hilang",
+          "steps": {
+            "1": "Jika ponsel/akun mungkin disalahgunakan, hentikan autentikasi dan ubah sandi.",
+            "2": "Lapor ke polisi/pusat barang hilang dan dapatkan nomor perkara.",
+            "3": "Jika paspor/kartu ikut hilang, segera hubungi konsulat."
+          }
+        },
+        "safety": {
+          "title": "Kejahatan / kekerasan / ancaman",
+          "short": "Penipuan, pemukulan, ancaman, atau bahaya di sekitar",
+          "steps": {
+            "1": "Segera pindah ke tempat aman dan minta bantuan.",
+            "2": "Jika terluka hubungi 119 (medis) atau 112 (polisi).",
+            "3": "Catat waktu/tempat dan simpan bukti (foto, pesan)."
+          }
+        },
+        "medical": {
+          "title": "Medis darurat / kecelakaan",
+          "short": "Sakit mendadak atau cedera kecelakaan",
+          "steps": {
+            "1": "Hubungi 119 atau 112 sesuai kebutuhan dan dapatkan pertolongan pertama.",
+            "2": "Jika rumah sakit butuh penerjemah, minta bantuan kedutaan/konsulat.",
+            "3": "Beritahu alergi, obat, dan penyakit kronis ke staf medis."
+          }
+        },
+        "disaster": {
+          "title": "Kebakaran / bencana / evakuasi",
+          "short": "Kebakaran, hujan lebat, mati listrik, dll.",
+          "steps": {
+            "1": "Ikuti alarm/petunjuk menuju jalur evakuasi aman.",
+            "2": "Ada korban luka: amankan dulu, lalu minta penyelamatan.",
+            "3": "Bagikan lokasi dan situasi ke kedutaan/penginapan."
+          }
+        },
+        "immigration": {
+          "title": "Imigrasi / deportasi & tinggal",
+          "short": "Overstay, risiko deportasi, masalah administrasi",
+          "steps": {
+            "1": "Jangan menangani sendiri; foto dokumen/pemberitahuan dan hubungi konsulat cepat.",
+            "2": "Minta bantuan hukum/penerjemah jika perlu.",
+            "3": "Hindari tindakan liar yang memengaruhi prosedur imigrasi."
+          }
+        },
+        "interpreter": {
+          "title": "Konsulat / permintaan penerjemah",
+          "short": "Hambatan bahasa menyulitkan permintaan bantuan",
+          "steps": {
+            "1": "Ringkas situasi (kapan/di mana/apa) dan bagikan ke konsulat.",
+            "2": "Siapkan nomor telepon, alamat, dan info penginapan.",
+            "3": "Mungkin perlu menelepon darurat (polisi/medis) secara paralel."
+          }
+        }
+      }
+    },
+    "detail": {
+      "badge": "Panduan respons",
+      "call_police": "112 Polisi",
+      "call_119": "119 Darurat",
+      "call_1339": "1339 KDCA (konsultasi medis)",
+      "call_consulate": "Kontak konsulat"
+    },
+    "share": {
+      "title_mobile": "Bagikan darurat",
+      "title": "Berbagi darurat publik",
+      "type_title": "Jenis darurat",
+      "type_subtitle": "Pilih jenis dan lampirkan foto/audio untuk berbagi cepat.",
+      "aria": { "select_reason": "Pilih {{id}}" },
+      "attach_title": "Lampiran",
+      "attach_subtitle": "Foto atau audio mempercepat berbagi.",
+      "photo_section": "Tambah foto",
+      "photo_pick": "Pilih foto",
+      "photo_empty": "Silakan pilih foto.",
+      "audio_section": "Rekam audio",
+      "recording": "Merekam: {{s}} dtk",
+      "record_ready": "Siap",
+      "optional": "Opsional",
+      "audio_start": "Mulai rekam",
+      "audio_stop": "Berhenti",
+      "audio_delete": "Hapus audio",
+      "audio_perm": "Izin mikrofon mungkin diperlukan.",
+      "now_title": "Bagikan sekarang",
+      "now_subtitle": "Demo: menampilkan konfirmasi, bukan pengiriman nyata.",
+      "call_emergency": "Panggilan darurat",
+      "start_button": "Mulai berbagi darurat",
+      "reason": {
+        "location": {
+          "label": "Butuh bantuan lokasi/keamanan",
+          "desc": "Minta bantuan berdasarkan lokasi saat ini."
+        },
+        "medical": {
+          "label": "Butuh bantuan medis",
+          "desc": "Dukungan medis darurat karena sakit atau cedera."
+        },
+        "danger": {
+          "label": "Situasi berbahaya mendesak",
+          "desc": "Keamanan segera karena kekerasan/penipuan/ancaman."
+        }
+      },
+      "alert": {
+        "audio_permission": "Periksa izin rekaman audio.",
+        "select_reason": "Pilih setidaknya satu jenis darurat.",
+        "attach_required": "Lampirkan foto atau audio.",
+        "start_demo": "Memulai berbagi darurat. (Demo)\nDipilih: {{selected}}"
+      }
+    }
+  },
+  "notices": {
+    "new_button_alert": "Fitur «Tulis pengumuman baru» akan ditambahkan nanti.",
+    "seed": {
+      "author": { "ops": "Tim operasi" },
+      "7": {
+        "title": "Rilis v1.0.3 (kinerja & perbaikan bug)",
+        "content": "Pembaruan ini mempercepat pemuatan dan memperbaiki bug.\nJika masalah berlanjut, hubungi pusat bantuan."
+      },
+      "6": {
+        "title": "Pemeliharaan server terjadwal",
+        "content": "Beberapa fitur mungkin tidak tersedia sementara.\nWaktu dan dampak lihat bagian bawah pengumuman."
+      },
+      "5": {
+        "title": "Pembaruan filter pengumuman",
+        "content": "Filter jenis dan pencarian membantu menemukan info lebih cepat."
+      },
+      "4": {
+        "title": "Diperbaiki: unggah gambar lambat di beberapa lingkungan",
+        "content": "Masalah keterlambatan unggah telah diperbaiki.\nLaporkan jika masih terjadi."
+      },
+      "3": {
+        "title": "Rilis v1.0.2 (peningkatan UX pertanyaan)",
+        "content": "Tab untuk layar pertanyaan dan riwayat."
+      }
+    }
+  }
+}

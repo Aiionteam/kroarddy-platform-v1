@@ -21,43 +21,35 @@ import {
 import { getAppUserIdFromToken } from "@/lib/api/auth";
 import { ItineraryCard } from "@/components/k-content/ItineraryCard";
 import { K_FOOD_MARKET_LIST } from "../constants";
+import { useTranslation } from "react-i18next";
 
 type FoodRegionKey = keyof typeof K_FOOD_MARKET_LIST;
 type FoodRegionTab = "ALL" | FoodRegionKey;
 
-const K_FOOD_REGION_TABS: { id: FoodRegionTab; label: string }[] = [
-  { id: "ALL", label: "전체" },
-  { id: "SEOUL", label: "서울" },
-  { id: "GANGWON", label: "강원" },
-  { id: "JEONLA", label: "전라" },
-  { id: "GYEONGSANG", label: "경상" },
-  { id: "JEJU", label: "제주" },
-];
-
 const CAFE_VIBES = [
   {
     id: "industrial_raw",
-    label: "Industrial/Raw",
+    label: "인더스트리얼/로우",
     descriptionKo: "거친 콘크리트와 철제의 힙한 감성",
   },
   {
     id: "traditional_zen",
-    label: "Traditional/Zen",
+    label: "전통/젠",
     descriptionKo: "한옥과 나무가 주는 고요한 휴식",
   },
   {
     id: "nature_botanical",
-    label: "Nature/Botanical",
+    label: "자연/보타니컬",
     descriptionKo: "초록 식물과 햇살이 가득한 공간",
   },
   {
     id: "retro_newtro",
-    label: "Retro/Newtro",
+    label: "레트로/뉴트로",
     descriptionKo: "응답하라 감성, 빈티지한 골목 투어",
   },
   {
     id: "modern_minimal",
-    label: "Modern/Minimal",
+    label: "모던/미니멀",
     descriptionKo: "세련된 무채색과 현대적인 조형미",
   },
 ] as const;
@@ -72,19 +64,19 @@ type ConvenienceVibeId =
   | "hangover"
   | "luxury_meal";
 
-const CONVENIENCE_BRANDS = ["GS25", "CU", "세븐일레븐", "이마트24"] as const;
+const CONVENIENCE_BRANDS = ["GS25", "CU", "SEVENELEVEN", "EMART24"] as const;
 const CONVENIENCE_RECIPE_VIBES: {
   id: ConvenienceVibeId;
   label: string;
   descriptionKo: string;
 }[] = [
-  { id: "spicy_fire", label: "화끈한 매운맛", descriptionKo: "스트레스 날리는 매콤 챌린지" },
-  { id: "sweet_salty", label: "단짠의 정석", descriptionKo: "달콤함과 짭짤함의 밸런스" },
-  { id: "diet_healthy", label: "편의점 다이어트", descriptionKo: "가볍고 든든한 헬시 조합" },
-  { id: "night_snack", label: "심야 야식", descriptionKo: "늦은 밤 소확행 야식 레시피" },
-  { id: "hangover", label: "해장 꿀조합", descriptionKo: "숙취 케어 특화 조합" },
-  { id: "luxury_meal", label: "가성비 정찬", descriptionKo: "편의점 프리미엄 한 끼" },
-];
+    { id: "spicy_fire", label: "화끈한 매운맛", descriptionKo: "스트레스 날리는 매콤 챌린지" },
+    { id: "sweet_salty", label: "단짠의 정석", descriptionKo: "달콤함과 짭짤함의 밸런스" },
+    { id: "diet_healthy", label: "편의점 다이어트", descriptionKo: "가볍고 든든한 헬시 조합" },
+    { id: "night_snack", label: "심야 야식", descriptionKo: "늦은 밤 소확행 야식 레시피" },
+    { id: "hangover", label: "해장 꿀조합", descriptionKo: "숙취 케어 특화 조합" },
+    { id: "luxury_meal", label: "가성비 정찬", descriptionKo: "편의점 프리미엄 한 끼" },
+  ];
 
 const HERO_IMAGE_FALLBACK_BY_PACKAGE: Record<string, string> = {
   KF_CAFE: K_CONTENT_KF_CAFE_FALLBACK_IMAGE,
@@ -110,6 +102,16 @@ type KCostSummary = {
   per_day: { day: number; total: string }[];
   trip_total: string;
 };
+
+function getBrandLabel(brand: (typeof CONVENIENCE_BRANDS)[number], t: (key: string, options?: Record<string, unknown>) => string): string {
+  if (brand === "SEVENELEVEN" || String(brand).toLowerCase() === "7-eleven") {
+    return t("planner.kcontent.brand.seveneleven", { defaultValue: "세븐일레븐" });
+  }
+  if (brand === "EMART24" || String(brand).toLowerCase() === "emart24") {
+    return t("planner.kcontent.brand.emart24", { defaultValue: "이마트24" });
+  }
+  return brand;
+}
 
 type KPackageMeta = {
   package_id: string;
@@ -160,7 +162,8 @@ function offsetDate(days: number) {
 function formatDate(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" }).replace(/\.\s?/g, "/").replace(/\/$/, "");
+  // Respect current browser/app locale instead of forcing Korean date formatting.
+  return d.toLocaleDateString(undefined, { month: "2-digit", day: "2-digit" }).replace(/\.\s?/g, "/").replace(/\/$/, "");
 }
 
 function countHangul(text: string) {
@@ -230,6 +233,7 @@ function getLocalizedDescription(opts: {
   place: string;
   source?: "db" | "external";
   lang: "ko" | "en";
+  fallbackDescription?: string;
 }) {
   const normalized = normalizeDescription(opts.description, opts.lang);
 
@@ -237,12 +241,16 @@ function getLocalizedDescription(opts: {
   if (opts.lang === "ko" && opts.source === "db" && looksEnglish(normalized)) {
     const tipKo = localizeTip(opts.tips, "ko");
     if (tipKo && looksKorean(tipKo)) return tipKo;
-    return `${opts.place}에서 즐길 수 있는 추천 스팟입니다.`;
+    return opts.fallbackDescription ?? `${opts.place}에서 즐길 수 있는 추천 스팟입니다.`;
   }
   return normalized;
 }
 
-function parseResponse(res: KContentResponse, startDate: string): {
+function parseResponse(
+  res: KContentResponse,
+  startDate: string,
+  fallbackScheduleTitlePrefix: string
+): {
   packageMeta: KPackageMeta | null;
   schedule: KScheduleItem[];
   costSummary: KCostSummary | null;
@@ -287,7 +295,7 @@ function parseResponse(res: KContentResponse, startDate: string): {
       date,
       time: typeof row.time === "string" ? row.time : undefined,
       place,
-      title: typeof row.title === "string" ? row.title : `일정 ${idx + 1}`,
+      title: typeof row.title === "string" ? row.title : `${fallbackScheduleTitlePrefix} ${idx + 1}`,
       description: typeof row.description === "string" ? row.description : "",
       tips: typeof row.tips === "string" ? row.tips : undefined,
       estimated_cost: typeof row.estimated_cost === "string" ? row.estimated_cost : undefined,
@@ -301,9 +309,9 @@ function parseResponse(res: KContentResponse, startDate: string): {
   const costRaw = (res.cost_summary ?? null) as Record<string, unknown> | null;
   const perDay = Array.isArray(costRaw?.per_day)
     ? (costRaw?.per_day as Array<Record<string, unknown>>).map((d) => ({
-        day: typeof d.day === "number" ? d.day : Number(d.day) || 0,
-        total: typeof d.total === "string" ? d.total : "",
-      })).filter((d) => d.day > 0 && d.total)
+      day: typeof d.day === "number" ? d.day : Number(d.day) || 0,
+      total: typeof d.total === "string" ? d.total : "",
+    })).filter((d) => d.day > 0 && d.total)
     : [];
   const tripTotal = typeof costRaw?.trip_total === "string" ? costRaw.trip_total : "";
   const costSummary = perDay.length > 0 || tripTotal ? { per_day: perDay, trip_total: tripTotal } : null;
@@ -316,6 +324,7 @@ export default function KContentPackagePage() {
   const { packageId } = useParams<{ packageId: string }>();
   const { isAuthenticated, logout } = useLoginStore();
   const newsTop10 = useNewsStore((s) => s.newsTop10);
+  const { t } = useTranslation();
   const appUserId = typeof window !== "undefined" ? Number(sessionStorage.getItem("app_user_id")) || null : null;
 
   const [startDate, setStartDate] = useState(todayStr);
@@ -346,6 +355,35 @@ export default function KContentPackagePage() {
   const [selectedVibe, setSelectedVibe] = useState<ConvenienceVibeId | null>(null);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [checkedIngredients, setCheckedIngredients] = useState<string[]>([]);
+  const foodRegionTabs = useMemo(
+    () => [
+      { id: "ALL" as const, label: t("planner.kcontent.region_tab.all", { defaultValue: "전체" }) },
+      { id: "SEOUL" as const, label: t("planner.kcontent.region_tab.seoul", { defaultValue: "서울" }) },
+      { id: "GANGWON" as const, label: t("planner.kcontent.region_tab.gangwon", { defaultValue: "강원" }) },
+      { id: "JEONLA" as const, label: t("planner.kcontent.region_tab.jeonla", { defaultValue: "전라" }) },
+      { id: "GYEONGSANG" as const, label: t("planner.kcontent.region_tab.gyeongsang", { defaultValue: "경상" }) },
+      { id: "JEJU" as const, label: t("planner.kcontent.region_tab.jeju", { defaultValue: "제주" }) },
+    ],
+    [t]
+  );
+  const cafeVibesLocalized = useMemo(
+    () =>
+      CAFE_VIBES.map((v) => ({
+        ...v,
+        labelLocalized: t(`planner.kcontent.cafe_vibe.${v.id}.label`, { defaultValue: v.label }),
+        descriptionLocalized: t(`planner.kcontent.cafe_vibe.${v.id}.description`, { defaultValue: v.descriptionKo }),
+      })),
+    [t]
+  );
+  const convenienceRecipeVibesLocalized = useMemo(
+    () =>
+      CONVENIENCE_RECIPE_VIBES.map((v) => ({
+        ...v,
+        labelLocalized: t(`planner.kcontent.recipe_vibe.${v.id}.label`, { defaultValue: v.label }),
+        descriptionLocalized: t(`planner.kcontent.recipe_vibe.${v.id}.description`, { defaultValue: v.descriptionKo }),
+      })),
+    [t]
+  );
 
   const foodMarketsForTab = useMemo(() => {
     if (foodRegionTab === "ALL") {
@@ -355,6 +393,15 @@ export default function KContentPackagePage() {
     }
     return K_FOOD_MARKET_LIST[foodRegionTab].map((m) => ({ ...m, regionKey: foodRegionTab }));
   }, [foodRegionTab]);
+  const localizedFoodMarketsForTab = useMemo(
+    () =>
+      foodMarketsForTab.map((m, idx) => ({
+        ...m,
+        nameLocalized: t(`planner.kcontent.market.${m.regionKey}.${idx}.name`, { defaultValue: m.name }),
+        descriptionLocalized: t(`planner.kcontent.market.${m.regionKey}.${idx}.description`, { defaultValue: m.description }),
+      })),
+    [foodMarketsForTab, t]
+  );
 
   useEffect(() => {
     if (!isAuthenticated) router.replace("/");
@@ -380,8 +427,8 @@ export default function KContentPackagePage() {
       const images = await fetchPackageImages(packageId);
       setHeroImage(
         pickRandomImage(images) ??
-          HERO_IMAGE_FALLBACK_BY_PACKAGE[packageKey] ??
-          K_CONTENT_PLACEHOLDER_IMAGE
+        HERO_IMAGE_FALLBACK_BY_PACKAGE[packageKey] ??
+        K_CONTENT_PLACEHOLDER_IMAGE
       );
       const detail = await fetchKContentPackage(packageId);
       if (detail) {
@@ -437,13 +484,17 @@ export default function KContentPackagePage() {
             newsTop10: newsTop10.length > 0 ? newsTop10 : undefined,
           }
         );
-        const parsed = parseResponse(res, startDate);
+        const parsed = parseResponse(
+          res,
+          startDate,
+          t("planner.kcontent.schedule_item_default", { defaultValue: "일정" })
+        );
         setSchedule(parsed.schedule);
         setCostSummary(parsed.costSummary);
         if (parsed.packageMeta?.package_id) setPackageMeta(parsed.packageMeta);
         setPlaces(Array.isArray(res.places) ? (res.places as Record<string, unknown>[]) : []);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "일정을 불러오지 못했습니다.");
+        setError(e instanceof Error ? e.message : t("planner.kcontent.schedule_load_fail", { defaultValue: "일정을 불러오지 못했습니다." }));
       } finally {
         setLoading(false);
       }
@@ -460,13 +511,13 @@ export default function KContentPackagePage() {
   }, [selectedMarket, generateSchedule]);
 
   const handleKFoodCafeGenerate = useCallback(() => {
-    const v = CAFE_VIBES.find((item) => item.id === selectedCafeVibe);
+    const v = cafeVibesLocalized.find((item) => item.id === selectedCafeVibe);
     const vibePart =
-      v != null ? `${v.label} — ${v.descriptionKo}` : "";
+      v != null ? `${v.labelLocalized} — ${v.descriptionLocalized}` : "";
     const trimmedKeyword = cafeKeyword.trim();
     const keyword = trimmedKeyword
       ? vibePart
-        ? `${vibePart} | 카페·장소 힌트: ${trimmedKeyword}`
+        ? `${vibePart} | ${t("planner.kcontent.cafe_place_hint", { defaultValue: "카페·장소 힌트" })}: ${trimmedKeyword}`
         : trimmedKeyword
       : vibePart;
     if (!keyword) return;
@@ -475,36 +526,39 @@ export default function KContentPackagePage() {
       keyword,
       pickedVibe: selectedCafeVibe ?? undefined,
     });
-  }, [selectedCafeVibe, cafeKeyword, generateSchedule]);
+  }, [selectedCafeVibe, cafeKeyword, generateSchedule, cafeVibesLocalized, t]);
 
   const handleKFoodConvenienceGenerate = useCallback(() => {
     if (activeTab === "trending" && !selectedBrand && !searchKeyword.trim()) return;
     if (activeTab === "recipe" && !selectedVibe && !searchKeyword.trim()) return;
 
     const trimmedKeyword = searchKeyword.trim();
+    const brandPrefix = lang === "en" ? "brand" : "브랜드";
+    const productPrefix = lang === "en" ? "product" : "상품";
+    const extraRequestPrefix = lang === "en" ? "extra request" : "추가요청";
     if (activeTab === "trending") {
       const trendKeyword = [
         "trending",
-        "편의점 유행템",
-        selectedBrand ? `브랜드:${selectedBrand}` : "",
-        trimmedKeyword ? `상품:${trimmedKeyword}` : "",
+        t("planner.kcontent.convenience_trending", { defaultValue: "편의점 유행템" }),
+        selectedBrand ? `${brandPrefix}:${getBrandLabel(selectedBrand, t)}` : "",
+        trimmedKeyword ? `${productPrefix}:${trimmedKeyword}` : "",
       ]
         .filter(Boolean)
         .join(" | ");
 
       void generateSchedule({
-        locationName: selectedBrand ?? "Seoul",
+        locationName: selectedBrand ? getBrandLabel(selectedBrand, t) : "Seoul",
         keyword: trendKeyword,
       });
       return;
     }
 
-    const selectedRecipeVibe = CONVENIENCE_RECIPE_VIBES.find((item) => item.id === selectedVibe);
+    const selectedRecipeVibe = convenienceRecipeVibesLocalized.find((item) => item.id === selectedVibe);
     const recipeKeyword = [
       "recipe",
-      selectedRecipeVibe?.label ?? "",
-      selectedRecipeVibe?.descriptionKo ?? "",
-      trimmedKeyword ? `추가요청:${trimmedKeyword}` : "",
+      selectedRecipeVibe?.labelLocalized ?? "",
+      selectedRecipeVibe?.descriptionLocalized ?? "",
+      trimmedKeyword ? `${extraRequestPrefix}:${trimmedKeyword}` : "",
     ]
       .filter(Boolean)
       .join(" | ");
@@ -514,78 +568,100 @@ export default function KContentPackagePage() {
       keyword: recipeKeyword,
       pickedVibe: selectedVibe ?? undefined,
     });
-  }, [activeTab, selectedBrand, selectedVibe, searchKeyword, generateSchedule]);
+  }, [activeTab, selectedBrand, selectedVibe, searchKeyword, generateSchedule, convenienceRecipeVibesLocalized, t, lang]);
 
   const convenienceTrendingCards = useMemo(() => {
     const brandFallback = selectedBrand ?? "GS25";
     if (schedule.length === 0) {
       return [
-        { title: "연세우유 크림빵", brand: brandFallback, tags: ["#신상", "#품절주의"] },
-        { title: "제로콜라 얼음컵 하이볼", brand: "CU", tags: ["#리뷰폭발", "#재구매"] },
+        {
+          title: t("planner.kcontent.trending_card.1.title", { defaultValue: "연세우유 크림빵" }),
+          brand: brandFallback,
+          tags: [
+            t("planner.kcontent.trending_card.tag.new", { defaultValue: "#신상" }),
+            t("planner.kcontent.trending_card.tag.soldout", { defaultValue: "#품절주의" }),
+          ],
+        },
+        {
+          title: t("planner.kcontent.trending_card.2.title", { defaultValue: "제로콜라 얼음컵 하이볼" }),
+          brand: "CU",
+          tags: [
+            t("planner.kcontent.trending_card.tag.review", { defaultValue: "#리뷰폭발" }),
+            t("planner.kcontent.trending_card.tag.repurchase", { defaultValue: "#재구매" }),
+          ],
+        },
       ];
     }
     return schedule.slice(0, 4).map((item) => ({
-      title: item.title || item.place || "AI 추천 유행템",
-      brand: selectedBrand ?? item.place ?? brandFallback,
-      tags: ["#신상", "#품절주의"],
+      title: item.title || item.place || t("planner.kcontent.trending_card.default_title", { defaultValue: "AI 추천 유행템" }),
+      brand: (selectedBrand ? getBrandLabel(selectedBrand, t) : item.place) ?? getBrandLabel(brandFallback, t),
+      tags: [
+        t("planner.kcontent.trending_card.tag.new", { defaultValue: "#신상" }),
+        t("planner.kcontent.trending_card.tag.soldout", { defaultValue: "#품절주의" }),
+      ],
     }));
-  }, [schedule, selectedBrand]);
+  }, [schedule, selectedBrand, t]);
 
   const convenienceRecipeTitle = useMemo(() => {
     if (schedule[0]?.title) return schedule[0].title;
-    const vibe = CONVENIENCE_RECIPE_VIBES.find((v) => v.id === selectedVibe);
-    return vibe ? `${vibe.label} 챌린지 2026 Ver.` : "마크정식 2026 Ver.";
-  }, [schedule, selectedVibe]);
+    const vibe = convenienceRecipeVibesLocalized.find((v) => v.id === selectedVibe);
+    return vibe
+      ? t("planner.kcontent.recipe_title_with_vibe", { vibe: vibe.labelLocalized, defaultValue: "{{vibe}} 챌린지 2026 Ver." })
+      : t("planner.kcontent.recipe_title_default", { defaultValue: "마크정식 2026 Ver." });
+  }, [schedule, selectedVibe, convenienceRecipeVibesLocalized, t]);
 
   const convenienceShoppingList = useMemo(() => {
     if (schedule.length === 0) {
-      return ["컵라면", "참치마요 삼각김밥", "스트링 치즈", "탄산수"];
+      return [t("planner.kcontent.shopping.ramen", { defaultValue: "컵라면" }), t("planner.kcontent.shopping.tuna_kimbap", { defaultValue: "참치마요 삼각김밥" }), t("planner.kcontent.shopping.string_cheese", { defaultValue: "스트링 치즈" }), t("planner.kcontent.shopping.sparkling_water", { defaultValue: "탄산수" })];
     }
     return schedule
       .slice(0, 5)
       .map((item) => item.place || item.title)
       .filter(Boolean);
-  }, [schedule]);
+  }, [schedule, t]);
 
   const convenienceCookingSteps = useMemo(() => {
     if (schedule.length === 0) {
-      return ["재료를 모두 준비하고 전자레인지 가능한 용기에 담기", "소스/토핑을 섞어 1분 30초 조리하기", "취향에 맞게 토핑 추가 후 인증샷 남기기"];
+      return [t("planner.kcontent.cooking.1", { defaultValue: "재료를 모두 준비하고 전자레인지 가능한 용기에 담기" }), t("planner.kcontent.cooking.2", { defaultValue: "소스/토핑을 섞어 1분 30초 조리하기" }), t("planner.kcontent.cooking.3", { defaultValue: "취향에 맞게 토핑 추가 후 인증샷 남기기" })];
     }
     return schedule
       .slice(0, 3)
       .map((item, idx) => `${idx + 1}. ${item.description || item.title}`);
-  }, [schedule]);
+  }, [schedule, t]);
 
   const selectedMeta = packageMeta ?? (packageId
     ? {
-        package_id: packageId,
-        category: inferCategoryFromPackageId(packageId),
-        title_ko:
-          packageId === "KF_MARKET"
-            ? "전국 전통시장 먹거리 탐방"
-            : packageId?.toUpperCase() === "KF_CAFE"
-            ? "K-디저트 & 카페 감성 투어"
+      package_id: packageId,
+      category: inferCategoryFromPackageId(packageId),
+      title_ko:
+        packageId === "KF_MARKET"
+          ? t("planner.kcontent.meta.kf_market.title_ko", { defaultValue: "전국 전통시장 먹거리 탐방" })
+          : packageId?.toUpperCase() === "KF_CAFE"
+            ? t("planner.kcontent.meta.kf_cafe.title_ko", { defaultValue: "K-디저트 & 카페 감성 투어" })
             : packageId?.toUpperCase() === "KF_CONVENIENCE"
-            ? "K-편의점 꿀조합 챌린지"
-            : packageId,
-        title_en:
-          packageId === "KF_MARKET"
-            ? "Traditional markets & street food across Korea"
-            : packageId?.toUpperCase() === "KF_CAFE"
+              ? t("planner.kcontent.meta.kf_convenience.title_ko", { defaultValue: "K-편의점 꿀조합 챌린지" })
+              : packageId,
+      title_en:
+        packageId === "KF_MARKET"
+          ? "Traditional markets & street food across Korea"
+          : packageId?.toUpperCase() === "KF_CAFE"
             ? "K-dessert and vibe-matched cafe tour"
             : packageId?.toUpperCase() === "KF_CONVENIENCE"
-            ? "품절 대란 신상부터 나만의 시크릿 레시피까지, 편의점 모디슈머가 되어보세요!"
-            : "K-Content package",
-        tags:
-          packageId === "KF_MARKET"
-            ? "전통시장, 먹거리, 로컬푸드"
-            : packageId?.toUpperCase() === "KF_CAFE"
-            ? "카페, 디저트, 편집샵, 감성투어"
+              ? "From sold-out new arrivals to your own secret recipes, become a convenience-store modisumer!"
+              : "K-Content package",
+      tags:
+        packageId === "KF_MARKET"
+          ? t("planner.kcontent.meta.kf_market.tags", { defaultValue: "전통시장, 먹거리, 로컬푸드" })
+          : packageId?.toUpperCase() === "KF_CAFE"
+            ? t("planner.kcontent.meta.kf_cafe.tags", { defaultValue: "카페, 디저트, 편집샵, 감성투어" })
             : packageId?.toUpperCase() === "KF_CONVENIENCE"
-            ? "편의점, 꿀조합, 모디슈머, 챌린지"
-            : "",
-      }
+              ? t("planner.kcontent.meta.kf_convenience.tags", { defaultValue: "편의점, 꿀조합, 모디슈머, 챌린지" })
+              : "",
+    }
     : null);
+  const selectedMetaTitle = lang === "en"
+    ? (selectedMeta?.title_en ?? selectedMeta?.title_ko ?? String(packageId ?? ""))
+    : (selectedMeta?.title_ko ?? selectedMeta?.title_en ?? String(packageId ?? ""));
 
   const handleSavePlan = useCallback(async () => {
     if (schedule.length === 0 || isSaving) return;
@@ -614,7 +690,7 @@ export default function KContentPackagePage() {
       });
       setSavedPlanId(res.plan_id);
     } catch (e) {
-      alert(e instanceof Error ? e.message : "저장에 실패했습니다.");
+      alert(e instanceof Error ? e.message : t("planner.kcontent.save_fail", { defaultValue: "저장에 실패했습니다." }));
     } finally {
       setIsSaving(false);
     }
@@ -655,14 +731,14 @@ export default function KContentPackagePage() {
                 ←
               </button>
               <div>
-                <p className="text-xs text-gray-400 font-medium">K-Content</p>
-                <h1 className="text-xl font-bold text-gray-800">{selectedMeta?.title_ko ?? packageId}</h1>
+                <p className="text-xs text-gray-400 font-medium">{t("planner.kcontent.title", { defaultValue: "K-Content" })}</p>
+                <h1 className="text-xl font-bold text-gray-800">{selectedMetaTitle}</h1>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
-                <span className="text-xs text-gray-400 shrink-0">날짜</span>
+                <span className="text-xs text-gray-400 shrink-0">{t("planner.kcontent.date", { defaultValue: "날짜" })}</span>
                 <input
                   type="date"
                   value={startDate}
@@ -704,10 +780,10 @@ export default function KContentPackagePage() {
                 {loading ? (
                   <>
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    생성 중…
+                    {t("planner.kcontent.generating", { defaultValue: "생성 중…" })}
                   </>
                 ) : (
-                  <>✨ 일정 생성</>
+                  <>{t("planner.kcontent.generate", { defaultValue: "✨ 일정 생성" })}</>
                 )}
               </button>
             </div>
@@ -718,7 +794,7 @@ export default function KContentPackagePage() {
           <div className="flex w-full flex-col border-b border-gray-200 bg-white p-4 sm:p-5 md:w-[40%] md:overflow-auto md:border-b-0 md:border-r">
             <div className="mb-4">
               <HeroBanner
-                title={selectedMeta?.title_ko ?? packageId}
+                title={selectedMetaTitle}
                 subtitle={selectedMeta?.title_en ?? "K-Content package"}
                 ctaLabel=""
                 backgroundImage={heroImage ?? undefined}
@@ -726,7 +802,7 @@ export default function KContentPackagePage() {
               />
             </div>
             <h2 className="mb-4 text-sm font-semibold text-gray-500 uppercase tracking-wide">
-              AI 추천 일정
+              {t("planner.kcontent.ai_recommended", { defaultValue: "AI 추천 일정" })}
             </h2>
 
             <div className="rounded-xl border border-gray-200 bg-white p-4">
@@ -736,7 +812,7 @@ export default function KContentPackagePage() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-gray-900">{selectedMeta?.title_ko ?? packageId}</span>
+                    <span className="font-semibold text-gray-900">{selectedMetaTitle}</span>
                     <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700">
                       {toCategoryBadgeText(selectedMeta?.category)}
                     </span>
@@ -758,10 +834,10 @@ export default function KContentPackagePage() {
               <div className="mt-4 space-y-4">
                 <div>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    지역 선택
+                    {t("planner.kcontent.region_select", { defaultValue: "지역 선택" })}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {K_FOOD_REGION_TABS.map((tab) => {
+                    {foodRegionTabs.map((tab) => {
                       const active = foodRegionTab === tab.id;
                       return (
                         <button
@@ -769,11 +845,10 @@ export default function KContentPackagePage() {
                           type="button"
                           onClick={() => setFoodRegionTab(tab.id)}
                           disabled={loading}
-                          className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
-                            active
-                              ? "bg-indigo-600 text-white shadow-sm"
-                              : "border border-gray-200 bg-white text-gray-600 hover:border-indigo-300 hover:bg-indigo-50"
-                          }`}
+                          className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${active
+                            ? "bg-indigo-600 text-white shadow-sm"
+                            : "border border-gray-200 bg-white text-gray-600 hover:border-indigo-300 hover:bg-indigo-50"
+                            }`}
                         >
                           {tab.label}
                         </button>
@@ -784,10 +859,10 @@ export default function KContentPackagePage() {
 
                 <div>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    전통시장
+                    {t("planner.kcontent.traditional_market", { defaultValue: "전통시장" })}
                   </p>
                   <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3">
-                    {foodMarketsForTab.map((m) => {
+                    {localizedFoodMarketsForTab.map((m) => {
                       const selected = selectedMarket?.name === m.name;
                       return (
                         <button
@@ -795,14 +870,13 @@ export default function KContentPackagePage() {
                           type="button"
                           onClick={() => !loading && setSelectedMarket({ name: m.name, description: m.description })}
                           disabled={loading}
-                          className={`rounded-xl border-2 p-3 text-left text-sm transition-all disabled:opacity-50 ${
-                            selected
-                              ? "border-indigo-500 bg-indigo-50 shadow-md ring-2 ring-indigo-100"
-                              : "border-gray-200 bg-white hover:border-indigo-200 hover:shadow-sm"
-                          }`}
+                          className={`rounded-xl border-2 p-3 text-left text-sm transition-all disabled:opacity-50 ${selected
+                            ? "border-indigo-500 bg-indigo-50 shadow-md ring-2 ring-indigo-100"
+                            : "border-gray-200 bg-white hover:border-indigo-200 hover:shadow-sm"
+                            }`}
                         >
-                          <span className="font-semibold text-gray-900">{m.name}</span>
-                          <p className="mt-1 text-xs leading-snug text-gray-500">{m.description}</p>
+                          <span className="font-semibold text-gray-900">{m.nameLocalized}</span>
+                          <p className="mt-1 text-xs leading-snug text-gray-500">{m.descriptionLocalized}</p>
                         </button>
                       );
                     })}
@@ -815,7 +889,7 @@ export default function KContentPackagePage() {
                   disabled={!selectedMarket || loading}
                   className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  이 시장 먹방 일정 생성하기
+                  {t("planner.kcontent.market_generate", { defaultValue: "이 시장 먹방 일정 생성하기" })}
                 </button>
               </div>
             )}
@@ -824,19 +898,19 @@ export default function KContentPackagePage() {
               <div className="mt-4 space-y-4">
                 <div>
                   <h3 className="mb-2 text-base font-bold text-gray-900">
-                    당신의 오늘 하루는 어떤 감성인가요?
+                    {t("planner.kcontent.cafe_question", { defaultValue: "당신의 오늘 하루는 어떤 감성인가요?" })}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    취향에 맞는 Vibe를 고르거나 카페 이름을 직접 입력해 AI 코스를 생성하세요.
+                    {t("planner.kcontent.cafe_hint", { defaultValue: "취향에 맞는 Vibe를 고르거나 카페 이름을 직접 입력해 AI 코스를 생성하세요." })}
                   </p>
                 </div>
 
                 <div>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    Vibe Grid
+                    {t("planner.kcontent.vibe_grid", { defaultValue: "Vibe Grid" })}
                   </p>
                   <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-3">
-                    {CAFE_VIBES.map((vibe) => {
+                    {cafeVibesLocalized.map((vibe) => {
                       const selected = selectedCafeVibe === vibe.id;
                       return (
                         <button
@@ -844,19 +918,17 @@ export default function KContentPackagePage() {
                           type="button"
                           onClick={() => !loading && setSelectedCafeVibe(vibe.id)}
                           disabled={loading}
-                          className={`flex min-h-[5.5rem] w-full flex-col items-center justify-center gap-1 rounded-xl border-2 px-2 py-2.5 text-center transition-all disabled:opacity-50 ${
-                            selected
-                              ? "border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm"
-                              : "border-gray-200 bg-white text-gray-700 hover:border-indigo-200 hover:bg-indigo-50"
-                          }`}
-                        >
-                          <span className="text-sm font-medium leading-tight">{vibe.label}</span>
-                          <span
-                            className={`text-[11px] leading-snug ${
-                              selected ? "text-indigo-600/90" : "text-gray-500"
+                          className={`flex min-h-[5.5rem] w-full flex-col items-center justify-center gap-1 rounded-xl border-2 px-2 py-2.5 text-center transition-all disabled:opacity-50 ${selected
+                            ? "border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm"
+                            : "border-gray-200 bg-white text-gray-700 hover:border-indigo-200 hover:bg-indigo-50"
                             }`}
+                        >
+                          <span className="text-sm font-medium leading-tight">{vibe.labelLocalized}</span>
+                          <span
+                            className={`text-[11px] leading-snug ${selected ? "text-indigo-600/90" : "text-gray-500"
+                              }`}
                           >
-                            {vibe.descriptionKo}
+                            {vibe.descriptionLocalized}
                           </span>
                         </button>
                       );
@@ -866,14 +938,14 @@ export default function KContentPackagePage() {
 
                 <div>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    Search Bar
+                    {t("planner.kcontent.search_bar", { defaultValue: "Search Bar" })}
                   </p>
                   <input
                     type="text"
                     value={cafeKeyword}
                     onChange={(e) => setCafeKeyword(e.target.value)}
                     disabled={loading}
-                    placeholder="직접 카페 이름을 입력해 보세요 (예: 성수 텅플래닛)"
+                    placeholder={t("planner.kcontent.cafe_placeholder", { defaultValue: "직접 카페 이름을 입력해 보세요 (예: 성수 텅플래닛)" })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none transition-colors placeholder:text-gray-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                   />
                 </div>
@@ -884,7 +956,7 @@ export default function KContentPackagePage() {
                   disabled={loading || (!selectedCafeVibe && !cafeKeyword.trim())}
                   className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  AI 일정 생성하기
+                  {t("planner.kcontent.cafe_generate", { defaultValue: "AI 일정 생성하기" })}
                 </button>
               </div>
             )}
@@ -894,115 +966,110 @@ export default function KContentPackagePage() {
                 <div className="rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-violet-50 p-3">
                   <div className="relative grid grid-cols-2 rounded-xl bg-white p-1 shadow-sm">
                     <div
-                      className={`absolute bottom-1 top-1 w-[calc(50%-0.25rem)] rounded-lg bg-gradient-to-r ${
-                        activeTab === "trending"
-                          ? "left-1 from-orange-500 to-rose-500 transition-all duration-300"
-                          : "left-[calc(50%+0.125rem)] from-emerald-500 via-cyan-500 to-violet-500 transition-all duration-300"
-                      }`}
+                      className={`absolute bottom-1 top-1 w-[calc(50%-0.25rem)] rounded-lg bg-gradient-to-r ${activeTab === "trending"
+                        ? "left-1 from-orange-500 to-rose-500 transition-all duration-300"
+                        : "left-[calc(50%+0.125rem)] from-emerald-500 via-cyan-500 to-violet-500 transition-all duration-300"
+                        }`}
                     />
                     <button
                       type="button"
                       onClick={() => setActiveTab("trending")}
-                      className={`relative z-10 rounded-lg px-2 py-2 text-sm font-semibold transition-colors ${
-                        activeTab === "trending" ? "text-white" : "text-gray-600"
-                      }`}
+                      className={`relative z-10 rounded-lg px-2 py-2 text-sm font-semibold transition-colors ${activeTab === "trending" ? "text-white" : "text-gray-600"
+                        }`}
                     >
-                      🔥 요즘 유행템
+                      🔥 {t("planner.kcontent.trending_items", { defaultValue: "요즘 유행템" })}
                     </button>
                     <button
                       type="button"
                       onClick={() => setActiveTab("recipe")}
-                      className={`relative z-10 rounded-lg px-2 py-2 text-sm font-semibold transition-colors ${
-                        activeTab === "recipe" ? "text-white" : "text-gray-600"
-                      }`}
+                      className={`relative z-10 rounded-lg px-2 py-2 text-sm font-semibold transition-colors ${activeTab === "recipe" ? "text-white" : "text-gray-600"
+                        }`}
                     >
-                      🧪 나만의 꿀조합
+                      🧪 {t("planner.kcontent.my_recipe", { defaultValue: "나만의 꿀조합" })}
                     </button>
                   </div>
                 </div>
 
                 {activeTab === "trending" ? (
                   <div className="space-y-4 transition-all duration-300">
-                      <div>
-                        <h3 className="text-base font-bold text-gray-900">지금 편의점에서 가장 구하기 힘든 건?</h3>
-                      </div>
-                      <div>
-                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Quick Selection</p>
-                        <div className="flex flex-wrap gap-2">
-                          {CONVENIENCE_BRANDS.map((brand) => {
-                            const selected = selectedBrand === brand;
-                            return (
-                              <button
-                                key={brand}
-                                type="button"
-                                onClick={() => setSelectedBrand(brand)}
-                                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                                  selected
-                                    ? "border-rose-300 bg-rose-100 text-rose-700"
-                                    : "border-gray-200 bg-white text-gray-600 hover:border-rose-200 hover:bg-rose-50"
-                                }`}
-                              >
-                                {brand}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                      <div>
-                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Search Bar</p>
-                        <input
-                          type="text"
-                          value={searchKeyword}
-                          onChange={(e) => setSearchKeyword(e.target.value)}
-                          placeholder="예: 연세우유 크림빵"
-                          className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none transition-colors placeholder:text-gray-400 focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
-                        />
-                      </div>
+                    <div>
+                      <h3 className="text-base font-bold text-gray-900">{t("planner.kcontent.convenience_q", { defaultValue: "지금 편의점에서 가장 구하기 힘든 건?" })}</h3>
                     </div>
-                ) : (
-                    <div className="space-y-4 transition-all duration-300">
-                      <div>
-                        <h3 className="text-base font-bold text-gray-900">어떤 맛의 조합에 도전해볼까요?</h3>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        {CONVENIENCE_RECIPE_VIBES.map((vibe) => {
-                          const selected = selectedVibe === vibe.id;
+                    <div>
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{t("planner.kcontent.quick_selection", { defaultValue: "Quick Selection" })}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {CONVENIENCE_BRANDS.map((brand) => {
+                          const selected = selectedBrand === brand;
                           return (
                             <button
-                              key={vibe.id}
+                              key={brand}
                               type="button"
-                              onClick={() => setSelectedVibe(vibe.id)}
-                              className={`rounded-xl border-2 px-3 py-2 text-left transition-all ${
-                                selected
-                                  ? "border-violet-400 bg-violet-50 shadow-sm"
-                                  : "border-gray-200 bg-white hover:border-violet-200 hover:bg-violet-50/60"
-                              }`}
+                              onClick={() => setSelectedBrand(brand)}
+                              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${selected
+                                ? "border-rose-300 bg-rose-100 text-rose-700"
+                                : "border-gray-200 bg-white text-gray-600 hover:border-rose-200 hover:bg-rose-50"
+                                }`}
                             >
-                              <p className="text-sm font-semibold text-gray-900">{vibe.label}</p>
-                              <p className="mt-1 text-[11px] text-gray-500">{vibe.descriptionKo}</p>
+                              {getBrandLabel(brand, t)}
                             </button>
                           );
                         })}
                       </div>
-                      <div>
-                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">추가 키워드</p>
-                        <input
-                          type="text"
-                          value={searchKeyword}
-                          onChange={(e) => setSearchKeyword(e.target.value)}
-                          placeholder="예: 맵부심 챌린지, 단짠 디저트"
-                          className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none transition-colors placeholder:text-gray-400 focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => void handleKFoodConvenienceGenerate()}
-                        disabled={loading || (!selectedVibe && !searchKeyword.trim())}
-                        className="w-full rounded-xl bg-gradient-to-r from-emerald-500 via-cyan-500 to-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        AI 꿀조합 레시피 생성하기
-                      </button>
                     </div>
+                    <div>
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{t("planner.kcontent.search_bar", { defaultValue: "Search Bar" })}</p>
+                      <input
+                        type="text"
+                        value={searchKeyword}
+                        onChange={(e) => setSearchKeyword(e.target.value)}
+                        placeholder={t("planner.kcontent.trending_placeholder", { defaultValue: "예: 연세우유 크림빵" })}
+                        className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none transition-colors placeholder:text-gray-400 focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4 transition-all duration-300">
+                    <div>
+                      <h3 className="text-base font-bold text-gray-900">{t("planner.kcontent.recipe_q", { defaultValue: "어떤 맛의 조합에 도전해볼까요?" })}</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {convenienceRecipeVibesLocalized.map((vibe) => {
+                        const selected = selectedVibe === vibe.id;
+                        return (
+                          <button
+                            key={vibe.id}
+                            type="button"
+                            onClick={() => setSelectedVibe(vibe.id)}
+                            className={`rounded-xl border-2 px-3 py-2 text-left transition-all ${selected
+                              ? "border-violet-400 bg-violet-50 shadow-sm"
+                              : "border-gray-200 bg-white hover:border-violet-200 hover:bg-violet-50/60"
+                              }`}
+                          >
+                            <p className="text-sm font-semibold text-gray-900">{vibe.labelLocalized}</p>
+                            <p className="mt-1 text-[11px] text-gray-500">{vibe.descriptionLocalized}</p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div>
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{t("planner.kcontent.extra_keywords", { defaultValue: "추가 키워드" })}</p>
+                      <input
+                        type="text"
+                        value={searchKeyword}
+                        onChange={(e) => setSearchKeyword(e.target.value)}
+                        placeholder={t("planner.kcontent.recipe_placeholder", { defaultValue: "예: 맵부심 챌린지, 단짠 디저트" })}
+                        className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none transition-colors placeholder:text-gray-400 focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void handleKFoodConvenienceGenerate()}
+                      disabled={loading || (!selectedVibe && !searchKeyword.trim())}
+                      className="w-full rounded-xl bg-gradient-to-r from-emerald-500 via-cyan-500 to-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {t("planner.kcontent.recipe_generate", { defaultValue: "AI 꿀조합 레시피 생성하기" })}
+                    </button>
+                  </div>
                 )}
               </div>
             )}
@@ -1010,14 +1077,14 @@ export default function KContentPackagePage() {
             {!triggered && !loading && !isKFoodMarket && !isKFoodCafeVibe && !isKFoodConvenience && (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 py-10 text-center text-gray-400">
                 <span className="text-4xl">📅</span>
-                <p className="text-sm font-medium text-gray-600">날짜를 설정하고<br />일정을 생성해주세요</p>
+                <p className="text-sm font-medium text-gray-600">{t("planner.kcontent.set_date_and_generate", { defaultValue: "날짜를 설정하고\n일정을 생성해주세요" })}</p>
                 <p className="text-xs text-gray-400">{startDate} ~ {endDate}</p>
                 <button
                   onClick={() => void generateSchedule()}
                   disabled={loading}
                   className="mt-1 flex items-center gap-1.5 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-indigo-700 transition-colors"
                 >
-                  ✨ 일정 생성 시작
+                  {t("planner.kcontent.start_generate", { defaultValue: "✨ 일정 생성 시작" })}
                 </button>
               </div>
             )}
@@ -1049,23 +1116,23 @@ export default function KContentPackagePage() {
                 <span className="mb-3 text-5xl">🗺️</span>
                 <p className="text-base font-medium">
                   {isKFoodMarket && !selectedMarket
-                    ? "시장을 선택한 뒤 일정을 생성하세요"
+                    ? t("planner.kcontent.empty.pick_market", { defaultValue: "시장을 선택한 뒤 일정을 생성하세요" })
                     : isKFoodCafeVibe && !selectedCafeVibe && !cafeKeyword.trim()
-                    ? "감성(Vibe) 또는 카페 이름을 선택하세요"
-                    : isKFoodConvenience &&
-                      ((activeTab === "trending" && !selectedBrand && !searchKeyword.trim()) ||
-                        (activeTab === "recipe" && !selectedVibe && !searchKeyword.trim()))
-                    ? "탭별 조건을 선택하고 생성하세요"
-                    : "날짜 선택 후 일정을 생성하세요"}
+                      ? t("planner.kcontent.empty.pick_vibe_or_cafe", { defaultValue: "감성(Vibe) 또는 카페 이름을 선택하세요" })
+                      : isKFoodConvenience &&
+                        ((activeTab === "trending" && !selectedBrand && !searchKeyword.trim()) ||
+                          (activeTab === "recipe" && !selectedVibe && !searchKeyword.trim()))
+                        ? t("planner.kcontent.empty.pick_tab_condition", { defaultValue: "탭별 조건을 선택하고 생성하세요" })
+                        : t("planner.kcontent.empty.pick_date", { defaultValue: "날짜 선택 후 일정을 생성하세요" })}
                 </p>
                 <p className="mt-1 text-sm">
                   {isKFoodMarket
-                    ? "왼쪽에서 시장을 고르고 [이 시장 먹방 일정 생성하기] 또는 상단 ✨ 일정 생성을 눌러주세요"
+                    ? t("planner.kcontent.empty.market_guide", { defaultValue: "왼쪽에서 시장을 고르고 [이 시장 먹방 일정 생성하기] 또는 상단 ✨ 일정 생성을 눌러주세요" })
                     : isKFoodCafeVibe
-                    ? "왼쪽에서 감성/카페명을 정하고 [AI 일정 생성하기]를 눌러주세요"
-                    : isKFoodConvenience
-                    ? "상단 탭에서 모드를 고른 뒤 키워드를 입력해 생성하세요"
-                    : "상단의 ✨ 일정 생성 버튼을 눌러주세요"}
+                      ? t("planner.kcontent.empty.cafe_guide", { defaultValue: "왼쪽에서 감성/카페명을 정하고 [AI 일정 생성하기]를 눌러주세요" })
+                      : isKFoodConvenience
+                        ? t("planner.kcontent.empty.convenience_guide", { defaultValue: "상단 탭에서 모드를 고른 뒤 키워드를 입력해 생성하세요" })
+                        : t("planner.kcontent.empty.default_guide", { defaultValue: "상단의 ✨ 일정 생성 버튼을 눌러주세요" })}
                 </p>
               </div>
             )}
@@ -1073,9 +1140,7 @@ export default function KContentPackagePage() {
             {loading && (
               <div className="flex flex-1 flex-col items-center justify-center gap-3">
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-500" />
-                <p className="text-sm text-gray-500">
-                  AI가 <b>{selectedMeta?.title_ko ?? packageId}</b> 일정을 만드는 중…
-                </p>
+                <p className="text-sm text-gray-500" dangerouslySetInnerHTML={{ __html: t("planner.kcontent.making_schedule", { title: selectedMetaTitle, defaultValue: "AI가 <b>{{title}}</b> 일정을 만드는 중…" }) }} />
                 <p className="text-xs text-gray-400">{startDate} ~ {endDate}</p>
               </div>
             )}
@@ -1085,7 +1150,7 @@ export default function KContentPackagePage() {
                 <div className="shrink-0 border-b border-gray-200 bg-white px-5 py-3">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <h2 className="font-semibold text-gray-800">{selectedMeta?.title_ko ?? packageId} — 추천 일정</h2>
+                      <h2 className="font-semibold text-gray-800">{t("planner.kcontent.recommended_schedule_title", { defaultValue: "{{title}} — 추천 일정", title: selectedMetaTitle })}</h2>
                       <p className="mt-0.5 text-xs text-gray-400">{startDate} ~ {endDate}</p>
                     </div>
                     {savedPlanId ? (
@@ -1093,7 +1158,7 @@ export default function KContentPackagePage() {
                         onClick={() => router.push("/planner/schedule")}
                         className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow hover:bg-emerald-700 transition-colors"
                       >
-                        ✅ 저장됨 · 일정관리 보기
+                        {t("planner.kcontent.saved_goto_schedule", { defaultValue: "✅ 저장됨 · 일정관리 보기" })}
                       </button>
                     ) : (
                       <button
@@ -1104,23 +1169,23 @@ export default function KContentPackagePage() {
                         {isSaving ? (
                           <>
                             <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                            저장 중…
+                            {t("common.saving", { defaultValue: "저장 중…" })}
                           </>
                         ) : (
-                          <>💾 저장하기</>
+                          <>{t("planner.kcontent.save_plan", { defaultValue: "💾 저장하기" })}</>
                         )}
                       </button>
                     )}
                   </div>
                   {costSummary && (
                     <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <span className="text-xs text-gray-400">예상 총 경비</span>
+                      <span className="text-xs text-gray-400">{t("planner.kcontent.total_cost", { defaultValue: "예상 총 경비" })}</span>
                       <span className="rounded-full bg-emerald-50 px-3 py-0.5 text-sm font-bold text-emerald-600">
                         💰 {costSummary.trip_total}
                       </span>
                       {costSummary.per_day.map((d) => (
                         <span key={d.day} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
-                          Day{d.day} {d.total}
+                          {t("planner.kcontent.cost_per_day", { defaultValue: "Day{{day}} {{total}}", day: d.day, total: d.total })}
                         </span>
                       ))}
                     </div>
@@ -1155,7 +1220,7 @@ export default function KContentPackagePage() {
                               type="button"
                               className="mt-3 w-full rounded-lg bg-gradient-to-r from-orange-500 to-rose-500 px-3 py-2 text-xs font-semibold text-white"
                             >
-                              이거 파는 가까운 곳 찾기
+                              {t("planner.kcontent.find_nearby_store", { defaultValue: "이거 파는 가까운 곳 찾기" })}
                             </button>
                           </article>
                         ))}
@@ -1165,10 +1230,12 @@ export default function KContentPackagePage() {
                         <article className="rounded-2xl border border-violet-100 bg-white p-4 shadow-sm">
                           <h3 className="text-base font-bold text-gray-900">{convenienceRecipeTitle}</h3>
                           <p className="mt-1 text-xs text-violet-600">
-                            #모디슈머 #편의점챌린지 #AI레시피
+                            {t("planner.kcontent.recipe_hashtags", { defaultValue: "#모디슈머 #편의점챌린지 #AI레시피" })}
                           </p>
                           <div className="mt-4">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Shopping List</p>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                              {t("planner.kcontent.shopping_list_title", { defaultValue: "쇼핑 리스트" })}
+                            </p>
                             <ul className="mt-2 space-y-2">
                               {convenienceShoppingList.map((item) => {
                                 const checked = checkedIngredients.includes(item);
@@ -1194,7 +1261,9 @@ export default function KContentPackagePage() {
                             </ul>
                           </div>
                           <div className="mt-4">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Cooking Steps</p>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                              {t("planner.kcontent.cooking_steps_title", { defaultValue: "조리 단계" })}
+                            </p>
                             <ol className="mt-2 space-y-2">
                               {convenienceCookingSteps.map((step) => (
                                 <li key={step} className="rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700">
@@ -1204,7 +1273,7 @@ export default function KContentPackagePage() {
                             </ol>
                           </div>
                           <div className="mt-4 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                            <b>Challenge Location</b>: AI 추천 길먹 명당 (100km 이내) — 성수 서울숲 앞 벤치존
+                            <b>{t("planner.kcontent.challenge_location", { defaultValue: "챌린지 장소" })}</b>: {t("planner.kcontent.challenge_location_desc", { defaultValue: "AI 추천 길먹 명당 (100km 이내) — 성수 서울숲 앞 벤치존" })}
                           </div>
                         </article>
                       </div>
@@ -1223,7 +1292,7 @@ export default function KContentPackagePage() {
                           </h3>
                           {costSummary?.per_day.find((d) => d.day === Number(day)) && (
                             <span className="text-xs font-medium text-emerald-600">
-                              소계 {costSummary.per_day.find((d) => d.day === Number(day))!.total}
+                              {t("planner.kcontent.subtotal", { total: costSummary.per_day.find((d) => d.day === Number(day))!.total, defaultValue: "소계 {{total}}" })}
                             </span>
                           )}
                         </div>
@@ -1254,7 +1323,7 @@ export default function KContentPackagePage() {
             {!loading && triggered && !error && schedule.length === 0 && (
               <div className="p-5">
                 <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
-                  생성된 일정이 없습니다. 다시 시도해 주세요.
+                  {t("planner.kcontent.no_schedule", { defaultValue: "생성된 일정이 없습니다. 다시 시도해 주세요." })}
                 </p>
               </div>
             )}

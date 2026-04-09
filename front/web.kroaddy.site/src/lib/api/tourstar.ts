@@ -2,6 +2,8 @@ declare const process: {
   env: Record<string, string | undefined>;
 };
 
+import i18n from "@/lib/i18n/config";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const TOURSTAR_DIRECT_BASE = process.env.NEXT_PUBLIC_TOURSTAR_URL || "";
 
@@ -183,7 +185,7 @@ export async function uploadTourstarPhotos(files: File[]): Promise<UploadPhotosR
     body: formData,
   });
   if (!res.ok) {
-    throw new Error(`투어스타 업로드 API 오류: ${res.status}`);
+    throw new Error(`${i18n.t("tourstar.api.upload_error", { defaultValue: "투어스타 업로드 API 오류" })}: ${res.status}`);
   }
   return res.json();
 }
@@ -193,7 +195,7 @@ export async function getTourstarJobStatus(jobId: string): Promise<TourstarJobSt
     cache: "no-store",
   });
   if (!res.ok) {
-    throw new Error(`투어스타 작업 조회 API 오류: ${res.status}`);
+    throw new Error(`${i18n.t("tourstar.api.job_status_error", { defaultValue: "투어스타 작업 조회 API 오류" })}: ${res.status}`);
   }
   return res.json();
 }
@@ -216,7 +218,7 @@ export async function generateTourstarPost(
     cache: "no-store",
   });
   if (!res.ok) {
-    throw new Error(`투어스타 게시글 생성 API 오류: ${res.status}`);
+    throw new Error(`${i18n.t("tourstar.api.generate_post_error", { defaultValue: "투어스타 게시글 생성 API 오류" })}: ${res.status}`);
   }
   return res.json();
 }
@@ -235,7 +237,7 @@ export async function generateTourstarAutoComment(
     cache: "no-store",
   });
   if (!res.ok) {
-    throw new Error(`투어스타 자동 코멘트 API 오류: ${res.status}`);
+    throw new Error(`${i18n.t("tourstar.api.auto_comment_error", { defaultValue: "투어스타 자동 코멘트 API 오류" })}: ${res.status}`);
   }
   return res.json();
 }
@@ -246,7 +248,7 @@ export async function listTourstarPosts(viewerUserId?: number | null): Promise<T
     : toApiUrl("/v1/photo-selection/posts");
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) {
-    throw new Error(`투어스타 게시물 조회 API 오류: ${res.status}`);
+    throw new Error(`${i18n.t("tourstar.api.list_posts_error", { defaultValue: "투어스타 게시물 조회 API 오류" })}: ${res.status}`);
   }
   return res.json();
 }
@@ -269,7 +271,7 @@ export async function createTourstarPost(payload: {
     cache: "no-store",
   });
   if (!res.ok) {
-    throw new Error(`투어스타 게시물 저장 API 오류: ${res.status}`);
+    throw new Error(`${i18n.t("tourstar.api.create_post_error", { defaultValue: "투어스타 게시물 저장 API 오류" })}: ${res.status}`);
   }
   return res.json();
 }
@@ -285,7 +287,7 @@ export async function createTourstarComment(
     cache: "no-store",
   });
   if (!res.ok) {
-    throw new Error(`투어스타 댓글 저장 API 오류: ${res.status}`);
+    throw new Error(`${i18n.t("tourstar.api.create_comment_error", { defaultValue: "투어스타 댓글 저장 API 오류" })}: ${res.status}`);
   }
   return res.json();
 }
@@ -301,7 +303,7 @@ export async function toggleTourstarLike(
     cache: "no-store",
   });
   if (!res.ok) {
-    throw new Error(`투어스타 좋아요 API 오류: ${res.status}`);
+    throw new Error(`${i18n.t("tourstar.api.like_toggle_error", { defaultValue: "투어스타 좋아요 API 오류" })}: ${res.status}`);
   }
   return res.json();
 }
@@ -311,7 +313,7 @@ export async function getTourstarSharePreview(postId: string): Promise<TourstarS
     cache: "no-store",
   });
   if (!res.ok) {
-    throw new Error(`투어스타 공유 미리보기 API 오류: ${res.status}`);
+    throw new Error(`${i18n.t("tourstar.api.share_preview_error", { defaultValue: "투어스타 공유 미리보기 API 오류" })}: ${res.status}`);
   }
   return res.json();
 }
@@ -339,7 +341,7 @@ export async function uploadProfileImage(file: File, userId?: number | null): Pr
     : toApiUrl("/v1/photo-selection/upload-profile-image");
   const res = await fetch(url, { method: "POST", body: formData });
   if (!res.ok) {
-    throw new Error(`프로필 사진 업로드 실패: ${res.status}`);
+    throw new Error(`${i18n.t("tourstar.api.profile_upload_error", { defaultValue: "프로필 사진 업로드 실패" })}: ${res.status}`);
   }
   const data: { profile_image_url: string } = await res.json();
   return data.profile_image_url;
@@ -357,7 +359,7 @@ export async function finalizeTourstarUploads(
     cache: "no-store",
   });
   if (!res.ok) {
-    throw new Error(`사진 S3 업로드 사전 처리 실패: ${res.status}`);
+    throw new Error(`${i18n.t("tourstar.api.finalize_upload_error", { defaultValue: "사진 S3 업로드 사전 처리 실패" })}: ${res.status}`);
   }
   return res.json();
 }
@@ -407,11 +409,11 @@ export async function updateTourstarPost(
     let postErrBody = "";
     try { postErrBody = await fallbackRes.text(); } catch { /* ignore */ }
     throw new Error(
-      `투어스타 게시물 수정 API 오류: PATCH ${res.status}${patchErrBody ? ` (${patchErrBody.slice(0, 200)})` : ""} / POST ${fallbackRes.status}${postErrBody ? ` (${postErrBody.slice(0, 200)})` : ""}`,
+      `${i18n.t("tourstar.api.update_post_error", { defaultValue: "투어스타 게시물 수정 API 오류" })}: PATCH ${res.status}${patchErrBody ? ` (${patchErrBody.slice(0, 200)})` : ""} / POST ${fallbackRes.status}${postErrBody ? ` (${postErrBody.slice(0, 200)})` : ""}`,
     );
   }
   throw new Error(
-    `투어스타 게시물 수정 API 오류: ${res.status}${patchErrBody ? ` — ${patchErrBody.slice(0, 200)}` : ""}`,
+    `${i18n.t("tourstar.api.update_post_error", { defaultValue: "투어스타 게시물 수정 API 오류" })}: ${res.status}${patchErrBody ? ` — ${patchErrBody.slice(0, 200)}` : ""}`,
   );
 }
 
@@ -434,9 +436,9 @@ export async function deleteTourstarPost(postId: string, userId: number): Promis
     if (fallbackRes.ok || fallbackRes.status === 204) {
       return;
     }
-    throw new Error(`투어스타 게시물 삭제 API 오류: ${fallbackRes.status}`);
+    throw new Error(`${i18n.t("tourstar.api.delete_post_error", { defaultValue: "투어스타 게시물 삭제 API 오류" })}: ${fallbackRes.status}`);
   }
-  throw new Error(`투어스타 게시물 삭제 API 오류: ${res.status}`);
+  throw new Error(`${i18n.t("tourstar.api.delete_post_error", { defaultValue: "투어스타 게시물 삭제 API 오류" })}: ${res.status}`);
 }
 
 export function buildTourstarShareUrl(postId: string): string {

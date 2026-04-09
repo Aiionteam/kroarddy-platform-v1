@@ -1,0 +1,199 @@
+{
+  "title": "K-内容规划师",
+  "subtitle": "通过 K-Pop、韩剧、美食与美妆探索韩国",
+  "hero_title": "K-内容规划师",
+  "hero_subtitle": "通过 K-Pop、韩剧、美食与美妆探索韩国",
+  "hero_cta": "生成 AI 路线",
+  "back": "返回规划师",
+  "row_kpop": "K-POP",
+  "row_kdrama": "K-剧 / 电影",
+  "row_kfood": "K-美食",
+  "row_kbeauty": "K-美妆",
+  "sample_itinerary": "示例行程",
+  "search_bar": "搜索",
+  "quick_selection": "快捷选择",
+  "vibe_grid": "氛围选择",
+  "date": "日期",
+  "generating": "生成中…",
+  "generate": "✨ 生成行程",
+  "ai_recommended": "AI 推荐行程",
+  "region_select": "选择地区",
+  "traditional_market": "传统市场",
+  "market_generate": "生成此市场美食行程",
+  "cafe_question": "今天想要哪种氛围？",
+  "cafe_hint": "选择氛围或直接输入咖啡厅名称以生成 AI 行程。",
+  "cafe_placeholder": "直接输入咖啡厅名（例如：圣水 Tongue Planet）",
+  "cafe_generate": "生成 AI 行程",
+  "trending_items": "当下热门",
+  "my_recipe": "我的神仙搭配",
+  "convenience_q": "现在便利店最难买到什么？",
+  "trending_placeholder": "例如：延世牛奶奶油面包",
+  "recipe_q": "想尝试哪种口味组合？",
+  "extra_keywords": "额外关键词",
+  "recipe_placeholder": "例如：辣味挑战、甜咸甜点",
+  "recipe_generate": "生成 AI 搭配食谱",
+  "set_date_and_generate": "设置日期后\n生成行程",
+  "start_generate": "✨ 开始生成行程",
+  "making_schedule": "AI 正在创建<b>{{title}}</b>行程…",
+  "recommended_schedule_title": "{{title}} — 推荐行程",
+  "save_plan": "💾 保存行程",
+  "total_cost": "预计总费用",
+  "cost_per_day": "第{{day}}天 {{total}}",
+  "no_schedule": "未能生成行程，请重试。",
+  "saved_goto_schedule": "已保存 · 前往日程",
+  "find_nearby_store": "查找附近有售的地点",
+  "recipe_hashtags": "#便利店达人 #便利店挑战 #AI食谱",
+  "description_fallback": "在 {{place}} 值得打卡的推荐地点。",
+  "challenge_location": "挑战地点",
+  "challenge_location_desc": "AI 精选挑战点（100 公里内）— 圣水首尔森林前长椅区",
+  "subtotal": "小计 {{total}}",
+  "schedule_item_default": "行程",
+  "schedule_load_fail": "加载行程失败。",
+  "save_fail": "保存失败。",
+  "cafe_place_hint": "咖啡厅/地点提示",
+  "convenience_trending": "便利店热门单品",
+  "recipe_title_with_vibe": "{{vibe}} 挑战 2026 版",
+  "recipe_title_default": "马克定食 2026 版",
+  "region_tab.all": "全部",
+  "region_tab.seoul": "首尔",
+  "region_tab.gangwon": "江原",
+  "region_tab.jeonla": "全罗",
+  "region_tab.gyeongsang": "庆尚",
+  "region_tab.jeju": "济州",
+  "cafe_vibe.industrial_raw.label": "工业/粗犷",
+  "cafe_vibe.industrial_raw.description": "水泥与金属的酷感空间。",
+  "cafe_vibe.traditional_zen.label": "传统/禅意",
+  "cafe_vibe.traditional_zen.description": "韩屋与木色带来的安静时光。",
+  "cafe_vibe.nature_botanical.label": "自然/植物",
+  "cafe_vibe.nature_botanical.description": "绿意与阳光充盈的空间。",
+  "cafe_vibe.retro_newtro.label": "复古/Newtro",
+  "cafe_vibe.retro_newtro.description": "怀旧与小巷复古漫步。",
+  "cafe_vibe.modern_minimal.label": "现代/极简",
+  "cafe_vibe.modern_minimal.description": "克制的单色美学。",
+  "brand.seveneleven": "7-Eleven",
+  "brand.emart24": "emart24",
+  "market": {
+    "SEOUL": {
+      "0": {
+        "name": "广藏市场",
+        "description": "生拌牛肉与绿豆饼圣地。"
+      },
+      "1": {
+        "name": "望远市场",
+        "description": "深受 MZ 世代喜爱的潮流市场。"
+      },
+      "2": {
+        "name": "通仁市场",
+        "description": "可体验著名铜钱便当的市场。"
+      }
+    },
+    "GANGWON": {
+      "0": {
+        "name": "宁越中央市场",
+        "description": "荞麦煎饼与冷面之乡。"
+      },
+      "1": {
+        "name": "束草观光水产市场",
+        "description": "炸鸡块与海鲜小吃的天堂。"
+      }
+    },
+    "JEONLA": {
+      "0": {
+        "name": "全州南部市场",
+        "description": "血肠与豆芽汤的发源地。"
+      },
+      "1": {
+        "name": "光州1913松汀站市场",
+        "description": "充满复古 Newtro 氛围的市场。"
+      }
+    },
+    "GYEONGSANG": {
+      "0": {
+        "name": "釜山国际市场",
+        "description": "电影回忆与拌凉粉。"
+      },
+      "1": {
+        "name": "大邱西门市场",
+        "description": "韩国三大市场之一的规模与味道。"
+      }
+    },
+    "JEJU": {
+      "0": {
+        "name": "济州东门市场",
+        "description": "艾草糕、黑猪肉块等岛屿风味。"
+      }
+    }
+  },
+  "fallback": {
+    "kfood": {
+      "KF_MARKET": {
+        "title": "全国传统市场美食之旅",
+        "description": "走遍韩国各地，感受温暖在地风味与烟火气。"
+      },
+      "KF_CAFE": {
+        "title": "K-甜品与咖啡厅氛围之旅",
+        "description": "串联符合你口味的咖啡厅与精选小店。"
+      },
+      "KF_CONVENIENCE": {
+        "title": "K-便利店神仙搭配挑战",
+        "description": "从断货新品到隐藏食谱，成为便利店达人！"
+      }
+    },
+    "kbeauty": {
+      "KBEAUTY_01": {
+        "title": "Olive Young 旗舰店",
+        "description": "一站式比较与购买护肤彩妆趋势。"
+      },
+      "KBEAUTY_02": {
+        "title": "明洞美妆街",
+        "description": "快速打卡主街周边畅销好物。"
+      },
+      "KBEAUTY_03": {
+        "title": "护肤体验店",
+        "description": "基于肌肤检测的定制护理与互动美妆项目。"
+      }
+    }
+  },
+  "recipe_vibe.spicy_fire.label": "火辣挑战",
+  "recipe_vibe.spicy_fire.description": "用辣味释放压力。",
+  "recipe_vibe.sweet_salty.label": "甜咸经典",
+  "recipe_vibe.sweet_salty.description": "甜与咸的平衡。",
+  "recipe_vibe.diet_healthy.label": "便利店轻食",
+  "recipe_vibe.diet_healthy.description": "轻盈又有饱腹感的健康组合。",
+  "recipe_vibe.night_snack.label": "宵夜",
+  "recipe_vibe.night_snack.description": "治愈系宵夜食谱。",
+  "recipe_vibe.hangover.label": "解酒组合",
+  "recipe_vibe.hangover.description": "专为宿醉舒缓设计。",
+  "recipe_vibe.luxury_meal.label": "高性价比豪华餐",
+  "recipe_vibe.luxury_meal.description": "便利店里的进阶美味。",
+  "shopping.ramen": "杯面",
+  "shopping.tuna_kimbap": "金枪鱼蛋黄酱三角饭团",
+  "shopping.string_cheese": "手撕奶酪条",
+  "shopping.sparkling_water": "气泡水",
+  "cooking.1": "备好食材放入可微波容器。",
+  "cooking.2": "混合酱料/配料微波 1 分 30 秒。",
+  "cooking.3": "按喜好加配料并拍照打卡。",
+  "trending_card.1.title": "延世牛奶奶油面包",
+  "trending_card.2.title": "零度可乐冰杯嗨棒",
+  "trending_card.default_title": "AI 推荐热门单品",
+  "trending_card.tag.new": "#新品",
+  "trending_card.tag.soldout": "#断货预警",
+  "trending_card.tag.review": "#好评爆棚",
+  "trending_card.tag.repurchase": "#回购",
+  "meta.kf_market.title_ko": "全国传统市场美食之旅",
+  "meta.kf_cafe.title_ko": "K-甜品与咖啡厅氛围之旅",
+  "meta.kf_convenience.title_ko": "K-便利店神仙搭配挑战",
+  "meta.kf_market.tags": "传统市场, 美食, 本地风味",
+  "meta.kf_cafe.tags": "咖啡厅, 甜品, 买手店, 氛围之旅",
+  "meta.kf_convenience.tags": "便利店, 搭配, 达人, 挑战",
+  "empty.pick_market": "请先选择市场再生成行程",
+  "empty.pick_vibe_or_cafe": "请选择氛围或输入咖啡厅名",
+  "empty.pick_tab_condition": "请选择标签条件后生成",
+  "empty.pick_date": "请选择日期后生成行程",
+  "empty.market_guide": "在左侧选择市场，点击【生成此市场美食行程】或顶部 ✨ 生成",
+  "empty.cafe_guide": "在左侧选择氛围/咖啡厅名，点击【生成 AI 行程】",
+  "empty.convenience_guide": "在顶部标签选择模式，输入关键词后生成",
+  "empty.default_guide": "点击顶部 ✨ 生成行程按钮",
+  "shopping_list_title": "购物清单",
+  "cooking_steps_title": "制作步骤"
+}

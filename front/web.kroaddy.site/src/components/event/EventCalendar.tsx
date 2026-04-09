@@ -1,9 +1,11 @@
 "use client";
 
 import React from "react";
+import "@/lib/i18n/config";
+import { useTranslation } from "react-i18next";
 import type { FestivalItem } from "@/lib/api/festival";
 
-const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+const WEEKDAYS_KO = ["일", "월", "화", "수", "목", "금", "토"];
 
 const DOT_COLORS = [
   "bg-amber-400",
@@ -63,6 +65,7 @@ export function EventCalendar({
   selectedDay,
   onSelectDay,
 }: EventCalendarProps) {
+  const { t } = useTranslation();
   const weeks = getCalendarWeeks(year, month);
   const today = new Date();
   const isCurrentMonth =
@@ -74,14 +77,14 @@ export function EventCalendar({
       <table className="w-full table-fixed border-collapse">
         <thead>
           <tr className="bg-gray-50">
-            {WEEKDAYS.map((w, i) => (
+            {(WEEKDAYS_KO).map((w, i) => (
               <th
                 key={w}
                 className={`border-b border-gray-200 py-2 text-center text-xs font-semibold ${
                   i === 0 ? "text-rose-500" : i === 6 ? "text-sky-500" : "text-gray-500"
                 }`}
               >
-                {w}
+                {t(`calendar.weekday.${i}`, { defaultValue: w })}
               </th>
             ))}
           </tr>

@@ -1,0 +1,2594 @@
+{
+  "app": {
+    "name": "Kroaddy"
+  },
+  "common": {
+    "save": "सहेजें",
+    "cancel": "रद्द करें",
+    "next": "अगला",
+    "skip": "छोड़ें",
+    "done": "पूर्ण",
+    "loading": "लोड हो रहा है...",
+    "saving": "सहेजा जा रहा है...",
+    "processing": "प्रोसेस हो रहा है...",
+    "error": "कुछ गलत हो गया",
+    "logout": "लॉग आउट",
+    "menu_open": "मेनू खोलें",
+    "search": "खोजें",
+    "show_all": "सभी दिखाएँ",
+    "back": "वापस",
+    "close": "बंद करें",
+    "retry": "फिर से कोशिश करें",
+    "fold": "संकुचित करें",
+    "view_all": "सभी देखें",
+    "more": "और",
+    "delete": "हटाएँ",
+    "deleting": "हटाया जा रहा है...",
+    "edit": "संपादित करें",
+    "submit": "जमा करें",
+    "share": "साझा करें",
+    "go_back": "वापस जाएँ",
+    "confirm": "पुष्टि करें",
+    "coming_soon": "जल्द आ रहा है",
+    "accept": "स्वीकार करें",
+    "login_needed": "लॉगिन आवश्यक है।",
+    "login_required": "लॉगिन आवश्यक है",
+    "not_found": {
+      "message": "आपके द्वारा माँगा गया पेज नहीं मिला।",
+      "back_home": "होम पर वापस जाएँ"
+    }
+  },
+  "onboarding": {
+    "title": "यात्रा प्राथमिकताएँ",
+    "subtitle": "AI यात्रा सुझावों को आपके लिए व्यक्तिगत बनाने में मदद करें",
+    "later": "बाद में",
+    "saving": "सहेजा जा रहा है...",
+    "nationality": {
+      "title": "देश / राष्ट्रीयता",
+      "hint": "ऐप आपकी पसंदीदा भाषा में बदल जाएगा"
+    },
+    "gender": {
+      "title": "लिंग"
+    },
+    "age": {
+      "title": "आयु समूह"
+    },
+    "diet": {
+      "title": "आहार प्राथमिकताएँ"
+    },
+    "religion": {
+      "title": "धर्म"
+    }
+  },
+  "auth": {
+    "api": {
+      "naver_auth_url_fail": "Naver लॉगिन URL प्राप्त नहीं हो सका।",
+      "naver_auth_url_missing": "Naver लॉगिन URL प्राप्त नहीं हुआ।",
+      "kakao_auth_url_fail": "Kakao लॉगिन URL प्राप्त नहीं हो सका।",
+      "kakao_auth_url_missing": "Kakao लॉगिन URL प्राप्त नहीं हुआ।",
+      "google_auth_url_fail": "Google लॉगिन URL प्राप्त नहीं हो सका।",
+      "google_auth_url_missing": "Google लॉगिन URL प्राप्त नहीं हुआ।",
+      "refresh_token_invalid": "रिफ्रेश टोकन समाप्त हो गया है या अमान्य है। कृपया फिर से लॉगिन करें।"
+    }
+  },
+  "weather": {
+    "reason": {
+      "no_location": "स्थान की जानकारी नहीं है"
+    }
+  },
+  "planner.standard": {
+    "title": "गंतव्य चुनें",
+    "subtitle": "एक जगह चुनें और AI आपके लिए उपयुक्त रूट सुझाएगा",
+    "mode_label": "स्टैंडर्ड",
+    "date": "तारीख",
+    "mode_car": "🚗 कार",
+    "mode_transit": "🚇 पब्लिक ट्रांज़िट",
+    "mode_walk": "🚶 पैदल",
+    "generating_loading": "सटीक जानकारी खोजी जा रही है...",
+    "generate_route": "✨ रूट बनाएं",
+    "ai_recommended_routes": "AI सुझाए गए रूट",
+    "set_date_and_generate": "तारीख सेट करें और\nरूट बनाएं",
+    "start_generate": "✨ रूट बनाना शुरू करें",
+    "pick_route": "कृपया एक रूट चुनें",
+    "range_hint": "AI {{start}} ~ {{end}} के लिए यात्रा कार्यक्रम बनाएगा",
+    "select_date_then_generate": "तारीख चुनें फिर रूट बनाएं",
+    "generate_hint": "ऊपर बाएँ ✨ रूट बनाएं बटन पर क्लिक करें",
+    "making_schedule": "AI <b>{{name}}</b> के लिए यात्रा कार्यक्रम बना रहा है...",
+    "recommended_schedule_title": "{{name}} — सुझाया गया यात्रा कार्यक्रम",
+    "saved_goto_schedule": "✅ सहेजा गया · शेड्यूल मैनेजर खोलें",
+    "save_plan": "💾 सहेजें",
+    "total_cost": "अनुमानित कुल लागत",
+    "cost_per_day": "दिन{{day}} {{total}}",
+    "search_placeholder": "शहर/स्थान खोजें (जैसे गैंगनेउंग, हनोक गाँव)",
+    "search_result": "“{{query}}” के परिणाम {{count}} आइटम",
+    "no_results": "कोई परिणाम नहीं",
+    "reset": "रीसेट",
+    "metro_quick": "त्वरित पहुँच (मेट्रो शहर)",
+    "metro_quick_sub": "लोकप्रिय मेट्रो शहरों पर जाएँ; नीचे विस्तृत क्षेत्रों को ब्राउज़ करें।",
+    "metro_detail": "मेट्रो शहर क्षेत्र",
+    "metro_detail_sub": "सियोल/बुसान/डेगू/उल्सान जैसी शहर-आधारित यात्राओं के लिए अधिक विस्तृत क्षेत्र देखें।",
+    "province": "प्रांत",
+    "province_sub": "ग्योंगगी, चुंगचॉन्ग, जिओल्ला, ग्योंगसांग, गैंगवॉन और जेजू जैसे क्षेत्रों की तुलना करें।",
+    "image_pending": "चित्र जल्द उपलब्ध होगा",
+    "popular": "लोकप्रिय",
+    "route_load_fail": "रूट लोड नहीं हो सका।",
+    "schedule_load_fail": "शेड्यूल लोड नहीं हो सका।",
+    "save_fail": "सहेजना विफल रहा।",
+    "subtotal": "उप-योग {{total}}",
+    "theme": {
+      "event": "इवेंट",
+      "food": "भोजन",
+      "spot": "आकर्षण",
+      "luxury": "लक्ज़री",
+      "value": "किफ़ायती",
+      "family": "परिवार",
+      "couple": "जोड़ा"
+    },
+    "highlight": {
+      "gyeongbokgung": "Gyeongbokgung",
+      "hongdae": "Hongdae",
+      "hangang_park": "Hangang Park",
+      "cheongwadae": "Cheongwadae",
+      "insadong": "Insadong",
+      "myeongdong_cathedral": "Myeongdong Cathedral",
+      "euljiro_alley": "Euljiro Alley",
+      "national_museum_of_korea": "National Museum of Korea",
+      "itaewon": "Itaewon",
+      "haeundae": "Haeundae",
+      "haeundae_beach": "Haeundae Beach",
+      "gamcheon_village": "Gamcheon Village",
+      "jagalchi_market": "Jagalchi Market",
+      "biff_square": "BIFF Square",
+      "dongseongro": "Dongseong-ro",
+      "kim_gwangseok_street": "Kim Gwangseok Street",
+      "suseong_lake": "Suseong Lake",
+      "songdo": "Songdo",
+      "chinatown": "Chinatown",
+      "gangneung": "Gangneung",
+      "gyeongpo": "Gyeongpo Pavilion",
+      "anmok_coffee_street": "Anmok Coffee Street",
+      "ojukheon": "Ojukheon",
+      "sokcho": "Sokcho",
+      "seoraksan": "Seoraksan",
+      "central_market": "Central Market",
+      "hallasan": "Hallasan",
+      "seongsan_ilchulbong": "Seongsan Ilchulbong"
+    }
+  },
+  "planner.dest": {
+    "seoul": {
+      "name": "Seoul",
+      "highlight1": "Gyeongbokgung",
+      "highlight2": "Hangang Park"
+    },
+    "busan": {
+      "name": "Busan",
+      "highlight1": "Haeundae Beach",
+      "highlight2": "Jagalchi Market"
+    },
+    "daegu": {
+      "name": "Daegu",
+      "highlight1": "Dongseong-ro",
+      "highlight2": "Suseong Lake"
+    },
+    "incheon": {
+      "name": "Incheon",
+      "highlight1": "Songdo",
+      "highlight2": "Chinatown"
+    },
+    "gwangju": {
+      "name": "Gwangju",
+      "highlight1": "ACC (Asia Culture Center)",
+      "highlight2": "Yangnim-dong"
+    },
+    "daejeon": {
+      "name": "Daejeon",
+      "highlight1": "Seongsimdang",
+      "highlight2": "Expo Park"
+    },
+    "ulsan": {
+      "name": "Ulsan",
+      "highlight1": "Ganjeolgot",
+      "highlight2": "Daewangam Park"
+    },
+    "sejong": {
+      "name": "Sejong",
+      "highlight1": "Sejong Lake Park",
+      "highlight2": "National Arboretum"
+    },
+    "jongno": {
+      "name": "Jongno & Gwanghwamun",
+      "highlight1": "Gyeongbokgung",
+      "highlight2": "Insadong"
+    },
+    "myeongdong": {
+      "name": "Myeongdong & Euljiro",
+      "highlight1": "Myeongdong Cathedral",
+      "highlight2": "Euljiro Alley"
+    },
+    "yongsan": {
+      "name": "Yongsan & Itaewon",
+      "highlight1": "National Museum of Korea",
+      "highlight2": "Itaewon"
+    },
+    "hongdae": {
+      "name": "Hongdae & Mapo",
+      "highlight1": "Hongdae",
+      "highlight2": "Yeonnam-dong"
+    },
+    "bukchon": {
+      "name": "Bukchon & Samcheong",
+      "highlight1": "Bukchon Hanok Village",
+      "highlight2": "Samcheong-dong"
+    },
+    "nowon": {
+      "name": "Nowon & Dobong"
+    },
+    "gangnam": {
+      "name": "Gangnam & Seocho",
+      "highlight1": "COEX",
+      "highlight2": "Apgujeong Rodeo"
+    },
+    "jamsil": {
+      "name": "Jamsil & Songpa",
+      "highlight1": "Lotte World",
+      "highlight2": "Olympic Park"
+    },
+    "seongsu": {
+      "name": "Seongsu & Hannam",
+      "highlight1": "Seongsu Cafe Street",
+      "highlight2": "Hannam-dong"
+    },
+    "goyang": {
+      "name": "Goyang"
+    },
+    "paju": {
+      "name": "Paju",
+      "highlight1": "Heyri Art Village",
+      "highlight2": "Imjingak"
+    },
+    "gimpo": {
+      "name": "Gimpo"
+    },
+    "uijeongbu": {
+      "name": "Uijeongbu"
+    },
+    "namyangju": {
+      "name": "Namyangju",
+      "highlight1": "Dumulmeori",
+      "highlight2": "Dasan-gil"
+    },
+    "guri": {
+      "name": "Guri"
+    },
+    "gapyeong": {
+      "name": "Gapyeong",
+      "highlight1": "Nami Island",
+      "highlight2": "Jara Island"
+    },
+    "yangpyeong": {
+      "name": "Yangpyeong",
+      "highlight1": "Dumulmeori",
+      "highlight2": "Yongmunsan"
+    },
+    "pocheon": {
+      "name": "Pocheon",
+      "highlight1": "Sanjeong Lake",
+      "highlight2": "Herb Island"
+    },
+    "yangju": {
+      "name": "Yangju"
+    },
+    "dongducheon": {
+      "name": "Dongducheon"
+    },
+    "suwon": {
+      "name": "Suwon",
+      "highlight1": "Hwaseong Haenggung",
+      "highlight2": "Haengnidan-gil"
+    },
+    "hwaseong": {
+      "name": "Hwaseong"
+    },
+    "ansan": {
+      "name": "Ansan"
+    },
+    "siheung": {
+      "name": "Siheung"
+    },
+    "anyang": {
+      "name": "Anyang"
+    },
+    "gunpo": {
+      "name": "Gunpo"
+    },
+    "pyeongtaek": {
+      "name": "Pyeongtaek"
+    },
+    "yongin": {
+      "name": "Yongin",
+      "highlight1": "Everland",
+      "highlight2": "Korean Folk Village"
+    },
+    "seongnam": {
+      "name": "Seongnam"
+    },
+    "hanam": {
+      "name": "Hanam"
+    },
+    "icheon": {
+      "name": "Icheon",
+      "highlight1": "Ceramics Village",
+      "highlight2": "Icheon Rice"
+    },
+    "yeoju": {
+      "name": "Yeoju"
+    },
+    "anseong": {
+      "name": "Anseong"
+    },
+    "osan": {
+      "name": "Osan"
+    },
+    "uiwang": {
+      "name": "Uiwang"
+    },
+    "gwacheon": {
+      "name": "Gwacheon"
+    },
+    "bucheon": {
+      "name": "Bucheon"
+    },
+    "gwangmyeong": {
+      "name": "Gwangmyeong"
+    },
+    "chuncheon": {
+      "name": "Chuncheon",
+      "highlight1": "Nami Island",
+      "highlight2": "Dakgalbi Alley"
+    },
+    "wonju": {
+      "name": "Wonju",
+      "highlight1": "Museum SAN",
+      "highlight2": "Sogeumsan Suspension Bridge"
+    },
+    "pyeongchang": {
+      "name": "Pyeongchang",
+      "highlight1": "Daegwallyeong Sheep Ranch",
+      "highlight2": "Odaesan"
+    },
+    "yeongwol": {
+      "name": "Yeongwol"
+    },
+    "hoengseong": {
+      "name": "Hoengseong"
+    },
+    "jeongseon": {
+      "name": "Jeongseon"
+    },
+    "inje": {
+      "name": "Inje"
+    },
+    "taebaek": {
+      "name": "Taebaek"
+    },
+    "gangneung": {
+      "name": "Gangneung",
+      "highlight1": "Gyeongpo Pavilion",
+      "highlight2": "Anmok Coffee Street"
+    },
+    "sokcho": {
+      "name": "Sokcho",
+      "highlight1": "Seoraksan",
+      "highlight2": "Central Market"
+    },
+    "yangyang": {
+      "name": "Yangyang",
+      "highlight1": "Surfyy Beach",
+      "highlight2": "Naksansa"
+    },
+    "donghae": {
+      "name": "Donghae"
+    },
+    "samcheok": {
+      "name": "Samcheok"
+    },
+    "goseong-gw": {
+      "name": "Goseong"
+    },
+    "cheongju": {
+      "name": "Cheongju"
+    },
+    "chungju": {
+      "name": "Chungju"
+    },
+    "jecheon": {
+      "name": "Jecheon",
+      "highlight1": "Cheongpung Lake",
+      "highlight2": "Uirimji"
+    },
+    "danyang": {
+      "name": "Danyang",
+      "highlight1": "Danyang Palgyeong",
+      "highlight2": "Dodamsambong"
+    },
+    "gongju": {
+      "name": "Gongju",
+      "highlight1": "Gongsanseong Fortress",
+      "highlight2": "Tomb of King Muryeong"
+    },
+    "buyeo": {
+      "name": "Buyeo",
+      "highlight1": "Busosanseong Fortress",
+      "highlight2": "Baekje Cultural Land"
+    },
+    "asan": {
+      "name": "Asan"
+    },
+    "cheonan": {
+      "name": "Cheonan"
+    },
+    "nonsan": {
+      "name": "Nonsan"
+    },
+    "boryeong": {
+      "name": "Boryeong",
+      "highlight1": "Mud Festival",
+      "highlight2": "Daecheon Beach"
+    },
+    "taean": {
+      "name": "Taean",
+      "highlight1": "Anmyeondo",
+      "highlight2": "Kkotji Beach"
+    },
+    "seosan": {
+      "name": "Seosan"
+    },
+    "dangjin": {
+      "name": "Dangjin"
+    },
+    "jeonju": {
+      "name": "Jeonju",
+      "highlight1": "Hanok Village",
+      "highlight2": "Makgeolli Alley"
+    },
+    "gunsan": {
+      "name": "Gunsan",
+      "highlight1": "Modern History Street",
+      "highlight2": "Lee Seongdang"
+    },
+    "iksan": {
+      "name": "Iksan"
+    },
+    "gochang": {
+      "name": "Gochang"
+    },
+    "jeongeup": {
+      "name": "Jeongeup"
+    },
+    "namwon": {
+      "name": "Namwon"
+    },
+    "gimje": {
+      "name": "Gimje"
+    },
+    "yeosu": {
+      "name": "Yeosu",
+      "highlight1": "Maritime Cable Car",
+      "highlight2": "Odongdo"
+    },
+    "suncheon": {
+      "name": "Suncheon",
+      "highlight1": "Suncheon Bay National Garden",
+      "highlight2": "Naganeupseong Folk Village"
+    },
+    "mokpo": {
+      "name": "Mokpo",
+      "highlight1": "Maritime Cable Car",
+      "highlight2": "Yudalsan"
+    },
+    "wando": {
+      "name": "Wando"
+    },
+    "gangjin": {
+      "name": "Gangjin"
+    },
+    "yeonggwang": {
+      "name": "Yeonggwang"
+    },
+    "haenam": {
+      "name": "Haenam"
+    },
+    "goheung": {
+      "name": "Goheung"
+    },
+    "yeongam": {
+      "name": "Yeongam"
+    },
+    "damyang": {
+      "name": "Damyang",
+      "highlight1": "Juknokwon",
+      "highlight2": "Metasequoia Road"
+    },
+    "gwangyang": {
+      "name": "Gwangyang"
+    },
+    "boseong": {
+      "name": "Boseong",
+      "highlight1": "Green Tea Fields",
+      "highlight2": "Yulpo Beach"
+    },
+    "naju": {
+      "name": "Naju"
+    },
+    "haeundae": {
+      "name": "Haeundae",
+      "highlight1": "Haeundae Beach",
+      "highlight2": "Dongbaekseom"
+    },
+    "gwangalli": {
+      "name": "Gwangalli & Suyeong",
+      "highlight1": "Gwangandaegyo Bridge",
+      "highlight2": "Gwangalli Beach"
+    },
+    "gijang": {
+      "name": "Gijang",
+      "highlight1": "Jukseong Dream Cathedral",
+      "highlight2": "Daebyeon Port"
+    },
+    "songjeong": {
+      "name": "Songjeong & Cheongsapo"
+    },
+    "nampo": {
+      "name": "Nampo & Jung-gu",
+      "highlight1": "Jagalchi Market",
+      "highlight2": "BIFF Square"
+    },
+    "seomyeon": {
+      "name": "Seomyeon & Bujeon"
+    },
+    "gamcheon": {
+      "name": "Gamcheon Culture Village",
+      "highlight1": "Gamcheon Village",
+      "highlight2": "Skywalk"
+    },
+    "yeongdo": {
+      "name": "Yeongdo"
+    },
+    "geumjeong": {
+      "name": "Geumjeong & Oncheonjang"
+    },
+    "gangseo-bs": {
+      "name": "Gangseo & Gadeokdo"
+    },
+    "dadaepo": {
+      "name": "Saha & Dadaepo"
+    },
+    "dongseongno": {
+      "name": "Dongseongno & Jung-gu",
+      "highlight1": "Dongseong-ro",
+      "highlight2": "Seomun Market"
+    },
+    "gimgwangseok": {
+      "name": "Kim Gwangseok Street",
+      "highlight1": "Kim Gwangseok Street",
+      "highlight2": "Bangcheon Market"
+    },
+    "suseongmot": {
+      "name": "Suseong Lake & Beomeo",
+      "highlight1": "Suseong Lake",
+      "highlight2": "Suseong Resort"
+    },
+    "palgongsan": {
+      "name": "Palgongsan",
+      "highlight1": "Donghwasa",
+      "highlight2": "Gatbawi"
+    },
+    "dalseong": {
+      "name": "Biseulsan & Dalseong",
+      "highlight1": "Biseulsan Royal Azaleas",
+      "highlight2": "Dalseong Wetlands"
+    },
+    "gunwi": {
+      "name": "Gunwi"
+    },
+    "ganjeolgot": {
+      "name": "Ganjeolgot",
+      "highlight1": "Ganjeolgot Lighthouse",
+      "highlight2": "Sunrise Spot"
+    },
+    "daewangam": {
+      "name": "Daewangam",
+      "highlight1": "Daewangam Park",
+      "highlight2": "Ilsan Beach"
+    },
+    "taehwagang": {
+      "name": "Taehwagang"
+    },
+    "bangudae": {
+      "name": "Bangudae"
+    },
+    "gyeongju": {
+      "name": "Gyeongju",
+      "highlight1": "Hwangnidan-gil",
+      "highlight2": "Bulguksa"
+    },
+    "andong": {
+      "name": "Andong",
+      "highlight1": "Hahoe Village",
+      "highlight2": "Dosanseowon"
+    },
+    "yeongju": {
+      "name": "Yeongju"
+    },
+    "mungyeong": {
+      "name": "Mungyeong"
+    },
+    "pohang": {
+      "name": "Pohang",
+      "highlight1": "Homigot",
+      "highlight2": "Space Walk"
+    },
+    "yeongdeok": {
+      "name": "Yeongdeok"
+    },
+    "uljin": {
+      "name": "Uljin"
+    },
+    "dokdo": {
+      "name": "Dokdo & Ulleungdo",
+      "highlight1": "Dokdo",
+      "highlight2": "Ulleungdo"
+    },
+    "gumi": {
+      "name": "Gumi"
+    },
+    "gimcheon": {
+      "name": "Gimcheon"
+    },
+    "yeongcheon": {
+      "name": "Yeongcheon"
+    },
+    "sangju": {
+      "name": "Sangju"
+    },
+    "gyeongsan": {
+      "name": "Gyeongsan"
+    },
+    "tongyeong": {
+      "name": "Tongyeong",
+      "highlight1": "Luge",
+      "highlight2": "Dongpirang Village"
+    },
+    "geoje": {
+      "name": "Geoje",
+      "highlight1": "Windy Hill",
+      "highlight2": "Oedo"
+    },
+    "namhae": {
+      "name": "Namhae",
+      "highlight1": "German Village",
+      "highlight2": "Darangyi Village"
+    },
+    "goseong-gn": {
+      "name": "Goseong"
+    },
+    "jinju": {
+      "name": "Jinju",
+      "highlight1": "Lantern Festival",
+      "highlight2": "Jinjuseong Fortress"
+    },
+    "changwon": {
+      "name": "Changwon"
+    },
+    "hapcheon": {
+      "name": "Hapcheon"
+    },
+    "miryang": {
+      "name": "Miryang"
+    },
+    "hamyang": {
+      "name": "Hamyang"
+    },
+    "sancheong": {
+      "name": "Sancheong"
+    },
+    "hadong": {
+      "name": "Hadong",
+      "highlight1": "Hwagae Market",
+      "highlight2": "Ssanggyesa"
+    },
+    "geochang": {
+      "name": "Geochang"
+    },
+    "gimhae": {
+      "name": "Gimhae"
+    },
+    "yangsan": {
+      "name": "Yangsan"
+    },
+    "changnyeong": {
+      "name": "Changnyeong"
+    },
+    "uiryeong": {
+      "name": "Uiryeong"
+    },
+    "jeju": {
+      "name": "Jeju City",
+      "highlight1": "Hallasan",
+      "highlight2": "Seongsan Ilchulbong"
+    },
+    "seogwipo": {
+      "name": "Seogwipo",
+      "highlight1": "Cheonjiyeon Falls",
+      "highlight2": "Olle Trail"
+    }
+  },
+  "planner.region": {
+    "seoul-areas": {
+      "label": "Seoul",
+      "subLabel": "Key areas by district"
+    },
+    "gyeonggi-north": {
+      "label": "Northern Gyeonggi",
+      "subLabel": "Goyang, Paju, Uijeongbu, Namyangju, etc."
+    },
+    "gyeonggi-south": {
+      "label": "Southern Gyeonggi",
+      "subLabel": "Suwon, Yongin, Seongnam, Pyeongtaek, etc."
+    },
+    "gangwon": {
+      "label": "Gangwon-do",
+      "subLabel": "Gangwon Special Self-Governing Province"
+    },
+    "chungbuk": {
+      "label": "Chungcheongbuk-do",
+      "subLabel": "Cheongju, Chungju, Jecheon, Danyang"
+    },
+    "chungnam": {
+      "label": "Chungcheongnam-do",
+      "subLabel": "Gongju, Buyeo, Boryeong, Taean, etc."
+    },
+    "jeonbuk": {
+      "label": "Jeonbuk",
+      "subLabel": "Jeonbuk Special Self-Governing Province"
+    },
+    "jeonnam": {
+      "label": "Jeollanam-do",
+      "subLabel": "Yeosu, Suncheon, Mokpo, Damyang, etc."
+    },
+    "busan": {
+      "label": "Busan",
+      "subLabel": "Busan Metropolitan City"
+    },
+    "daegu": {
+      "label": "Daegu",
+      "subLabel": "Daegu Metropolitan City"
+    },
+    "ulsan": {
+      "label": "Ulsan",
+      "subLabel": "Ulsan Metropolitan City"
+    },
+    "gyeongbuk": {
+      "label": "Gyeongsangbuk-do",
+      "subLabel": "Gyeongju, Pohang, Andong, etc."
+    },
+    "gyeongnam": {
+      "label": "Gyeongsangnam-do",
+      "subLabel": "Tongyeong, Geoje, Jinju, Changwon, etc."
+    },
+    "jeju": {
+      "label": "Jeju-do",
+      "subLabel": "Jeju Special Self-Governing Province"
+    }
+  },
+  "home": {
+    "subtitle": "AI के साथ अपनी परफेक्ट यात्रा बनाएँ",
+    "planner": {
+      "label": "ट्रिप प्लानर",
+      "desc": "AI द्वारा सुझाए गए रूट और यात्रा कार्यक्रम"
+    },
+    "schedule": {
+      "label": "मेरी योजनाएँ",
+      "desc": "सहेजी गई यात्रा योजनाएँ देखें"
+    },
+    "guide": {
+      "label": "खोजें",
+      "desc": "रेस्टोरेंट और इवेंट्स एक ही जगह"
+    },
+    "kcontent": {
+      "label": "K-Content प्लानर",
+      "desc": "K-content से प्रेरित यात्राएँ प्लान करें",
+      "title": "🎭 K-कंटेंट थीम यात्राएँ",
+      "theme_kpop": "K-POP",
+      "theme_kdrama": "K-DRAMA",
+      "theme_kfood": "K-FOOD",
+      "theme_kbeauty": "K-BEAUTY"
+    },
+    "news": {
+      "prev": "पिछला",
+      "next": "अगला",
+      "page_n": "पृष्ठ {{page}}",
+      "nationwide": "पूरे देश में",
+      "analyzing": "AI विश्लेषण अभी चल रहा है।",
+      "error": "समाचार लोड नहीं हो सका।"
+    },
+    "rebate": {
+      "city_route_title": "{{name}} यात्रा मार्ग और कार्यक्रम (मानक प्लानर)",
+      "province": {
+        "강원": "गांगवॉन",
+        "충북": "चुंगबुक",
+        "전북": "जॉनबुक",
+        "전남": "जॉननाम",
+        "경남": "ग्योंगनाम",
+        "gangwon": "गांगवॉन",
+        "chungbuk": "चुंगबुक",
+        "jeonbuk": "जॉनबुक",
+        "jeonnam": "जॉननाम",
+        "gyeongnam": "ग्योंगनाम"
+      },
+      "period": "2026.4 ~ 6 · पायलट कार्यक्रम",
+      "title": "🎫 चयनित ग्रामीण यात्राओं पर अधिकतम 50% वापसी",
+      "desc": "यात्रा खर्च का आधा हिस्सा मोबाइल स्थानीय गिफ्ट वाउचर के रूप में। प्रति व्यक्ति अधिकतम 1,00,000 KRW, 2+ समूहों के लिए अधिकतम 2,00,000 KRW।",
+      "visit_korea": "विजिट कोरिया",
+      "fold": "उपयोग विधि छुपाएँ",
+      "expand": "उपयोग विधि · पात्र क्षेत्र",
+      "step1": "पूर्व आवेदन — visitkorea.or.kr पर पात्र क्षेत्र देखें और यात्रा से पहले अनुमोदन लें।",
+      "step2": "यात्रा — अनुमोदित क्षेत्रों में खर्च करें (भोजन, ठहर आदि) और रसीद रखें।",
+      "step3": "प्रमाण जमा करें — यात्रा के बाद स्थानीय निर्देशानुसार रसीदें जमा करें।",
+      "step4": "वापसी — सत्यापन के बाद खर्च का 50% मोबाइल स्थानीय वाउचर में।",
+      "step5": "उपयोग — उसी वर्ष क्षेत्र के रेस्तरां, कैफ़े या ऑनलाइन मॉल में उपयोग करें।",
+      "notice": "ध्यान दें: पूर्व आवेदन व अनुमोदन आवश्यक। बजट सीमा पर जल्दी बंद हो सकता है। विवरण भिन्न हो सकते हैं; अप्रैल की शुरुआत में आधिकारिक साइट देखें।",
+      "targets": "16 पात्र क्षेत्र · प्लानर में मार्ग देखें या आधिकारिक गाइड"
+    },
+    "banner": {
+      "title": "बेहतर AI सुझावों के लिए अपनी प्राथमिकताएँ सेट करें!",
+      "sub": "पर्सनलाइज्ड रूट के लिए लिंग, उम्र, आहार और धर्म जोड़ें।",
+      "setup": "सेट करें",
+      "close": "बंद करें"
+    },
+    "popular": {
+      "title": "📍 लोकप्रिय गंतव्य"
+    },
+    "shortcuts": {
+      "planner": "यात्रा प्लानर",
+      "kcontent": "K-कंटेंट",
+      "schedule": "अनुसूची",
+      "standard": "स्थान खोजें",
+      "user": "उपयोगकर्ता मार्ग",
+      "group": "समूह चैट"
+    }
+  },
+  "sidebar": {
+    "tourstar": "यात्रा सितारा",
+    "planner": "ट्रिप प्लानर",
+    "schedule": "मेरी योजनाएँ",
+    "guide": "खोजें",
+    "groupchat": "ग्रुप चैट",
+    "friends": "मित्र सूची",
+    "whisper": "फुसफुसाहट",
+    "profile": "मेरा प्रोफ़ाइल",
+    "customer": "कस्टमर सेंटर",
+    "logout": "लॉग आउट"
+  },
+  "settings": {
+    "title": "सेटिंग्स",
+    "saved": "सहेजा गया।",
+    "error": {
+      "load_user": "उपयोगकर्ता जानकारी लोड नहीं हो सकी।",
+      "save": "सहेजना विफल।",
+      "save_during": "सहेजते समय त्रुटि।"
+    },
+    "account": {
+      "title": "खाता जानकारी",
+      "email": "ईमेल",
+      "nickname": "उपनाम",
+      "default": "(डिफ़ॉल्ट)",
+      "nickname_placeholder": "खाली छोड़ने पर नाम दिखेगा",
+      "nickname_hint": "खाली होने पर आपका नाम दिखाई देगा।",
+      "honor": "सम्मान",
+      "point": "अंक",
+      "provider": "प्रदाता"
+    },
+    "withdraw": {
+      "title": "खाता हटाएँ",
+      "desc": "हटाने पर खाता और डेटा मिट जाएगा, वापस नहीं आएगा।",
+      "button": "खाता हटाएँ",
+      "confirm_desc": "क्या वाकई हटाना है? आगे बढ़ने के लिए नीचे Delete account लिखें।",
+      "placeholder": "Delete account",
+      "submit": "हटाएँ",
+      "error": "खाता हटाना विफल।",
+      "error_during": "खाता हटाते समय त्रुटि।"
+    },
+    "profile": {
+      "title": "यात्रा प्रोफ़ाइल",
+      "subtitle": "AI वैयक्तिक सुझावों के लिए उपयोग होता है",
+      "save": "यात्रा प्रोफ़ाइल सहेजें",
+      "saved": "यात्रा प्रोफ़ाइल सहेजी गई।"
+    }
+  },
+  "customer": {
+    "subscription": {
+      "title_mobile": "सदस्यता",
+      "title": "सदस्यता सेवा",
+      "subtitle": "मुफ्त परीक्षण के बाद अपनी योजना चुनें।",
+      "safety": "सुरक्षित भुगतान · कभी भी रद्द करें",
+      "free": {
+        "kicker": "आज मुफ्त में शुरू करें",
+        "note": "7 दिन मुफ्त के बाद चयनित योजना पर स्वतः स्विच होगा।"
+      },
+      "plan_monthly": {
+        "title": "मासिक योजना",
+        "badge": "बेसिक",
+        "price": "₩5,900 / माह",
+        "note": "मासिक बिलिंग",
+        "features": {
+          "1": "विशेषज्ञ सिफारिश सारांश",
+          "2": "पूछताछ/गाइड के लिए प्राथमिकता उत्तर",
+          "3": "नवीनतम फीचर अपडेट शामिल"
+        }
+      },
+      "plan_yearly": {
+        "title": "वार्षिक योजना",
+        "badge": "अनुशंसित",
+        "price": "₩46,800 / वर्ष",
+        "note": "वार्षिक बिलिंग",
+        "oldPrice": "लगभग ₩7,000/माह के बराबर",
+        "features": {
+          "1": "मासिक योजना के सभी लाभ",
+          "2": "पूरे वर्ष की छूट",
+          "3": "प्राथमिकता सहायता और स्थिरता"
+        }
+      },
+      "cta_monthly": "मासिक सदस्यता शुरू करें",
+      "cta_yearly": "वार्षिक सदस्यता शुरू करें",
+      "selected": {
+        "title": "चयनित योजना",
+        "compare": "तुलना: ",
+        "includes": "शामिल लाभ"
+      },
+      "agree": {
+        "service_title": "सेवा उपयोग की सहमति",
+        "service_desc": "सदस्यता भुगतान और उपयोग के लिए आवश्यक।",
+        "billing_title": "बिलिंग सूचना की सहमति",
+        "billing_desc": "स्वतः स्विच और बिलिंग चक्र के बारे में।"
+      },
+      "demo_alert": "(डेमो UI) वास्तविक भुगतान API बाद में जोड़ी जाएगी।",
+      "demo_note": "यह डेमो स्क्रीन है। वास्तविक भुगतान/स्विच प्रोडक्शन में।"
+    },
+    "emergency": {
+      "title_mobile": "आपात सहायता",
+      "title": "आपात सहायता और यात्रा सुझाव",
+      "subtitle": "कोरिया में विदेशियों के लिए संभावित आपात स्थितियों की श्रेणी-आधारित मार्गदर्शिका।",
+      "share_button": "आपात स्थिति साझा करें",
+      "consulate": {
+        "title": "दूतावास / वाणिज्य दूतावास",
+        "nationality": "राष्ट्रीयता",
+        "find_contact": "वाणिज्य संपर्क खोजें",
+        "callcenter": "24 घंटे वाणिज्य कॉल सेंटर 02-3210-0404",
+        "unknown_nationality": "अज्ञात"
+      },
+      "categories": {
+        "title": "आपात श्रेणियाँ",
+        "selected": "चयनित",
+        "view": "देखें",
+        "items": {
+          "passport": {
+            "title": "पासपोर्ट / वीज़ा और ठहराव सहायता",
+            "short": "पासपोर्ट खो जाना या वीज़ा/ठहराव सहायता",
+            "steps": {
+              "1": "यदि संभव हो तो प्रतिलिपि/फोटो रखें और आवास/पुलिस पर खोने की पुष्टि करें।",
+              "2": "पुनः जारी या अस्थायी दस्तावेज़ के लिए दूतावास से संपर्क करें।",
+              "3": "आवश्यक हो तो पुलिस मामला संख्या तैयार रखें।"
+            }
+          },
+          "lost": {
+            "title": "खोया / चोरी रिपोर्ट",
+            "short": "बटुआ, फोन या महत्वपूर्ण सामान खो जाना",
+            "steps": {
+              "1": "यदि खाता समझौता हो सकता है तो तुरंत प्रमाणीकरण रोकें और पासवर्ड बदलें।",
+              "2": "निकटतम थाने/खोया-पाया केंद्र पर रिपोर्ट कर मामला संख्या लें।",
+              "3": "पासपोर्ट/कार्ड साथ खो जाएँ तो तुरंत वाणिज्य दूतावास कॉल करें।"
+            }
+          },
+          "safety": {
+            "title": "अपराध / हिंसा / सुरक्षा खतरा",
+            "short": "ठगी, मारपीट, धमकी या आसपास खतरा",
+            "steps": {
+              "1": "तुरंत सुरक्षित स्थान पर जाएँ और मदद माँगें।",
+              "2": "चोट लगे तो 119 (चिकित्सा) या 112 (पुलिस) डायल करें।",
+              "3": "घटना का समय/स्थान नोट करें और सबूत (फोटो, संदेश) रखें।"
+            }
+          },
+          "medical": {
+            "title": "आपात चिकित्सा / दुर्घटना",
+            "short": "अचानक बीमारी या दुर्घटना में चोट",
+            "steps": {
+              "1": "ज़रूरत अनुसार 119 या 112 कॉल कर प्राथमिक उपचार लें।",
+              "2": "अस्पताल में दुभाषिया चाहिए तो दूतावास सहायता लें।",
+              "3": "एलर्जी, दवाएँ और पुरानी बीमारियाँ चिकित्साकर्मियों को बताएँ।"
+            }
+          },
+          "disaster": {
+            "title": "आग / आपदा / निकासी",
+            "short": "आग, भारी बारिश, बिजली गुल आदि",
+            "steps": {
+              "1": "अलार्म/निर्देशों का पालन कर सुरक्षित मार्ग से निकलें।",
+              "2": "घायल हों तो पहले सुरक्षा, फिर बचाव कॉल करें।",
+              "3": "स्थान और स्थिति दूतावास/आवास के साथ साझा करें।"
+            }
+          },
+          "immigration": {
+            "title": "आव्रजन / निष्कासन और ठहराव",
+            "short": "अवैध ठहराव, निष्कासन जोखिम",
+            "steps": {
+              "1": "अकेले न निपटें; दस्तावेज़/नोटिस फोटो कर तुरंत वाणिज्य दूतावास कॉल करें।",
+              "2": "वकील/दुभाषिया मार्गदर्शन लें यदि ज़रूरत हो।",
+              "3": "ऐसे कार्य न करें जो आव्रजन प्रक्रिया प्रभावित करें।"
+            }
+          },
+          "interpreter": {
+            "title": "वाणिज्य दूतावास / दुभाषिया संपर्क",
+            "short": "भाषा बाधा से मदद माँगना मुश्किल",
+            "steps": {
+              "1": "संक्षेप में (कब/कहाँ/क्या) लिखकर वाणिज्य दूतावास को भेजें।",
+              "2": "फोन नंबर, पता और आवास तैयार रखें।",
+              "3": "आपात लाइन (पुलिस/चिकित्सा) समानांतर कॉल करनी पड़ सकती है।"
+            }
+          }
+        }
+      },
+      "detail": {
+        "badge": "प्रतिक्रिया गाइड",
+        "call_police": "112 पुलिस",
+        "call_119": "119 आपातकाल",
+        "call_1339": "1339 KCDC (चिकित्सा सलाह)",
+        "call_consulate": "वाणिज्य दूतावास संपर्क"
+      },
+      "share": {
+        "title_mobile": "आपात साझा करें",
+        "title": "सार्वजनिक आपात साझाकरण",
+        "type_title": "आपात प्रकार",
+        "type_subtitle": "प्रकार चुनें और तुरंत साझा करने के लिए फोटो/ऑडियो संलग्न करें।",
+        "aria": {
+          "select_reason": "{{id}} चुनें"
+        },
+        "attach_title": "संलग्नक",
+        "attach_subtitle": "फोटो या ऑडियो साझाकरण तेज़ करता है।",
+        "photo_section": "फोटो जोड़ें",
+        "photo_pick": "फोटो चुनें",
+        "photo_empty": "कृपया फोटो चुनें।",
+        "audio_section": "ऑडियो रिकॉर्डिंग",
+        "recording": "रिकॉर्डिंग: {{s}} सेकंड",
+        "record_ready": "तैयार",
+        "optional": "वैकल्पिक",
+        "audio_start": "रिकॉर्ड शुरू",
+        "audio_stop": "रोकें",
+        "audio_delete": "ऑडियो हटाएँ",
+        "audio_perm": "माइक अनुमति आवश्यक हो सकती है।",
+        "now_title": "अभी साझा करें",
+        "now_subtitle": "डेमो: वास्तविक भेजने के बजाय पुष्टि दिखाता है।",
+        "call_emergency": "आपात कॉल",
+        "start_button": "आपात साझाकरण शुरू करें",
+        "reason": {
+          "location": {
+            "label": "स्थान/सुरक्षा सहायता चाहिए",
+            "desc": "वर्तमान स्थान के आधार पर मदद माँगें।"
+          },
+          "medical": {
+            "label": "चिकित्सा सहायता चाहिए",
+            "desc": "बीमारी या चोट के लिए आपात चिकित्सा।"
+          },
+          "danger": {
+            "label": "तत्काल खतरनाक स्थिति",
+            "desc": "हिंसा/ठगी/धमकी से तुरंत सुरक्षा।"
+          }
+        },
+        "alert": {
+          "audio_permission": "ऑडियो रिकॉर्डिंग अनुमति जाँचें।",
+          "select_reason": "कम से कम एक आपात प्रकार चुनें।",
+          "attach_required": "फोटो या ऑडियो संलग्न करें।",
+          "start_demo": "आपात साझाकरण शुरू। (डेमो)\nचयनित: {{selected}}"
+        }
+      }
+    },
+    "notices": {
+      "title": "सूचनाएँ",
+      "subtitle": "नवीनतम सूचनाएँ देखें।",
+      "new_button": "नई सूचना लिखें",
+      "new_button_alert": "«नई सूचना लिखें» सुविधा बाद में जोड़ी जाएगी।",
+      "search_placeholder": "सूचना खोजें (शीर्षक/सामग्री)",
+      "search_button": "खोजें",
+      "count": "{{count}} आइटम",
+      "no_results": "कोई परिणाम नहीं मिला।",
+      "seed": {
+        "3": {
+          "title": "v1.0.2 रिलीज़ (पूछताछ UX सुधार)",
+          "content": "पूछताछ और इतिहास के लिए टैब जोड़े गए।"
+        },
+        "4": {
+          "title": "ठीक किया: कुछ वातावरण में धीमी छवि अपलोड",
+          "content": "छवि अपलोड में देरी की समस्या हल हुई।\nयदि फिर हो तो सूचित करें।"
+        },
+        "5": {
+          "title": "सूचना फ़िल्टर अपडेट",
+          "content": "प्रकार और खोज फ़िल्टर से जल्दी जानकारी मिलती है।"
+        },
+        "6": {
+          "title": "नियोजित सर्वर रखरखाव",
+          "content": "कुछ सुविधाएँ अस्थायी रूप से बंद हो सकती हैं।\nसमय और प्रभाव सूचना के नीचे देखें।"
+        },
+        "7": {
+          "title": "v1.0.3 रिलीज़ (प्रदर्शन और बग फिक्स)",
+          "content": "इस अपडेट में लोडिंग तेज़ हुई और कुछ त्रुटियाँ ठीक हुईं।\nसमस्या बनी रहे तो सहायता केंद्र से संपर्क करें।"
+        },
+        "author": {
+          "ops": "संचालन टीम"
+        }
+      },
+      "table": {
+        "no": "क्रम",
+        "title": "शीर्षक",
+        "author": "लेखक",
+        "date": "तारीख",
+        "views": "दृश्य"
+      },
+      "aria": {
+        "select_all": "सभी चुनें",
+        "select_row": "सूचना {{id}} चुनें"
+      },
+      "modal": {
+        "meta": "{{author}} द्वारा · {{date}}",
+        "close": "बंद करें"
+      }
+    },
+    "inquiry": {
+      "title": "संपर्क करें",
+      "tabs": {
+        "write": "1:1 पूछताछ",
+        "list": "मेरी पूछताछ"
+      },
+      "form": {
+        "subject": "विषय",
+        "subject_placeholder": "विषय दर्ज करें",
+        "content": "संदेश",
+        "content_placeholder": "विवरण दें",
+        "attachments": "संलग्नक",
+        "attachment_help": "छवियाँ (GIF, PNG, JPG) प्रति 10MB तक, अधिकतम 3",
+        "privacy_agree": "व्यक्तिगत डेटा संग्रह व उपयोग की सहमति",
+        "sending": "भेजा जा रहा है…",
+        "submit": "जमा करें"
+      },
+      "list": {
+        "search_label": "खोज",
+        "search_placeholder": "शीर्षक/सामग्री/स्थिति से खोजें",
+        "no_results": "कोई परिणाम नहीं।"
+      },
+      "status": {
+        "answered": "उत्तर दिया",
+        "pending": "प्रगति पर"
+      },
+      "submit_done": "आपकी पूछताछ भेज दी गई।",
+      "seed": {
+        "10001": {
+          "title": "प्रोफ़ाइल फोटो अपलोड नहीं हो रही",
+          "content": "छवि चुनने के बाद अपलोड बार-बार विफल होता है।"
+        },
+        "10002": {
+          "title": "अपना शेड्यूल कैसे बदलूँ?",
+          "content": "मैं सहेजे गए मार्ग में केवल एक दिन बदलना चाहता/चाहती हूँ।",
+          "answer": "शेड्यूल खोलें, तारीख चुनें, फिर रीरोल या AI संशोधन उपयोग करें।"
+        }
+      }
+    },
+    "inquiries": {
+      "title": "मेरी पूछताछ",
+      "mobile_title": "पूछताछ इतिहास",
+      "subtitle": "भेजी गई पूछताछ और उत्तर देखें।",
+      "my_list": "पूछताछ सूची",
+      "write": "पूछताछ लिखें",
+      "search_placeholder": "शीर्षक/सामग्री/स्थिति से खोजें",
+      "no_results": "कोई परिणाम नहीं।",
+      "status": {
+        "answered": "उत्तर दिया",
+        "pending": "प्रगति पर"
+      },
+      "seed": {
+        "10001": {
+          "title": "प्रोफ़ाइल फोटो अपलोड नहीं हो रही",
+          "content": "छवि चुनने के बाद अपलोड बार-बार विफल होता है।"
+        },
+        "10002": {
+          "title": "अपना शेड्यूल कैसे बदलूँ?",
+          "content": "मैं सहेजे गए मार्ग में केवल एक दिन बदलना चाहता/चाहती हूँ।",
+          "answer": "शेड्यूल खोलें, तारीख चुनें, फिर रीरोल या AI संशोधन उपयोग करें।"
+        }
+      },
+      "detail": {
+        "title": "पूछताछ विवरण",
+        "mobile_title": "पूछताछ विवरण",
+        "back_to_list": "सूची पर वापस",
+        "received_at": "प्राप्ति: {{date}}",
+        "content": "सामग्री",
+        "attachments": "संलग्नक",
+        "no_attachments": "कोई संलग्नक नहीं।",
+        "answer": "उत्तर",
+        "answer_pending": "उत्तर तैयार हो रहा है, कृपया प्रतीक्षा करें।",
+        "not_found": "पूछताछ नहीं मिली।"
+      }
+    },
+    "faq": {
+      "count": "{{count}} प्रविष्टियाँ",
+      "title": "अक्सर पूछे जाने वाले प्रश्न",
+      "no_results": "कोई खोज परिणाम नहीं।",
+      "items": {
+        "login_help": {
+          "category": "पूछताछ",
+          "question": "लॉगिन नहीं हो रहा तो क्या करूँ?",
+          "answer": "ऐप रीफ़्रेश कर पुनः प्रयास करें। फिर भी समस्या हो तो सहायता से संपर्क करें।"
+        },
+        "first_steps": {
+          "category": "गाइड",
+          "question": "नया उपयोगकर्ता हूँ, कहाँ से शुरू करूँ?",
+          "answer": "होम से यात्रा योजनाकार और खोजें उपयोग करें, फिर शेड्यूल प्रबंधन।"
+        },
+        "update_notes": {
+          "category": "सूचनाएँ",
+          "question": "अपडेट नोट्स कहाँ देखें?",
+          "answer": "ग्राहक केंद्र की सूचना श्रेणी में नवीनतम परिवर्तन।"
+        },
+        "refund_flow": {
+          "category": "भुगतान और सेवा",
+          "question": "भुगतान रद्द (रिफ़ंड) कैसे?",
+          "answer": "भुगतान विवरण और ऑर्डर नंबर के साथ पूछताछ भेजें, हम क्रम से मार्गदर्शन करेंगे।"
+        },
+        "emergency_help": {
+          "category": "आपातकाल और यात्रा सुझाव",
+          "question": "यात्रा में आपातकाल में क्या मदद मिलती है?",
+          "answer": "पहले आपात संपर्क और मूल गाइड देखें, ज़रूरत हो तो तुरंत सहायता से संपर्क करें।"
+        }
+      }
+    },
+    "center": {
+      "title": "ग्राहक केंद्र",
+      "subtitle": "ज़रूरी सहायता जल्दी खोजें।"
+    },
+    "search": {
+      "label": "हम कैसे मदद करें?",
+      "placeholder": "खोज शब्द दर्ज करें"
+    },
+    "categories": {
+      "title": "श्रेणियाँ",
+      "items": {
+        "inquiry": {
+          "title": "पूछताछ",
+          "desc": "खाता, सुविधाएँ, त्रुटियाँ — सामान्य प्रश्न"
+        },
+        "guide": {
+          "title": "उपयोगकर्ता गाइड",
+          "desc": "सेवा उपयोग और शुरुआत"
+        },
+        "notices": {
+          "title": "सूचनाएँ",
+          "desc": "रखरखाव, रिलीज़ और परिवर्तन"
+        },
+        "payment": {
+          "title": "भुगतान और उपयोग",
+          "desc": "भुगतान, रिफ़ंड और सदस्यता"
+        },
+        "emergency": {
+          "title": "आपात सहायता और यात्रा सुझाव",
+          "desc": "आपात प्रतिक्रिया और सुरक्षा"
+        }
+      }
+    },
+    "guide": {
+      "title": "उपयोगकर्ता गाइड",
+      "subtitle": "होम से शुरू होने वाली पाँच मुख्य सुविधाओं का सार।",
+      "hero": {
+        "kicker": "अपनी पहली यात्रा ऐसे शुरू करें",
+        "title": "मार्ग बनाएँ → शेड्यूल व्यवस्थित करें → ज़रूरत हो तो साझा करें और चैट करें",
+        "steps": {
+          "planner": "यात्रा योजनाकार",
+          "schedule": "शेड्यूल",
+          "guide": "खोजें",
+          "social": "Tourstar / समूह चैट"
+        },
+        "cta_planner": "यात्रा योजनाकार शुरू करें",
+        "cta_groupchat": "समूह चैट देखें"
+      },
+      "cards": {
+        "tourstar": {
+          "title": "Tourstar",
+          "subtitle": "यात्रा पोस्ट, समीक्षा और साझाकरण एक जगह।",
+          "cta": "Tourstar पर जाएँ",
+          "items": {
+            "1": {
+              "title": "1) फोटो/नोट तैयार करें",
+              "body": "फोटो अपलोड करें, AI शीर्षक/सारांश में मदद करता है।"
+            },
+            "2": {
+              "title": "2) दृश्यता चुनें",
+              "body": "ज़रूरत अनुसार सार्वजनिक या निजी।"
+            },
+            "3": {
+              "title": "3) प्रतिक्रियाएँ",
+              "body": "लाइक/टिप्पणियों से सुझाव, मित्र जोड़ें।"
+            }
+          },
+          "tip": {
+            "title": "सुझाव",
+            "body": "शीर्षक छोटे; पाठ: कब/कहाँ/क्या अच्छा लगा।"
+          }
+        },
+        "planner": {
+          "title": "यात्रा योजनाकार",
+          "subtitle": "AI आपकी शैली के अनुसार मार्ग और दिनचर्या सुझाता है।",
+          "cta": "यात्रा योजनाकार पर जाएँ",
+          "items": {
+            "1": {
+              "label": "मानक / K-सामग्री / उपयोगकर्ता सामग्री",
+              "body": "शुरू करने के लिए एक चुनें।"
+            },
+            "2": {
+              "label": "गंतव्य (या थीम) चुनें",
+              "body": "संदर्भ स्पष्ट होने पर सुझाव बेहतर होते हैं।"
+            },
+            "3": {
+              "body": "सुझाई गई योजनाएँ स्वतः सहेजी जाती हैं, शेड्यूल में निखारें।"
+            }
+          }
+        },
+        "schedule": {
+          "title": "शेड्यूल प्रबंधन",
+          "subtitle": "कैलेंडर में सहेजी योजनाएँ; रीरोल या AI से संशोधन।",
+          "cta": "शेड्यूल खोलें",
+          "items": {
+            "1": {
+              "title": "1) कैलेंडर में तारीख चुनें",
+              "body": "तारीख पर टैप कर उस दिन की योजना देखें।"
+            },
+            "2": {
+              "title": "2) रीरोल से नया संस्करण",
+              "body": "जो पसंद न हो केवल वही फिर से बनाएँ।"
+            },
+            "3": {
+              "title": "3) AI से संशोधन",
+              "body": "प्रॉम्प्ट से शेड्यूल समायोजित करें।"
+            }
+          },
+          "tip": {
+            "title": "मानचित्र / मौसम",
+            "body": "शेड्यूल कार्ड में मानचित्र और मौसम सारांश।"
+          }
+        },
+        "discover": {
+          "title": "खोजें",
+          "subtitle": "रेस्तरां, आयोजन आदि एक स्क्रीन पर।",
+          "cta": "खोजें पर जाएँ",
+          "items": {
+            "1": {
+              "title": "1) गाइड चुनें",
+              "body": "रेस्तरां या आयोजन टैब।"
+            },
+            "2": {
+              "title": "2) कार्ड/सूची देखें",
+              "body": "स्थान टैप कर विवरण देखें।"
+            },
+            "3": {
+              "body": "योजना में जोड़ने के लिए योजनाकार/शेड्यूल में समायोजित करें।"
+            }
+          }
+        },
+        "groupchat": {
+          "title": "समूह चैट",
+          "subtitle": "सम्मान स्तर के अनुसार कमरे — यात्रा कहानियाँ साझा करें।",
+          "cta": "समूह चैट पर जाएँ",
+          "items": {
+            "1": {
+              "title": "1) कमरे की सूची से प्रवेश",
+              "body": "प्रवेश सम्मान स्तर पर निर्भर हो सकता है।"
+            },
+            "2": {
+              "title": "2) संदेश भेजें",
+              "body": "इनपुट में लिखकर वास्तविक समय में भेजें।"
+            },
+            "3": {
+              "title": "3) मित्र / फुसफुसाहट / सम्मान",
+              "body": "संदेश मेनू: फुसफुसाहट, मित्र जोड़ें, सम्मान।"
+            }
+          }
+        }
+      }
+    }
+  },
+  "planner": {
+    "title": "यात्रा योजनाकार",
+    "subtitle": "अपनी पसंद की यात्रा शैली चुनें",
+    "modes": {
+      "standard": {
+        "title": "स्टैंडर्ड",
+        "desc": "AI द्वारा सुझाए गए रूट और यात्रा कार्यक्रम"
+      },
+      "kcontent": {
+        "title": "K-कंटेंट",
+        "desc": "ड्रामा/फ़िल्म की शूटिंग लोकेशन की यात्रा"
+      },
+      "usercontent": {
+        "title": "यूज़र कंटेंट",
+        "desc": "यात्रियों द्वारा सुझाए गए कोर्स"
+      }
+    },
+    "schedule": {
+      "title": "मेरी योजनाएँ",
+      "subtitle_with_count": "{{count}} सहेजी गई योजनाएँ · किसी दिन को देखने के लिए तारीख पर क्लिक करें",
+      "new_route": "+ नया रूट",
+      "prev_month": "पिछला महीना",
+      "next_month": "अगला महीना",
+      "year_month": "{{year}}-{{month}}",
+      "legend": "योजना संकेत",
+      "reroll_fail": "दोबारा बनाना विफल रहा।",
+      "modify_fail": "संशोधित करना विफल रहा।",
+      "view_all_route": "सभी स्टॉप्स के लिए रूट देखें",
+      "all_route": "🗺️ पूरा रूट",
+      "in_trip_period": "यात्रा अवधि के भीतर",
+      "rerolled": "🔄 दोबारा बनाया गया",
+      "generating": "बनाया जा रहा है…",
+      "reroll_this_item": "इस आइटम को दोबारा बनाएं",
+      "view_on_map": "मैप पर देखें",
+      "ask_ai_modify": "AI से यात्रा कार्यक्रम बदलने के लिए कहें",
+      "modify_placeholder": "उदा. \"Changdeokgung Secret Garden tour को किसी और जगह से बदलें\"",
+      "ai_modifying": "AI संशोधित कर रहा है…",
+      "item_regenerating": "आइटम दोबारा बनाया जा रहा है…",
+      "modify_login_needed": "संशोधन फीचर के लिए लॉगिन आवश्यक है",
+      "date_ymd": "{{year}}-{{month}}-{{day}}",
+      "item_count": "{{count}} आइटम",
+      "no_items_on_day": "इस दिन के लिए कोई आइटम तय नहीं है",
+      "delete_confirm": "क्या इस योजना को हटाएँ?",
+      "saved_at": "{{date}} को सहेजा गया",
+      "weather_forecast": "🌤 मौसम पूर्वानुमान",
+      "within_5days": "· 5 दिनों के भीतर",
+      "view_schedule": "यात्रा कार्यक्रम देखें",
+      "view_day_route": "दिन {{day}} का रूट देखें",
+      "route": "🗺️ रूट",
+      "ai_modified": "✨ AI द्वारा संशोधित",
+      "load_fail": "योजनाएँ लोड नहीं हो सकीं।",
+      "delete_fail": "हटाना विफल रहा।",
+      "login_note": "SNS लॉगिन के बाद यात्रा योजनाएँ अपने आप सहेजी जाती हैं",
+      "login_needed": "लॉगिन आवश्यक है",
+      "empty_title": "कोई सहेजी हुई योजना नहीं",
+      "empty_desc": "Trip Planner में कोई रूट चुनें\nऔर AI योजनाएँ अपने आप सहेज देगा",
+      "go_planner": "Trip Planner खोलें",
+      "list_hint": "सभी योजनाएँ · किसी दिन को देखने के लिए तारीख पर क्लिक करें"
+    },
+    "kcontent": {
+      "title": "K-कंटेंट प्लानर",
+      "subtitle": "K-Pop, ड्रामा, भोजन और ब्यूटी के ज़रिए कोरिया खोजें",
+      "hero_title": "K-कंटेंट प्लानर",
+      "hero_subtitle": "K-Pop, ड्रामा, भोजन और ब्यूटी के ज़रिए कोरिया खोजें",
+      "hero_cta": "AI मार्ग बनाएँ",
+      "back": "प्लानर पर वापस जाएँ",
+      "row_kpop": "K-POP",
+      "row_kdrama": "K-ड्रामा / फ़िल्म",
+      "row_kfood": "K-Food",
+      "row_kbeauty": "K-Beauty",
+      "sample_itinerary": "नमूना यात्रा कार्यक्रम",
+      "search_bar": "खोजें",
+      "quick_selection": "त्वरित चयन",
+      "vibe_grid": "माहौल चुनें",
+      "date": "तारीख",
+      "generating": "बन रहा है…",
+      "generate": "✨ कार्यक्रम बनाएँ",
+      "ai_recommended": "AI अनुशंसित कार्यक्रम",
+      "region_select": "क्षेत्र चुनें",
+      "traditional_market": "पारंपरिक बाज़ार",
+      "market_generate": "इस बाज़ार का खान-पान कार्यक्रम बनाएँ",
+      "cafe_question": "आज आप कैसा माहौल चाहते हैं?",
+      "cafe_hint": "माहौल चुनें या कैफ़े का नाम लिखें ताकि AI मार्ग बना सके।",
+      "cafe_placeholder": "कैफ़े का नाम लिखें (जैसे Seongsu Tongue Planet)",
+      "cafe_generate": "AI कार्यक्रम बनाएँ",
+      "trending_items": "अभी ट्रेंडिंग",
+      "my_recipe": "मेरा कॉम्बो रेसिपी",
+      "convenience_q": "अभी कन्वीनियंस स्टोर पर सबसे मुश्किल क्या मिलता है?",
+      "trending_placeholder": "जैसे Yonsei Milk Cream Bread",
+      "recipe_q": "कौन सा फ़्लेवर कॉम्बो आज़माना चाहेंगे?",
+      "extra_keywords": "अतिरिक्त कीवर्ड",
+      "recipe_placeholder": "जैसे मसालेदार चुनौती, मीठा-नमकीन डेज़र्ट",
+      "recipe_generate": "AI कॉम्बो रेसिपी बनाएँ",
+      "set_date_and_generate": "तारीख सेट करें और\nकार्यक्रम बनाएँ",
+      "start_generate": "✨ कार्यक्रम बनाना शुरू करें",
+      "making_schedule": "AI <b>{{title}}</b> का कार्यक्रम बना रहा है…",
+      "recommended_schedule_title": "{{title}} — अनुशंसित कार्यक्रम",
+      "save_plan": "💾 कार्यक्रम सहेजें",
+      "total_cost": "अनुमानित कुल लागत",
+      "cost_per_day": "दिन {{day}} {{total}}",
+      "no_schedule": "कोई कार्यक्रम नहीं बना। फिर से कोशिश करें।",
+      "saved_goto_schedule": "सहेजा गया · शेड्यूल पर जाएँ",
+      "find_nearby_store": "पास बेचने वाली जगहें खोजें",
+      "recipe_hashtags": "#मोडिशूमर #कन्वीनियंसचैलेंज #AIरेसिपी",
+      "description_fallback": "{{place}} पर आनंद लेने के लिए अनुशंसित स्थल।",
+      "challenge_location": "चुनौती स्थल",
+      "challenge_location_desc": "AI द्वारा चुना सर्वोत्तम स्थल (100 किमी के भीतर) — सियोल फ़ॉरेस्ट, सियोंग्सू के सामने बेंच ज़ोन",
+      "subtotal": "उप-योग {{total}}",
+      "schedule_item_default": "कार्यक्रम",
+      "schedule_load_fail": "कार्यक्रम लोड नहीं हो सका।",
+      "save_fail": "सहेजना विफल।",
+      "cafe_place_hint": "कैफ़े/स्थल संकेत",
+      "convenience_trending": "कन्वीनियंस ट्रेंडिंग आइटम",
+      "recipe_title_with_vibe": "{{vibe}} चैलेंज 2026 संस्करण",
+      "recipe_title_default": "मार्क सेट 2026 संस्करण",
+      "region_tab.all": "सभी",
+      "region_tab.seoul": "सियोल",
+      "region_tab.gangwon": "गंगवॉन",
+      "region_tab.jeonla": "जेओल्ला",
+      "region_tab.gyeongsang": "ग्येओंगसांग",
+      "region_tab.jeju": "जेजू",
+      "cafe_vibe.industrial_raw.label": "इंडस्ट्रियल/कच्चा",
+      "cafe_vibe.industrial_raw.description": "कंक्रीट और स्टील का कूल माहौल।",
+      "cafe_vibe.traditional_zen.label": "पारंपरिक/ज़ेन",
+      "cafe_vibe.traditional_zen.description": "हानोक और लकड़ी की बनावट के साथ शांति।",
+      "cafe_vibe.nature_botanical.label": "प्रकृति/बॉटानिकल",
+      "cafe_vibe.nature_botanical.description": "हरियाली और धूप से भरा स्थान।",
+      "cafe_vibe.retro_newtro.label": "रेट्रो/न्यूट्रो",
+      "cafe_vibe.retro_newtro.description": "नॉस्टैल्जिया और विंटेज गली टूर।",
+      "cafe_vibe.modern_minimal.label": "मॉडर्न/मिनिमल",
+      "cafe_vibe.modern_minimal.description": "परिष्कृत मोनोक्रोम सौंदर्यशास्त्र।",
+      "brand.seveneleven": "7-Eleven",
+      "brand.emart24": "emart24",
+      "market": {
+        "SEOUL": {
+          "0": {
+            "name": "ग्वांगजांग बाज़ार",
+            "description": "युखो और बिंदेट्टोक का केंद्र।"
+          },
+          "1": {
+            "name": "मांगवॉन बाज़ार",
+            "description": "MZ पीढ़ी का पसंदीदा ट्रेंडी बाज़ार।"
+          },
+          "2": {
+            "name": "तोंगिन बाज़ार",
+            "description": "प्रसिद्ध सिक्का लंचबॉक्स अनुभव।"
+          }
+        },
+        "GANGWON": {
+          "0": {
+            "name": "योंगवोल जुंगांग बाज़ार",
+            "description": "बकवीट जियॉनब्योंग और नूडल्स।"
+          },
+          "1": {
+            "name": "सोक्चो पर्यटन मछली बाज़ार",
+            "description": "डकगैंगजोंग और समुद्री स्ट्रीट फ़ूड।"
+          }
+        },
+        "JEONLA": {
+          "0": {
+            "name": "जेओनजू नाम्बू बाज़ार",
+            "description": "ब्लड सॉसेज और स्प्राउट सूप की जन्मभूमि।"
+          },
+          "1": {
+            "name": "ग्वांगजू 1913 सोंगजोंग स्टेशन बाज़ार",
+            "description": "रेट्रो-न्यूट्रो माहौल।"
+          }
+        },
+        "GYEONGSANG": {
+          "0": {
+            "name": "बुसान गुक्जे बाज़ार",
+            "description": "फ़िल्म यादें और बिबिम दांगम्योन।"
+          },
+          "1": {
+            "name": "दाएगू सोमुन बाज़ार",
+            "description": "कोरिया के शीर्ष 3 बाज़ारों में से एक।"
+          }
+        },
+        "JEJU": {
+          "0": {
+            "name": "जेजू डोंगमुन बाज़ार",
+            "description": "द्वीपीय स्वाद: ओमेगी राइस केक और काले सूअर का गैंगजोंग।"
+          }
+        }
+      },
+      "fallback": {
+        "kfood": {
+          "KF_MARKET": {
+            "title": "राष्ट्रव्यापी पारंपरिक बाज़ार खानपान यात्रा",
+            "description": "पूरे कोरिया में स्थानीय स्वाद और ऊर्जा से भरपूर बाज़ार यात्रा।"
+          },
+          "KF_CAFE": {
+            "title": "K-डेज़र्ट और कैफ़े वाइब टूर",
+            "description": "आपके स्वाद के अनुरूप कैफ़े और सेलेक्ट शॉप जोड़ता मार्ग।"
+          },
+          "KF_CONVENIENCE": {
+            "title": "K-कन्वीनियंस स्टोर कॉम्बो चैलेंज",
+            "description": "नए सोल्ड-आउट आइटम से गुप्त रेसिपी तक — असली मोडिशूमर बनें!"
+          }
+        },
+        "kbeauty": {
+          "KBEAUTY_01": {
+            "title": "Olive Young फ़्लैगशिप",
+            "description": "स्कincare और मेकअप ट्रेंड एक जगह तुलना व खरीदारी।"
+          },
+          "KBEAUTY_02": {
+            "title": "म्येओंगडोंग ब्यूटी स्ट्रीट",
+            "description": "मुख्य रोड शॉप के आसपास बेस्टसेलर।"
+          },
+          "KBEAUTY_03": {
+            "title": "स्कincare अनुभव दुकान",
+            "description": "त्वचा विश्लेषण पर आधारित कस्टम केयर और प्रोग्राम।"
+          }
+        },
+        "kpop": {
+          "KPOP_01": {
+            "title": "BTS: शाश्वत HYYH",
+            "description": "BTS, ARMY, Gangnam, HYBE"
+          },
+          "KPOP_02": {
+            "title": "BLACKPINK: हिप और लक्ज़री",
+            "description": "BLACKPINK, YG, लक्ज़री, ट्रेंड"
+          },
+          "KPOP_03": {
+            "title": "SEVENTEEN और Stray Kids: परफॉर्मेंस ऊर्जा",
+            "description": "SEVENTEEN, Stray Kids, JYP, परफॉर्मेंस"
+          },
+          "KPOP_04": {
+            "title": "NewJeans और IVE: हाई-टीन सियोल",
+            "description": "NewJeans, IVE, Y2K, Seongsu, Hannam"
+          },
+          "KPOP_05": {
+            "title": "SM: Kwangya Express",
+            "description": "SM, aespa, NCT, Kwangya, Seongsu"
+          },
+          "KPOP_06": {
+            "title": "आइडल अनुभव",
+            "description": "अनुभव, नृत्य, रिकॉर्डिंग, आइडल जीवन"
+          },
+          "KPOP_07": {
+            "title": "होंगडे: फैन संस्कृति का केंद्र",
+            "description": "होंगडे, बस्किंग, एल्बम, प्रशंसक"
+          },
+          "KPOP_08": {
+            "title": "K-OST और भावनात्मक सियोल",
+            "description": "IU, OST, हीलिंग, रेट्रो, सियोल"
+          }
+        },
+        "kdrama": {
+          "KD_01": {
+            "title": "गॉबलिन",
+            "description": "Goblin · #GongYoo #Fantasy #Romance"
+          },
+          "KD_02": {
+            "title": "स्क्विड गेम",
+            "description": "Squid Game · #Netflix #Survival #Thriller"
+          },
+          "KD_03": {
+            "title": "क्रैश लैंडिंग ऑन यू",
+            "description": "Crash Landing on You · #HyunBin #SonYeJin #Romance"
+          },
+          "KD_04": {
+            "title": "किंगडम",
+            "description": "Kingdom · #Zombies #Historical #Horror"
+          },
+          "KD_05": {
+            "title": "पैरासाइट",
+            "description": "Parasite · #Oscar #BongJoonHo #SocialIssues"
+          },
+          "KD_06": {
+            "title": "लवली रनर",
+            "description": "Lovely Runner · #ByeonWooSeok #TimeSlip #Youth"
+          },
+          "KD_07": {
+            "title": "होटल डेल लूना",
+            "description": "Hotel Del Luna · #IU #Fantasy #Mystery"
+          },
+          "KD_08": {
+            "title": "किंग द लैंड",
+            "description": "King the Land · #JunHo #Yoona #Luxury"
+          },
+          "KD_09": {
+            "title": "मिस्टर सनशाइन",
+            "description": "Mr. Sunshine · #History #LeeByungHun #KimTaeri"
+          },
+          "KD_10": {
+            "title": "डिसेंडेंट्स ऑफ द सन",
+            "description": "Descendants of the Sun · #SongJoongKi #SongHyeKyo #Military"
+          },
+          "KD_11": {
+            "title": "क्वीन ऑफ टियर्स",
+            "description": "Queen of Tears · #KimSooHyun #KimJiWon #Chaebol"
+          },
+          "KD_12": {
+            "title": "द मैन हू लिव्स विद द किंग",
+            "description": "The Man Who Lives with the King · #GangDongWon #YooHaeJin #History"
+          }
+        }
+      },
+      "recipe_vibe.spicy_fire.label": "तीखा मसाला",
+      "recipe_vibe.spicy_fire.description": "तनाव उतारने के लिए मसालेदार चुनौती।",
+      "recipe_vibe.sweet_salty.label": "मीठा-नमकीन क्लासिक",
+      "recipe_vibe.sweet_salty.description": "मिठास और नमकीन संतुलन।",
+      "recipe_vibe.diet_healthy.label": "कन्वीनियंस डाइट",
+      "recipe_vibe.diet_healthy.description": "हल्का लेकिन संतोषजनक हेल्दी कॉम्बो।",
+      "recipe_vibe.night_snack.label": "रात का नाश्ता",
+      "recipe_vibe.night_snack.description": "छोटी खुशी रात के नाश्ते की रेसिपी।",
+      "recipe_vibe.hangover.label": "हैंगओवर कॉम्बो",
+      "recipe_vibe.hangover.description": "हैंगओवर देखभाल के लिए विशेष।",
+      "recipe_vibe.luxury_meal.label": "वैल्यू प्रीमियम भोजन",
+      "recipe_vibe.luxury_meal.description": "कन्वीनियंस स्टोर का प्रीमियम भोजन।",
+      "shopping.ramen": "कप नूडल्स",
+      "shopping.tuna_kimbap": "टूना मेयो त्रिकोण किम्बाप",
+      "shopping.string_cheese": "स्ट्रिंग चीज़",
+      "shopping.sparkling_water": "स्पार्कलिंग पानी",
+      "cooking.1": "सभी सामग्री तैयार कर माइक्रोवेव-सुरक्षित बर्तन में रखें।",
+      "cooking.2": "सॉस/टॉपिंग मिलाएँ और 1 मिनट 30 सेकंड पकाएँ।",
+      "cooking.3": "पसंद अनुसार टॉपिंग जोड़ें और फोटो लें।",
+      "trending_card.1.title": "Yonsei Milk Cream Bread",
+      "trending_card.2.title": "Zero Cola Ice-cup Highball",
+      "trending_card.default_title": "AI चुना ट्रेंडिंग आइटम",
+      "trending_card.tag.new": "#नया",
+      "trending_card.tag.soldout": "#स्टॉकखत्म",
+      "trending_card.tag.review": "#रिव्यूबज़",
+      "trending_card.tag.repurchase": "#दोबाराखरीद",
+      "meta.kf_market.title_ko": "राष्ट्रव्यापी पारंपरिक बाज़ार खानपान यात्रा",
+      "meta.kf_cafe.title_ko": "K-डेज़र्ट और कैफ़े वाइब टूर",
+      "meta.kf_convenience.title_ko": "K-कन्वीनियंस कॉम्बो चैलेंज",
+      "meta.kf_market.tags": "पारंपरिक बाज़ार, खाना, स्थानीय भोजन",
+      "meta.kf_cafe.tags": "कैफ़े, डेज़र्ट, सेलेक्ट शॉप",
+      "meta.kf_convenience.tags": "कन्वीनियंस स्टोर, कॉम्बो, मोडिशूमर",
+      "empty.pick_market": "बाज़ार चुनें फिर कार्यक्रम बनाएँ",
+      "empty.pick_vibe_or_cafe": "माहौल या कैफ़े नाम चुनें",
+      "empty.pick_tab_condition": "टैब शर्तें चुनें और बनाएँ",
+      "empty.pick_date": "तारीख चुनें और कार्यक्रम बनाएँ",
+      "empty.market_guide": "बाएँ बाज़ार चुनें, [बाज़ार खानपान कार्यक्रम] या ऊपर ✨ दबाएँ",
+      "empty.cafe_guide": "बाएँ माहौल/कैफ़े चुनें, [AI कार्यक्रम] दबाएँ",
+      "empty.convenience_guide": "ऊपर टैब से मोड चुनें, कीवर्ड दर्ज कर बनाएँ",
+      "empty.default_guide": "ऊपर ✨ कार्यक्रम बटन दबाएँ",
+      "shopping_list_title": "खरीदारी सूची",
+      "cooking_steps_title": "पकाने के चरण"
+    },
+    "usercontent": {
+      "title": "यूज़र कंटेंट",
+      "subtitle": "यात्रियों द्वारा साझा किए गए रूट",
+      "upload": "अपना रूट अपलोड करें",
+      "tab_all": "सभी रूट",
+      "tab_mine": "मेरे रूट",
+      "search_placeholder": "उपनाम से खोजें…",
+      "search_result": "{{count}} परिणाम मिले",
+      "empty_all_title": "अभी कोई रूट साझा नहीं",
+      "empty_all_sub": "पहले अपलोड करने वाले बनें!",
+      "empty_mine_title": "आपने अभी कोई रूट अपलोड नहीं किया",
+      "empty_mine_sub": "रूट साझा करें और लाइक पाएँ!",
+      "cta_first_upload": "पहला रूट अपलोड करें",
+      "cta_share_first": "पहले रूट साझा करें",
+      "already_liked": "पहले से लाइक",
+      "like": "लाइक",
+      "delete": "हटाएँ",
+      "delete_my_route": "मेरा रूट हटाएँ",
+      "shared_route": "साझा रूट",
+      "schedule_save_fail": "शेड्यूल सहेजना विफल।",
+      "route": "रूट",
+      "added_to_schedule": "मेरे शेड्यूल में जोड़ा गया",
+      "go_schedule": "शेड्यूल प्रबंधन पर जाएँ",
+      "add_to_schedule": "मेरे शेड्यूल में जोड़ें",
+      "login_required": "लॉगिन आवश्यक।",
+      "no_places_to_save": "सहेजने के लिए कोई स्थान नहीं।",
+      "when_trip": "कब यात्रा की योजना है?",
+      "date_applied": "चयनित तारीख शेड्यूल में लागू होगी।",
+      "visit_date": "भ्रमण तिथि",
+      "add_with_this_date": "इस तारीख से जोड़ें",
+      "image_validate_fail": "छवि सत्यापन विफल",
+      "ai_polish_fail": "AI पॉलिश विफल",
+      "save_fail": "सहेजना विफल",
+      "step_photo": "फ़ोटो चुनें",
+      "step_form": "रूट दर्ज करें",
+      "step_polish": "AI पॉलिश",
+      "upload_my_route": "अपना रूट अपलोड करें",
+      "upload_photo_hint": "खींचें या क्लिक कर अपलोड करें",
+      "upload_photo_types": "JPG, PNG, WEBP समर्थित",
+      "remove_photo": "फ़ोटो हटाएँ",
+      "image_validated": "छवि सत्यापन पूर्ण",
+      "validating": "सत्यापन…",
+      "continue_without_photo": "फ़ोटो के बिना जारी रखें",
+      "import_saved_schedule": "सहेजे शेड्यूल से आयात",
+      "select_saved_schedule": "सहेजा शेड्यूल चुनें",
+      "no_saved_schedule": "कोई सहेजा शेड्यूल नहीं।",
+      "place_count": " · {{count}} स्थल",
+      "route_title_required": "रूट शीर्षक *",
+      "route_title_placeholder": "जैसे गांगनेउंग एक दिन की यात्रा",
+      "destination_required": "गंतव्य *",
+      "destination_placeholder": "जैसे गांगनेउंग, ग्येओंगपो बीच",
+      "one_line_intro_optional": "एक पंक्ति परिचय (वैकल्पिक)",
+      "one_line_intro_placeholder": "संक्षेप में वर्णन करें (AI संवारेगा)",
+      "place_list_required": "स्थान सूची *",
+      "max_per_day": "(प्रति दिन अधिकतम {{max}})",
+      "day_n": "दिन {{day}}",
+      "add_place": "+ स्थान जोड़ें",
+      "place_name_placeholder": "स्थान नाम (जैसे अनमोक बीच कैफ़े स्ट्रीट)",
+      "memo_optional_placeholder": "संक्षिप्त नोट (वैकल्पिक)",
+      "add_day_n": "+ दिन {{day}} जोड़ें",
+      "ai_polish": "✨ AI से संवारें",
+      "ai_polishing": "AI आपका रूट संवार रहा है",
+      "ai_polishing_sub": "जीवंत परिचय और यात्रा सुझाव जोड़ रहा है…",
+      "re_enter": "फिर से संपादित करें",
+      "share": "साझा करें",
+      "shared_success": "रूट साझा हो गया!",
+      "shared_success_sub": "फ़ीड में देखें",
+      "delete_confirm": "यह रूट हटाएँ?",
+      "delete_fail": "हटाना विफल।"
+    },
+    "standard": {
+      "title": "गंतव्य चुनें",
+      "subtitle": "गंतव्य चुनें और AI उपयुक्त रूट सुझाएगा।",
+      "search_placeholder": "शहर/लैंडमार्क खोजें (जैसे गांगनेउंग, हानोक गाँव)",
+      "search_result": "“{{query}}”: {{count}} स्थल",
+      "no_results": "कोई परिणाम नहीं",
+      "reset": "रीसेट",
+      "metro_quick": "महानगर त्वरित पहुँच",
+      "metro_quick_sub": "लोकप्रिय शहर चुनें, नीचे विवरण देखें।",
+      "metro_detail": "महानगर उप-क्षेत्र",
+      "metro_detail_sub": "सियोल, बुसान, दाएगू, उल्सान उप-क्षेत्रों में।",
+      "province": "प्रांत/क्षेत्र",
+      "province_sub": "ग्येओंग्गी, चुंगचेओंग, जेओल्ला, ग्येओंगसांग, गांगवॉन, जेजू की तुलना।",
+      "image_pending": "छवि जल्द आ रही है",
+      "popular": "लोकप्रिय",
+      "mode_label": "स्टैंडर्ड",
+      "date": "तारीख",
+      "mode_car": "🚗 कार",
+      "mode_transit": "🚇 सार्वजनिक परिवहन",
+      "mode_walk": "🚶 पैदल",
+      "generate_route": "✨ रूट बनाएँ",
+      "generating_loading": "सटीक जानकारी खोजी जा रही है…",
+      "ai_recommended_routes": "AI अनुशंसित रूट",
+      "set_date_and_generate": "तारीख सेट करें और\nरूट बनाएँ",
+      "start_generate": "✨ रूट बनाना शुरू करें",
+      "route_load_fail": "रूट लोड विफल।",
+      "pick_route": "कृपया एक रूट चुनें",
+      "range_hint": "AI {{start}} से {{end}} तक कार्यक्रम बनाएगा",
+      "select_date_then_generate": "तारीख चुनें फिर रूट बनाएँ",
+      "generate_hint": "ऊपर बाएँ ✨ बटन दबाएँ",
+      "making_schedule": "AI <b>{{name}}</b> के लिए कार्यक्रम बना रहा है…",
+      "schedule_load_fail": "कार्यक्रम लोड विफल।",
+      "recommended_schedule_title": "{{name}} — अनुशंसित कार्यक्रम",
+      "saved_goto_schedule": "✅ सहेजा गया · शेड्यूल प्रबंधन खोलें",
+      "save_plan": "💾 सहेजें",
+      "save_fail": "सहेजना विफल।",
+      "total_cost": "अनुमानित कुल लागत",
+      "cost_per_day": "दिन {{day}} {{total}}",
+      "subtotal": "उप-योग {{total}}",
+      "theme": {
+        "event": "इवेंट",
+        "food": "भोजन",
+        "spot": "दर्शनीय",
+        "luxury": "लक्ज़री",
+        "value": "किफायती",
+        "family": "परिवार",
+        "couple": "जोड़ा"
+      },
+      "highlight": {
+        "gyeongbokgung": "Cung Gyeongbok",
+        "hongdae": "Hongdae",
+        "hangang_park": "Công viên Hangang",
+        "cheongwadae": "Nhà Xanh",
+        "insadong": "Insadong",
+        "myeongdong_cathedral": "Nhà thờ Myeongdong",
+        "euljiro_alley": "Hẻm Euljiro",
+        "national_museum_of_korea": "Bảo tàng quốc gia",
+        "itaewon": "Itaewon",
+        "haeundae": "Haeundae",
+        "haeundae_beach": "Bãi biển Haeundae",
+        "gamcheon_village": "Làng Gamcheon",
+        "jagalchi_market": "Chợ Jagalchi",
+        "biff_square": "Quảng trường BIFF",
+        "dongseongro": "Dongseong-ro",
+        "kim_gwangseok_street": "Phố Kim Gwangseok",
+        "suseong_lake": "Hồ Suseong",
+        "songdo": "Songdo",
+        "chinatown": "Phố Tàu",
+        "gangneung": "Gangneung",
+        "gyeongpo": "Gyeongpo",
+        "anmok_coffee_street": "Phố cà phê Anmok",
+        "ojukheon": "Ojukheon",
+        "sokcho": "Sokcho",
+        "seoraksan": "Seoraksan",
+        "central_market": "Chợ trung tâm",
+        "hallasan": "Hallasan",
+        "seongsan_ilchulbong": "Seongsan Ilchulbong"
+      }
+    },
+    "region": {
+      "seoul-areas": {
+        "label": "सियोल",
+        "subLabel": "क्षेत्र के अनुसार प्रमुख इलाके"
+      },
+      "gyeonggi-north": {
+        "label": "उत्तरी ग्योंग्गी",
+        "subLabel": "गोयांग, पाजू, उइजोंगबू, नामयांगजू आदि"
+      },
+      "gyeonggi-south": {
+        "label": "दक्षिणी ग्योंग्गी",
+        "subLabel": "सुवॉन, योंगिन, सोंगनाम, प्योंगटेक आदि"
+      },
+      "gangwon": {
+        "label": "गांगवॉन-दो",
+        "subLabel": "गांगवॉन विशेष स्वायत्त प्रांत"
+      },
+      "chungbuk": {
+        "label": "चुंगचेओंगबुक-दो",
+        "subLabel": "चेओंगजू, चुंगजू, जेचेओन, दानयांग"
+      },
+      "chungnam": {
+        "label": "चुंगचेओंगनाम-दो",
+        "subLabel": "गोंगजू, बुयेओ, बोर्येओंग, ताएआन आदि"
+      },
+      "jeonbuk": {
+        "label": "जेओनबुक",
+        "subLabel": "जेओनबुक विशेष स्वायत्त प्रांत"
+      },
+      "jeonnam": {
+        "label": "जेओल्लानाम-दो",
+        "subLabel": "येओसू, सुन्चेओन, मोकपो, दामयांग आदि"
+      },
+      "busan": {
+        "label": "बुसान",
+        "subLabel": "बुसान महानगर"
+      },
+      "daegu": {
+        "label": "दाएगू",
+        "subLabel": "दाएगू महानगर"
+      },
+      "ulsan": {
+        "label": "उल्सान",
+        "subLabel": "उल्सान महानगर"
+      },
+      "gyeongbuk": {
+        "label": "ग्येओंगसांगबुक-दो",
+        "subLabel": "ग्येओंगजू, पोहांग, अंडोंग आदि"
+      },
+      "gyeongnam": {
+        "label": "ग्येओंगसांगनाम-दो",
+        "subLabel": "तोंग्येओंग, गेओजे, जिंजू, चांगवॉन आदि"
+      },
+      "jeju": {
+        "label": "जेजू-दो",
+        "subLabel": "जेजू विशेष स्वायत्त प्रांत"
+      }
+    },
+    "dest": {
+      "seoul": {
+        "name": "सियोल",
+        "highlight1": "ग्येओंगबोकगुंग महल",
+        "highlight2": "होंगडे",
+        "highlight3": "हान नदी पार्क"
+      },
+      "busan": {
+        "name": "बुसान",
+        "highlight1": "हाएउंदाए समुद्र तट",
+        "highlight2": "गमचेओन सांस्कृतिक गाँव",
+        "highlight3": "जगालची बाजार"
+      },
+      "daegu": {
+        "name": "दाएगू",
+        "highlight1": "डोंगसेओंग-रो",
+        "highlight2": "किम ग्वांगसोक गली",
+        "highlight3": "सुसेओंग झील"
+      },
+      "incheon": {
+        "name": "इंचेओन",
+        "highlight1": "सोंगदो",
+        "highlight2": "गांगह्वा द्वीप",
+        "highlight3": "चाइनाटाउन"
+      },
+      "gwangju": {
+        "name": "ग्वांगजू",
+        "highlight1": "ACC (एशिया संस्कृति केंद्र)",
+        "highlight2": "यांगनिम-दोंग"
+      },
+      "daejeon": {
+        "name": "दाएजेओन",
+        "highlight1": "सेओंगसिमदांग बेकरी",
+        "highlight2": "एक्सपो पार्क",
+        "highlight3": "यूसेओंग हॉट स्प्रिंग"
+      },
+      "ulsan": {
+        "name": "उल्सान",
+        "highlight1": "गांजेओलगोट",
+        "highlight2": "दाएवांगआम पार्क",
+        "highlight3": "ताएह्वा नदी"
+      },
+      "sejong": {
+        "name": "सेजोंग",
+        "highlight1": "सेजोंग झील पार्क",
+        "highlight2": "राष्ट्रीय वनस्पति उद्यान"
+      },
+      "jongno": {
+        "name": "जोंगनो / ग्वांगह्वामुन",
+        "highlight1": "ग्येओंगबोकगुंग",
+        "highlight2": "चेओंग वा दाए",
+        "highlight3": "इंसादोंग"
+      },
+      "myeongdong": {
+        "name": "म्येओंगदोंग / उलजिरो",
+        "highlight1": "म्येओंगदोंग कैथेड्रल",
+        "highlight2": "उलजिरो गलियाँ"
+      },
+      "yongsan": {
+        "name": "योंगसान / इताएवॉन",
+        "highlight1": "कोरिया का राष्ट्रीय संग्रहालय",
+        "highlight2": "इताएवॉन"
+      },
+      "gangnam": {
+        "name": "गांगनाम / सेओचो",
+        "highlight1": "COEX",
+        "highlight2": "अपगूजेओंग रोडियो",
+        "highlight3": "दोसान पार्क"
+      },
+      "jamsil": {
+        "name": "जामसिल / सोंगपा",
+        "highlight1": "लोट्टे वर्ल्ड",
+        "highlight2": "ओलंपिक पार्क",
+        "highlight3": "सेओकचों झील"
+      },
+      "seongsu": {
+        "name": "सेओंगसू / हन्नाम",
+        "highlight1": "सेओंगसू कैफे गली",
+        "highlight2": "हन्नाम-दोंग गैलरी"
+      },
+      "hongdae": {
+        "name": "होंगदे / मापो",
+        "highlight1": "होंगदे क्लब",
+        "highlight2": "येओन्नाम-दोंग",
+        "highlight3": "ग्येओंगुई रेलवे वन"
+      },
+      "bukchon": {
+        "name": "बुकचों / सामचेओंग",
+        "highlight1": "बुकचों हानोक गाँव",
+        "highlight2": "सामचेओंग-दोंग कैफे"
+      },
+      "nowon": {
+        "name": "नोवॉन / दोबोंग",
+        "highlight1": "सुराकसान पहाड़",
+        "highlight2": "दोबोंगसान पहाड़",
+        "highlight3": "बुलामसान पहाड़"
+      },
+      "haeundae": {
+        "name": "हाएउंदाए",
+        "highlight1": "हाएउंदाए समुद्र तट",
+        "highlight2": "दोंगबाएक द्वीप",
+        "highlight3": "दालमाजी-गिल"
+      },
+      "gwangalli": {
+        "name": "ग्वांगल्ली / सुयेओंग",
+        "highlight1": "ग्वांगांदाएग्यो पुल",
+        "highlight2": "ग्वांगल्ली समुद्र तट"
+      },
+      "gijang": {
+        "name": "गिजांग",
+        "highlight1": "जुकसेओंग ड्रीम चर्च",
+        "highlight2": "दाएब्येओन बंदरगाह",
+        "highlight3": "एक्वेरियम"
+      },
+      "songjeong": {
+        "name": "सोंगजेओंग / चेओंगसापो",
+        "highlight1": "सोंगजेओंग समुद्र तट",
+        "highlight2": "चेओंगसापो दृश्य बिंदु"
+      },
+      "nampo": {
+        "name": "नामपो / जुंग-गू",
+        "highlight1": "जगालची बाजार",
+        "highlight2": "BIFF चौक",
+        "highlight3": "बोसू-दोंग पुस्तक गली"
+      },
+      "seomyeon": {
+        "name": "सेओम्येओन / बूजेओन",
+        "highlight1": "सेओम्येओन गली",
+        "highlight2": "जूडीस ताएह्वा",
+        "highlight3": "बूजेओन बाजार"
+      },
+      "gamcheon": {
+        "name": "गमचेओन सांस्कृतिक गाँव",
+        "highlight1": "गमचेओन सांस्कृतिक गाँव",
+        "highlight2": "स्काई रोड"
+      },
+      "yeongdo": {
+        "name": "येओंगदो",
+        "highlight1": "ताएजोंगदाए",
+        "highlight2": "हुइन्न्येओल सांस्कृतिक गाँव",
+        "highlight3": "बोंगनाएसान पहाड़"
+      },
+      "geumjeong": {
+        "name": "गेओमजेओंग / ओन्चेओंजांग",
+        "highlight1": "गेओमजेओंगसानसेओंग किला",
+        "highlight2": "बोमेओसा मंदिर",
+        "highlight3": "ओन्चेओंजांग"
+      },
+      "gangseo-bs": {
+        "name": "गांगसेओ / गाएकदो",
+        "highlight1": "उलसुकदो",
+        "highlight2": "गाएकदो ज्वारीय भूमि"
+      },
+      "dadaepo": {
+        "name": "साहा / दादाएपो",
+        "highlight1": "दादाएपो समुद्र तट",
+        "highlight2": "नाकदोंग नदी मुहाना"
+      },
+      "dongseongno": {
+        "name": "डोंगसेओंगनो / जुंग-गू",
+        "highlight1": "डोंगसेओंग-रो",
+        "highlight2": "सेओमुन बाजार",
+        "highlight3": "याकजेओन बाजार"
+      },
+      "gimgwangseok": {
+        "name": "किम ग्वांगसोक गली",
+        "highlight1": "किम ग्वांगसोक गली",
+        "highlight2": "बांगचेओन बाजार"
+      },
+      "suseongmot": {
+        "name": "सुसेओंगमोत / बोमेओ",
+        "highlight1": "सुसेओंग झील",
+        "highlight2": "सुसेओंग मनोरंजन पार्क"
+      },
+      "palgongsan": {
+        "name": "पालगोंगसान",
+        "highlight1": "डोंगह्वासा मंदिर",
+        "highlight2": "गातबावी चट्टान",
+        "highlight3": "पालगोंग स्काईलाइन"
+      },
+      "dalseong": {
+        "name": "बिसुलसान / दालसेओंग",
+        "highlight1": "बिसुलसान चेरी ब्लॉसम",
+        "highlight2": "दालसेओंग दलदल"
+      },
+      "gunwi": {
+        "name": "गुनवी",
+        "highlight1": "सामगुक युसा थीम पार्क",
+        "highlight2": "ह्वासान किला"
+      },
+      "ganjeolgot": {
+        "name": "गांजेओलगोट",
+        "highlight1": "गांजेओलगोट प्रकाशस्तंभ",
+        "highlight2": "नए साल का सूर्योदय"
+      },
+      "daewangam": {
+        "name": "दाएवांगआम",
+        "highlight1": "दाएवांगआम पार्क",
+        "highlight2": "इलसान समुद्र तट"
+      },
+      "taehwagang": {
+        "name": "ताएह्वा नदी",
+        "highlight1": "ताएह्वा राष्ट्रीय उद्यान",
+        "highlight2": "सिप्री दाएसुप बांस का जंगल"
+      },
+      "bangudae": {
+        "name": "बांगुदाए",
+        "highlight1": "बांगुदाए शैल चित्र",
+        "highlight2": "जिपचेओंगजेओंग"
+      },
+      "jeju": {
+        "name": "जेजू शहर",
+        "highlight1": "हाल्लासान",
+        "highlight2": "सेओंगसान इलचुलबोंग",
+        "highlight3": "ह्येओपजाए समुद्र तट"
+      },
+      "gyeongju": {
+        "name": "ग्येओंगजू",
+        "highlight1": "ह्वांगरिदान-गिल",
+        "highlight2": "चेओमसेओंगदाए",
+        "highlight3": "बुलगुकसा"
+      },
+      "gangneung": {
+        "name": "गांगनेउंग",
+        "highlight1": "ग्येओंगपो समुद्र तट",
+        "highlight2": "आनमोक कॉफी गली",
+        "highlight3": "ओजुखेओन"
+      },
+      "jeonju": {
+        "name": "जेओनजू",
+        "highlight1": "हानोक गाँव",
+        "highlight2": "माकगेओल्ली गली"
+      }
+    }
+  },
+  "guide": {
+    "title": "डिस्कवर",
+    "subtitle": "एक ही जगह पर रेस्तरां या इवेंट चुनें।",
+    "restaurant": {
+      "title": "रेस्तरां",
+      "soon": "Restaurant recommendations will be available soon."
+    },
+    "event": {
+      "title": "इवेंट",
+      "subtitle": "राष्ट्रीय सांस्कृतिक उत्सव डेटा पर आधारित · उस दिन के इवेंट देखने के लिए तारीख पर क्लिक करें",
+      "prev_month": "Previous month",
+      "next_month": "Next month",
+      "legend_hint": "● Has events · Click a date to filter that day",
+      "list_title_day": "{{y}}-{{m}}-{{d}} Events",
+      "list_title_all": "{{y}}-{{m}} All events",
+      "count": "{{count}} items",
+      "show_all": "Show all",
+      "no_data_period": "इस अवधि के लिए कोई इवेंट पंजीकृत नहीं है।",
+      "no_data_day": "इस दिन कोई इवेंट नहीं चल रहा है।",
+      "no_data": "कोई इवेंट नहीं।",
+      "hosted_by": "आयोजक: {{name}}",
+      "year_month": "{{m}}/{{y}}",
+      "untitled": "(Untitled)",
+      "homepage": "Homepage",
+      "error": {
+        "load": "इवेंट सूची लोड करने में विफल।",
+        "connection": "Unable to load event information. Please try again shortly."
+      }
+    },
+    "tabs": {
+      "restaurant": {
+        "label": "Restaurant Picks",
+        "description": "Explore restaurants by region"
+      },
+      "event": {
+        "label": "Event Picks",
+        "description": "Nationwide cultural festival calendar"
+      }
+    }
+  },
+  "chat": {
+    "tier": {
+      "silver": "Silver",
+      "gold": "Gold",
+      "platinum": "Platinum",
+      "diamond": "Diamond"
+    },
+    "group": {
+      "title_list": "समूह चैट कमरे",
+      "title_room": "समूह चैट - {{room}}",
+      "back_to_list": "कमरों की सूची",
+      "loading_rooms": "रूम लोड हो रहे हैं...",
+      "rooms_hint": "उपलब्ध कमरे सम्मान स्तर पर निर्भर करते हैं। उच्च रैंक वाले निचले कमरों में भी प्रवेश कर सकते हैं।",
+      "table": {
+        "room": "कमरा",
+        "honor": "न्यूनतम सम्मान",
+        "access": "पहुँच"
+      },
+      "room_label": "{{label}} कमरा",
+      "or_more": "या अधिक",
+      "access_yes": "हाँ",
+      "access_no": "सम्मान अपर्याप्त",
+      "enter": "प्रवेश",
+      "loading_messages": "संदेश लोड हो रहे हैं...",
+      "user_fallback": "उपयोगकर्ता {{id}}",
+      "open_tourstar": "Tourstar पोस्ट खोलें",
+      "menu": {
+        "whisper": "फुसफुसाहट भेजें",
+        "honor_up": "सम्मान बढ़ाने के लिए वोट",
+        "honor_down": "सम्मान घटाने के लिए वोट",
+        "add_friend": "मित्र जोड़ें"
+      },
+      "input_placeholder": "संदेश लिखें...",
+      "send": "भेजें",
+      "dev_add_dummy": "Dev: दूसरे का परीक्षण संदेश जोड़ें",
+      "whisper": {
+        "title": "फुसफुसाहट भेजें",
+        "to": "प्रति: {{username}}"
+      },
+      "sending": "भेजा जा रहा है...",
+      "submit": "भेजें",
+      "action_failed": "अनुरोध विफल।",
+      "friend_failed": "मित्रता अनुरोध विफल।",
+      "error_load_messages": "संदेश लोड नहीं हो सके।",
+      "error_load_messages_runtime": "संदेश लोड करते समय त्रुटि।",
+      "error_auth_sse": "चैट कनेक्शन प्रमाणीकरण विफल। बाद में पुनः प्रयास करें।",
+      "error_send": "भेजना विफल।",
+      "error_send_runtime": "भेजते समय त्रुटि।",
+      "error_whisper_send": "फुसफुसाहट भेजना विफल।",
+      "error_whisper_send_runtime": "फुसफुसाहट भेजते समय त्रुटि।",
+      "test_user": "परीक्षण उपयोगकर्ता",
+      "test_message": "साथ यात्रा करने वाले निजी संदेश भेज सकते हैं! (परीक्षण संदेश — देखने के लिए टैप करें)"
+    },
+    "whisper": {
+      "user_fallback": "उपयोगकर्ता {{id}}",
+      "title": "फुसफुसाहट",
+      "new_chat": "नई बातचीत",
+      "no_conversations": "कोई बातचीत नहीं",
+      "start": "फुसफुसाहट भेजें",
+      "blocked_user": "ब्लॉक किया उपयोगकर्ता",
+      "delete_conv": "बातचीत हटाएँ",
+      "unblock": "अनब्लॉक",
+      "block": "उपयोगकर्ता ब्लॉक करें",
+      "empty_thread": "{{name}} के साथ बातचीत शुरू करें",
+      "view_tourstar": "Tourstar पोस्ट देखें",
+      "read": "पढ़ा",
+      "cannot_send_blocked": "ब्लॉक किए उपयोगकर्ता को संदेश नहीं भेज सकते।",
+      "input_placeholder": "संदेश लिखें… (भेजने के लिए Enter, नई पंक्ति Shift+Enter)",
+      "pick_or_start": "बातचीत चुनें या नई फुसफुसाहट भेजें",
+      "new_whisper": "+ नई फुसफुसाहट",
+      "new_whisper_title": "नई फुसफुसाहट",
+      "no_friends": "कोई मित्र नहीं।",
+      "add_friend": "मित्र जोड़ें",
+      "delete_confirm": "{{name}} के साथ सभी बातचीत हटाएँ?\nयह पूर्ववत नहीं हो सकता।"
+    },
+    "friends": {
+      "title": "मित्र सूची",
+      "whisper_box": "फुसफुसाहट इनबॉक्स",
+      "error_list": "सूची लोड नहीं हो सकी।",
+      "list_title": "मित्र ({{count}})",
+      "empty": "अभी कोई मित्र नहीं। समूह चैट में संदेश पर टैप कर मित्र अनुरोध भेजें।",
+      "pending_title": "मिले मित्र अनुरोध ({{count}})",
+      "pending_empty": "कोई लंबित अनुरोध नहीं।",
+      "whisper": "फुसफुसाहट",
+      "remove_title": "मित्र हटाएँ",
+      "block_title": "उपयोगकर्ता ब्लॉक करें",
+      "whisper_to_suffix": " को फुसफुसाहट",
+      "whisper_placeholder": "फुसफुसाहट लिखें…",
+      "counter_send_hint": "{{len}} / 500 · भेजने के लिए Ctrl+Enter",
+      "sending": "भेजा जा रहा है…",
+      "send": "भेजें",
+      "honor": "सम्मान {{value}}",
+      "user_fallback": "उपयोगकर्ता {{id}}",
+      "accept_ok": "मित्र अनुरोध स्वीकार किया गया।",
+      "accept_fail": "स्वीकार विफल।",
+      "accept_err": "स्वीकार करते समय त्रुटि।",
+      "remove_confirm": "{{name}} को मित्र सूची से हटाएँ?",
+      "remove_ok": "{{name}} को मित्र सूची से हटा दिया गया।",
+      "remove_fail": "मित्र हटाना विफल।",
+      "remove_err": "मित्र हटाना विफल।",
+      "block_confirm": "{{name}} को ब्लॉक करें?\nवे मित्र सूची से हट जाएँगे और फुसफुसाहट नहीं भेज सकेंगे।",
+      "block_ok": "{{name}} ब्लॉक किया गया।",
+      "block_fail": "ब्लॉक विफल।",
+      "block_err": "ब्लॉक विफल।",
+      "whisper_ok": "{{name}} को फुसफुसाहट भेजी गई।",
+      "whisper_fail": "फुसफुसाहट भेजना विफल।",
+      "whisper_err": "फुसफुसाहट भेजना विफल।"
+    }
+  },
+  "tourstar": {
+    "title": "टूरस्टार",
+    "subtitle": "AI आपकी सबसे अच्छी यात्रा तस्वीरें चुनता है; सुंदर पोस्ट के लिए छोटा कमेंट जोड़ें।",
+    "new_post": "नई पोस्ट",
+    "back_to_feed_title": "सभी फ़ीड पर वापस",
+    "friend_badge": "मित्र",
+    "author": {
+      "self_caption": "अपने कीमती यात्रा पलों को रिकॉर्ड करें और साझा करें",
+      "other_caption": "इस उपयोगकर्ता की पोस्ट"
+    },
+    "stats": {
+      "posts": "पोस्ट",
+      "scraps": "स्क्रैप",
+      "friends": "मित्र"
+    },
+    "search": {
+      "all": "सभी",
+      "author": "उपयोगकर्ता नाम",
+      "title": "शीर्षक",
+      "content": "सामग्री",
+      "tags": "टैग",
+      "location": "स्थान",
+      "placeholder": "खोजने के लिए लिखें..."
+    },
+    "tabs": {
+      "all": "सभी",
+      "mine": "मेरी पोस्ट",
+      "friends": "मित्रों की पोस्ट",
+      "bookmarked": "स्क्रैप"
+    },
+    "sort": {
+      "latest": "नवीनतम",
+      "likes": "सबसे अधिक लाइक",
+      "comments": "सबसे अधिक टिप्पणियाँ"
+    },
+    "empty": {
+      "author": "{{name}} की कोई पोस्ट नहीं है",
+      "mine": "आपने अभी तक कोई पोस्ट नहीं की है",
+      "bookmarked": "कोई स्क्रैप की गई पोस्ट नहीं",
+      "friends": "मित्रों की कोई पोस्ट नहीं",
+      "search": "कोई परिणाम नहीं",
+      "none": "अभी तक कोई यात्रा दर्ज नहीं हुई",
+      "help_bookmarked": "दूसरों की पोस्ट पर बुकमार्क बटन दबाएँ",
+      "help_friends": "उनके यात्रा रिकॉर्ड देखने के लिए मित्र जोड़ें",
+      "help_new": "अपनी पहली यात्रा दर्ज करने के लिए ऊपर \"नई पोस्ट\" बटन का उपयोग करें",
+      "cta": "यात्रा दर्ज करें"
+    },
+    "ai_banner": {
+      "title": "AI आपकी सर्वश्रेष्ठ तस्वीरें अपने आप चुनता है",
+      "body": "यात्रा फ़ोटो अपलोड करें; AI अच्छी तस्वीरें सुझाएगा। छोटे कमेंट के साथ सुंदर पोस्ट करें।"
+    },
+    "status": {
+      "photo_queued": "AI फ़ोटो विश्लेषण कतार में...",
+      "photo_running": "AI फ़ोटो विश्लेषण चल रहा है...",
+      "photo_failed": "AI विश्लेषण विफल",
+      "photo_done_pick": "विश्लेषण पूर्ण (रैंकिंग देखें और फ़ोटो चुनें)",
+      "comment_draft_running": "विश्लेषण पूर्ण (टिप्पणी ड्राफ़्ट बन रहा है...)",
+      "comment_draft_done": "विश्लेषण पूर्ण (टिप्पणी ड्राफ़्ट तैयार)",
+      "photo_done": "AI विश्लेषण पूर्ण",
+      "upload_failed": "अपलोड विफल",
+      "checking_metadata": "शॉट-डेटा मेटाडेटा जाँचा जा रहा है...",
+      "no_photo_in_range": "चयनित अवधि में कोई फ़ोटो नहीं",
+      "filtered_uploading": "{{excludedCount}} तारीख़ फ़िल्टर से बाहर, स्वतः {{filteredCount}} फ़ोटो अपलोड हो रही हैं...",
+      "uploading_count": "{{count}} फ़ोटो अपलोड हो रही हैं...",
+      "post_generating": "AI पोस्ट बनाई जा रही है...",
+      "post_generated": "AI पोस्ट बन गई",
+      "post_save_failed": "पोस्ट सहेजने में विफल"
+    },
+    "create": {
+      "title": "नया यात्रा रिकॉर्ड बनाएँ",
+      "subtitle": "फोटो अपलोड करें और AI अपने आप सबसे अच्छे शॉट चुनेगा ✨",
+      "file_upload": "फ़ाइल अपलोड",
+      "photo_selected_count": "फ़ोटो (चुना {{selected}}/{{total}})",
+      "date_filter_note": "यदि तारीख़ दर्ज करें, तो केवल उसी अवधि की फ़ोटो अपने-आप अपलोड होंगी (OpenAI नहीं)।",
+      "start_date": "प्रारंभ तिथि",
+      "end_date": "समाप्ति तिथि",
+      "include_unknown_shot_date": "बिना शॉट-डेटा वाली फ़ोटो शामिल करें",
+      "style_preset": "शैली प्रीसेट (MBTI)",
+      "user_template_optional": "यूज़र टेम्पलेट (वैकल्पिक)",
+      "style_auto": "ऑटो (डिफ़ॉल्ट)",
+      "style_group": {
+        "nt": "विश्लेषक/रणनीतिक (NT)",
+        "nf": "कूटनीतिक/भावुक (NF)",
+        "sj": "प्रबंधक/व्यावहारिक (SJ)",
+        "sp": "अन्वेषक/आकस्मिक (SP)"
+      },
+      "checking_shot_date": "शॉट तिथि जाँची जा रही है...",
+      "uploading": "अपलोड हो रहा है...",
+      "upload_files": "+ फ़ोटो अपलोड करें",
+      "filter_by_date": "शॉट तिथि के अनुसार स्वतः-फ़िल्टर (मेटाडेटा)",
+      "location_optional": "स्थान (वैकल्पिक)",
+      "location_placeholder": "जैसे गंगनम सियोल, हैउन्डे बुसान (खाली हो तो AI अनुमान)",
+      "one_line_comment": "एक-पंक्ति टिप्पणी",
+      "comment_placeholder": "छोटी टिप्पणी लिखें — पोस्ट सुंदर दिखेगी",
+      "style_template_placeholder": "उदा. शांत लहजा, 3 हैशटैग",
+      "generated_title": "AI अनुशंसित यात्रा रिकॉर्ड {{date}}",
+      "location_empty": "गंतव्य दर्ज नहीं",
+      "comment_default": "कीमती यात्रा पलों को संजोना।",
+      "generating": "बन रहा है...",
+      "submit": "पोस्ट करें"
+    },
+    "error": {
+      "upload_photo": "फोटो अपलोड करने में विफल। कृपया जांचें कि tourstar सर्वर चल रहा है या नहीं।",
+      "upload_photo_simple": "फोटो अपलोड करने में विफल।",
+      "like_failed": "लाइक प्रोसेस करने में विफल। कृपया थोड़ी देर बाद फिर प्रयास करें।",
+      "cannot_delete_no_login": "लॉगिन जानकारी सत्यापित नहीं हो सकी, इसलिए पोस्ट हटाई नहीं जा सकती।",
+      "delete_failed": "हटाना विफल। जाँचें कि यह आपकी पोस्ट है या बाद में पुनः प्रयास करें।",
+      "delete_retry": "हटाना विफल। कृपया थोड़ी देर बाद फिर प्रयास करें।",
+      "edit_failed_with_detail": "पोस्ट संपादित करने में विफल।\n{{detail}}",
+      "author_not_found": "{{name}} के लिए खाता नहीं मिला।",
+      "friend_request_failed": "मित्र अनुरोध भेजने में विफल।",
+      "friend_request_failed_with_detail": "मित्र अनुरोध भेजने में विफल।\n{{detail}}",
+      "friends_only": "केवल मित्र।",
+      "no_photo_for_period": "चयनित अवधि के लिए कोई फ़ोटो नहीं मिली।\n(कोई मेटाडेटा: {{unknownCount}}, बाहर: {{excludedCount}})"
+    },
+    "confirm": {
+      "delete_post": "इस पोस्ट को हटाएँ? यह क्रिया वापस नहीं होगी।"
+    },
+    "share": {
+      "copied": "शेयर लिंक कॉपी हुआ। चैट में पेस्ट करें।",
+      "copy_prompt": "नीचे दिए लिंक को कॉपी करें और चैट में साझा करें।"
+    },
+    "edit": {
+      "title": "पोस्ट संपादित करें",
+      "field_title": "शीर्षक",
+      "title_placeholder": "शीर्षक दर्ज करें",
+      "field_location": "स्थान",
+      "location_placeholder": "जैसे गंगनम सियोल, हैउन्डे बुसान",
+      "field_body": "मुख्य भाग",
+      "body_placeholder": "पोस्ट की सामग्री दर्ज करें",
+      "photo_edit": "फ़ोटो संपादित करें",
+      "add_photo": "+ फ़ोटो जोड़ें",
+      "click_to_remove": "सूची से हटाने के लिए क्लिक करें।",
+      "new": "नया",
+      "photo_help": "पुरानी फ़ोटो पर क्लिक कर रखें/हटाएँ। नई फ़ोटो पर क्लिक कर हटाएँ।",
+      "tags_label": "टैग (अल्पविराम या स्पेस से अलग)",
+      "tags_placeholder": "उदा. winterwalk, healing, travelrecord",
+      "deleting": "हटाया जा रहा है...",
+      "delete_post": "पोस्ट हटाएँ",
+      "saving": "सहेजा जा रहा है..."
+    },
+    "placeholder": {
+      "location_unknown": "स्थान अज्ञात",
+      "anonymous": "अनाम"
+    },
+    "time": {
+      "now": "अभी",
+      "minutes_ago": "{{count}} मिनट पहले",
+      "hours_ago": "{{count}} घंटे पहले",
+      "days_ago": "{{count}} दिन पहले"
+    },
+    "bookmarked": "सहेजा गया",
+    "bookmark": "सहेजें",
+    "comments_count": "{{count}} टिप्पणियाँ",
+    "photos_count": "{{count}} फ़ोटो",
+    "first_comment": "पहली टिप्पणी आप करें।",
+    "comment_placeholder": "टिप्पणी लिखें",
+    "copy_share_link": "लिंक कॉपी करें",
+    "friend_request_sent": "{{name}} को मित्र अनुरोध भेजा।",
+    "already_friend": "यह उपयोगकर्ता पहले से आपका मित्र है।",
+    "requesting": "भेजा जा रहा है...",
+    "send_friend_request": "मित्र अनुरोध भेजें",
+    "view_posts": "पोस्ट देखें",
+    "cancel_bookmark": "बुकमार्क हटाएँ",
+    "my_post": "मेरी पोस्ट",
+    "change_profile_photo": "प्रोफ़ाइल फ़ोटो बदलें"
+  },
+  "calendar": {
+    "weekday": {
+      "0": "रवि",
+      "1": "सोम",
+      "2": "मंगल",
+      "3": "बुध",
+      "4": "गुरु",
+      "5": "शुक्र",
+      "6": "शनि"
+    }
+  },
+  "map": {
+    "mode": {
+      "car": "कार",
+      "walk": "पैदल",
+      "transit": "सार्वजनिक परिवहन"
+    },
+    "duration_min": "लगभग {{min}} मिनट",
+    "duration_hour_min": "लगभग {{hour}} घं {{min}} मि",
+    "total_route_stops": "पूरा रूट · {{count}} ठहराव",
+    "searching_locations": "स्थान खोजे जा रहे हैं… {{resolved}} / {{total}}",
+    "routing_car": "सड़क रूट की गणना…",
+    "drawing_route": "रूट बनाया जा रहा है…",
+    "car_estimate": "(car estimate)",
+    "walk_estimate": "(walk estimate)",
+    "route_failed": "रूट दिखाया नहीं जा सका",
+    "segment_route": "रूट {{from}}→{{to}}",
+    "view_map": "मानचित्र देखें",
+    "same_place": "📌 वही स्थान",
+    "open_in_naver_title": "Naver Map में {{name}} देखें",
+    "loading": "मानचित्र लोड हो रहा है…",
+    "static_failed": "स्थिर मानचित्र लोड नहीं हो सका",
+    "open_in_naver": "Naver Map में देखें",
+    "note_new_schedule": "नया बना शेड्यूल मानचित्र अपने-आप दिखाता है",
+    "zoom_in": "ज़ूम इन",
+    "zoom_out": "ज़ूम आउट",
+    "zoom_reset": "ज़ूम रीसेट",
+    "open_in_naver_with_arrow": "Naver Map में खोलें ↗"
+  },
+  "options": {
+    "gender": {
+      "male": "पुरुष",
+      "female": "महिला",
+      "other": "अन्य",
+      "no_answer": "कहना नहीं चाहते"
+    },
+    "age": {
+      "teens": "किशोर",
+      "twenties": "20s",
+      "thirties": "30s",
+      "forties": "40s",
+      "fifties": "50s",
+      "sixties_plus": "60+"
+    },
+    "diet": {
+      "normal": "सामान्य",
+      "vegetarian": "शाकाहारी",
+      "vegan": "वीगन",
+      "halal": "हलाल",
+      "allergy": "एलर्जी"
+    },
+    "religion": {
+      "none": "कोई नहीं",
+      "christian": "ईसाई",
+      "buddhist": "बौद्ध",
+      "catholic": "कैथोलिक",
+      "islam": "मुस्लिम",
+      "other": "अन्य"
+    },
+    "nationality": {
+      "korea": "कोरिया",
+      "japan": "जापान",
+      "china": "चीन",
+      "usa": "USA",
+      "united_kingdom": "यूनाइटेड किंगडम",
+      "france": "फ्रांस",
+      "germany": "जर्मनी",
+      "canada": "कनाडा",
+      "australia": "ऑस्ट्रेलिया",
+      "vietnam": "वियतनाम",
+      "thailand": "थाईलैंड",
+      "philippines": "फिलीपींस",
+      "indonesia": "इंडोनेशिया",
+      "singapore": "सिंगापुर",
+      "malaysia": "मलेशिया",
+      "india": "भारत",
+      "other": "अन्य"
+    }
+  }
+}

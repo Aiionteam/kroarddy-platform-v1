@@ -1,0 +1,210 @@
+{
+  "subscription": {
+    "title_mobile": "Abo",
+    "title": "Abonnement",
+    "subtitle": "Nach der kostenlosen Testphase wählen Sie Ihren Tarif.",
+    "safety": "Sichere Zahlung · Jederzeit kündbar",
+    "free": {
+      "kicker": "Heute kostenlos starten",
+      "note": "Nach 7 kostenlosen Tagen wechselt es automatisch zum gewählten Tarif."
+    },
+    "plan_monthly": {
+      "title": "Monatsabo",
+      "badge": "Basis",
+      "price": "₩5.900 / Monat",
+      "note": "Monatliche Abrechnung",
+      "features": {
+        "1": "Zusammenfassungen von Expertenempfehlungen",
+        "2": "Priorisierte Antworten bei Anfragen/Guide",
+        "3": "Neueste Funktionsupdates inklusive"
+      }
+    },
+    "plan_yearly": {
+      "title": "Jahresabo",
+      "badge": "Empfohlen",
+      "price": "₩46.800 / Jahr",
+      "note": "Jährliche Abrechnung",
+      "oldPrice": "Entspricht ca. ₩7.000 / Monat",
+      "features": {
+        "1": "Alle Vorteile des Monatsabos",
+        "2": "Rabatt für die Laufzeit von einem Jahr",
+        "3": "Priorisierter Support und mehr Stabilität"
+      }
+    },
+    "cta_monthly": "Monatsabo starten",
+    "cta_yearly": "Jahresabo starten",
+    "selected": {
+      "title": "Gewählter Tarif",
+      "compare": "Vergleich: ",
+      "includes": "Enthaltene Vorteile"
+    },
+    "agree": {
+      "service_title": "Nutzungsbedingungen zustimmen",
+      "service_desc": "Erforderlich für Abo-Zahlung und Nutzung.",
+      "billing_title": "Zahlungshinweis zustimmen",
+      "billing_desc": "Hinweis zu automatischem Wechsel und Abrechnungszyklus."
+    },
+    "demo_alert": "(Demo) Echte Zahlungs-API folgt im nächsten Schritt.",
+    "demo_note": "Demo-Ansicht. Echte Zahlung/Auto-Wechsel erfolgt in Produktion."
+  },
+  "emergency": {
+    "title_mobile": "Notfallhilfe",
+    "title": "Notfallhilfe & Reisetipps",
+    "subtitle": "Kategoriebasierte Hilfe für Notfälle, die Ausländer in Korea erleben können.",
+    "share_button": "Notfall teilen",
+    "consulate": {
+      "title": "Botschaft/Konsulat",
+      "nationality": "Staatsangehörigkeit",
+      "find_contact": "Konsulatkontakt finden",
+      "callcenter": "24h Konsular-Hotline 02-3210-0404",
+      "unknown_nationality": "Unbekannt"
+    },
+    "categories": {
+      "title": "Notfallkategorien",
+      "selected": "Ausgewählt",
+      "view": "Ansehen",
+      "items": {
+        "passport": {
+          "title": "Reisepass / Visum & Aufenthalt",
+          "short": "Bei Verlust des Passes oder Fragen zu Visum/Aufenthalt",
+          "steps": {
+            "1": "Wenn möglich Kopie/Foto sichern und Verlust bei Unterkunft/Polizei bestätigen.",
+            "2": "Botschaft/Konsulat für Neuerteilung oder Provisorien kontaktieren.",
+            "3": "Polizei-/Aktennummer vorbereiten, falls nötig."
+          }
+        },
+        "lost": {
+          "title": "Verlust / Diebstahl melden",
+          "short": "Geldbörse, Handy oder wichtige Sachen verloren",
+          "steps": {
+            "1": "Bei möglicher Kompromittierung sofort Authentifizierung stoppen und Passwörter ändern.",
+            "2": "Bei Polizei/Fundbüro melden und Vorgangsnummer erhalten.",
+            "3": "Bei Verlust von Pass/Karten Konsulat dringend kontaktieren."
+          }
+        },
+        "safety": {
+          "title": "Kriminalität / Gewalt / Gefahr",
+          "short": "Betrug, Übergriff, Drohung oder Gefahr in der Nähe",
+          "steps": {
+            "1": "Sofort an einen sicheren Ort und Hilfe bei Personen/Personal holen.",
+            "2": "Bei Verletzung 119 (Rettung) oder 112 (Polizei) wählen.",
+            "3": "Vorgang (Zeit/Ort) notieren und Beweise (Fotos, Nachrichten) aufbewahren."
+          }
+        },
+        "medical": {
+          "title": "Notfallmedizin / Unfall & Verletzung",
+          "short": "Plötzliche Krankheit oder Verletzung nach Unfall",
+          "steps": {
+            "1": "119 oder 112 je nach Situation und Erste Hilfe erhalten.",
+            "2": "Im Krankenhaus Dolmetscher über Botschaft/Konsulat anfragen.",
+            "3": "Allergien, Medikamente und Vorerkrankungen dem Personal mitteilen."
+          }
+        },
+        "disaster": {
+          "title": "Brand / Katastrophe & Evakuierung",
+          "short": "Bei Feuer, Starkregen, Stromausfall usw.",
+          "steps": {
+            "1": "Alarmen und Anweisungen folgen und sicherer Fluchtweg.",
+            "2": "Verletzte: zuerst Sicherheit, dann Rettung rufen.",
+            "3": "Standort und Lage an Botschaft/Unterkunft mitteilen."
+          }
+        },
+        "immigration": {
+          "title": "Einreise / Abschiebung & Aufenthalt",
+          "short": "Überziehung, Abschiebungsrisiko und Verwaltung",
+          "steps": {
+            "1": "Nicht allein handeln; Dokumente fotografieren und schnell Konsulat informieren.",
+            "2": "Bei Bedarf Rechtsberatung/Dolmetscher einholen.",
+            "3": "Unautorisierte Handlungen vermeiden, die Einreise beeinträchtigen."
+          }
+        },
+        "interpreter": {
+          "title": "Konsulat / Dolmetscher kontaktieren",
+          "short": "Sprachbarrieren erschweren Hilfe",
+          "steps": {
+            "1": "Kurz zusammenfassen (wann/wo/was) und mit Konsulat teilen.",
+            "2": "Erreichbare Telefonnummer, Adresse und Unterkunft bereithalten.",
+            "3": "Parallel ggf. Notrufe (Polizei/Rettung)."
+          }
+        }
+      }
+    },
+    "detail": {
+      "badge": "Leitfaden",
+      "call_police": "112 Polizei",
+      "call_119": "119 Rettungsdienst",
+      "call_1339": "1339 KDCA (medizinische Beratung)",
+      "call_consulate": "Konsulatkontakt"
+    },
+    "share": {
+      "title_mobile": "Notfall teilen",
+      "title": "Öffentliche Notfall-Mitteilung",
+      "type_title": "Notfallarten",
+      "type_subtitle": "Art wählen und Foto/Audio anhängen für schnelles Teilen.",
+      "aria": { "select_reason": "{{id}} auswählen" },
+      "attach_title": "Anhänge",
+      "attach_subtitle": "Foto oder Audio beschleunigt die Weitergabe.",
+      "photo_section": "Fotos hinzufügen",
+      "photo_pick": "Fotos wählen",
+      "photo_empty": "Bitte Fotos auswählen.",
+      "audio_section": "Audio aufnehmen",
+      "recording": "Aufnahme: {{s}}s",
+      "record_ready": "Bereit",
+      "optional": "Optional",
+      "audio_start": "Aufnahme starten",
+      "audio_stop": "Stopp",
+      "audio_delete": "Audio löschen",
+      "audio_perm": "Mikrofonberechtigung kann erforderlich sein.",
+      "now_title": "Jetzt teilen",
+      "now_subtitle": "Demo: Es erscheint eine Bestätigung statt echtem Versand.",
+      "call_emergency": "Notruf",
+      "start_button": "Notfall-Teilen starten",
+      "reason": {
+        "location": {
+          "label": "Hilfe zu Ort/Sicherheit",
+          "desc": "Hilfe basierend auf dem aktuellen Standort anfordern."
+        },
+        "medical": {
+          "label": "Medizinische Hilfe",
+          "desc": "Notfallmedizin bei Krankheit oder Verletzung."
+        },
+        "danger": {
+          "label": "Akute Gefahr",
+          "desc": "Sofortige Sicherheit wegen Gewalt/Betrug/Drohung."
+        }
+      },
+      "alert": {
+        "audio_permission": "Bitte Mikrofonberechtigung prüfen.",
+        "select_reason": "Mindestens eine Notfallart wählen.",
+        "attach_required": "Bitte Foto oder Audio anhängen.",
+        "start_demo": "Notfall-Teilen starten. (Demo)\nGewählt: {{selected}}"
+      }
+    }
+  },
+  "notices": {
+    "new_button_alert": "Die Funktion „Neue Mitteilung“ wird später ergänzt.",
+    "seed": {
+      "author": { "ops": "Betriebsteam" },
+      "7": {
+        "title": "Release v1.0.3 (Performance & Fehlerbehebungen)",
+        "content": "Dieses Update verbessert die Ladezeiten und behebt Fehler.\nBei anhaltenden Problemen wenden Sie sich an den Support."
+      },
+      "6": {
+        "title": "Geplante Serverwartung",
+        "content": "Einige Funktionen können vorübergehend nicht verfügbar sein.\nZeiten und Umfang siehe unten in der Mitteilung."
+      },
+      "5": {
+        "title": "Update: Filter in den Mitteilungen",
+        "content": "Typ- und Suchfilter helfen, schneller die richtige Mitteilung zu finden."
+      },
+      "4": {
+        "title": "Behoben: Verzögerte Bild-Uploads",
+        "content": "Upload-Verzögerungen in manchen Umgebungen wurden behoben.\nBitte melden Sie sich, falls es weiterhin auftritt."
+      },
+      "3": {
+        "title": "Release v1.0.2 (Verbesserung Anfragen-UX)",
+        "content": "Tabs für Anfragen und Verlauf erleichtern die Übersicht."
+      }
+    }
+  }
+}

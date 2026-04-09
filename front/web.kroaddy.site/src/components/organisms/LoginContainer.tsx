@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import "@/lib/i18n/config";
+import { useTranslation } from "react-i18next";
 import { Button } from "../atoms/Button";
 import { GoogleLoginButton } from "../molecules/GoogleLoginButton";
 import { KakaoLoginButton } from "../molecules/KakaoLoginButton";
@@ -9,6 +11,7 @@ import { useLoginStore } from "@/store";
 
 export const LoginContainer: React.FC = () => {
   const { handleGoogleLogin, handleKakaoLogin, handleNaverLogin, handleGuestLogin } = useLoginStore();
+  const { t } = useTranslation();
 
   return (
     <div className="relative w-full max-w-md">
@@ -17,8 +20,8 @@ export const LoginContainer: React.FC = () => {
           TourStory
         </h1>
         <p className="text-gray-700 text-lg leading-relaxed">
-          안녕하세요! 👋<br />
-          로그인하여 이용해 주세요.
+          {t("auth.welcome", { defaultValue: "안녕하세요! 👋" })}<br />
+          {t("auth.login_please", { defaultValue: "로그인하여 이용해 주세요." })}
         </p>
       </div>
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 p-8">
@@ -28,7 +31,7 @@ export const LoginContainer: React.FC = () => {
           <NaverLoginButton onClick={handleNaverLogin} />
           <div className="pt-2">
             <Button type="button" variant="outline" onClick={handleGuestLogin} className="w-full border-gray-300 text-gray-700 hover:bg-gray-50">
-              게스트로 접속하기
+              {t("auth.continue_as_guest", { defaultValue: "게스트로 접속하기" })}
             </Button>
           </div>
         </div>

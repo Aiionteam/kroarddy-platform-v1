@@ -4,19 +4,69 @@ import React, { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
 import { AppLayout } from "@/components/organisms/AppLayout";
+import { useTranslation } from "react-i18next";
 import {
   REGION_GROUPS,
   METRO_CITIES,
   METRO_REGION_GROUP_IDS,
   ALL_DESTINATIONS,
   type Destination,
+  type RegionGroup,
 } from "../planner-data";
 import Image from "next/image";
 import { getDestinationImage } from "../planner-images";
 
+const DEST_NAME_FALLBACK_EN: Record<string, string> = {
+  seoul: "Seoul",
+  busan: "Busan",
+  daegu: "Daegu",
+  incheon: "Incheon",
+  gwangju: "Gwangju",
+  daejeon: "Daejeon",
+  ulsan: "Ulsan",
+  sejong: "Sejong",
+  jongno: "Jongno / Gwanghwamun",
+  myeongdong: "Myeongdong / Euljiro",
+  yongsan: "Yongsan / Itaewon",
+  gangnam: "Gangnam / Seocho",
+  haeundae: "Haeundae",
+  gwangalli: "Gwangalli / Suyeong",
+  gijang: "Gijang",
+  songjeong: "Songjeong / Cheongsapo",
+};
+
+const REGION_LABEL_FALLBACK_EN: Record<string, string> = {
+  "seoul-areas": "Seoul",
+  busan: "Busan",
+  daegu: "Daegu",
+  ulsan: "Ulsan",
+};
+
+function humanizeSlug(slug: string): string {
+  return slug
+    .replace(/[-_]/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 function DestCard({ dest, onClick }: { dest: Destination; onClick: () => void }) {
+  const { t, i18n } = useTranslation();
   const imagePath = getDestinationImage(dest.slug);
   const [imgError, setImgError] = React.useState(false);
+  const isKorean = (i18n.language || "").toLowerCase().startsWith("ko");
+  const translatedName = t(`planner.dest.${dest.slug}.name`, { defaultValue: dest.name });
+  const nameForUi = !isKorean && translatedName === dest.name
+    ? (DEST_NAME_FALLBACK_EN[dest.slug] ?? humanizeSlug(dest.slug))
+    : translatedName;
+  const highlightsForUi = (dest.highlights ?? [])
+    .map((h, idx) => {
+      const translated = t(`planner.dest.${dest.slug}.highlight${idx + 1}`, { defaultValue: h });
+      if (!isKorean && translated === h) return "";
+      return translated;
+    })
+    .filter(Boolean);
 
   const showPlaceholder = !imagePath || imgError;
 
@@ -29,7 +79,7 @@ function DestCard({ dest, onClick }: { dest: Destination; onClick: () => void })
       {!showPlaceholder ? (
         <Image
           src={imagePath}
-          alt={dest.name}
+          alt={nameForUi}
           fill
           sizes="320px"
           className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -39,21 +89,25 @@ function DestCard({ dest, onClick }: { dest: Destination; onClick: () => void })
       ) : (
         <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col items-center justify-center gap-1.5">
           <span className="text-4xl opacity-30 select-none">{dest.emoji ?? "📍"}</span>
-          <span className="text-[10px] font-medium text-gray-400 tracking-wide select-none">이미지 준비중</span>
+          <span className="text-[10px] font-medium text-gray-400 tracking-wide select-none">
+            {t("planner.standard.image_pending", { defaultValue: "이미지 준비중" })}
+          </span>
         </div>
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
       <div className="absolute bottom-0 left-0 right-0 p-2.5">
-        <p className="text-sm font-bold text-white drop-shadow leading-tight">{dest.name}</p>
-        {dest.highlights && dest.highlights.length > 0 && (
+        <p className="text-sm font-bold text-white drop-shadow leading-tight">
+          {nameForUi}
+        </p>
+        {highlightsForUi.length > 0 && (
           <p className="mt-0.5 text-[10px] text-white/70 truncate">
-            {dest.highlights.slice(0, 2).join(" · ")}
+            {highlightsForUi.slice(0, 2).join(" · ")}
           </p>
         )}
       </div>
       {dest.popular && (
         <span className="absolute top-2 left-2 rounded-sm bg-red-500 px-1.5 py-0.5 text-[9px] font-extrabold text-white leading-none shadow">
-          인기
+          {t("planner.standard.popular", { defaultValue: "인기" })}
         </span>
       )}
     </button>
@@ -117,6 +171,8 @@ export default function StandardPage() {
   const router = useRouter();
   const { isAuthenticated, logout } = useLoginStore();
   const [query, setQuery] = useState("");
+  const { t, i18n } = useTranslation();
+  const isKorean = (i18n.language || "").toLowerCase().startsWith("ko");
 
   React.useEffect(() => {
     if (!isAuthenticated) router.replace("/");
@@ -131,12 +187,18 @@ export default function StandardPage() {
     []
   );
   const searchResults = useMemo(() => {
-    const q = query.trim();
+    const q = query.trim().toLowerCase();
     if (!q) return null;
     return ALL_DESTINATIONS.filter(
-      (d) => d.name.includes(q) || d.highlights?.some((h) => h.includes(q))
+      (d) => {
+        const localizedName = t(`planner.dest.${d.slug}.name`, { defaultValue: d.name }).toLowerCase();
+        const localizedHighlights = (d.highlights ?? []).map((h, idx) =>
+          t(`planner.dest.${d.slug}.highlight${idx + 1}`, { defaultValue: h }).toLowerCase()
+        );
+        return localizedName.includes(q) || localizedHighlights.some((h) => h.includes(q));
+      }
     );
-  }, [query]);
+  }, [query, t]);
 
   const navigate = (dest: Destination) => router.push(`/planner/standard/${dest.slug}`);
 
@@ -154,14 +216,14 @@ export default function StandardPage() {
             ←
           </button>
           <div>
-            <h2 className="text-base font-bold text-gray-800">여행지 선택</h2>
-            <p className="text-[11px] text-gray-400">여행지를 선택하면 AI가 맞춤 루트를 추천해드려요</p>
+            <h2 className="text-base font-bold text-gray-800">{t("planner.standard.title", { defaultValue: "여행지 선택" })}</h2>
+            <p className="text-[11px] text-gray-400">{t("planner.standard.subtitle", { defaultValue: "여행지를 선택하면 AI가 맞춤 루트를 추천해드려요" })}</p>
           </div>
           <div className="ml-auto relative w-64">
             <span className="absolute inset-y-0 left-3 flex items-center text-gray-400 text-xs">🔍</span>
             <input
               type="text"
-              placeholder="도시·명소 검색 (예: 강릉, 한옥마을)"
+              placeholder={t("planner.standard.search_placeholder", { defaultValue: "도시·명소 검색 (예: 강릉, 한옥마을)" })}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pl-9 pr-8 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-100"
@@ -182,14 +244,14 @@ export default function StandardPage() {
           {searchResults !== null ? (
             <div className="px-6">
               <p className="mb-4 text-xs text-gray-400">
-                &ldquo;{query}&rdquo; 검색 결과 {searchResults.length}곳
+                {t("planner.standard.search_result", { query, count: searchResults.length, defaultValue: "“{{query}}” 검색 결과 {{count}}곳" })}
               </p>
               {searchResults.length === 0 ? (
                 <div className="flex flex-col items-center py-20 text-center text-gray-400">
                   <span className="text-4xl mb-2">🗺️</span>
-                  <p className="text-sm">검색 결과가 없습니다</p>
+                  <p className="text-sm">{t("planner.standard.no_results", { defaultValue: "검색 결과가 없습니다" })}</p>
                   <button onClick={() => setQuery("")} className="mt-2 text-xs text-purple-500 hover:underline">
-                    초기화
+                    {t("planner.standard.reset", { defaultValue: "초기화" })}
                   </button>
                 </div>
               ) : (
@@ -204,9 +266,9 @@ export default function StandardPage() {
             <>
               <div className="mb-8 px-6">
                 <div className="mb-4">
-                  <h3 className="text-lg font-bold text-gray-900">광역시·특별시 바로가기</h3>
+                  <h3 className="text-lg font-bold text-gray-900">{t("planner.standard.metro_quick", { defaultValue: "광역시·특별시 바로가기" })}</h3>
                   <p className="mt-1 text-xs text-gray-500">
-                    많이 찾는 대도시는 바로 선택하고, 아래에서 상세 지역도 둘러보세요.
+                    {t("planner.standard.metro_quick_sub", { defaultValue: "많이 찾는 대도시는 바로 선택하고, 아래에서 상세 지역도 둘러보세요." })}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -217,39 +279,64 @@ export default function StandardPage() {
                       className="rounded-full border border-purple-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700"
                     >
                       <span className="mr-1.5">{city.emoji ?? "📍"}</span>
-                      {city.name}
+                      {(() => {
+                        const translated = t(`planner.dest.${city.slug}.name`, { defaultValue: city.name });
+                        return !isKorean && translated === city.name
+                          ? (DEST_NAME_FALLBACK_EN[city.slug] ?? humanizeSlug(city.slug))
+                          : translated;
+                      })()}
                     </button>
                   ))}
                 </div>
               </div>
 
               <div className="mb-3 px-6">
-                <h3 className="text-lg font-bold text-gray-900">광역시 상세 지역</h3>
+                <h3 className="text-lg font-bold text-gray-900">{t("planner.standard.metro_detail", { defaultValue: "광역시 상세 지역" })}</h3>
                 <p className="mt-1 text-xs text-gray-500">
-                  서울·부산·대구·울산처럼 도시 단위로 여행하는 지역은 세부 권역으로 나눠서 보여드려요.
+                  {t("planner.standard.metro_detail_sub", { defaultValue: "서울·부산·대구·울산처럼 도시 단위로 여행하는 지역은 세부 권역으로 나눠서 보여드려요." })}
                 </p>
               </div>
-              {metroRegionGroups.map((group) => (
+              {metroRegionGroups.map((group: RegionGroup) => (
                 <RegionRow
                   key={group.id}
-                  label={group.label}
-                  subLabel={group.subLabel}
+                  label={(() => {
+                    const translated = t(`planner.region.${group.id}.label`, { defaultValue: group.label });
+                    return !isKorean && translated === group.label
+                      ? (REGION_LABEL_FALLBACK_EN[group.id] ?? humanizeSlug(group.id))
+                      : translated;
+                  })()}
+                  subLabel={group.subLabel
+                    ? (() => {
+                      const translated = t(`planner.region.${group.id}.subLabel`, { defaultValue: group.subLabel });
+                      return !isKorean && translated === group.subLabel ? "" : translated;
+                    })()
+                    : undefined}
                   destinations={group.subSections.flatMap((s) => s.destinations)}
                   onSelect={navigate}
                 />
               ))}
 
               <div className="mb-3 mt-10 px-6">
-                <h3 className="text-lg font-bold text-gray-900">도 단위 지역</h3>
+                <h3 className="text-lg font-bold text-gray-900">{t("planner.standard.province", { defaultValue: "도 단위 지역" })}</h3>
                 <p className="mt-1 text-xs text-gray-500">
-                  경기도, 충청, 전라, 경상, 강원, 제주처럼 권역 중심으로 여행지를 비교해보세요.
+                  {t("planner.standard.province_sub", { defaultValue: "경기도, 충청, 전라, 경상, 강원, 제주처럼 권역 중심으로 여행지를 비교해보세요." })}
                 </p>
               </div>
               {provinceRegionGroups.map((group) => (
                 <RegionRow
                   key={group.id}
-                  label={group.label}
-                  subLabel={group.subLabel}
+                  label={(() => {
+                    const translated = t(`planner.region.${group.id}.label`, { defaultValue: group.label });
+                    return !isKorean && translated === group.label
+                      ? (REGION_LABEL_FALLBACK_EN[group.id] ?? humanizeSlug(group.id))
+                      : translated;
+                  })()}
+                  subLabel={group.subLabel
+                    ? (() => {
+                      const translated = t(`planner.region.${group.id}.subLabel`, { defaultValue: group.subLabel });
+                      return !isKorean && translated === group.subLabel ? "" : translated;
+                    })()
+                    : undefined}
                   destinations={group.subSections.flatMap((s) => s.destinations)}
                   onSelect={navigate}
                 />

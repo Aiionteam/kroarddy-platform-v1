@@ -1,0 +1,210 @@
+{
+  "subscription": {
+    "title_mobile": "Abonnement",
+    "title": "Abonnement",
+    "subtitle": "Après l’essai gratuit, choisissez votre formule.",
+    "safety": "Paiement sécurisé · Résiliation à tout moment",
+    "free": {
+      "kicker": "Commencez gratuitement aujourd’hui",
+      "note": "Après 7 jours gratuits, passage automatique au forfait choisi."
+    },
+    "plan_monthly": {
+      "title": "Forfait mensuel",
+      "badge": "Basique",
+      "price": "₩5 900 / mois",
+      "note": "Facturation mensuelle",
+      "features": {
+        "1": "Synthèses de recommandations d’experts",
+        "2": "Réponses prioritaires pour demandes/guide",
+        "3": "Dernières mises à jour incluses"
+      }
+    },
+    "plan_yearly": {
+      "title": "Forfait annuel",
+      "badge": "Recommandé",
+      "price": "₩46 800 / an",
+      "note": "Facturation annuelle",
+      "oldPrice": "Équiv. env. ₩7 000 / mois",
+      "features": {
+        "1": "Tous les avantages du forfait mensuel",
+        "2": "Remise sur l’année",
+        "3": "Support prioritaire et stabilité"
+      }
+    },
+    "cta_monthly": "Démarrer l’abonnement mensuel",
+    "cta_yearly": "Démarrer l’abonnement annuel",
+    "selected": {
+      "title": "Forfait sélectionné",
+      "compare": "Comparer : ",
+      "includes": "Avantages inclus"
+    },
+    "agree": {
+      "service_title": "Accepter les conditions d’utilisation",
+      "service_desc": "Requis pour le paiement et l’utilisation de l’abonnement.",
+      "billing_title": "Accepter l’avis de facturation",
+      "billing_desc": "Information sur le passage automatique et le cycle de facturation."
+    },
+    "demo_alert": "(Démo) L’API de paiement réelle sera intégrée ensuite.",
+    "demo_note": "Écran de démonstration. Paiement réel et bascule auto en production."
+  },
+  "emergency": {
+    "title_mobile": "Aide d’urgence",
+    "title": "Aide d’urgence et conseils voyage",
+    "subtitle": "Guide par catégorie pour les urgences que les étrangers peuvent rencontrer en Corée.",
+    "share_button": "Partager une urgence",
+    "consulate": {
+      "title": "Ambassade / Consulat",
+      "nationality": "Nationalité",
+      "find_contact": "Trouver les coordonnées du consulat",
+      "callcenter": "Centre d’appel consulaire 24h/24 02-3210-0404",
+      "unknown_nationality": "Inconnu"
+    },
+    "categories": {
+      "title": "Catégories d’urgence",
+      "selected": "Sélectionné",
+      "view": "Voir",
+      "items": {
+        "passport": {
+          "title": "Passeport / visa et séjour",
+          "short": "Perte de passeport ou besoin d’aide visa/séjour",
+          "steps": {
+            "1": "Si possible, gardez une copie/photo et confirmez la perte (hébergement/police).",
+            "2": "Contactez l’ambassade/consulat pour renouvellement ou documents temporaires.",
+            "3": "Préparez le numéro de dossier police si nécessaire."
+          }
+        },
+        "lost": {
+          "title": "Perte / vol — déclaration",
+          "short": "Portefeuille, téléphone ou objets importants perdus",
+          "steps": {
+            "1": "Si compte compromis, stoppez l’authentification et changez les mots de passe.",
+            "2": "Déclarez au commissariat / objets trouvés et obtenez un numéro de dossier.",
+            "3": "Si passeport/cartes perdus, contactez vite le consulat."
+          }
+        },
+        "safety": {
+          "title": "Crime / violence / menace",
+          "short": "Arnaque, agression, menace ou danger à proximité",
+          "steps": {
+            "1": "Allez immédiatement en lieu sûr et demandez de l’aide.",
+            "2": "En cas de blessure, appelez 119 (secours) ou 112 (police).",
+            "3": "Notez circonstances et conservez preuves (photos, messages)."
+          }
+        },
+        "medical": {
+          "title": "Urgence médicale / accident",
+          "short": "Maladie soudaine ou blessure accidentelle",
+          "steps": {
+            "1": "Appelez 119 ou 112 selon le cas et recevez les premiers soins.",
+            "2": "Si interprète nécessaire à l’hôpital, sollicitez l’ambassade/consulat.",
+            "3": "Indiquez allergies, traitements et antécédents au personnel."
+          }
+        },
+        "disaster": {
+          "title": "Incendie / catastrophe / évacuation",
+          "short": "Feu, pluies, coupures de courant, etc.",
+          "steps": {
+            "1": "Suivez alarmes et consignes vers une voie d’évacuation sûre.",
+            "2": "Blessés : sécurisez d’abord, puis demandez secours.",
+            "3": "Partagez position et situation avec ambassade/hébergement."
+          }
+        },
+        "immigration": {
+          "title": "Immigration / expulsion / séjour",
+          "short": "Séjour irrégulier, risque d’expulsion",
+          "steps": {
+            "1": "Ne répondez pas seul ; photographiez documents/avis et contactez le consulat.",
+            "2": "Demandez aide juridique/interprète si besoin.",
+            "3": "Évitez les actes non autorisés affectant votre statut."
+          }
+        },
+        "interpreter": {
+          "title": "Consulat / interprète",
+          "short": "Barrière linguistique pour demander de l’aide",
+          "steps": {
+            "1": "Résumez (quand/où/quoi) et transmettez au consulat.",
+            "2": "Préparez téléphone joignable, adresse et hébergement.",
+            "3": "Appelez peut-être aussi les urgences (police/secours)."
+          }
+        }
+      }
+    },
+    "detail": {
+      "badge": "Guide d’action",
+      "call_police": "112 Police",
+      "call_119": "119 Urgences",
+      "call_1339": "1339 KDCA (conseil médical)",
+      "call_consulate": "Contact consulat"
+    },
+    "share": {
+      "title_mobile": "Partage urgence",
+      "title": "Partage public d’urgence",
+      "type_title": "Types d’urgence",
+      "type_subtitle": "Choisissez un type et joignez photo/audio pour partager vite.",
+      "aria": { "select_reason": "Sélectionner {{id}}" },
+      "attach_title": "Pièces jointes",
+      "attach_subtitle": "Photo ou audio accélère le partage.",
+      "photo_section": "Ajouter des photos",
+      "photo_pick": "Choisir des photos",
+      "photo_empty": "Veuillez choisir des photos.",
+      "audio_section": "Enregistrement audio",
+      "recording": "Enregistrement : {{s}} s",
+      "record_ready": "Prêt",
+      "optional": "Facultatif",
+      "audio_start": "Démarrer l’enregistrement",
+      "audio_stop": "Arrêter",
+      "audio_delete": "Supprimer l’audio",
+      "audio_perm": "L’autorisation micro peut être nécessaire.",
+      "now_title": "Partager maintenant",
+      "now_subtitle": "Démo : confirmation affichée au lieu d’un envoi réel.",
+      "call_emergency": "Appel d’urgence",
+      "start_button": "Démarrer le partage d’urgence",
+      "reason": {
+        "location": {
+          "label": "Aide localisation/sécurité",
+          "desc": "Demander de l’aide selon votre position."
+        },
+        "medical": {
+          "label": "Aide médicale",
+          "desc": "Soutien médical urgent pour maladie ou blessure."
+        },
+        "danger": {
+          "label": "Danger immédiat",
+          "desc": "Sécurité urgente : violence, arnaque, menace."
+        }
+      },
+      "alert": {
+        "audio_permission": "Vérifiez l’autorisation microphone.",
+        "select_reason": "Sélectionnez au moins un type d’urgence.",
+        "attach_required": "Joignez une photo ou un audio.",
+        "start_demo": "Démarrage du partage d’urgence. (Démo)\nSélection : {{selected}}"
+      }
+    }
+  },
+  "notices": {
+    "new_button_alert": "La fonction « Nouvelle annonce » sera ajoutée prochainement.",
+    "seed": {
+      "author": { "ops": "Équipe opérations" },
+      "7": {
+        "title": "Version v1.0.3 (performances et correctifs)",
+        "content": "Cette version améliore le chargement et corrige des bugs.\nSi le problème persiste, contactez le support."
+      },
+      "6": {
+        "title": "Maintenance serveur planifiée",
+        "content": "Certaines fonctions peuvent être indisponibles.\nHoraires et portée en bas de l’annonce."
+      },
+      "5": {
+        "title": "Mise à jour des filtres d’annonces",
+        "content": "Filtres par type et recherche pour trouver plus vite l’info."
+      },
+      "4": {
+        "title": "Corrigé : lenteur d’upload d’images",
+        "content": "Problème corrigé dans certains environnements.\nContactez-nous si cela continue."
+      },
+      "3": {
+        "title": "Version v1.0.2 (UX des demandes)",
+        "content": "Onglets pour demandes et historique pour plus de clarté."
+      }
+    }
+  }
+}

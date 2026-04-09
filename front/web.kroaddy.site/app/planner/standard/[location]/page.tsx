@@ -22,17 +22,113 @@ import {
   writeSchedule,
 } from "@/lib/plannerCache";
 import { SLUG_TO_NAME } from "../../planner-data";
+import { useTranslation } from "react-i18next";
 
-const THEME_META: Record<string, { emoji: string; bg: string; text: string }> = {
-  행사:   { emoji: "🎪", bg: "bg-amber-100",   text: "text-amber-700"  },
-  먹거리: { emoji: "🍱", bg: "bg-green-100",   text: "text-green-700"  },
-  명소:   { emoji: "🏛️", bg: "bg-blue-100",    text: "text-blue-700"   },
-  럭셔리: { emoji: "💎", bg: "bg-violet-100",  text: "text-violet-700" },
-  가성비: { emoji: "🪙", bg: "bg-teal-100",    text: "text-teal-700"   },
-  가족:   { emoji: "👨‍👩‍👧", bg: "bg-orange-100", text: "text-orange-700" },
-  커플:   { emoji: "💑", bg: "bg-pink-100",    text: "text-pink-700"   },
+type ThemeSlug = "event" | "food" | "spot" | "luxury" | "value" | "family" | "couple";
+
+const THEME_SLUG_BY_LABEL: Record<string, ThemeSlug> = {
+  행사: "event",
+  먹거리: "food",
+  명소: "spot",
+  럭셔리: "luxury",
+  가성비: "value",
+  가족: "family",
+  커플: "couple",
+};
+
+const THEME_META: Record<ThemeSlug, { emoji: string; bg: string; text: string }> = {
+  event: { emoji: "🎪", bg: "bg-amber-100", text: "text-amber-700" },
+  food: { emoji: "🍱", bg: "bg-green-100", text: "text-green-700" },
+  spot: { emoji: "🏛️", bg: "bg-blue-100", text: "text-blue-700" },
+  luxury: { emoji: "💎", bg: "bg-violet-100", text: "text-violet-700" },
+  value: { emoji: "🪙", bg: "bg-teal-100", text: "text-teal-700" },
+  family: { emoji: "👨‍👩‍👧", bg: "bg-orange-100", text: "text-orange-700" },
+  couple: { emoji: "💑", bg: "bg-pink-100", text: "text-pink-700" },
 };
 const DEFAULT_THEME = { emoji: "✈️", bg: "bg-indigo-100", text: "text-indigo-700" };
+
+const DEST_NAME_FALLBACK_EN: Record<string, string> = {
+  seoul: "Seoul",
+  busan: "Busan",
+  daegu: "Daegu",
+  incheon: "Incheon",
+  gwangju: "Gwangju",
+  daejeon: "Daejeon",
+  ulsan: "Ulsan",
+  sejong: "Sejong",
+  jongno: "Jongno / Gwanghwamun",
+  myeongdong: "Myeongdong / Euljiro",
+  yongsan: "Yongsan / Itaewon",
+  gangnam: "Gangnam / Seocho",
+  haeundae: "Haeundae",
+  gwangalli: "Gwangalli / Suyeong",
+  gijang: "Gijang",
+  songjeong: "Songjeong / Cheongsapo",
+};
+
+function humanizeSlug(slug: string): string {
+  return slug
+    .replace(/[-_]/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+const HIGHLIGHT_SLUG_BY_LABEL: Record<string, string> = {
+  // Seoul
+  "경복궁": "gyeongbokgung",
+  "홍대": "hongdae",
+  "한강공원": "hangang_park",
+  "청와대": "cheongwadae",
+  "인사동": "insadong",
+  "명동성당": "myeongdong_cathedral",
+  "을지로골목": "euljiro_alley",
+  "국립중앙박물관": "national_museum_of_korea",
+  "이태원": "itaewon",
+  // Busan
+  "해운대": "haeundae",
+  "해운대해수욕장": "haeundae_beach",
+  "감천마을": "gamcheon_village",
+  "자갈치시장": "jagalchi_market",
+  "BIFF광장": "biff_square",
+  // Daegu
+  "동성로": "dongseongro",
+  "김광석거리": "kim_gwangseok_street",
+  "수성못": "suseong_lake",
+  // Incheon
+  "송도": "songdo",
+  "차이나타운": "chinatown",
+  // Gangwon
+  "강릉": "gangneung",
+  "경포대": "gyeongpo",
+  "안목커피거리": "anmok_coffee_street",
+  "오죽헌": "ojukheon",
+  "속초": "sokcho",
+  "설악산": "seoraksan",
+  "중앙시장": "central_market",
+  // Jeju
+  "한라산": "hallasan",
+  "성산일출봉": "seongsan_ilchulbong",
+};
+
+function toUiKeySlug(v: string) {
+  const raw = String(v || "").trim();
+  if (!raw) return "unknown";
+
+  const mapped = HIGHLIGHT_SLUG_BY_LABEL[raw];
+  if (mapped) return mapped;
+
+  const ascii = raw
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_]/g, "");
+  if (ascii) return ascii;
+
+  // Fallback for non-ascii strings (e.g., Korean) — keep deterministic but short
+  const enc = encodeURIComponent(raw).replace(/%/g, "").toLowerCase();
+  return `k_${enc.slice(0, 16) || "unknown"}`;
+}
 
 function todayStr() {
   const d = new Date();
@@ -57,8 +153,15 @@ export default function LocationPlannerPage() {
   const { location } = useParams<{ location: string }>();
   const { isAuthenticated, logout } = useLoginStore();
   const newsTop10 = useNewsStore((s) => s.newsTop10);
+  const { t, i18n } = useTranslation();
+  const isKorean = (i18n.language || "").toLowerCase().startsWith("ko");
 
-  const locationName = SLUG_TO_NAME[location] ?? location;
+  const locationNameRaw = SLUG_TO_NAME[location] ?? location;
+  const translatedLocationName = t(`planner.dest.${location}.name`, { defaultValue: locationNameRaw });
+  const locationName =
+    !isKorean && translatedLocationName === locationNameRaw
+      ? (DEST_NAME_FALLBACK_EN[location] ?? humanizeSlug(location))
+      : translatedLocationName;
   const appUserId = typeof window !== "undefined" ? Number(sessionStorage.getItem("app_user_id")) || null : null;
 
   const [startDate, setStartDate] = useState(todayStr);
@@ -110,7 +213,7 @@ export default function LocationPlannerPage() {
 
       const cached = readRoutes<{ routes: PlanRoute[] }>(location, startDate, endDate, existingRoutes, useSearch);
       if (cached) {
-        console.info("[plannerCache] 루트 캐시 히트:", dedupeKey);
+        console.info("[plannerCache] route cache hit:", dedupeKey);
         setRoutes(cached.routes);
         setRoutesLoading(false);
         return;
@@ -130,11 +233,11 @@ export default function LocationPlannerPage() {
         setRoutesError(res.error);
       } else if (res.routes.length > 0) {
         writeRoutes(location, startDate, endDate, existingRoutes, useSearch, { routes: res.routes });
-        console.info("[plannerCache] 루트 캐시 저장:", dedupeKey);
+        console.info("[plannerCache] route cache saved:", dedupeKey);
       }
     } catch (e) {
       routesFetchedRef.current = null;
-      setRoutesError(e instanceof Error ? e.message : "루트를 불러오지 못했습니다.");
+      setRoutesError(e instanceof Error ? e.message : t("planner.standard.route_load_fail", { defaultValue: "루트를 불러오지 못했습니다." }));
     } finally {
       setRoutesLoading(false);
     }
@@ -161,7 +264,7 @@ export default function LocationPlannerPage() {
       try {
         const cached = readSchedule<{ schedule: ScheduleItem[]; cost_summary?: CostSummary }>(location, route.name, startDate, endDate, useSearch);
         if (cached) {
-          console.info("[plannerCache] 일정 캐시 히트:", route.name);
+          console.info("[plannerCache] schedule cache hit:", route.name);
           setSchedule(cached.schedule);
           if (cached.cost_summary) setCostSummary(cached.cost_summary);
           setScheduleLoading(false);
@@ -182,10 +285,10 @@ export default function LocationPlannerPage() {
           setScheduleError(res.error);
         } else if (res.schedule.length > 0) {
           writeSchedule(location, route.name, startDate, endDate, useSearch, { schedule: res.schedule, cost_summary: res.cost_summary });
-          console.info("[plannerCache] 일정 캐시 저장:", route.name);
+          console.info("[plannerCache] schedule cache saved:", route.name);
         }
       } catch (e) {
-        setScheduleError(e instanceof Error ? e.message : "일정을 불러오지 못했습니다.");
+        setScheduleError(e instanceof Error ? e.message : t("planner.standard.schedule_load_fail", { defaultValue: "일정을 불러오지 못했습니다." }));
       } finally {
         setScheduleLoading(false);
       }
@@ -209,7 +312,7 @@ export default function LocationPlannerPage() {
       invalidateRoutes(location);
       routesFetchedRef.current = null;
     } catch (e) {
-      alert(e instanceof Error ? e.message : "저장에 실패했습니다.");
+      alert(e instanceof Error ? e.message : t("planner.standard.save_fail", { defaultValue: "저장에 실패했습니다." }));
     } finally {
       setIsSaving(false);
     }
@@ -235,14 +338,14 @@ export default function LocationPlannerPage() {
                 ←
               </button>
               <div>
-                <p className="text-xs text-gray-400 font-medium">스탠다드</p>
+                <p className="text-xs text-gray-400 font-medium">{t("planner.standard.mode_label", { defaultValue: "스탠다드" })}</p>
                 <h1 className="text-xl font-bold text-gray-800">{locationName}</h1>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
-                <span className="text-xs text-gray-400 shrink-0">날짜</span>
+                <span className="text-xs text-gray-400 shrink-0">{t("planner.standard.date", { defaultValue: "날짜" })}</span>
                 <input
                   type="date"
                   value={startDate}
@@ -284,9 +387,9 @@ export default function LocationPlannerPage() {
               <div className="flex items-center gap-1 rounded-xl border border-gray-200 bg-gray-50 p-1">
                 {(
                   [
-                    { value: "car",     label: "🚗 자가용" },
-                    { value: "transit", label: "🚇 대중교통" },
-                    { value: "walk",    label: "🚶 도보" },
+                    { value: "car",     label: t("planner.standard.mode_car", { defaultValue: "🚗 자가용" }) },
+                    { value: "transit", label: t("planner.standard.mode_transit", { defaultValue: "🚇 대중교통" }) },
+                    { value: "walk",    label: t("planner.standard.mode_walk", { defaultValue: "🚶 도보" }) },
                   ] as const
                 ).map(({ value, label }) => (
                   <button
@@ -319,10 +422,10 @@ export default function LocationPlannerPage() {
                 {routesLoading ? (
                   <>
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    정확한 정보 검색 중…
+                    {t("planner.standard.generating_loading", { defaultValue: "정확한 정보 검색 중…" })}
                   </>
                 ) : (
-                  <>✨ 루트 생성</>
+                  <>{t("planner.standard.generate_route", { defaultValue: "✨ 루트 생성" })}</>
                 )}
               </button>
             </div>
@@ -332,20 +435,20 @@ export default function LocationPlannerPage() {
         <div className="flex flex-col md:flex-row md:flex-1 md:overflow-hidden">
           <div className="flex w-full flex-col border-b border-gray-200 bg-white p-5 md:w-[40%] md:overflow-auto md:border-b-0 md:border-r">
             <h2 className="mb-4 text-sm font-semibold text-gray-500 uppercase tracking-wide">
-              AI 추천 루트
+              {t("planner.standard.ai_recommended_routes", { defaultValue: "AI 추천 루트" })}
             </h2>
 
             {!routesTriggered && !routesLoading && (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 py-10 text-center text-gray-400">
                 <span className="text-4xl">📅</span>
-                <p className="text-sm font-medium text-gray-600">날짜를 설정하고<br />루트를 생성해주세요</p>
+                <p className="text-sm font-medium text-gray-600">{t("planner.standard.set_date_and_generate", { defaultValue: "날짜를 설정하고\n루트를 생성해주세요" })}</p>
                 <p className="text-xs text-gray-400">{startDate} ~ {endDate}</p>
                 <button
                   onClick={loadRoutes}
                   disabled={routesLoading}
                   className="mt-1 flex items-center gap-1.5 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-indigo-700 transition-colors"
                 >
-                  ✨ 루트 생성 시작
+                  {t("planner.standard.start_generate", { defaultValue: "✨ 루트 생성 시작" })}
                 </button>
               </div>
             )}
@@ -374,7 +477,11 @@ export default function LocationPlannerPage() {
               <ul className="space-y-3">
                 {routes.map((route) => {
                   const isActive = selectedRoute?.name === route.name;
-                  const meta = THEME_META[route.theme] ?? DEFAULT_THEME;
+                  const themeSlug = THEME_SLUG_BY_LABEL[route.theme] ?? toUiKeySlug(route.theme);
+                  const meta =
+                    (themeSlug in THEME_META
+                      ? THEME_META[themeSlug as ThemeSlug]
+                      : undefined) ?? DEFAULT_THEME;
                   return (
                     <li key={route.name}>
                       <button
@@ -392,14 +499,14 @@ export default function LocationPlannerPage() {
                             <div className="flex items-center gap-2">
                               <span className="font-semibold text-gray-900">{route.name}</span>
                               <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${meta.bg} ${meta.text}`}>
-                                {route.theme}
+                                {t(`planner.standard.theme.${themeSlug}`, { defaultValue: route.theme })}
                               </span>
                             </div>
                             <p className="mt-1 text-sm text-gray-500">{route.description}</p>
                             <div className="mt-2 flex flex-wrap gap-1">
                               {route.highlights.map((h) => (
                                 <span key={h} className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
-                                  {h}
+                                  {t(`planner.standard.highlight.${toUiKeySlug(h)}`, { defaultValue: h })}
                                 </span>
                               ))}
                             </div>
@@ -419,13 +526,13 @@ export default function LocationPlannerPage() {
                 <span className="mb-3 text-5xl">🗺️</span>
                 {routesTriggered && routes.length > 0 ? (
                   <>
-                    <p className="text-base font-medium">루트를 선택해 주세요</p>
-                    <p className="mt-1 text-sm">{startDate} ~ {endDate} 일정을 AI가 만들어드려요</p>
+                    <p className="text-base font-medium">{t("planner.standard.pick_route", { defaultValue: "루트를 선택해 주세요" })}</p>
+                    <p className="mt-1 text-sm">{t("planner.standard.range_hint", { defaultValue: "{{start}} ~ {{end}} 일정을 AI가 만들어드려요", start: startDate, end: endDate })}</p>
                   </>
                 ) : (
                   <>
-                    <p className="text-base font-medium">날짜 선택 후 루트를 생성하세요</p>
-                    <p className="mt-1 text-sm">왼쪽 상단의 ✨ 루트 생성 버튼을 눌러주세요</p>
+                    <p className="text-base font-medium">{t("planner.standard.select_date_then_generate", { defaultValue: "날짜 선택 후 루트를 생성하세요" })}</p>
+                    <p className="mt-1 text-sm">{t("planner.standard.generate_hint", { defaultValue: "왼쪽 상단의 ✨ 루트 생성 버튼을 눌러주세요" })}</p>
                   </>
                 )}
               </div>
@@ -435,7 +542,7 @@ export default function LocationPlannerPage() {
               <div className="flex flex-1 flex-col items-center justify-center gap-3">
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-500" />
                 <p className="text-sm text-gray-500">
-                  AI가 <b>{selectedRoute?.name}</b> 일정을 만드는 중…
+                  {t("planner.standard.making_schedule", { defaultValue: "AI가 <b>{{name}}</b> 일정을 만드는 중…", name: selectedRoute?.name ?? "", interpolation: { escapeValue: false } })}
                 </p>
                 <p className="text-xs text-gray-400">{startDate} ~ {endDate}</p>
               </div>
@@ -452,7 +559,7 @@ export default function LocationPlannerPage() {
                 <div className="shrink-0 border-b border-gray-200 bg-white px-5 py-3">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <h2 className="font-semibold text-gray-800">{selectedRoute?.name} — 추천 일정</h2>
+                        <h2 className="font-semibold text-gray-800">{t("planner.standard.recommended_schedule_title", { defaultValue: "{{name}} — 추천 일정", name: selectedRoute?.name ?? "" })}</h2>
                       <p className="mt-0.5 text-xs text-gray-400">{startDate} ~ {endDate}</p>
                     </div>
                     {savedPlanId ? (
@@ -460,7 +567,7 @@ export default function LocationPlannerPage() {
                         onClick={() => router.push("/planner/schedule")}
                         className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow hover:bg-emerald-700 transition-colors"
                       >
-                        ✅ 저장됨 · 일정관리 보기
+                          {t("planner.standard.saved_goto_schedule", { defaultValue: "✅ 저장됨 · 일정관리 보기" })}
                       </button>
                     ) : (
                       <button
@@ -471,23 +578,23 @@ export default function LocationPlannerPage() {
                         {isSaving ? (
                           <>
                             <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                            저장 중…
+                              {t("common.saving", { defaultValue: "저장 중…" })}
                           </>
                         ) : (
-                          <>💾 저장하기</>
+                            <>{t("planner.standard.save_plan", { defaultValue: "💾 저장하기" })}</>
                         )}
                       </button>
                     )}
                   </div>
                   {costSummary && (
                     <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <span className="text-xs text-gray-400">예상 총 경비</span>
+                        <span className="text-xs text-gray-400">{t("planner.standard.total_cost", { defaultValue: "예상 총 경비" })}</span>
                       <span className="rounded-full bg-emerald-50 px-3 py-0.5 text-sm font-bold text-emerald-600">
                         💰 {costSummary.trip_total}
                       </span>
                       {costSummary.per_day.map((d) => (
                         <span key={d.day} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
-                          Day{d.day} {d.total}
+                            {t("planner.standard.cost_per_day", { defaultValue: "Day{{day}} {{total}}", day: d.day, total: d.total })}
                         </span>
                       ))}
                     </div>
@@ -505,7 +612,7 @@ export default function LocationPlannerPage() {
                         </h3>
                         {costSummary?.per_day.find((d) => d.day === Number(day)) && (
                           <span className="text-xs font-medium text-emerald-600">
-                            소계 {costSummary.per_day.find((d) => d.day === Number(day))!.total}
+                            {t("planner.standard.subtotal", { total: costSummary.per_day.find((d) => d.day === Number(day))!.total, defaultValue: "소계 {{total}}" })}
                           </span>
                         )}
                       </div>

@@ -9,6 +9,8 @@ import React, {
 import { useRouter } from "next/navigation";
 import { useLoginStore } from "@/store";
 import { AppLayout } from "@/components/organisms/AppLayout";
+import "@/lib/i18n/config";
+import { useTranslation } from "react-i18next";
 import {
   polishRoute,
   saveUserRoute,
@@ -57,6 +59,7 @@ function RouteCard({
   onOpen: (route: UserRoute) => void;
   onDelete: (id: number) => void;
 }) {
+  const { t } = useTranslation();
   const grad = GRAD_FALLBACKS[route.id % GRAD_FALLBACKS.length];
 
   return (
@@ -91,7 +94,7 @@ function RouteCard({
             ? "bg-rose-500/80 scale-110 cursor-default"
             : "bg-black/30 hover:bg-rose-500/70 hover:scale-110"
           }`}
-        aria-label={liked ? "이미 좋아요" : "좋아요"}
+        aria-label={liked ? t("planner.usercontent.already_liked", { defaultValue: "이미 좋아요" }) : t("planner.usercontent.like", { defaultValue: "좋아요" })}
       >
         <span className={`transition-transform duration-200 ${liked ? "scale-125" : "scale-100"}`}>
           {liked ? "❤️" : "🤍"}
@@ -104,11 +107,11 @@ function RouteCard({
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(route.id); }}
           className="absolute top-3 left-3 flex items-center justify-center rounded-full bg-black/30 p-1.5 text-white opacity-0 group-hover:opacity-100 hover:bg-red-500/80 transition-all duration-200"
-          aria-label="삭제"
-          title="내 루트 삭제"
+          aria-label={t("planner.usercontent.delete", { defaultValue: "삭제" })}
+          title={t("planner.usercontent.delete_my_route", { defaultValue: "내 루트 삭제" })}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+            <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
           </svg>
         </button>
       )}
@@ -182,6 +185,7 @@ function RouteDetailModal({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [adding, setAdding] = useState(false);
   const [addDone, setAddDone] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
@@ -206,7 +210,7 @@ function RouteDetailModal({
       const schedule = userRouteToScheduleItems(route, dateIso);
       await savePlan({
         location: route.location.trim() || "custom",
-        routeName: route.title.trim() || "공유 루트",
+        routeName: route.title.trim() || t("planner.usercontent.shared_route", { defaultValue: "공유 루트" }),
         startDate: dateIso,
         endDate: dateIso,
         schedule,
@@ -215,7 +219,7 @@ function RouteDetailModal({
       setAddDone(true);
       setDatePickerOpen(false);
     } catch (e) {
-      setAddError(e instanceof Error ? e.message : "일정 저장에 실패했습니다.");
+      setAddError(e instanceof Error ? e.message : t("planner.usercontent.schedule_save_fail", { defaultValue: "일정 저장에 실패했습니다." }));
     } finally {
       setAdding(false);
     }
@@ -267,7 +271,7 @@ function RouteDetailModal({
         <div className="flex-1 overflow-y-auto p-5 pb-2">
           <p className="text-sm text-gray-600 mb-5">{route.description}</p>
 
-          <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-400">루트</h3>
+          <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-400">{t("planner.usercontent.route", { defaultValue: "루트" })}</h3>
           <ol className="relative border-l-2 border-purple-100 pl-5 space-y-4">
             {route.route_items.map((item, idx) => (
               <li key={idx} className="relative">
@@ -293,7 +297,7 @@ function RouteDetailModal({
           )}
           {addDone ? (
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-center sm:gap-3">
-              <p className="text-center text-sm font-medium text-emerald-700">✅ 내 일정에 추가되었습니다</p>
+              <p className="text-center text-sm font-medium text-emerald-700">{t("planner.usercontent.added_to_schedule", { defaultValue: "✅ 내 일정에 추가되었습니다" })}</p>
               <button
                 type="button"
                 onClick={() => {
@@ -302,7 +306,7 @@ function RouteDetailModal({
                 }}
                 className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
               >
-                일정 관리로 이동
+                {t("planner.usercontent.go_schedule", { defaultValue: "일정 관리로 이동" })}
               </button>
             </div>
           ) : (
@@ -315,14 +319,14 @@ function RouteDetailModal({
               disabled={!canAdd || adding}
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-purple-600 py-3 text-sm font-semibold text-white shadow-sm hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
             >
-              📅 내 일정에 추가
+              {t("planner.usercontent.add_to_schedule", { defaultValue: "📅 내 일정에 추가" })}
             </button>
           )}
           {!userId && (
-            <p className="text-center text-[11px] text-gray-400">로그인 후 이용할 수 있습니다.</p>
+            <p className="text-center text-[11px] text-gray-400">{t("planner.usercontent.login_required", { defaultValue: "로그인 후 이용할 수 있습니다." })}</p>
           )}
           {userId && route.route_items.length === 0 && (
-            <p className="text-center text-[11px] text-gray-400">저장할 장소가 없습니다.</p>
+            <p className="text-center text-[11px] text-gray-400">{t("planner.usercontent.no_places_to_save", { defaultValue: "저장할 장소가 없습니다." })}</p>
           )}
         </div>
 
@@ -336,9 +340,9 @@ function RouteDetailModal({
               className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl border border-gray-100"
               onClick={(e) => e.stopPropagation()}
             >
-              <h4 className="text-sm font-bold text-gray-800">언제 다녀오실 예정인가요?</h4>
-              <p className="mt-1 text-xs text-gray-500">선택한 날짜가 일정에 반영됩니다.</p>
-              <label className="mt-4 block text-xs font-semibold text-gray-600">방문 날짜</label>
+              <h4 className="text-sm font-bold text-gray-800">{t("planner.usercontent.when_trip", { defaultValue: "언제 다녀오실 예정인가요?" })}</h4>
+              <p className="mt-1 text-xs text-gray-500">{t("planner.usercontent.date_applied", { defaultValue: "선택한 날짜가 일정에 반영됩니다." })}</p>
+              <label className="mt-4 block text-xs font-semibold text-gray-600">{t("planner.usercontent.visit_date", { defaultValue: "방문 날짜" })}</label>
               <input
                 type="date"
                 value={tripDate}
@@ -353,7 +357,7 @@ function RouteDetailModal({
                   onClick={() => setDatePickerOpen(false)}
                   className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
                 >
-                  취소
+                  {t("common.cancel", { defaultValue: "취소" })}
                 </button>
                 <button
                   type="button"
@@ -364,10 +368,10 @@ function RouteDetailModal({
                   {adding ? (
                     <>
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      저장 중…
+                      {t("common.saving", { defaultValue: "저장 중…" })}
                     </>
                   ) : (
-                    "이 날짜로 추가"
+                    t("planner.usercontent.add_with_this_date", { defaultValue: "이 날짜로 추가" })
                   )}
                 </button>
               </div>
@@ -396,6 +400,7 @@ function UploadModal({
   onClose: () => void;
   onSaved: (route: UserRoute) => void;
 }) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<Step>("photo");
 
   // Step 1 – 사진 (S3 업로드를 위해 File 객체 유지)
@@ -465,7 +470,7 @@ function UploadModal({
       setValidatedImage(result);
       setStep("form");
     } catch (e) {
-      setNsfwError(e instanceof Error ? e.message : "이미지 검증 실패");
+      setNsfwError(e instanceof Error ? e.message : t("planner.usercontent.image_validate_fail", { defaultValue: "이미지 검증 실패" }));
     } finally {
       setValidating(false);
     }
@@ -554,7 +559,7 @@ function UploadModal({
       });
       setPolished(result);
     } catch (e) {
-      setPolishError(e instanceof Error ? e.message : "AI 폴리시 실패");
+      setPolishError(e instanceof Error ? e.message : t("planner.usercontent.ai_polish_fail", { defaultValue: "AI 폴리시 실패" }));
     } finally {
       setPolishing(false);
     }
@@ -583,17 +588,17 @@ function UploadModal({
       onSaved(saved);
       setStep("done");
     } catch (e) {
-      alert(e instanceof Error ? e.message : "저장 실패");
+      alert(e instanceof Error ? e.message : t("planner.usercontent.save_fail", { defaultValue: "저장 실패" }));
     } finally {
       setSaving(false);
     }
   }, [polished, userId, imageFile, validatedImage, onSaved]);
 
   const STEPS: Record<Step, string> = {
-    photo: "사진 선택",
-    form: "루트 입력",
-    polish: "AI 다듬기",
-    done: "완료",
+    photo: t("planner.usercontent.step_photo", { defaultValue: "사진 선택" }),
+    form: t("planner.usercontent.step_form", { defaultValue: "루트 입력" }),
+    polish: t("planner.usercontent.step_polish", { defaultValue: "AI 다듬기" }),
+    done: t("common.done", { defaultValue: "완료" }),
   };
   const stepKeys = Object.keys(STEPS) as Step[];
   const stepIdx = stepKeys.indexOf(step);
@@ -607,7 +612,7 @@ function UploadModal({
         {/* 헤더 + 스텝 인디케이터 */}
         <div className="border-b border-gray-100 px-5 py-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-gray-800">내 루트 업로드</h3>
+            <h3 className="font-bold text-gray-800">{t("planner.usercontent.upload_my_route", { defaultValue: "내 루트 업로드" })}</h3>
             {step !== "polish" && step !== "done" && (
               <button
                 onClick={onClose}
@@ -621,9 +626,8 @@ function UploadModal({
             {stepKeys.filter((s) => s !== "done").map((s, i) => (
               <div
                 key={s}
-                className={`h-1.5 flex-1 rounded-full transition-colors ${
-                  i <= stepIdx ? "bg-purple-500" : "bg-gray-200"
-                }`}
+                className={`h-1.5 flex-1 rounded-full transition-colors ${i <= stepIdx ? "bg-purple-500" : "bg-gray-200"
+                  }`}
               />
             ))}
           </div>
@@ -650,8 +654,8 @@ function UploadModal({
               ) : (
                 <>
                   <span className="text-5xl">📸</span>
-                  <p className="text-sm font-medium text-gray-600">사진을 드래그하거나 클릭해서 업로드</p>
-                  <p className="text-xs text-gray-400">JPG, PNG, WEBP 지원</p>
+                  <p className="text-sm font-medium text-gray-600">{t("planner.usercontent.upload_photo_hint", { defaultValue: "사진을 드래그하거나 클릭해서 업로드" })}</p>
+                  <p className="text-xs text-gray-400">{t("planner.usercontent.upload_photo_types", { defaultValue: "JPG, PNG, WEBP 지원" })}</p>
                 </>
               )}
               <input
@@ -667,7 +671,7 @@ function UploadModal({
                 onClick={() => { setImageFile(null); setPreviewUrl(null); setValidatedImage(null); setNsfwError(null); }}
                 className="mt-2 text-xs text-gray-400 hover:text-red-500 transition-colors"
               >
-                ✕ 사진 제거
+                {t("planner.usercontent.remove_photo", { defaultValue: "✕ 사진 제거" })}
               </button>
             )}
 
@@ -683,7 +687,7 @@ function UploadModal({
             {validatedImage && !nsfwError && (
               <div className="mt-3 flex items-center gap-1.5 text-xs text-emerald-600">
                 <span>✅</span>
-                <span>이미지 검증 완료</span>
+                <span>{t("planner.usercontent.image_validated", { defaultValue: "이미지 검증 완료" })}</span>
               </div>
             )}
 
@@ -696,10 +700,12 @@ function UploadModal({
                 {validating ? (
                   <>
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    검증 중…
+                    {t("planner.usercontent.validating", { defaultValue: "검증 중…" })}
                   </>
                 ) : (
-                  imageFile ? "다음 →" : "사진 없이 계속"
+                  imageFile
+                    ? t("common.next", { defaultValue: "다음 →" })
+                    : t("planner.usercontent.continue_without_photo", { defaultValue: "사진 없이 계속" })
                 )}
               </button>
             </div>
@@ -721,10 +727,10 @@ function UploadModal({
                 {plansLoading ? (
                   <>
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent" />
-                    불러오는 중…
+                    {t("common.loading", { defaultValue: "불러오는 중…" })}
                   </>
                 ) : (
-                  <>📅 저장된 일정에서 가져오기</>
+                  <>{t("planner.usercontent.import_saved_schedule", { defaultValue: "📅 저장된 일정에서 가져오기" })}</>
                 )}
               </button>
             </div>
@@ -733,17 +739,17 @@ function UploadModal({
             {showPlanPicker && (
               <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-indigo-100">
-                  <span className="text-xs font-bold text-indigo-700">저장된 일정 선택</span>
+                  <span className="text-xs font-bold text-indigo-700">{t("planner.usercontent.select_saved_schedule", { defaultValue: "저장된 일정 선택" })}</span>
                   <button
                     type="button"
                     onClick={() => setShowPlanPicker(false)}
                     className="text-xs text-gray-400 hover:text-gray-600"
                   >
-                    닫기
+                    {t("common.close", { defaultValue: "닫기" })}
                   </button>
                 </div>
                 {myPlans.length === 0 ? (
-                  <p className="px-3 py-4 text-xs text-center text-gray-400">저장된 일정이 없습니다.</p>
+                  <p className="px-3 py-4 text-xs text-center text-gray-400">{t("planner.usercontent.no_saved_schedule", { defaultValue: "저장된 일정이 없습니다." })}</p>
                 ) : (
                   <div className="max-h-48 overflow-y-auto divide-y divide-indigo-100">
                     {myPlans.map((plan) => (
@@ -757,7 +763,7 @@ function UploadModal({
                         <span className="text-xs text-gray-500">
                           {plan.location}
                           {plan.start_date && ` · ${plan.start_date}${plan.end_date ? ` ~ ${plan.end_date}` : ""}`}
-                          {` · ${plan.schedule.length}개 장소`}
+                          {t("planner.usercontent.place_count", { count: plan.schedule.length, defaultValue: " · {{count}}개 장소" })}
                         </span>
                       </button>
                     ))}
@@ -768,29 +774,29 @@ function UploadModal({
 
             <div className="space-y-3">
               <div>
-                <label className="mb-1 block text-xs font-semibold text-gray-600">루트 제목 *</label>
+                <label className="mb-1 block text-xs font-semibold text-gray-600">{t("planner.usercontent.route_title_required", { defaultValue: "루트 제목 *" })}</label>
                 <input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="예: 강릉 감성 당일치기"
+                  placeholder={t("planner.usercontent.route_title_placeholder", { defaultValue: "예: 강릉 감성 당일치기" })}
                   className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-800 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-semibold text-gray-600">여행지 *</label>
+                <label className="mb-1 block text-xs font-semibold text-gray-600">{t("planner.usercontent.destination_required", { defaultValue: "여행지 *" })}</label>
                 <input
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="예: 강릉, 경포대"
+                  placeholder={t("planner.usercontent.destination_placeholder", { defaultValue: "예: 강릉, 경포대" })}
                   className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-800 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-semibold text-gray-600">한 줄 소개 (선택)</label>
+                <label className="mb-1 block text-xs font-semibold text-gray-600">{t("planner.usercontent.one_line_intro_optional", { defaultValue: "한 줄 소개 (선택)" })}</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="이 루트의 매력을 간단히 써주세요 (AI가 다듬어줘요)"
+                  placeholder={t("planner.usercontent.one_line_intro_placeholder", { defaultValue: "이 루트의 매력을 간단히 써주세요 (AI가 다듬어줘요)" })}
                   rows={2}
                   className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-800 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 resize-none"
                 />
@@ -798,7 +804,7 @@ function UploadModal({
 
               <div>
                 <label className="mb-2 block text-xs font-semibold text-gray-600">
-                  장소 목록 * <span className="font-normal text-gray-400">(일차당 최대 {MAX_STOPS_PER_DAY}개)</span>
+                  {t("planner.usercontent.place_list_required", { defaultValue: "장소 목록 *" })} <span className="font-normal text-gray-400">{t("planner.usercontent.max_per_day", { max: MAX_STOPS_PER_DAY, defaultValue: "(일차당 최대 {{max}}개)" })}</span>
                 </label>
 
                 <div className="space-y-3">
@@ -810,7 +816,7 @@ function UploadModal({
                           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-600 text-xs font-bold text-white">
                             {dayIdx + 1}
                           </span>
-                          <span className="text-sm font-semibold text-purple-800">{dayIdx + 1}일차</span>
+                          <span className="text-sm font-semibold text-purple-800">{t("planner.usercontent.day_n", { day: dayIdx + 1, defaultValue: "{{day}}일차" })}</span>
                           <span className="text-[11px] text-gray-400">
                             {day.stops.length}/{MAX_STOPS_PER_DAY}
                           </span>
@@ -822,7 +828,7 @@ function UploadModal({
                             disabled={day.stops.length >= MAX_STOPS_PER_DAY}
                             className="text-xs text-purple-600 hover:underline disabled:opacity-40 disabled:no-underline"
                           >
-                            + 장소 추가
+                            {t("planner.usercontent.add_place", { defaultValue: "+ 장소 추가" })}
                           </button>
                           {days.length > 1 && (
                             <button
@@ -830,7 +836,7 @@ function UploadModal({
                               onClick={() => removeDay(dayIdx)}
                               className="text-xs text-gray-400 hover:text-red-400 transition-colors"
                             >
-                              삭제
+                              {t("planner.usercontent.delete", { defaultValue: "삭제" })}
                             </button>
                           )}
                         </div>
@@ -847,13 +853,13 @@ function UploadModal({
                               <input
                                 value={stop.place}
                                 onChange={(e) => updateStopInDay(dayIdx, stopIdx, "place", e.target.value)}
-                                placeholder="장소명 (예: 안목해변 카페거리)"
+                                placeholder={t("planner.usercontent.place_name_placeholder", { defaultValue: "장소명 (예: 안목해변 카페거리)" })}
                                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-purple-400"
                               />
                               <input
                                 value={stop.note ?? ""}
                                 onChange={(e) => updateStopInDay(dayIdx, stopIdx, "note", e.target.value)}
-                                placeholder="간단한 메모 (선택)"
+                                placeholder={t("planner.usercontent.memo_optional_placeholder", { defaultValue: "간단한 메모 (선택)" })}
                                 className="w-full rounded-lg border border-gray-100 bg-gray-50 px-3 py-1.5 text-xs text-gray-600 outline-none focus:border-purple-300"
                               />
                             </div>
@@ -878,7 +884,7 @@ function UploadModal({
                     onClick={addDay}
                     className="w-full flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-purple-200 py-2.5 text-sm font-semibold text-purple-400 hover:border-purple-400 hover:bg-purple-50 hover:text-purple-600 transition-colors"
                   >
-                    + {days.length + 1}일차 추가
+                    {t("planner.usercontent.add_day_n", { day: days.length + 1, defaultValue: "+ {{day}}일차 추가" })}
                   </button>
                 </div>
               </div>
@@ -896,7 +902,7 @@ function UploadModal({
                 disabled={!title.trim() || !location.trim() || !days.some((d) => d.stops.some((s) => s.place.trim()))}
                 className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-purple-600 py-2.5 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-40 transition-colors"
               >
-                ✨ AI로 다듬기
+                {t("planner.usercontent.ai_polish", { defaultValue: "✨ AI로 다듬기" })}
               </button>
             </div>
           </div>
@@ -911,8 +917,8 @@ function UploadModal({
                   <div className="absolute inset-0 animate-spin rounded-full border-4 border-purple-200 border-t-purple-500" />
                   <span className="absolute inset-0 flex items-center justify-center text-xl">✨</span>
                 </div>
-                <p className="font-semibold text-gray-700">AI가 루트를 다듬고 있어요</p>
-                <p className="text-xs text-gray-400">감성적인 소개와 여행 팁을 추가하는 중…</p>
+                <p className="font-semibold text-gray-700">{t("planner.usercontent.ai_polishing", { defaultValue: "AI가 루트를 다듬고 있어요" })}</p>
+                <p className="text-xs text-gray-400">{t("planner.usercontent.ai_polishing_sub", { defaultValue: "감성적인 소개와 여행 팁을 추가하는 중…" })}</p>
               </div>
             ) : polishError ? (
               <div className="flex flex-col items-center gap-3 py-8 text-center">
@@ -922,7 +928,7 @@ function UploadModal({
                   onClick={() => setStep("form")}
                   className="rounded-xl border border-gray-200 px-5 py-2 text-sm text-gray-600 hover:bg-gray-50"
                 >
-                  돌아가기
+                  {t("common.go_back", { defaultValue: "돌아가기" })}
                 </button>
               </div>
             ) : polished && (
@@ -976,7 +982,7 @@ function UploadModal({
                     onClick={() => { setPolished(null); setStep("form"); }}
                     className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
                   >
-                    다시 입력
+                    {t("planner.usercontent.re_enter", { defaultValue: "다시 입력" })}
                   </button>
                   <button
                     onClick={handleSave}
@@ -986,10 +992,10 @@ function UploadModal({
                     {saving ? (
                       <>
                         <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                        저장 중…
+                        {t("common.saving", { defaultValue: "저장 중…" })}
                       </>
                     ) : (
-                      "🚀 공유하기"
+                      t("planner.usercontent.share", { defaultValue: "🚀 공유하기" })
                     )}
                   </button>
                 </div>
@@ -1002,13 +1008,13 @@ function UploadModal({
         {step === "done" && (
           <div className="px-5 py-10 flex flex-col items-center gap-4 text-center">
             <span className="text-6xl">🎉</span>
-            <p className="text-lg font-bold text-gray-800">루트가 공유됐어요!</p>
-            <p className="text-sm text-gray-400">피드에서 내 루트를 확인해보세요</p>
+            <p className="text-lg font-bold text-gray-800">{t("planner.usercontent.shared_success", { defaultValue: "루트가 공유됐어요!" })}</p>
+            <p className="text-sm text-gray-400">{t("planner.usercontent.shared_success_sub", { defaultValue: "피드에서 내 루트를 확인해보세요" })}</p>
             <button
               onClick={onClose}
               className="mt-2 rounded-xl bg-purple-600 px-8 py-2.5 text-sm font-semibold text-white hover:bg-purple-700 transition-colors"
             >
-              확인
+              {t("common.confirm", { defaultValue: "확인" })}
             </button>
           </div>
         )}
@@ -1024,6 +1030,7 @@ function UploadModal({
 export default function UserContentPage() {
   const router = useRouter();
   const { isAuthenticated, logout } = useLoginStore();
+  const { t } = useTranslation();
   const userId = typeof window !== "undefined" ? Number(sessionStorage.getItem("app_user_id")) || null : null;
   const myNickname = typeof window !== "undefined" ? sessionStorage.getItem("nickname") ?? "" : "";
 
@@ -1116,13 +1123,13 @@ export default function UserContentPage() {
 
   const handleDelete = useCallback(async (id: number) => {
     if (!userId) return;
-    if (!window.confirm("이 루트를 삭제하시겠습니까?")) return;
+    if (!window.confirm(t("planner.usercontent.delete_confirm", { defaultValue: "이 루트를 삭제하시겠습니까?" }))) return;
     try {
       await deleteUserRoute(id, userId);
       setRoutes((prev) => prev.filter((r) => r.id !== id));
       if (detailRoute?.id === id) setDetailRoute(null);
     } catch (e) {
-      alert(e instanceof Error ? e.message : "삭제에 실패했습니다.");
+      alert(e instanceof Error ? e.message : t("planner.usercontent.delete_fail", { defaultValue: "삭제에 실패했습니다." }));
     }
   }, [userId, detailRoute]);
 
@@ -1142,15 +1149,15 @@ export default function UserContentPage() {
               ←
             </button>
             <div className="flex-1 min-w-0">
-              <h2 className="text-base font-bold text-gray-800">유저 컨텐츠</h2>
-              <p className="text-[11px] text-gray-400">여행자들이 공유한 추천 루트</p>
+              <h2 className="text-base font-bold text-gray-800">{t("planner.usercontent.title", { defaultValue: "유저 컨텐츠" })}</h2>
+              <p className="text-[11px] text-gray-400">{t("planner.usercontent.subtitle", { defaultValue: "여행자들이 공유한 추천 루트" })}</p>
             </div>
             <button
               onClick={() => setShowUpload(true)}
               className="flex items-center gap-1.5 rounded-xl bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-700 transition-colors"
             >
               <span className="text-base leading-none">＋</span>
-              내 루트 업로드
+              {t("planner.usercontent.upload", { defaultValue: "내 루트 업로드" })}
             </button>
           </div>
 
@@ -1164,7 +1171,7 @@ export default function UserContentPage() {
                   ? "bg-purple-600 text-white shadow-sm"
                   : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}
             >
-              🌍 전체 루트
+              🌍 {t("planner.usercontent.tab_all", { defaultValue: "전체 루트" })}
             </button>
             <button
               type="button"
@@ -1175,7 +1182,7 @@ export default function UserContentPage() {
                   ? "bg-purple-600 text-white shadow-sm"
                   : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}
             >
-              👤 내 루트
+              👤 {t("planner.usercontent.tab_mine", { defaultValue: "내 루트" })}
             </button>
           </div>
 
@@ -1188,7 +1195,7 @@ export default function UserContentPage() {
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                placeholder="닉네임으로 검색..."
+                placeholder={t("planner.usercontent.search_placeholder", { defaultValue: "닉네임으로 검색..." })}
                 className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-9 pr-4 py-2 text-sm text-gray-800 outline-none focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-100 transition-all"
               />
               {searchInput && (
@@ -1206,15 +1213,15 @@ export default function UserContentPage() {
               onClick={handleSearch}
               className="rounded-xl bg-purple-100 px-4 py-2 text-sm font-semibold text-purple-700 hover:bg-purple-200 transition-colors"
             >
-              검색
+              {t("common.search", { defaultValue: "검색" })}
             </button>
           </div>}
 
           {/* 검색 중 표시 */}
           {viewMode === "all" && nicknameQuery && (
             <p className="text-xs text-purple-600">
-              <span className="font-semibold">"{nicknameQuery}"</span> 닉네임 검색 결과
-              <button type="button" onClick={handleClearSearch} className="ml-2 text-gray-400 hover:text-gray-600 underline">전체 보기</button>
+              <span className="font-semibold">"{nicknameQuery}"</span> {t("planner.usercontent.search_result", { defaultValue: "닉네임 검색 결과" })}
+              <button type="button" onClick={handleClearSearch} className="ml-2 text-gray-400 hover:text-gray-600 underline">{t("common.show_all", { defaultValue: "전체 보기" })}</button>
             </p>
           )}
         </div>
@@ -1237,28 +1244,28 @@ export default function UserContentPage() {
                 <>
                   <span className="text-6xl">🗺️</span>
                   <div>
-                    <p className="text-lg font-semibold text-gray-700">아직 내가 올린 루트가 없습니다</p>
-                    <p className="mt-1.5 text-sm text-gray-400">나만의 여행 루트를 공유해보세요!</p>
+                    <p className="text-lg font-semibold text-gray-700">{t("planner.usercontent.empty_mine_title", { defaultValue: "아직 내가 올린 루트가 없습니다" })}</p>
+                    <p className="mt-1.5 text-sm text-gray-400">{t("planner.usercontent.empty_mine_sub", { defaultValue: "나만의 여행 루트를 공유해보세요!" })}</p>
                   </div>
                   <button
                     onClick={() => setShowUpload(true)}
                     className="flex items-center gap-2 rounded-xl border border-purple-300 bg-white px-5 py-2.5 text-sm font-medium text-purple-600 hover:bg-purple-50 transition-colors shadow-sm"
                   >
-                    ＋ 첫 루트 올리기
+                    ＋ {t("planner.usercontent.cta_first_upload", { defaultValue: "첫 루트 올리기" })}
                   </button>
                 </>
               ) : (
                 <>
                   <span className="text-6xl">👥</span>
                   <div>
-                    <p className="text-lg font-semibold text-gray-700">아직 공유된 루트가 없습니다</p>
-                    <p className="mt-1.5 text-sm text-gray-400">첫 번째로 루트를 공유해보세요!</p>
+                    <p className="text-lg font-semibold text-gray-700">{t("planner.usercontent.empty_all_title", { defaultValue: "아직 공유된 루트가 없습니다" })}</p>
+                    <p className="mt-1.5 text-sm text-gray-400">{t("planner.usercontent.empty_all_sub", { defaultValue: "첫 번째로 루트를 공유해보세요!" })}</p>
                   </div>
                   <button
                     onClick={() => setShowUpload(true)}
                     className="flex items-center gap-2 rounded-xl border border-purple-300 bg-white px-5 py-2.5 text-sm font-medium text-purple-600 hover:bg-purple-50 transition-colors shadow-sm"
                   >
-                    ＋ 첫 번째로 루트를 공유해보세요
+                    ＋ {t("planner.usercontent.cta_share_first", { defaultValue: "첫 번째로 루트를 공유해보세요" })}
                   </button>
                 </>
               )}
