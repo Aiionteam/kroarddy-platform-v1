@@ -11,7 +11,7 @@ export const GoogleLoginButton: React.FC<{ onClick: () => void }> = ({ onClick }
   return (
     <Button variant="google" onClick={onClick}>
       <Icon name="google" size={20} />
-      <span>{t("auth.login_google", { defaultValue: "Continue with Google" })}</span>
+      <span>{t("auth.login_google", { defaultValue: "구글로 시작하기" })}</span>
     </Button>
   );
 };
