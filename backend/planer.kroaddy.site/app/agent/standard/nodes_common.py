@@ -21,7 +21,18 @@ logger = logging.getLogger(__name__)
 
 # Nationality -> response language mapping
 _NATIONALITY_TO_LANG: dict[str, str] = {
+    # 한국어 국적명 (DB 저장값)
     "한국": "Korean",
+    "미국": "English", "영국": "English", "호주": "English",
+    "캐나다": "English", "싱가포르": "English", "인도": "English",
+    "말레이시아": "English", "필리핀": "English", "인도네시아": "English",
+    "태국": "English", "기타": "English",
+    "일본": "Japanese",
+    "중국": "Chinese (Simplified)",
+    "독일": "German",
+    "프랑스": "French",
+    "베트남": "Vietnamese",
+    # 영어 국적명 (하위 호환)
     "USA": "English", "United Kingdom": "English", "Australia": "English",
     "Canada": "English", "Singapore": "English", "India": "English",
     "Malaysia": "English", "Philippines": "English", "Indonesia": "English",
@@ -146,9 +157,8 @@ def _get_llm_with_search():
 def _get_llm_search_context():
     """선행 웹 검색 전용 LLM 싱글턴.
 
-    메인 LLM과 동일한 모델이지만 max_output_tokens=600으로 응답 길이를 제한한다.
-    GoogleSearchAPIWrapper(k=5)가 LLM 입력 토큰을 줄이는 것과 같은 맥락으로,
-    여기서는 **출력 토큰** 상한을 걸어 생성 시간 자체를 단축한다.
+    메인 LLM과 동일한 모델이지만 max_output_tokens=1500으로 응답 길이를 제한한다.
+    (_WEB_CONTEXT_MAX_CHARS=4000자 수준에 맞춰 넉넉히 확보)
     JSON이 아닌 불릿 텍스트를 받으므로 max_output_tokens 사용이 안전하다.
     """
     global _llm_search_ctx_instance
@@ -156,7 +166,7 @@ def _get_llm_search_context():
         base = ChatGoogleGenerativeAI(
             model=settings.gemini_model,
             temperature=0.2,
-            max_output_tokens=600,
+            max_output_tokens=1500,
             google_api_key=settings.gemini_api_key,
             max_retries=0,
         )
@@ -166,11 +176,11 @@ def _get_llm_search_context():
 
 
 def _get_llm_fallback() -> ChatGoogleGenerativeAI:
-    """2.5-flash 503 소진 또는 404 시 즉시 대체 – gemini-2.0-flash."""
+    """3.1-flash 503 소진 또는 404 시 즉시 대체 – gemini-2.0-flash-lite."""
     global _llm_fallback_instance
     if _llm_fallback_instance is None:
         _llm_fallback_instance = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
+            model="gemini-2.0-flash-lite",
             temperature=0.4,
             google_api_key=settings.gemini_api_key,
             max_retries=0,
