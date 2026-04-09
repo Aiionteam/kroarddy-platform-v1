@@ -26,13 +26,29 @@ from app.agent.standard.state import PlannerState
 from app.core.config import settings
 from app.core.database.session import _get_async_session_factory
 from app.services.festival_client import fetch_festivals_for_period_with_db_cache
-from app.services.naver_map_client import geocode, keyword_search
+from app.services.naver_map_client import geocode, keyword_search, reverse_geocode
 from app.services.naver_place_hours import enrich_schedule_items_with_hours
 from app.services.news_client import build_news_block_for_prompt, fetch_news_top10
 from app.services.user_info_client import fetch_user_profile
 from app.services.weather_client import build_weather_block_for_prompt, fetch_weather_for_planner
 
 logger = logging.getLogger(__name__)
+
+# 대한민국 대략 경계 (LLM 좌표 유효성 검사)
+_KR_LAT_MIN, _KR_LAT_MAX = 33.0, 38.8
+_KR_LNG_MIN, _KR_LNG_MAX = 124.5, 132.0
+
+
+def _parse_item_wgs84(item: dict[str, Any]) -> tuple[float, float] | None:
+    """일정 항목의 lat/lng를 숫자로 파싱. 한국 영역 밖이면 None."""
+    try:
+        lat = float(item.get("lat"))
+        lng = float(item.get("lng"))
+    except (TypeError, ValueError):
+        return None
+    if not (_KR_LAT_MIN <= lat <= _KR_LAT_MAX and _KR_LNG_MIN <= lng <= _KR_LNG_MAX):
+        return None
+    return (lat, lng)
 
 _TRAVEL_DAYS_DEFAULT = 2
 # 웹 검색 선행 단계 응답 길이 상한 (토큰·지연 절약)
@@ -111,7 +127,9 @@ async def gather_context_node(state: PlannerState) -> PlannerState:
 
     # 프로필 언어 확정 후 웹 검색 (언어에 맞는 쿼리를 써야 정확)
     web_ctx = ""
+    web_search_gather_attempted = False
     if use_search:
+        web_search_gather_attempted = True
         lang = _get_lang(profile)
         route_name = state.get("route_name") or ""
         try:
@@ -136,6 +154,7 @@ async def gather_context_node(state: PlannerState) -> PlannerState:
         "news_top10": news,
         "weather_forecast": weather,
         "web_search_context": web_ctx or None,
+        "web_search_gather_attempted": web_search_gather_attempted,
     }
 
 
@@ -206,7 +225,10 @@ async def _gather_web_search_context(
 
     text = _extract_text_from_response(response).strip()
     logger.info("웹 맥락 수집 완료: %d자 (%.2fs)", len(text), perf_counter() - t0)
-    if not text:
+    # 100자 미만은 유의미한 정보가 없는 것으로 판단해 버린다 (쓰레기 데이터 프롬프트 오염 방지)
+    if len(text) < 100:
+        if text:
+            logger.info("웹 맥락 너무 짧아 제외: %d자", len(text))
         return ""
     if len(text) > _WEB_CONTEXT_MAX_CHARS:
         text = text[:_WEB_CONTEXT_MAX_CHARS] + "\n…(생략)"
@@ -315,15 +337,29 @@ async def _generate_single_day(
             '"title":"activity","description":"desc","tips":"tip","estimated_cost":"₩0"}'
             f'],"day_total":"₩0","day_total_krw":0}}'
         )
+    if lang == "Korean":
+        coord_block = (
+            "【좌표 필수】items 각 항목에 lat·lng 필수(WGS84, 소수점 5자리 이상). "
+            f"반드시 '{location_name}' 안 실제 장소 좌표. "
+            "예시로 자주 쓰이는 서울 시청 좌표(37.5665,126.978)를 복사하면 안 됩니다.\n"
+        )
+    else:
+        coord_block = (
+            "【Coordinates REQUIRED】Every item MUST include lat and lng (WGS84, ≥5 decimal places). "
+            f"Use real coordinates for places inside {location_name}. "
+            "Do NOT copy example Seoul City Hall coordinates (37.5665,126.978).\n"
+        )
+
     prompt = (
         f"Destination:{location_name} | Route:{route_name} | Day:{day_num} ({date_str})\n"
         f"⚠️ ALL places must be within '{location_name}'.\n"
         f"{excl_block}\n"
+        f"{coord_block}"
         f"{web_search_block}"
         f"{user_block}{festival_block}{weather_block}{transport_block}{news_block}"
         f"Create 4 schedule items. time∈[{time_labels}]. "
         f"CLUSTER in same district. Order: {flow_hint}. "
-        "estimated_cost in KRW. address: exact street addr. lat/lng: WGS84.\n"
+        "estimated_cost in KRW. address: exact street addr (Korea).\n"
         f"{day_zone_hint}{lang_dir}"
         "\nRespond ONLY with valid JSON:\n"
         f"{schema}"
@@ -422,9 +458,14 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
     date_list = _build_date_list(start_date, end_date)
 
     # gather_context_node에서 이미 수집된 웹 검색 컨텍스트를 우선 사용한다.
-    # 없으면 use_search=True 일 때 직접 수집 (generate_schedule 단독 호출 호환).
+    # gather에서 검색을 이미 시도했으면(성공/실패) 여기서는 재호출하지 않는다.
+    # 없고 use_search=True이며 그래프 밖 단독 호출일 때만 직접 수집.
     raw_ctx = state.get("web_search_context") or ""
-    if not raw_ctx and bool(state.get("use_search")):
+    if (
+        not raw_ctx
+        and bool(state.get("use_search"))
+        and not state.get("web_search_gather_attempted")
+    ):
         raw_ctx = await _gather_web_search_context(
             location_name=location_name,
             route_name=route_name,
@@ -527,8 +568,9 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         "- estimated_cost: cost in KRW (e.g. '무료', '₩3,000', '₩15,000~₩20,000')\n"
         "- cost_summary.per_day: sum of estimated_cost for each day\n"
         "- cost_summary.trip_total: grand total\n"
-        "- address: exact street address\n"
-        "- lat/lng: WGS84 decimal degree (approximate OK)\n"
+        "- address: exact street address (Korea)\n"
+        "- lat/lng: REQUIRED WGS84 per item (≥5 decimals). Real coords for that POI in "
+        f"{location_name} — do NOT copy Seoul City Hall example (37.5665,126.978).\n"
         "\n[GEOGRAPHIC EFFICIENCY – CRITICAL]\n"
         "- CLUSTER: Each day's 4 places must be in the SAME neighborhood/district.\n"
         f"- FLOW: Order {flow_hint} geographically close.\n"
@@ -553,15 +595,16 @@ async def _geocode_item(item: dict[str, Any], location_name: str = "") -> dict[s
     """네이버로 좌표·주소를 보강하고, 가능하면 ‘실제 등록된 장소’인지 검증한다.
 
     1. Geocoding API: 도로명 주소 → 장소명 순 (공식 주소 DB)
-    2. 지역 검색 API: 「장소명 + 여행지」→ 장소명만 (네이버 장소/상호 인덱스)
+    2. LLM이 넣은 WGS84(lat/lng)가 있으면 **역지오코딩**으로 도로명 주소를 맞춘다
+       (텍스트 검색이 실패해도 좌표만 맞으면 지도·경로에 사용 가능).
+    3. 지역 검색 API: 「장소명 + 여행지」→ 장소명만 (네이버 장소/상호 인덱스)
 
-    Geocoding이 실패하거나 주소만 맞고 상호가 허구인 경우, 지역검색으로 POI를 찾으면
-    좌표·주소·naver_place_id를 채우고 ``naver_verified=True`` 로 표시한다.
     끝까지 매칭되지 않으면 ``naver_verified=False`` (LLM이 넣은 lat/lng 유지).
     """
     place = (item.get("place") or "").strip()
     address = (item.get("address") or "").strip()
     region = (location_name or "").strip()
+    llm_coords = _parse_item_wgs84(item)
 
     for q in [x for x in [address, place] if x]:
         result = await geocode(q)
@@ -575,8 +618,29 @@ async def _geocode_item(item: dict[str, Any], location_name: str = "") -> dict[s
                 "naver_source": "geocode",
             }
 
+    # 텍스트 지오코딩 실패 시 LLM 좌표로 역지오코딩 (주소 보강 + 좌표가 육지인지 확인)
+    if llm_coords:
+        lat, lng = llm_coords
+        rev = await reverse_geocode(lng, lat)
+        if rev:
+            road = (rev.get("road_address") or "").strip()
+            addr_one = (rev.get("address") or "").strip()
+            merged_addr = road or addr_one or item.get("address", "")
+            return {
+                **item,
+                "lat": lat,
+                "lng": lng,
+                "address": merged_addr,
+                "naver_verified": True,
+                "naver_source": "reverse_geocode",
+            }
+
     if not place:
-        return {**item, "naver_verified": False, "naver_source": "none"}
+        return {
+            **item,
+            "naver_verified": False,
+            "naver_source": "llm_coord_only" if llm_coords else "none",
+        }
 
     local_queries = [f"{place} {region}", place] if region else [place]
     for q in local_queries:

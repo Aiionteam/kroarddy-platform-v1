@@ -40,11 +40,12 @@ class Settings(BaseSettings):
     gemini_model: str = "gemini-2.5-flash"
     openai_api_key: str = ""
     database_url: str = ""
-    # 로컬: localhost / Docker Compose: http://guide:8002
+    # 로컬: localhost / 프로덕션: https://api.kroaddy.site
     guide_service_url: str = "http://localhost:8002"
-    # backward-compat alias
-    festival_service_url: str = "http://localhost:8002"
-    # 로컬: localhost / Docker Compose: http://user_info:8004
+    # 프로필 API 베이스 (끝에 / 없음). user_info_client가 ``{url}/api/v1/user-profile/{id}`` 로 호출.
+    # - 프로덕션(공개): https://profile.kroaddy.site
+    # - Docker Compose 동일 스택: http://user_info:8004
+    # - API 게이트웨이만 쓸 때: https://api.kroaddy.site (경로는 동일)
     user_info_service_url: str = "http://localhost:8004"
 
     # 공공데이터포털 전국문화축제표준데이터

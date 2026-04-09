@@ -331,6 +331,7 @@ def _base_state(location: str, start_date: Optional[str], end_date: Optional[str
         "news_top10": [],
         "weather_forecast": None,
         "web_search_context": None,
+        "web_search_gather_attempted": False,
         "routes": [],
         "schedule": [],
         "cost_summary": None,

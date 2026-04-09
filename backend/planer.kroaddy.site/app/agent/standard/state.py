@@ -20,6 +20,8 @@ class PlannerState(TypedDict):
     news_top10: Optional[list]       # K-콘텐츠 뉴스 Top10
     weather_forecast: Optional[dict] # OpenWeatherMap 날씨 예보
     web_search_context: Optional[str]  # Google Search grounding으로 수집한 최신 텍스트
+    # gather_context_node에서 use_search=True로 웹 검색을 이미 시도했으면 True (실패 시 재호출 방지)
+    web_search_gather_attempted: Optional[bool]
 
     # ── 생성 결과 ────────────────────────────────────────────────────────────
     routes: list             # generate_routes 결과
