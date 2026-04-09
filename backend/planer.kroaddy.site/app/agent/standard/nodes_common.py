@@ -165,13 +165,13 @@ def _get_llm_search_context():
 def _get_llm_fallback() -> ChatGoogleGenerativeAI:
     """503 UNAVAILABLE / 타임아웃 시 즉시 대체할 경량 fallback 모델.
 
-    메인 모델(gemini-3-flash)이 과부하일 때 SDK가 수분간 재시도하는 것을 방지한다.
-    gemini-2.0-flash-lite는 더 가볍고 빠른 GA 모델이다.
+    메인 모델이 과부하일 때 SDK가 수분간 재시도하는 것을 방지한다.
+    gemini-2.5-flash-lite는 더 가볍고 빠른 GA 모델이다.
     """
     global _llm_fallback_instance
     if _llm_fallback_instance is None:
         _llm_fallback_instance = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash-lite",
+            model="gemini-2.5-flash-lite",
             temperature=0.4,
             google_api_key=settings.gemini_api_key,
         )
@@ -226,7 +226,7 @@ async def _invoke_inner(llm: Any, messages: list, *, max_retries: int, plain_fal
 
             # 503 UNAVAILABLE: SDK가 내부적으로 긴 재시도를 하므로 즉시 stable 모델로 전환
             if any(m in msg for m in _UNAVAILABLE_MARKERS):
-                logger.warning("Gemini 503 UNAVAILABLE → fallback 모델(gemini-2.0-flash-lite)로 즉시 폴백")
+                        logger.warning("Gemini 503 UNAVAILABLE → fallback 모델(gemini-2.5-flash-lite)로 즉시 폴백")
                 try:
                     return await asyncio.wait_for(
                         _get_llm_fallback().ainvoke(messages),
