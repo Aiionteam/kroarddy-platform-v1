@@ -21,7 +21,7 @@ export function useAutoLocaleFromProfile() {
       try {
         const profile = await fetchUserProfile(userId);
         if (!cancelled && profile?.nationality) {
-          setLangByNationality(profile.nationality);
+          setLangByNationality(profile.nationality, { source: "profile" });
         }
       } catch {
         // noop: keep last known language

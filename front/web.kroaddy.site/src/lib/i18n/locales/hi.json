@@ -2162,27 +2162,336 @@
         "highlight2": "जिपचेओंगजेओंग"
       },
       "jeju": {
-        "name": "जेजू शहर",
+        "name": "जेजू",
         "highlight1": "हाल्लासान",
         "highlight2": "सेओंगसान इलचुलबोंग",
         "highlight3": "ह्येओपजाए समुद्र तट"
       },
       "gyeongju": {
-        "name": "ग्येओंगजू",
+        "name": "ग्योंगजू",
         "highlight1": "ह्वांगरिदान-गिल",
         "highlight2": "चेओमसेओंगदाए",
         "highlight3": "बुलगुकसा"
       },
       "gangneung": {
-        "name": "गांगनेउंग",
+        "name": "गंगनुंग",
         "highlight1": "ग्येओंगपो समुद्र तट",
         "highlight2": "आनमोक कॉफी गली",
         "highlight3": "ओजुखेओन"
       },
       "jeonju": {
-        "name": "जेओनजू",
+        "name": "जोंजू",
         "highlight1": "हानोक गाँव",
         "highlight2": "माकगेओल्ली गली"
+      },
+      "asan": {
+        "name": "आसन"
+      },
+      "cheonan": {
+        "name": "चियोनान"
+      },
+      "nonsan": {
+        "name": "नोनसान"
+      },
+      "seosan": {
+        "name": "सिओसान"
+      },
+      "dangjin": {
+        "name": "डांगजिन"
+      },
+      "iksan": {
+        "name": "इकसान"
+      },
+      "gochang": {
+        "name": "गोचांग"
+      },
+      "jeongeup": {
+        "name": "जोंग्युप"
+      },
+      "gimje": {
+        "name": "गिम्जे"
+      },
+      "wando": {
+        "name": "वांडो"
+      },
+      "gangjin": {
+        "name": "गांगजिन"
+      },
+      "yeonggwang": {
+        "name": "योंगग्वांग"
+      },
+      "haenam": {
+        "name": "हैनाम"
+      },
+      "goheung": {
+        "name": "गोह्यूंग"
+      },
+      "yeongam": {
+        "name": "योंगाम"
+      },
+      "gwangyang": {
+        "name": "ग्वांगयांग"
+      },
+      "boseong": {
+        "name": "बोसोंग"
+      },
+      "naju": {
+        "name": "नाजू"
+      },
+      "goyang": {
+        "name": "गोयांग"
+      },
+      "paju": {
+        "name": "पाजू"
+      },
+      "gimpo": {
+        "name": "गिम्पो"
+      },
+      "uijeongbu": {
+        "name": "उइजोंगबू"
+      },
+      "namyangju": {
+        "name": "नमयांगजू"
+      },
+      "guri": {
+        "name": "गुरी"
+      },
+      "gapyeong": {
+        "name": "गाप्योंग"
+      },
+      "yangpyeong": {
+        "name": "यांगप्योंग"
+      },
+      "pocheon": {
+        "name": "पोचॉन"
+      },
+      "yangju": {
+        "name": "यांगजू"
+      },
+      "dongducheon": {
+        "name": "डोंगदूचॉन"
+      },
+      "suwon": {
+        "name": "सुवोन"
+      },
+      "hwaseong": {
+        "name": "ह्वासोंग"
+      },
+      "ansan": {
+        "name": "आनसान"
+      },
+      "siheung": {
+        "name": "सिहुंग"
+      },
+      "anyang": {
+        "name": "अनयांग"
+      },
+      "gunpo": {
+        "name": "गुनपो"
+      },
+      "pyeongtaek": {
+        "name": "प्योंगतैक"
+      },
+      "yongin": {
+        "name": "योंगिन"
+      },
+      "seongnam": {
+        "name": "सोंगनाम"
+      },
+      "hanam": {
+        "name": "हनाम"
+      },
+      "icheon": {
+        "name": "इचॉन"
+      },
+      "yeoju": {
+        "name": "योजू"
+      },
+      "anseong": {
+        "name": "आनसोंग"
+      },
+      "osan": {
+        "name": "ओसान"
+      },
+      "uiwang": {
+        "name": "उइवांग"
+      },
+      "gwacheon": {
+        "name": "ग्वाचॉन"
+      },
+      "bucheon": {
+        "name": "बुचॉन"
+      },
+      "gwangmyeong": {
+        "name": "ग्वांगम्योंग"
+      },
+      "chuncheon": {
+        "name": "चुनचॉन"
+      },
+      "wonju": {
+        "name": "वोनजू"
+      },
+      "pyeongchang": {
+        "name": "प्योंगचांग"
+      },
+      "yeongwol": {
+        "name": "योंगवोल"
+      },
+      "hoengseong": {
+        "name": "ह्वेंगसोंग"
+      },
+      "jeongseon": {
+        "name": "जोंगसॉन"
+      },
+      "inje": {
+        "name": "इंजे"
+      },
+      "taebaek": {
+        "name": "तैबैक"
+      },
+      "sokcho": {
+        "name": "सोकचो"
+      },
+      "yangyang": {
+        "name": "यांगयांग"
+      },
+      "donghae": {
+        "name": "डोंघे"
+      },
+      "samcheok": {
+        "name": "सामचोक"
+      },
+      "goseong-gw": {
+        "name": "गोसोंग"
+      },
+      "cheongju": {
+        "name": "चोंगजू"
+      },
+      "chungju": {
+        "name": "चुंगजू"
+      },
+      "jecheon": {
+        "name": "जेचॉन"
+      },
+      "danyang": {
+        "name": "दानयांग"
+      },
+      "gongju": {
+        "name": "गोंगजू"
+      },
+      "buyeo": {
+        "name": "बुयॉ"
+      },
+      "boryeong": {
+        "name": "बोर्योंग"
+      },
+      "taean": {
+        "name": "तैआन"
+      },
+      "gunsan": {
+        "name": "गुनसान"
+      },
+      "namwon": {
+        "name": "नामवोन"
+      },
+      "yeosu": {
+        "name": "योसू"
+      },
+      "suncheon": {
+        "name": "सुनचॉन"
+      },
+      "mokpo": {
+        "name": "मोक्पो"
+      },
+      "damyang": {
+        "name": "दामयांग"
+      },
+      "andong": {
+        "name": "आंदोंग"
+      },
+      "yeongju": {
+        "name": "योंगजू"
+      },
+      "mungyeong": {
+        "name": "मुंग्योंग"
+      },
+      "pohang": {
+        "name": "पोहांग"
+      },
+      "yeongdeok": {
+        "name": "योंगदोक"
+      },
+      "uljin": {
+        "name": "उलजिन"
+      },
+      "dokdo": {
+        "name": "दोक्दो / उल्लुंगदो"
+      },
+      "gumi": {
+        "name": "गुमी"
+      },
+      "gimcheon": {
+        "name": "गिमचोन"
+      },
+      "yeongcheon": {
+        "name": "योंगचोन"
+      },
+      "sangju": {
+        "name": "सांगजू"
+      },
+      "gyeongsan": {
+        "name": "ग्योंगसान"
+      },
+      "tongyeong": {
+        "name": "टोंगयॉन्ग"
+      },
+      "geoje": {
+        "name": "गोजे"
+      },
+      "namhae": {
+        "name": "नमहे"
+      },
+      "goseong-gn": {
+        "name": "गोसोंग"
+      },
+      "jinju": {
+        "name": "जिनजू"
+      },
+      "changwon": {
+        "name": "चांगवॉन"
+      },
+      "hapcheon": {
+        "name": "हापचॉन"
+      },
+      "miryang": {
+        "name": "मिरयांग"
+      },
+      "hamyang": {
+        "name": "हमयांग"
+      },
+      "sancheong": {
+        "name": "सांचोंग"
+      },
+      "hadong": {
+        "name": "हाडोंग"
+      },
+      "geochang": {
+        "name": "ग्योचांग"
+      },
+      "gimhae": {
+        "name": "गिम्हे"
+      },
+      "yangsan": {
+        "name": "यांगसान"
+      },
+      "changnyeong": {
+        "name": "चांगन्योंग"
+      },
+      "uiryeong": {
+        "name": "उइर्योंग"
+      },
+      "seogwipo": {
+        "name": "सोग्वीपो"
       }
     }
   },
