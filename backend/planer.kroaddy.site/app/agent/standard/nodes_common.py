@@ -44,9 +44,13 @@ _SEMAPHORE_WAIT_TIMEOUT = 10
 
 _llm_instance: "ChatGoogleGenerativeAI | None" = None
 _llm_search_instance: "ChatGoogleGenerativeAI | None" = None
-# 선행 웹 검색 전용 LLM – max_output_tokens 제한으로 빠른 불릿 요약 수집
-# JSON 생성에는 쓰지 않으므로 max_output_tokens를 사용해도 안전하다.
 _llm_search_ctx_instance: "ChatGoogleGenerativeAI | None" = None
+# 503 UNAVAILABLE 시 즉시 대체할 안정적인 stable 모델
+_llm_fallback_instance: "ChatGoogleGenerativeAI | None" = None
+
+# 단일 LLM 호출 타임아웃 – SDK 내부 재시도가 수분씩 대기하는 것을 방지
+_INVOKE_TIMEOUT_SEC = 25.0
+_UNAVAILABLE_MARKERS = ("503", "UNAVAILABLE", "high demand", "Service Unavailable")
 
 _TIME_SLOTS_KO = ["오전", "점심", "오후", "저녁"]
 _TIME_SLOTS_EN = ["morning", "lunch", "afternoon", "evening"]
@@ -130,7 +134,7 @@ def _get_llm_with_search():
     global _llm_search_instance
     if _llm_search_instance is None:
         base = ChatGoogleGenerativeAI(
-            model="gemini-3-flash-preview",
+            model="gemini-2.0-flash",
             temperature=0.4,
             google_api_key=settings.gemini_api_key,
         )
@@ -149,13 +153,29 @@ def _get_llm_search_context():
     global _llm_search_ctx_instance
     if _llm_search_ctx_instance is None:
         base = ChatGoogleGenerativeAI(
-            model="gemini-3-flash-preview",
+            model="gemini-2.0-flash",
             temperature=0.2,          # 낮은 temperature → 군더더기 없는 사실 나열
             max_output_tokens=600,    # 검색 요약은 짧을수록 빠름
             google_api_key=settings.gemini_api_key,
         )
         _llm_search_ctx_instance = base.bind_tools([{"google_search": {}}])
     return _llm_search_ctx_instance
+
+
+def _get_llm_fallback() -> ChatGoogleGenerativeAI:
+    """503 UNAVAILABLE / 타임아웃 시 즉시 대체할 경량 fallback 모델.
+
+    메인 모델(gemini-3-flash)이 과부하일 때 SDK가 수분간 재시도하는 것을 방지한다.
+    gemini-2.0-flash-lite는 더 가볍고 빠른 GA 모델이다.
+    """
+    global _llm_fallback_instance
+    if _llm_fallback_instance is None:
+        _llm_fallback_instance = ChatGoogleGenerativeAI(
+            model="gemini-2.0-flash-lite",
+            temperature=0.4,
+            google_api_key=settings.gemini_api_key,
+        )
+    return _llm_fallback_instance
 
 
 def _is_daily_quota(err: Exception) -> bool:
@@ -180,7 +200,20 @@ async def _invoke(llm: Any, messages: list, *, max_retries: int = 1, plain_fallb
 async def _invoke_inner(llm: Any, messages: list, *, max_retries: int, plain_fallback: bool) -> Any:
     for attempt in range(max_retries + 1):
         try:
-            return await llm.ainvoke(messages)
+            # SDK 내부 재시도가 수분씩 블로킹하는 것을 방지하기 위해 타임아웃을 건다.
+            return await asyncio.wait_for(
+                llm.ainvoke(messages),
+                timeout=_INVOKE_TIMEOUT_SEC,
+            )
+        except asyncio.TimeoutError:
+            logger.warning(
+                "Gemini 응답 타임아웃(%.0fs) – stable 모델로 즉시 폴백 (시도 %d/%d)",
+                _INVOKE_TIMEOUT_SEC, attempt + 1, max_retries + 1,
+            )
+            return await asyncio.wait_for(
+                _get_llm_fallback().ainvoke(messages),
+                timeout=_INVOKE_TIMEOUT_SEC,
+            )
         except Exception as e:
             msg = str(e)
 
@@ -190,6 +223,18 @@ async def _invoke_inner(llm: Any, messages: list, *, max_retries: int, plain_fal
 
             if _is_daily_quota(e):
                 raise
+
+            # 503 UNAVAILABLE: SDK가 내부적으로 긴 재시도를 하므로 즉시 stable 모델로 전환
+            if any(m in msg for m in _UNAVAILABLE_MARKERS):
+                logger.warning("Gemini 503 UNAVAILABLE → fallback 모델(gemini-2.0-flash-lite)로 즉시 폴백")
+                try:
+                    return await asyncio.wait_for(
+                        _get_llm_fallback().ainvoke(messages),
+                        timeout=_INVOKE_TIMEOUT_SEC,
+                    )
+                except Exception as fb_err:
+                    logger.error("Fallback 모델도 실패: %s", fb_err)
+                    raise
 
             if "429" in msg or "RESOURCE_EXHAUSTED" in msg:
                 if plain_fallback:
