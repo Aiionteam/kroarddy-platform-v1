@@ -1,3 +1,4 @@
+import "package:easy_localization/easy_localization.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
@@ -12,10 +13,16 @@ class KroaddyApp extends ConsumerWidget {
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
+      key: ValueKey(context.locale.toString()),
       title: "Kroaddy",
       debugShowCheckedModeBanner: false,
       routerConfig: router,
       theme: KroaddyTheme.light(),
+      localizationsDelegates: [
+        ...context.localizationDelegates,
+      ],
+      supportedLocales: context.supportedLocales,
+      locale: context.locale,
     );
   }
 }

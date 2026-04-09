@@ -1,5 +1,6 @@
 import "dart:async";
 
+import "package:easy_localization/easy_localization.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
@@ -45,12 +46,12 @@ const _cardGradients = [
   [Color(0xFF84CC16), Color(0xFF16A34A)],
 ];
 
-// ── 바로가기 (장소탐색 → 여행피드 → 여행플래너 → 마이플랜) ───────
+// ── 바로가기 (번역 키 = 사이드바와 동일: sidebar.guide 등) ───────
 const _shortcuts = [
-  {"label": "장소탐색", "asset": "icons/sidebar/jangso.png", "path": "/guide"},
-  {"label": "여행피드", "asset": "icons/sidebar/feed.png", "path": "/tourstar"},
-  {"label": "여행플래너", "asset": "icons/sidebar/planner.png", "path": "/planner"},
-  {"label": "마이플랜", "asset": "icons/sidebar/myplan.png", "path": "/planner/schedule"},
+  {"labelKey": "sidebar.guide", "asset": "icons/sidebar/jangso.png", "path": "/guide"},
+  {"labelKey": "sidebar.tourstar", "asset": "icons/sidebar/feed.png", "path": "/tourstar"},
+  {"labelKey": "sidebar.planner", "asset": "icons/sidebar/planner.png", "path": "/planner"},
+  {"labelKey": "sidebar.schedule", "asset": "icons/sidebar/myplan.png", "path": "/planner/schedule"},
 ];
 
 // ── K-콘텐츠 테마 ─────────────────────────────────────────────
@@ -220,10 +221,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                       child: Row(
                         children: [
-                          const Expanded(
+                          Expanded(
                             child: Text(
-                              "✨ 여행 프로필을 완성하면 맞춤 추천을 받을 수 있어요",
-                              style: TextStyle(
+                              "home.profile_banner".tr(),
+                              style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: _textPrimary,
@@ -234,7 +235,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           const SizedBox(width: 8),
                           TextButton(
                             onPressed: () => setState(() => _showOnboardingBanner = false),
-                            child: const Text("닫기", style: TextStyle(fontSize: 12)),
+                            child: Text("common.close".tr(), style: const TextStyle(fontSize: 12)),
                           ),
                           FilledButton(
                             onPressed: () => context.go("/profile/onboarding"),
@@ -242,7 +243,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                               backgroundColor: _primary,
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                             ),
-                            child: const Text("설정하기", style: TextStyle(fontSize: 12)),
+                            child: Text("home.setup_profile".tr(), style: const TextStyle(fontSize: 12)),
                           ),
                         ],
                       ),
@@ -274,7 +275,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     Text(
                       newsState.message.isNotEmpty
                           ? newsState.message
-                          : "아직 AI 분석이 진행 중입니다.",
+                          : "home.news_pending".tr(),
                       style: const TextStyle(color: _textSecondary, fontSize: 13),
                       textAlign: TextAlign.center,
                     ),
@@ -287,9 +288,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                           color: _primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Text(
-                          "다시 시도",
-                          style: TextStyle(color: _primary, fontSize: 12, fontWeight: FontWeight.w600),
+                        child: Text(
+                          "common.retry".tr(),
+                          style: const TextStyle(color: _primary, fontSize: 12, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),
@@ -341,7 +342,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 ),
                                 const SizedBox(height: 5),
                                 Text(
-                                  s["label"] as String,
+                                  (s["labelKey"] as String).tr(),
                                   style: const TextStyle(fontSize: 10, color: _textSecondary, fontWeight: FontWeight.w500),
                                   textAlign: TextAlign.center,
                                   maxLines: 2,
@@ -381,36 +382,36 @@ class _HomePageState extends ConsumerState<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          "2026.4 ~ 6 · 시범사업",
-                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF059669), letterSpacing: 0.5),
+                        Text(
+                          "home.rebate_period".tr(),
+                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF059669), letterSpacing: 0.5),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          "🎫 지정 시골 지역 여행 시 최대 50% 환급",
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _textPrimary),
+                        Text(
+                          "home.rebate_title".tr(),
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _textPrimary),
                         ),
                         const SizedBox(height: 4),
                         RichText(
-                          text: const TextSpan(
-                            style: TextStyle(fontSize: 11, color: _textSecondary, height: 1.4),
+                          text: TextSpan(
+                            style: const TextStyle(fontSize: 11, color: _textSecondary, height: 1.4),
                             children: [
-                              TextSpan(text: "여행 지출의 "),
+                              TextSpan(text: "home.rebate_rich_a".tr()),
                               TextSpan(
-                                text: "절반",
-                                style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF059669)),
+                                text: "home.rebate_rich_half".tr(),
+                                style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF059669)),
                               ),
-                              TextSpan(text: "을 모바일 지역사랑 상품권으로 돌려받을 수 있어요. 개인 최대 "),
+                              TextSpan(text: "home.rebate_rich_b".tr()),
                               TextSpan(
-                                text: "10만 원",
-                                style: TextStyle(fontWeight: FontWeight.bold, color: _textPrimary),
+                                text: "home.rebate_rich_10".tr(),
+                                style: const TextStyle(fontWeight: FontWeight.bold, color: _textPrimary),
                               ),
-                              TextSpan(text: ", 2인 이상 단체 최대 "),
+                              TextSpan(text: "home.rebate_rich_c".tr()),
                               TextSpan(
-                                text: "20만 원",
-                                style: TextStyle(fontWeight: FontWeight.bold, color: _textPrimary),
+                                text: "home.rebate_rich_20".tr(),
+                                style: const TextStyle(fontWeight: FontWeight.bold, color: _textPrimary),
                               ),
-                              TextSpan(text: "."),
+                              TextSpan(text: "home.rebate_rich_d".tr()),
                             ],
                           ),
                         ),
@@ -429,10 +430,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     color: const Color(0xFF059669),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: const Center(
+                                  child: Center(
                                     child: Text(
-                                      "대한민국 구석구석 ↗",
-                                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                      "home.visit_korea".tr(),
+                                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                                     ),
                                   ),
                                 ),
@@ -442,7 +443,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             GestureDetector(
                               onTap: () => setState(() => _rebateOpen = !_rebateOpen),
                               child: Text(
-                                _rebateOpen ? "접기" : "이용 방법 보기",
+                                _rebateOpen ? "home.rebate_collapse".tr() : "home.rebate_expand".tr(),
                                 style: const TextStyle(
                                   fontSize: 11,
                                   color: Color(0xFF059669),
@@ -465,15 +466,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                               color: const Color(0xFFFFFBEB),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Text(
-                              "⚠️ 사전 신청·승인 필수 · 예산 한도로 조기 마감될 수 있음 · 세부는 지자체마다 다를 수 있으니 4월 초 공식 사이트를 꼭 확인하세요.",
-                              style: TextStyle(fontSize: 10, color: Color(0xFF92400E), height: 1.4),
+                            child: Text(
+                              "home.rebate_notice".tr(),
+                              style: const TextStyle(fontSize: 10, color: Color(0xFF92400E), height: 1.4),
                             ),
                           ),
                           const SizedBox(height: 12),
-                          const Text(
-                            "대상 지역 16곳 · 플래너로 루트 보기",
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _textPrimary),
+                          Text(
+                            "home.rebate_regions".tr(),
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _textPrimary),
                           ),
                           const SizedBox(height: 8),
                           ..._ruralRegions.map((region) {
@@ -534,8 +535,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                       height: 22,
                       fit: BoxFit.contain,
                     ),
-                    title: "K-콘텐츠 테마 여행",
-                    actionLabel: "전체 보기",
+                    title: "home.k_content_title".tr(),
+                    actionLabel: "common.view_all".tr(),
                     onAction: () => context.push("/planner/k-content"),
                   ),
                   const SizedBox(height: 10),
@@ -603,12 +604,12 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   List<Widget> _buildRebateSteps() {
-    const steps = [
-      ("사전 신청", "visitkorea.or.kr에서 대상 지역 확인 후 여행 전 승인을 받으세요."),
-      ("여행", "승인 지역에서 식비·숙박 등 지출 (영수증 보관)."),
-      ("증빙 제출", "여행 후 지자체 안내에 따라 영수증 등 제출."),
-      ("환급", "확인 후 지출의 50%를 모바일 지역사랑 상품권으로 지급."),
-      ("사용", "해당 지역 식당·카페·온라인몰 등에서 올해 안에 사용."),
+    final steps = [
+      ("home.rebate_s1t".tr(), "home.rebate_s1d".tr()),
+      ("home.rebate_s2t".tr(), "home.rebate_s2d".tr()),
+      ("home.rebate_s3t".tr(), "home.rebate_s3d".tr()),
+      ("home.rebate_s4t".tr(), "home.rebate_s4d".tr()),
+      ("home.rebate_s5t".tr(), "home.rebate_s5d".tr()),
     ];
     return steps.asMap().entries.map((entry) {
       final i = entry.key + 1;

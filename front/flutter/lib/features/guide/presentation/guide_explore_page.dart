@@ -1,3 +1,4 @@
+import "package:easy_localization/easy_localization.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_markdown/flutter_markdown.dart";
@@ -14,8 +15,38 @@ import "../data/guide_map_utils.dart";
 import "../data/guide_models.dart";
 import "../data/guide_repository.dart";
 
-const _geminiNotice =
-    "사용자님의 평소 취향과 현재 환경을 분석해 AI가 새로운 장소를 추천합니다";
+bool _guideIsMissingInfo(String s) {
+  final t = s.trim();
+  if (t.isEmpty) return true;
+  if (t == "정보 없음") return true;
+  return t == "screens.guide_explore.info_none".tr();
+}
+
+String _guideCategoryLabel(GuideCategoryId id) {
+  return switch (id) {
+    GuideCategoryId.all => "screens.guide_explore.cat_all".tr(),
+    GuideCategoryId.festival => "screens.guide_explore.cat_festival".tr(),
+    GuideCategoryId.activity => "screens.guide_explore.cat_activity".tr(),
+    GuideCategoryId.historic => "screens.guide_explore.cat_historic".tr(),
+    GuideCategoryId.culture => "screens.guide_explore.cat_culture".tr(),
+    GuideCategoryId.nature => "screens.guide_explore.cat_nature".tr(),
+    GuideCategoryId.restaurant => "screens.guide_explore.cat_restaurant".tr(),
+    GuideCategoryId.cafe => "screens.guide_explore.cat_cafe".tr(),
+  };
+}
+
+String? _guideCategoryPrompt(GuideCategoryId id) {
+  return switch (id) {
+    GuideCategoryId.all => null,
+    GuideCategoryId.festival => null,
+    GuideCategoryId.activity => "screens.guide_explore.prompt_activity".tr(),
+    GuideCategoryId.historic => "screens.guide_explore.prompt_historic".tr(),
+    GuideCategoryId.culture => "screens.guide_explore.prompt_culture".tr(),
+    GuideCategoryId.nature => "screens.guide_explore.prompt_nature".tr(),
+    GuideCategoryId.restaurant => "screens.guide_explore.prompt_restaurant".tr(),
+    GuideCategoryId.cafe => "screens.guide_explore.prompt_cafe".tr(),
+  };
+}
 
 enum GuideCategoryId {
   all,
@@ -27,26 +58,6 @@ enum GuideCategoryId {
   restaurant,
   cafe,
 }
-
-const Map<GuideCategoryId, String> _categoryLabels = {
-  GuideCategoryId.all: "전체",
-  GuideCategoryId.festival: "행사",
-  GuideCategoryId.activity: "K-액티비티",
-  GuideCategoryId.historic: "역사/유적",
-  GuideCategoryId.culture: "로컬문화",
-  GuideCategoryId.nature: "자연/힐링",
-  GuideCategoryId.restaurant: "맛집",
-  GuideCategoryId.cafe: "카페",
-};
-
-const Map<GuideCategoryId, String> _categoryChatPrompts = {
-  GuideCategoryId.activity: "K-액티비티로 즐길 만한 여행지를 추천해줘",
-  GuideCategoryId.historic: "한국의 역사·유적 명소를 추천해줘",
-  GuideCategoryId.culture: "로컬 문화를 체험할 수 있는 곳을 추천해줘",
-  GuideCategoryId.nature: "자연과 힐링을 즐길 수 있는 여행지를 추천해줘",
-  GuideCategoryId.restaurant: "지역 맛집을 추천해줘",
-  GuideCategoryId.cafe: "분위기 좋은 카페를 추천해줘",
-};
 
 IconData _categoryIcon(GuideCategoryId id) => switch (id) {
       GuideCategoryId.all => Icons.grid_view_rounded,
@@ -82,11 +93,16 @@ String _placesAssistantSummary(List<GuidePlaceMarkerDto> places) {
   final names =
       places.map((p) => p.name.trim()).where((s) => s.isNotEmpty).toList();
   final count = names.length;
-  if (count == 0) return "추천 장소가 없습니다.";
+  if (count == 0) return "screens.guide_explore.places_none".tr();
   const maxShow = 4;
   final head = names.take(maxShow).map((n) => "📍 $n").join(", ");
-  final tail = count > maxShow ? " 외 ${count - maxShow}곳" : "";
-  return "$head$tail 등 총 $count곳을 추천했어요.\n지도에서 마커를 눌러 장소별 상세 가이드를 확인해 보세요.";
+  final tail = count > maxShow
+      ? "screens.guide_explore.places_extra".tr(namedArgs: {"n": "${count - maxShow}"})
+      : "";
+  return "screens.guide_explore.places_summary".tr(namedArgs: {
+    "list": "$head$tail",
+    "count": "$count",
+  });
 }
 
 String _nearbyCategoryParam(GuideMapMarker m) {
@@ -104,10 +120,12 @@ String _nearbyCategoryParam(GuideMapMarker m) {
 String _formatDurationMs(int ms) {
   if (ms <= 0) return "";
   final minutes = (ms / 60000).round();
-  if (minutes < 60) return "약 $minutes분";
+  if (minutes < 60) {
+    return "screens.guide_explore.dur_min".tr(namedArgs: {"m": "$minutes"});
+  }
   final h = minutes ~/ 60;
   final rm = minutes % 60;
-  return "약 $h시간 $rm분";
+  return "screens.guide_explore.dur_hr".tr(namedArgs: {"h": "$h", "rm": "$rm"});
 }
 
 String _formatKm(int meters) {
@@ -337,7 +355,7 @@ class _GuideExplorePageState extends ConsumerState<GuideExplorePage> {
         _ChatMessage(
           id: _newId(),
           role: "assistant",
-          content: "요청이 너무 빈번합니다. 1초 후 다시 시도해 주세요.",
+          content: "screens.guide_explore.rate_limit".tr(),
           at: now,
         ),
       );
@@ -400,13 +418,12 @@ class _GuideExplorePageState extends ConsumerState<GuideExplorePage> {
         const maxLen = 360;
         final clipped =
             raw.length > maxLen ? "${raw.substring(0, maxLen).trim()}…" : raw;
-        const hint =
-            "\n\n*지도에 표시할 좌표는 찾지 못했어요. 지명·구체적인 장소 이름을 넣어 다시 질문해 보세요.*";
+        final hint = "screens.guide_explore.no_coords_hint".tr();
         _pushMessage(
           _ChatMessage(
             id: _newId(),
             role: "assistant",
-            content: (clipped.isEmpty ? "답변을 가져오지 못했습니다." : clipped) + hint,
+            content: (clipped.isEmpty ? "screens.guide_explore.answer_failed".tr() : clipped) + hint,
             at: DateTime.now().millisecondsSinceEpoch,
             useMarkdown: true,
           ),
@@ -477,8 +494,12 @@ class _GuideExplorePageState extends ConsumerState<GuideExplorePage> {
             id: _newId(),
             role: "assistant",
             content: markers.isNotEmpty
-                ? "이번 달 행사 ${markers.length}곳을 지도에 표시했어요. (${data.year}년 ${data.month}월)"
-                : "표시할 좌표가 있는 행사가 없거나 API 응답이 비었습니다.",
+                ? "screens.guide_explore.festival_ok".tr(namedArgs: {
+                    "n": "${markers.length}",
+                    "year": "${data.year}",
+                    "month": "${data.month}",
+                  })
+                : "screens.guide_explore.festival_empty".tr(),
             at: DateTime.now().millisecondsSinceEpoch,
           ),
         );
@@ -492,7 +513,7 @@ class _GuideExplorePageState extends ConsumerState<GuideExplorePage> {
           _ChatMessage(
             id: _newId(),
             role: "assistant",
-            content: "행사 정보를 불러오지 못했습니다: $e",
+            content: "screens.guide_explore.festival_err".tr(namedArgs: {"error": "$e"}),
             at: DateTime.now().millisecondsSinceEpoch,
           ),
         );
@@ -514,7 +535,7 @@ class _GuideExplorePageState extends ConsumerState<GuideExplorePage> {
       return;
     }
 
-    final prompt = _categoryChatPrompts[id];
+    final prompt = _guideCategoryPrompt(id);
     if (prompt != null && prompt.trim().isNotEmpty) {
       await _runGuideAsk(prompt);
     }
@@ -572,7 +593,7 @@ class _GuideExplorePageState extends ConsumerState<GuideExplorePage> {
       title: item.name,
       kind: GuideMarkerKind.place,
       address: item.address.trim(),
-      category: item.category.trim().isNotEmpty ? item.category.trim() : "맛집·카페",
+      category: item.category.trim().isNotEmpty ? item.category.trim() : "screens.guide_explore.food_category_fallback".tr(),
       description: "",
       imageUrl: item.imageUrl.trim().isNotEmpty ? item.imageUrl.trim() : null,
     );
@@ -628,7 +649,7 @@ class _GuideExplorePageState extends ConsumerState<GuideExplorePage> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 10),
                         child: Text(
-                          _geminiNotice,
+                          "screens.guide_explore.gemini_notice".tr(),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontSize: 12,
@@ -645,16 +666,16 @@ class _GuideExplorePageState extends ConsumerState<GuideExplorePage> {
                       child: Container(
                         color: Colors.black.withValues(alpha: 0.12),
                         alignment: Alignment.center,
-                        child: const Card(
+                        child: Card(
                           child: Padding(
-                            padding: EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                                 horizontal: 20, vertical: 14),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                CircularProgressIndicator(strokeWidth: 2),
-                                SizedBox(width: 12),
-                                Text("가이드 응답 생성 중…"),
+                                const CircularProgressIndicator(strokeWidth: 2),
+                                const SizedBox(width: 12),
+                                Text("screens.guide_explore.loading_guide".tr()),
                               ],
                             ),
                           ),
@@ -673,7 +694,7 @@ class _GuideExplorePageState extends ConsumerState<GuideExplorePage> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 20, vertical: 12),
                             child: Text(
-                              "행사 정보 불러오는 중…",
+                              "screens.guide_explore.loading_festival".tr(),
                               style: TextStyle(
                                 color: Colors.cyan.shade800,
                                 fontWeight: FontWeight.w600,
@@ -782,7 +803,7 @@ class _CategoryChipBar extends StatelessWidget {
                           : const Color(0xFF64748B),
                     ),
                     const SizedBox(width: 6),
-                    Text(_categoryLabels[id] ?? id.name),
+                    Text(_guideCategoryLabel(id)),
                   ],
                 ),
                 selected: isOn,
@@ -849,9 +870,9 @@ class _ChatPanel extends StatelessWidget {
                 const Icon(Icons.forum_outlined,
                     color: Color(0xFF0284C7), size: 22),
                 const SizedBox(width: 8),
-                const Text(
-                  "채팅·장소 설명 열기",
-                  style: TextStyle(
+                Text(
+                  "screens.guide_explore.chat_expand".tr(),
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF334155),
@@ -898,17 +919,17 @@ class _ChatPanel extends StatelessWidget {
                 itemCount: visible.length + (assistantLoading ? 1 : 0),
                 itemBuilder: (context, i) {
                   if (assistantLoading && i == visible.length) {
-                    return const Padding(
-                      padding: EdgeInsets.all(8),
+                    return Padding(
+                      padding: const EdgeInsets.all(8),
                       child: Row(
                         children: [
-                          SizedBox(
+                          const SizedBox(
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           ),
-                          SizedBox(width: 8),
-                          Text("응답 작성 중…", style: TextStyle(fontSize: 12)),
+                          const SizedBox(width: 8),
+                          Text("screens.guide_explore.replying".tr(), style: const TextStyle(fontSize: 12)),
                         ],
                       ),
                     );
@@ -975,7 +996,7 @@ class _ChatPanel extends StatelessWidget {
               children: [
                 IconButton(
                   icon: const Icon(Icons.expand_more, size: 26),
-                  tooltip: "채팅·장소 설명 접기",
+                  tooltip: "screens.guide_explore.chat_collapse".tr(),
                   style: IconButton.styleFrom(
                     backgroundColor: const Color(0xFFF1F5F9),
                     foregroundColor: const Color(0xFF475569),
@@ -989,7 +1010,7 @@ class _ChatPanel extends StatelessWidget {
                     maxLines: 4,
                     enabled: !disabled,
                     decoration: InputDecoration(
-                      hintText: "장소에 대해 물어보세요",
+                      hintText: "screens.guide_explore.input_hint".tr(),
                       filled: true,
                       fillColor: Colors.white.withValues(alpha: 0.5),
                       border: OutlineInputBorder(
@@ -1109,7 +1130,7 @@ class _GuidePlaceSheetState extends ConsumerState<_GuidePlaceSheet> {
               IconButton(
                 visualDensity: VisualDensity.compact,
                 icon: const Icon(Icons.copy_rounded, size: 20),
-                tooltip: "주소 복사",
+                tooltip: "screens.guide_explore.copy_address".tr(),
                 onPressed: () => _copyAddress(context, t),
               ),
             ],
@@ -1229,12 +1250,12 @@ class _GuidePlaceSheetState extends ConsumerState<_GuidePlaceSheet> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.directions_car_outlined),
-                    tooltip: "자동차 경로",
+                    tooltip: "screens.guide_explore.driving_route".tr(),
                   ),
                 IconButton(
                   onPressed: widget.onClose,
                   icon: const Icon(Icons.close),
-                  tooltip: "닫기",
+                  tooltip: "screens.guide_explore.close".tr(),
                 ),
               ],
             ),
@@ -1280,12 +1301,12 @@ class _GuidePlaceSheetState extends ConsumerState<_GuidePlaceSheet> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.directions_car_outlined),
-                    tooltip: "자동차 경로",
+                    tooltip: "screens.guide_explore.driving_route".tr(),
                   ),
                 IconButton(
                   onPressed: widget.onClose,
                   icon: const Icon(Icons.close),
-                  tooltip: "닫기",
+                  tooltip: "screens.guide_explore.close".tr(),
                 ),
               ],
             ),
@@ -1300,11 +1321,17 @@ class _GuidePlaceSheetState extends ConsumerState<_GuidePlaceSheet> {
                         if (m.fstvlStartDate != null &&
                             m.fstvlEndDate != null)
                           Text(
-                            "기간: ${m.fstvlStartDate} ~ ${m.fstvlEndDate}",
+                            "screens.guide_explore.period".tr(namedArgs: {
+                              "start": "${m.fstvlStartDate}",
+                              "end": "${m.fstvlEndDate}",
+                            }),
                             style: const TextStyle(fontSize: 13),
                           ),
                         if ((m.opar ?? "").isNotEmpty)
-                          Text("장소: ${m.opar}", style: const TextStyle(fontSize: 13)),
+                          Text(
+                            "screens.guide_explore.venue".tr(namedArgs: {"name": m.opar!}),
+                            style: const TextStyle(fontSize: 13),
+                          ),
                         if (m.description.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 8),
@@ -1345,7 +1372,7 @@ class _GuidePlaceSheetState extends ConsumerState<_GuidePlaceSheet> {
                           const SizedBox(height: 10),
                           _addressCopyCard(
                               context, _effectiveAddress(m, _details)),
-                          _kv("카테고리", _effectiveCategory(m, _details)),
+                          _kv("screens.guide_explore.category_label".tr(), _effectiveCategory(m, _details)),
                           if (m.summary != null && m.summary!.isNotEmpty)
                             Text(m.summary!,
                                 style: const TextStyle(
@@ -1375,8 +1402,8 @@ class _GuidePlaceSheetState extends ConsumerState<_GuidePlaceSheet> {
                           ),
                           if (_nearby.isNotEmpty) ...[
                             const SizedBox(height: 16),
-                            const Text("주변 맛집·카페",
-                                style: TextStyle(
+                            Text("screens.guide_explore.nearby_title".tr(),
+                                style: const TextStyle(
                                     fontWeight: FontWeight.w700, fontSize: 13)),
                             const SizedBox(height: 8),
                             SizedBox(
@@ -1442,10 +1469,12 @@ class _GuidePlaceSheetState extends ConsumerState<_GuidePlaceSheet> {
   Widget _drivingSection() {
     final r = widget.drivingRoute;
     if (widget.directionsLoading && r == null) {
-      return const Padding(
-        padding: EdgeInsets.only(top: 12),
-        child: Text("경로를 불러오는 중…",
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+      return Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: Text(
+          "screens.guide_explore.driving_loading".tr(),
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+        ),
       );
     }
     if (r == null) return const SizedBox.shrink();
@@ -1456,13 +1485,12 @@ class _GuidePlaceSheetState extends ConsumerState<_GuidePlaceSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              r.message ??
-                  "자동차 경로를 지원하지 않는 구간입니다. 다른 이동 수단을 이용해 보세요.",
+              r.message ?? "screens.guide_explore.driving_unsupported".tr(),
               style: const TextStyle(fontSize: 13),
             ),
             TextButton(
               onPressed: widget.onRequestDrivingRoute,
-              child: const Text("다시 시도"),
+              child: Text("common.retry".tr()),
             ),
           ],
         ),
@@ -1474,12 +1502,17 @@ class _GuidePlaceSheetState extends ConsumerState<_GuidePlaceSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "자동차 이동: ${_formatDurationMs(r.durationMs)} · ${_formatKm(r.distanceM)}",
+            "screens.guide_explore.driving_line".tr(namedArgs: {
+              "duration": _formatDurationMs(r.durationMs),
+              "distance": _formatKm(r.distanceM),
+            }),
             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
           ),
           if (r.tollFare > 0)
-            Text("통행료 약 ${r.tollFare}원",
-                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+            Text(
+              "screens.guide_explore.toll".tr(namedArgs: {"amount": "${r.tollFare}"}),
+              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+            ),
         ],
       ),
     );
@@ -1492,7 +1525,7 @@ class _GuidePlaceSheetState extends ConsumerState<_GuidePlaceSheet> {
       final extracted = extractPlaceSectionFromAnswer(fb, m.title);
       if (extracted.isNotEmpty) return extracted;
     }
-    return "상세 설명이 없습니다.";
+    return "screens.guide_explore.no_detail".tr();
   }
 
   Widget _imageBlock(GuideMapMarker m, GuidePlaceDetailsResponse? d) {
@@ -1514,13 +1547,14 @@ class _GuidePlaceSheetState extends ConsumerState<_GuidePlaceSheet> {
 
   String _effectiveAddress(GuideMapMarker m, GuidePlaceDetailsResponse? d) {
     final a = d?.address.trim() ?? "";
-    if (a.isNotEmpty && a != "정보 없음") return a;
-    return m.address.trim().isNotEmpty ? m.address : "정보 없음";
+    if (a.isNotEmpty && !_guideIsMissingInfo(a)) return a;
+    final ma = m.address.trim();
+    return ma.isNotEmpty ? ma : "screens.guide_explore.info_none".tr();
   }
 
   String _effectiveCategory(GuideMapMarker m, GuidePlaceDetailsResponse? d) {
     final c = d?.category.trim() ?? "";
-    if (c.isNotEmpty && c != "정보 없음") return c;
-    return m.category.isNotEmpty ? m.category : "정보 없음";
+    if (c.isNotEmpty && !_guideIsMissingInfo(c)) return c;
+    return m.category.isNotEmpty ? m.category : "screens.guide_explore.info_none".tr();
   }
 }

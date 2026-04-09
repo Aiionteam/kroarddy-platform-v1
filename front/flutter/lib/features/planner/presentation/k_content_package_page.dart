@@ -1,3 +1,4 @@
+import "package:easy_localization/easy_localization.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
@@ -190,7 +191,7 @@ class _KContentPackagePageState extends ConsumerState<KContentPackagePage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("저장 실패: $e")),
+        SnackBar(content: Text("screens.k_content.save_failed".tr(namedArgs: {"error": "$e"}))),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -209,7 +210,7 @@ class _KContentPackagePageState extends ConsumerState<KContentPackagePage> {
           onPressed: () => mainScaffoldKey.currentState?.openDrawer(),
         ),
         title: Text(
-          "K-Content · ${widget.packageId}",
+          "screens.k_content.app_title".tr(namedArgs: {"id": widget.packageId}),
           style: const TextStyle(color: _textPrimary, fontWeight: FontWeight.bold, fontSize: 16),
         ),
       ),
@@ -226,7 +227,7 @@ class _KContentPackagePageState extends ConsumerState<KContentPackagePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("날짜 설정", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _textPrimary)),
+                Text("screens.k_content.date_settings".tr(), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _textPrimary)),
                 const SizedBox(height: 10),
                 Row(
                   children: [
@@ -238,7 +239,7 @@ class _KContentPackagePageState extends ConsumerState<KContentPackagePage> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
                         ),
                         child: Text(
-                          "시작일 ${_iso(_startDate)}",
+                          "screens.k_content.start_date".tr(namedArgs: {"date": _iso(_startDate)}),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -253,7 +254,7 @@ class _KContentPackagePageState extends ConsumerState<KContentPackagePage> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
                         ),
                         child: Text(
-                          "종료일 ${_iso(_endDate)}",
+                          "screens.k_content.end_date".tr(namedArgs: {"date": _iso(_endDate)}),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -273,7 +274,7 @@ class _KContentPackagePageState extends ConsumerState<KContentPackagePage> {
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
                         : const Icon(Icons.auto_awesome),
-                    label: Text(_loading ? "생성 중..." : "일정 생성"),
+                    label: Text(_loading ? "screens.k_content.generating".tr() : "screens.k_content.generate_schedule".tr()),
                     style: FilledButton.styleFrom(backgroundColor: _primary),
                   ),
                 ),
@@ -319,11 +320,11 @@ class _KContentPackagePageState extends ConsumerState<KContentPackagePage> {
                     ),
                   ),
                   if (_loadingImages)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 6),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
                       child: Text(
-                        "이미지 불러오는 중...",
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                        "screens.k_content.image_loading".tr(),
+                        style: const TextStyle(color: Colors.white70, fontSize: 12),
                       ),
                     ),
                 ],
@@ -342,7 +343,7 @@ class _KContentPackagePageState extends ConsumerState<KContentPackagePage> {
             const SizedBox(height: 14),
             Row(
               children: [
-                const Text("추천 일정", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary)),
+                Text("screens.k_content.recommended_schedule".tr(), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary)),
                 const Spacer(),
                 if (_savedPlanId != null)
                   TextButton(
@@ -353,7 +354,7 @@ class _KContentPackagePageState extends ConsumerState<KContentPackagePage> {
                   FilledButton(
                     onPressed: _saving ? null : _save,
                     style: FilledButton.styleFrom(backgroundColor: _primary),
-                    child: Text(_saving ? "저장 중..." : "저장하기"),
+                    child: Text(_saving ? "common.saving".tr() : "screens.k_content.save".tr()),
                   ),
               ],
             ),

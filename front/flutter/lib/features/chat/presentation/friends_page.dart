@@ -1,3 +1,4 @@
+import "package:easy_localization/easy_localization.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
@@ -44,9 +45,9 @@ class _FriendsPageState extends ConsumerState<FriendsPage> {
           icon: const Icon(Icons.menu, color: _textPrimary),
           onPressed: () => mainScaffoldKey.currentState?.openDrawer(),
         ),
-        title: const Text(
-          "친구목록",
-          style: TextStyle(color: _textPrimary, fontWeight: FontWeight.bold, fontSize: 18),
+        title: Text(
+          "sidebar.friends".tr(),
+          style: const TextStyle(color: _textPrimary, fontWeight: FontWeight.bold, fontSize: 18),
         ),
         actions: [
           IconButton(
@@ -70,9 +71,9 @@ class _FriendsPageState extends ConsumerState<FriendsPage> {
                 children: [
                   Row(
                     children: [
-                      const Text(
-                        "친구 요청",
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
+                      Text(
+                        "screens.friends.pending_title".tr(),
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
                       ),
                       const SizedBox(width: 8),
                       Container(
@@ -108,9 +109,9 @@ class _FriendsPageState extends ConsumerState<FriendsPage> {
           ),
 
           // ── 친구 목록 ────────────────────────────────────────────
-          const Text(
-            "친구 목록",
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
+          Text(
+            "screens.friends.list_title".tr(),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
           ),
           const SizedBox(height: 10),
           friendsAsync.when(
@@ -122,18 +123,18 @@ class _FriendsPageState extends ConsumerState<FriendsPage> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Column(
+                  child: Column(
                     children: [
-                      Icon(Icons.people_outline, size: 48, color: Color(0xFFD1D5DB)),
-                      SizedBox(height: 12),
+                      const Icon(Icons.people_outline, size: 48, color: Color(0xFFD1D5DB)),
+                      const SizedBox(height: 12),
                       Text(
-                        "아직 친구가 없습니다",
-                        style: TextStyle(fontSize: 14, color: Color(0xFF9CA3AF)),
+                        "screens.friends.empty_title".tr(),
+                        style: const TextStyle(fontSize: 14, color: Color(0xFF9CA3AF)),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
-                        "여행피드 게시물에서 닉네임을 눌러 친구를 추가하세요",
-                        style: TextStyle(fontSize: 12, color: Color(0xFFD1D5DB)),
+                        "screens.friends.empty_hint".tr(),
+                        style: const TextStyle(fontSize: 12, color: Color(0xFFD1D5DB)),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -148,13 +149,18 @@ class _FriendsPageState extends ConsumerState<FriendsPage> {
                             final confirmed = await showDialog<bool>(
                               context: context,
                               builder: (_) => AlertDialog(
-                                title: const Text("친구 삭제"),
-                                content: Text("${f.nickname} 님을 친구 목록에서 삭제할까요?"),
+                                title: Text("screens.friends.delete_dialog_title".tr()),
+                                content: Text(
+                                  "screens.friends.delete_dialog_body".tr(namedArgs: {"name": f.nickname}),
+                                ),
                                 actions: [
-                                  TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("취소")),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, false),
+                                    child: Text("common.cancel".tr()),
+                                  ),
                                   TextButton(
                                     onPressed: () => Navigator.pop(context, true),
-                                    child: const Text("삭제", style: TextStyle(color: Colors.red)),
+                                    child: Text("common.delete".tr(), style: const TextStyle(color: Colors.red)),
                                   ),
                                 ],
                               ),
@@ -169,7 +175,10 @@ class _FriendsPageState extends ConsumerState<FriendsPage> {
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Text("친구 목록을 불러올 수 없습니다: $e", style: const TextStyle(color: Colors.red)),
+            error: (e, _) => Text(
+              "screens.friends.load_error".tr(namedArgs: {"error": "$e"}),
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
 
           const SizedBox(height: 20),
@@ -181,14 +190,14 @@ class _FriendsPageState extends ConsumerState<FriendsPage> {
               color: _primaryLight,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(Icons.info_outline, size: 16, color: _primary),
-                SizedBox(width: 8),
+                const Icon(Icons.info_outline, size: 16, color: _primary),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    "여행피드 게시물에서 닉네임을 탭하면 친구 요청을 보낼 수 있어요.",
-                    style: TextStyle(fontSize: 12, color: _primary, height: 1.5),
+                    "screens.friends.banner_hint".tr(),
+                    style: const TextStyle(fontSize: 12, color: _primary, height: 1.5),
                   ),
                 ),
               ],
@@ -229,10 +238,10 @@ class _PendingRequestCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  request.nickname.isNotEmpty ? request.nickname : "알 수 없음",
+                  request.nickname.isNotEmpty ? request.nickname : "screens.unknown".tr(),
                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _textPrimary),
                 ),
-                const Text("친구 요청을 보냈습니다", style: TextStyle(fontSize: 12, color: _textSecondary)),
+                Text("screens.friends.request_sent".tr(), style: const TextStyle(fontSize: 12, color: _textSecondary)),
               ],
             ),
           ),
@@ -244,7 +253,7 @@ class _PendingRequestCard extends StatelessWidget {
                 color: _primary,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Text("수락", style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+              child: Text("screens.friends.accept".tr(), style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
             ),
           ),
         ],
@@ -281,24 +290,27 @@ class _FriendCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  friend.nickname.isNotEmpty ? friend.nickname : "알 수 없음",
+                  friend.nickname.isNotEmpty ? friend.nickname : "screens.unknown".tr(),
                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _textPrimary),
                 ),
                 if (friend.honorScore > 0)
-                  Text("명예도 ${friend.honorScore}", style: const TextStyle(fontSize: 12, color: _textSecondary)),
+                  Text(
+                    "screens.friends.friend_honor".tr(namedArgs: {"score": "${friend.honorScore}"}),
+                    style: const TextStyle(fontSize: 12, color: _textSecondary),
+                  ),
               ],
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(color: _primaryLight, borderRadius: BorderRadius.circular(8)),
-            child: const Text("친구", style: TextStyle(fontSize: 11, color: _primary, fontWeight: FontWeight.w600)),
+            child: Text("screens.friends.badge_friend".tr(), style: const TextStyle(fontSize: 11, color: _primary, fontWeight: FontWeight.w600)),
           ),
           const SizedBox(width: 6),
           IconButton(
             icon: const Icon(Icons.person_remove_outlined, size: 20, color: Color(0xFF9CA3AF)),
             onPressed: onDelete,
-            tooltip: "친구 삭제",
+            tooltip: "screens.friends.delete_tooltip".tr(),
           ),
         ],
       ),

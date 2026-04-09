@@ -1,0 +1,4075 @@
+{
+  "app": {
+    "name": "Kroaddy"
+  },
+  "common": {
+    "save": "Simpan",
+    "cancel": "Batal",
+    "next": "Berikutnya",
+    "skip": "Lewati",
+    "done": "Selesai",
+    "loading": "Memuat...",
+    "saving": "Menyimpan...",
+    "processing": "Memproses...",
+    "error": "Terjadi kesalahan",
+    "logout": "Keluar",
+    "menu_open": "Buka menu",
+    "search": "Cari",
+    "show_all": "Tampilkan semua",
+    "back": "Kembali",
+    "close": "Tutup",
+    "retry": "Coba lagi",
+    "previous": "Back",
+    "fold": "Ciutkan",
+    "view_all": "Lihat semua",
+    "more": "Lainnya",
+    "delete": "Hapus",
+    "deleting": "Menghapus...",
+    "edit": "Edit",
+    "submit": "Kirim",
+    "share": "Bagikan",
+    "go_back": "Kembali",
+    "confirm": "Konfirmasi",
+    "coming_soon": "Segera hadir",
+    "accept": "Setuju",
+    "login_needed": "Perlu masuk.",
+    "login_required": "Perlu masuk",
+    "not_found": {
+      "message": "Halaman yang Anda minta tidak ditemukan.",
+      "back_home": "Kembali ke beranda"
+    },
+    "unknown_error": "unknown error",
+    "language": "Bahasa"
+  },
+  "onboarding": {
+    "title": "Preferensi Perjalanan",
+    "subtitle": "Bantu kami mempersonalisasi rekomendasi perjalanan AI Anda",
+    "later": "Nanti",
+    "saving": "Menyimpan...",
+    "nationality": {
+      "title": "Negara / Kewarganegaraan",
+      "hint": "Aplikasi akan beralih ke bahasa pilihan Anda"
+    },
+    "gender": {
+      "title": "Jenis Kelamin"
+    },
+    "age": {
+      "title": "Kelompok Usia"
+    },
+    "diet": {
+      "title": "Preferensi Makanan"
+    },
+    "religion": {
+      "title": "Agama"
+    },
+    "prev": "Back",
+    "skip_later": "Maybe later",
+    "save_failed": "Save failed: {{error}}",
+    "steps": {
+      "nationality": "Which country are you from?",
+      "gender": "What is your gender?",
+      "age_band": "Choose your age range",
+      "dietary_pref": "Any dietary preferences?",
+      "religion": "Do you have a religion?"
+    }
+  },
+  "auth": {
+    "api": {
+      "naver_auth_url_fail": "Gagal mendapatkan URL login Naver.",
+      "naver_auth_url_missing": "URL login Naver tidak diterima.",
+      "kakao_auth_url_fail": "Gagal mendapatkan URL login Kakao.",
+      "kakao_auth_url_missing": "URL login Kakao tidak diterima.",
+      "google_auth_url_fail": "Gagal mendapatkan URL login Google.",
+      "google_auth_url_missing": "URL login Google tidak diterima.",
+      "refresh_token_invalid": "Refresh token kedaluwarsa atau tidak valid. Silakan login kembali."
+    },
+    "back_to_login": "로그인 페이지로 돌아가기",
+    "guest_browse": "게스트로 둘러보기",
+    "login_failed": "로그인 실패",
+    "login_failed_with_detail": "알 수 없는 오류",
+    "login_google": "Continue with Google",
+    "login_kakao": "카카오로 시작하기",
+    "login_naver": "네이버로 시작하기",
+    "login_success": "로그인 성공!",
+    "login_terms_notice": "로그인하면 서비스 이용약관 및 개인정보처리방침에 동의하는 것으로 간주합니다.",
+    "oauth_processing": "로그인 처리 중...",
+    "or": "또는",
+    "popup_blocked": "팝업이 차단되었습니다.",
+    "popup_unblock": "팝업 차단을 해제해 주세요.",
+    "provider_login_failed": "{{provider}} 로그인에 실패했습니다.",
+    "redirecting_home": "홈으로 이동 중...",
+    "social_login_heading": "소셜 계정으로 시작하기",
+    "tagline": "AI와 함께하는 스마트 여행 플래너"
+  },
+  "weather": {
+    "reason": {
+      "no_location": "Tidak ada informasi lokasi"
+    }
+  },
+  "planner.standard": {
+    "title": "Pilih destinasi",
+    "subtitle": "Pilih tempat dan AI akan merekomendasikan rute yang sesuai",
+    "mode_label": "Standar",
+    "date": "Tanggal",
+    "mode_car": "🚗 Mobil",
+    "mode_transit": "🚇 Transportasi umum",
+    "mode_walk": "🚶 Jalan kaki",
+    "generating_loading": "Mencari informasi yang akurat...",
+    "generate_route": "✨ Buat rute",
+    "ai_recommended_routes": "Rute rekomendasi AI",
+    "set_date_and_generate": "Atur tanggal dan\nbuat rute",
+    "start_generate": "✨ Mulai membuat rute",
+    "pick_route": "Silakan pilih rute",
+    "range_hint": "AI akan membuat itinerary untuk {{start}} ~ {{end}}",
+    "select_date_then_generate": "Pilih tanggal lalu buat rute",
+    "generate_hint": "Klik tombol ✨ Buat rute di kiri atas",
+    "making_schedule": "AI sedang membuat itinerary untuk <b>{{name}}</b>...",
+    "recommended_schedule_title": "{{name}} — Itinerary rekomendasi",
+    "saved_goto_schedule": "✅ Tersimpan · Buka manajer jadwal",
+    "save_plan": "💾 Simpan",
+    "total_cost": "Estimasi total biaya",
+    "cost_per_day": "Hari{{day}} {{total}}",
+    "search_placeholder": "Cari kota/tempat (mis., Gangneung, Hanok Village)",
+    "search_result": "Hasil pencarian \"{{query}}\" {{count}} item",
+    "no_results": "Tidak ada hasil",
+    "reset": "Reset",
+    "metro_quick": "Akses cepat (kota metropolitan)",
+    "metro_quick_sub": "Langsung ke kota metropolitan populer, lalu telusuri area detail di bawah.",
+    "metro_detail": "Area kota metropolitan",
+    "metro_detail_sub": "Untuk perjalanan berbasis kota seperti Seoul/Busan/Daegu/Ulsan, lihat area yang lebih detail.",
+    "province": "Provinsi",
+    "province_sub": "Bandingkan area seperti Gyeonggi, Chungcheong, Jeolla, Gyeongsang, Gangwon, Jeju.",
+    "image_pending": "Gambar segera hadir",
+    "popular": "Populer",
+    "route_load_fail": "Gagal memuat rute.",
+    "schedule_load_fail": "Gagal memuat jadwal.",
+    "save_fail": "Gagal menyimpan.",
+    "subtotal": "Subtotal {{total}}",
+    "theme": {
+      "event": "Acara",
+      "food": "Makanan",
+      "spot": "Tempat wisata",
+      "luxury": "Mewah",
+      "value": "Hemat",
+      "family": "Keluarga",
+      "couple": "Pasangan"
+    },
+    "highlight": {
+      "gyeongbokgung": "Gyeongbokgung",
+      "hongdae": "Hongdae",
+      "hangang_park": "Hangang Park",
+      "cheongwadae": "Cheongwadae",
+      "insadong": "Insadong",
+      "myeongdong_cathedral": "Myeongdong Cathedral",
+      "euljiro_alley": "Euljiro Alley",
+      "national_museum_of_korea": "National Museum of Korea",
+      "itaewon": "Itaewon",
+      "haeundae": "Haeundae",
+      "haeundae_beach": "Haeundae Beach",
+      "gamcheon_village": "Gamcheon Village",
+      "jagalchi_market": "Jagalchi Market",
+      "biff_square": "BIFF Square",
+      "dongseongro": "Dongseong-ro",
+      "kim_gwangseok_street": "Kim Gwangseok Street",
+      "suseong_lake": "Suseong Lake",
+      "songdo": "Songdo",
+      "chinatown": "Chinatown",
+      "gangneung": "Gangneung",
+      "gyeongpo": "Gyeongpo Pavilion",
+      "anmok_coffee_street": "Anmok Coffee Street",
+      "ojukheon": "Ojukheon",
+      "sokcho": "Sokcho",
+      "seoraksan": "Seoraksan",
+      "central_market": "Central Market",
+      "hallasan": "Hallasan",
+      "seongsan_ilchulbong": "Seongsan Ilchulbong"
+    }
+  },
+  "planner.dest": {
+    "seoul": {
+      "name": "Seoul",
+      "highlight1": "Gyeongbokgung",
+      "highlight2": "Hangang Park"
+    },
+    "busan": {
+      "name": "Busan",
+      "highlight1": "Haeundae Beach",
+      "highlight2": "Jagalchi Market"
+    },
+    "daegu": {
+      "name": "Daegu",
+      "highlight1": "Dongseong-ro",
+      "highlight2": "Suseong Lake"
+    },
+    "incheon": {
+      "name": "Incheon",
+      "highlight1": "Songdo",
+      "highlight2": "Chinatown"
+    },
+    "gwangju": {
+      "name": "Gwangju",
+      "highlight1": "ACC (Asia Culture Center)",
+      "highlight2": "Yangnim-dong"
+    },
+    "daejeon": {
+      "name": "Daejeon",
+      "highlight1": "Seongsimdang",
+      "highlight2": "Expo Park"
+    },
+    "ulsan": {
+      "name": "Ulsan",
+      "highlight1": "Ganjeolgot",
+      "highlight2": "Daewangam Park"
+    },
+    "sejong": {
+      "name": "Sejong",
+      "highlight1": "Sejong Lake Park",
+      "highlight2": "National Arboretum"
+    },
+    "jongno": {
+      "name": "Jongno & Gwanghwamun",
+      "highlight1": "Gyeongbokgung",
+      "highlight2": "Insadong"
+    },
+    "myeongdong": {
+      "name": "Myeongdong & Euljiro",
+      "highlight1": "Myeongdong Cathedral",
+      "highlight2": "Euljiro Alley"
+    },
+    "yongsan": {
+      "name": "Yongsan & Itaewon",
+      "highlight1": "National Museum of Korea",
+      "highlight2": "Itaewon"
+    },
+    "hongdae": {
+      "name": "Hongdae & Mapo",
+      "highlight1": "Hongdae",
+      "highlight2": "Yeonnam-dong"
+    },
+    "bukchon": {
+      "name": "Bukchon & Samcheong",
+      "highlight1": "Bukchon Hanok Village",
+      "highlight2": "Samcheong-dong"
+    },
+    "nowon": {
+      "name": "Nowon & Dobong"
+    },
+    "gangnam": {
+      "name": "Gangnam & Seocho",
+      "highlight1": "COEX",
+      "highlight2": "Apgujeong Rodeo"
+    },
+    "jamsil": {
+      "name": "Jamsil & Songpa",
+      "highlight1": "Lotte World",
+      "highlight2": "Olympic Park"
+    },
+    "seongsu": {
+      "name": "Seongsu & Hannam",
+      "highlight1": "Seongsu Cafe Street",
+      "highlight2": "Hannam-dong"
+    },
+    "goyang": {
+      "name": "Goyang"
+    },
+    "paju": {
+      "name": "Paju",
+      "highlight1": "Heyri Art Village",
+      "highlight2": "Imjingak"
+    },
+    "gimpo": {
+      "name": "Gimpo"
+    },
+    "uijeongbu": {
+      "name": "Uijeongbu"
+    },
+    "namyangju": {
+      "name": "Namyangju",
+      "highlight1": "Dumulmeori",
+      "highlight2": "Dasan-gil"
+    },
+    "guri": {
+      "name": "Guri"
+    },
+    "gapyeong": {
+      "name": "Gapyeong",
+      "highlight1": "Nami Island",
+      "highlight2": "Jara Island"
+    },
+    "yangpyeong": {
+      "name": "Yangpyeong",
+      "highlight1": "Dumulmeori",
+      "highlight2": "Yongmunsan"
+    },
+    "pocheon": {
+      "name": "Pocheon",
+      "highlight1": "Sanjeong Lake",
+      "highlight2": "Herb Island"
+    },
+    "yangju": {
+      "name": "Yangju"
+    },
+    "dongducheon": {
+      "name": "Dongducheon"
+    },
+    "suwon": {
+      "name": "Suwon",
+      "highlight1": "Hwaseong Haenggung",
+      "highlight2": "Haengnidan-gil"
+    },
+    "hwaseong": {
+      "name": "Hwaseong"
+    },
+    "ansan": {
+      "name": "Ansan"
+    },
+    "siheung": {
+      "name": "Siheung"
+    },
+    "anyang": {
+      "name": "Anyang"
+    },
+    "gunpo": {
+      "name": "Gunpo"
+    },
+    "pyeongtaek": {
+      "name": "Pyeongtaek"
+    },
+    "yongin": {
+      "name": "Yongin",
+      "highlight1": "Everland",
+      "highlight2": "Korean Folk Village"
+    },
+    "seongnam": {
+      "name": "Seongnam"
+    },
+    "hanam": {
+      "name": "Hanam"
+    },
+    "icheon": {
+      "name": "Icheon",
+      "highlight1": "Ceramics Village",
+      "highlight2": "Icheon Rice"
+    },
+    "yeoju": {
+      "name": "Yeoju"
+    },
+    "anseong": {
+      "name": "Anseong"
+    },
+    "osan": {
+      "name": "Osan"
+    },
+    "uiwang": {
+      "name": "Uiwang"
+    },
+    "gwacheon": {
+      "name": "Gwacheon"
+    },
+    "bucheon": {
+      "name": "Bucheon"
+    },
+    "gwangmyeong": {
+      "name": "Gwangmyeong"
+    },
+    "chuncheon": {
+      "name": "Chuncheon",
+      "highlight1": "Nami Island",
+      "highlight2": "Dakgalbi Alley"
+    },
+    "wonju": {
+      "name": "Wonju",
+      "highlight1": "Museum SAN",
+      "highlight2": "Sogeumsan Suspension Bridge"
+    },
+    "pyeongchang": {
+      "name": "Pyeongchang",
+      "highlight1": "Daegwallyeong Sheep Ranch",
+      "highlight2": "Odaesan"
+    },
+    "yeongwol": {
+      "name": "Yeongwol"
+    },
+    "hoengseong": {
+      "name": "Hoengseong"
+    },
+    "jeongseon": {
+      "name": "Jeongseon"
+    },
+    "inje": {
+      "name": "Inje"
+    },
+    "taebaek": {
+      "name": "Taebaek"
+    },
+    "gangneung": {
+      "name": "Gangneung",
+      "highlight1": "Gyeongpo Pavilion",
+      "highlight2": "Anmok Coffee Street"
+    },
+    "sokcho": {
+      "name": "Sokcho",
+      "highlight1": "Seoraksan",
+      "highlight2": "Central Market"
+    },
+    "yangyang": {
+      "name": "Yangyang",
+      "highlight1": "Surfyy Beach",
+      "highlight2": "Naksansa"
+    },
+    "donghae": {
+      "name": "Donghae"
+    },
+    "samcheok": {
+      "name": "Samcheok"
+    },
+    "goseong-gw": {
+      "name": "Goseong"
+    },
+    "cheongju": {
+      "name": "Cheongju"
+    },
+    "chungju": {
+      "name": "Chungju"
+    },
+    "jecheon": {
+      "name": "Jecheon",
+      "highlight1": "Cheongpung Lake",
+      "highlight2": "Uirimji"
+    },
+    "danyang": {
+      "name": "Danyang",
+      "highlight1": "Danyang Palgyeong",
+      "highlight2": "Dodamsambong"
+    },
+    "gongju": {
+      "name": "Gongju",
+      "highlight1": "Gongsanseong Fortress",
+      "highlight2": "Tomb of King Muryeong"
+    },
+    "buyeo": {
+      "name": "Buyeo",
+      "highlight1": "Busosanseong Fortress",
+      "highlight2": "Baekje Cultural Land"
+    },
+    "asan": {
+      "name": "Asan"
+    },
+    "cheonan": {
+      "name": "Cheonan"
+    },
+    "nonsan": {
+      "name": "Nonsan"
+    },
+    "boryeong": {
+      "name": "Boryeong",
+      "highlight1": "Mud Festival",
+      "highlight2": "Daecheon Beach"
+    },
+    "taean": {
+      "name": "Taean",
+      "highlight1": "Anmyeondo",
+      "highlight2": "Kkotji Beach"
+    },
+    "seosan": {
+      "name": "Seosan"
+    },
+    "dangjin": {
+      "name": "Dangjin"
+    },
+    "jeonju": {
+      "name": "Jeonju",
+      "highlight1": "Hanok Village",
+      "highlight2": "Makgeolli Alley"
+    },
+    "gunsan": {
+      "name": "Gunsan",
+      "highlight1": "Modern History Street",
+      "highlight2": "Lee Seongdang"
+    },
+    "iksan": {
+      "name": "Iksan"
+    },
+    "gochang": {
+      "name": "Gochang"
+    },
+    "jeongeup": {
+      "name": "Jeongeup"
+    },
+    "namwon": {
+      "name": "Namwon"
+    },
+    "gimje": {
+      "name": "Gimje"
+    },
+    "yeosu": {
+      "name": "Yeosu",
+      "highlight1": "Maritime Cable Car",
+      "highlight2": "Odongdo"
+    },
+    "suncheon": {
+      "name": "Suncheon",
+      "highlight1": "Suncheon Bay National Garden",
+      "highlight2": "Naganeupseong Folk Village"
+    },
+    "mokpo": {
+      "name": "Mokpo",
+      "highlight1": "Maritime Cable Car",
+      "highlight2": "Yudalsan"
+    },
+    "wando": {
+      "name": "Wando"
+    },
+    "gangjin": {
+      "name": "Gangjin"
+    },
+    "yeonggwang": {
+      "name": "Yeonggwang"
+    },
+    "haenam": {
+      "name": "Haenam"
+    },
+    "goheung": {
+      "name": "Goheung"
+    },
+    "yeongam": {
+      "name": "Yeongam"
+    },
+    "damyang": {
+      "name": "Damyang",
+      "highlight1": "Juknokwon",
+      "highlight2": "Metasequoia Road"
+    },
+    "gwangyang": {
+      "name": "Gwangyang"
+    },
+    "boseong": {
+      "name": "Boseong",
+      "highlight1": "Green Tea Fields",
+      "highlight2": "Yulpo Beach"
+    },
+    "naju": {
+      "name": "Naju"
+    },
+    "haeundae": {
+      "name": "Haeundae",
+      "highlight1": "Haeundae Beach",
+      "highlight2": "Dongbaekseom"
+    },
+    "gwangalli": {
+      "name": "Gwangalli & Suyeong",
+      "highlight1": "Gwangandaegyo Bridge",
+      "highlight2": "Gwangalli Beach"
+    },
+    "gijang": {
+      "name": "Gijang",
+      "highlight1": "Jukseong Dream Cathedral",
+      "highlight2": "Daebyeon Port"
+    },
+    "songjeong": {
+      "name": "Songjeong & Cheongsapo"
+    },
+    "nampo": {
+      "name": "Nampo & Jung-gu",
+      "highlight1": "Jagalchi Market",
+      "highlight2": "BIFF Square"
+    },
+    "seomyeon": {
+      "name": "Seomyeon & Bujeon"
+    },
+    "gamcheon": {
+      "name": "Gamcheon Culture Village",
+      "highlight1": "Gamcheon Village",
+      "highlight2": "Skywalk"
+    },
+    "yeongdo": {
+      "name": "Yeongdo"
+    },
+    "geumjeong": {
+      "name": "Geumjeong & Oncheonjang"
+    },
+    "gangseo-bs": {
+      "name": "Gangseo & Gadeokdo"
+    },
+    "dadaepo": {
+      "name": "Saha & Dadaepo"
+    },
+    "dongseongno": {
+      "name": "Dongseongno & Jung-gu",
+      "highlight1": "Dongseong-ro",
+      "highlight2": "Seomun Market"
+    },
+    "gimgwangseok": {
+      "name": "Kim Gwangseok Street",
+      "highlight1": "Kim Gwangseok Street",
+      "highlight2": "Bangcheon Market"
+    },
+    "suseongmot": {
+      "name": "Suseong Lake & Beomeo",
+      "highlight1": "Suseong Lake",
+      "highlight2": "Suseong Resort"
+    },
+    "palgongsan": {
+      "name": "Palgongsan",
+      "highlight1": "Donghwasa",
+      "highlight2": "Gatbawi"
+    },
+    "dalseong": {
+      "name": "Biseulsan & Dalseong",
+      "highlight1": "Biseulsan Royal Azaleas",
+      "highlight2": "Dalseong Wetlands"
+    },
+    "gunwi": {
+      "name": "Gunwi"
+    },
+    "ganjeolgot": {
+      "name": "Ganjeolgot",
+      "highlight1": "Ganjeolgot Lighthouse",
+      "highlight2": "Sunrise Spot"
+    },
+    "daewangam": {
+      "name": "Daewangam",
+      "highlight1": "Daewangam Park",
+      "highlight2": "Ilsan Beach"
+    },
+    "taehwagang": {
+      "name": "Taehwagang"
+    },
+    "bangudae": {
+      "name": "Bangudae"
+    },
+    "gyeongju": {
+      "name": "Gyeongju",
+      "highlight1": "Hwangnidan-gil",
+      "highlight2": "Bulguksa"
+    },
+    "andong": {
+      "name": "Andong",
+      "highlight1": "Hahoe Village",
+      "highlight2": "Dosanseowon"
+    },
+    "yeongju": {
+      "name": "Yeongju"
+    },
+    "mungyeong": {
+      "name": "Mungyeong"
+    },
+    "pohang": {
+      "name": "Pohang",
+      "highlight1": "Homigot",
+      "highlight2": "Space Walk"
+    },
+    "yeongdeok": {
+      "name": "Yeongdeok"
+    },
+    "uljin": {
+      "name": "Uljin"
+    },
+    "dokdo": {
+      "name": "Dokdo & Ulleungdo",
+      "highlight1": "Dokdo",
+      "highlight2": "Ulleungdo"
+    },
+    "gumi": {
+      "name": "Gumi"
+    },
+    "gimcheon": {
+      "name": "Gimcheon"
+    },
+    "yeongcheon": {
+      "name": "Yeongcheon"
+    },
+    "sangju": {
+      "name": "Sangju"
+    },
+    "gyeongsan": {
+      "name": "Gyeongsan"
+    },
+    "tongyeong": {
+      "name": "Tongyeong",
+      "highlight1": "Luge",
+      "highlight2": "Dongpirang Village"
+    },
+    "geoje": {
+      "name": "Geoje",
+      "highlight1": "Windy Hill",
+      "highlight2": "Oedo"
+    },
+    "namhae": {
+      "name": "Namhae",
+      "highlight1": "German Village",
+      "highlight2": "Darangyi Village"
+    },
+    "goseong-gn": {
+      "name": "Goseong"
+    },
+    "jinju": {
+      "name": "Jinju",
+      "highlight1": "Lantern Festival",
+      "highlight2": "Jinjuseong Fortress"
+    },
+    "changwon": {
+      "name": "Changwon"
+    },
+    "hapcheon": {
+      "name": "Hapcheon"
+    },
+    "miryang": {
+      "name": "Miryang"
+    },
+    "hamyang": {
+      "name": "Hamyang"
+    },
+    "sancheong": {
+      "name": "Sancheong"
+    },
+    "hadong": {
+      "name": "Hadong",
+      "highlight1": "Hwagae Market",
+      "highlight2": "Ssanggyesa"
+    },
+    "geochang": {
+      "name": "Geochang"
+    },
+    "gimhae": {
+      "name": "Gimhae"
+    },
+    "yangsan": {
+      "name": "Yangsan"
+    },
+    "changnyeong": {
+      "name": "Changnyeong"
+    },
+    "uiryeong": {
+      "name": "Uiryeong"
+    },
+    "jeju": {
+      "name": "Jeju City",
+      "highlight1": "Hallasan",
+      "highlight2": "Seongsan Ilchulbong"
+    },
+    "seogwipo": {
+      "name": "Seogwipo",
+      "highlight1": "Cheonjiyeon Falls",
+      "highlight2": "Olle Trail"
+    }
+  },
+  "planner.region": {
+    "seoul-areas": {
+      "label": "Seoul",
+      "subLabel": "Key areas by district"
+    },
+    "gyeonggi-north": {
+      "label": "Northern Gyeonggi",
+      "subLabel": "Goyang, Paju, Uijeongbu, Namyangju, etc."
+    },
+    "gyeonggi-south": {
+      "label": "Southern Gyeonggi",
+      "subLabel": "Suwon, Yongin, Seongnam, Pyeongtaek, etc."
+    },
+    "gangwon": {
+      "label": "Gangwon-do",
+      "subLabel": "Gangwon Special Self-Governing Province"
+    },
+    "chungbuk": {
+      "label": "Chungcheongbuk-do",
+      "subLabel": "Cheongju, Chungju, Jecheon, Danyang"
+    },
+    "chungnam": {
+      "label": "Chungcheongnam-do",
+      "subLabel": "Gongju, Buyeo, Boryeong, Taean, etc."
+    },
+    "jeonbuk": {
+      "label": "Jeonbuk",
+      "subLabel": "Jeonbuk Special Self-Governing Province"
+    },
+    "jeonnam": {
+      "label": "Jeollanam-do",
+      "subLabel": "Yeosu, Suncheon, Mokpo, Damyang, etc."
+    },
+    "busan": {
+      "label": "Busan",
+      "subLabel": "Busan Metropolitan City"
+    },
+    "daegu": {
+      "label": "Daegu",
+      "subLabel": "Daegu Metropolitan City"
+    },
+    "ulsan": {
+      "label": "Ulsan",
+      "subLabel": "Ulsan Metropolitan City"
+    },
+    "gyeongbuk": {
+      "label": "Gyeongsangbuk-do",
+      "subLabel": "Gyeongju, Pohang, Andong, etc."
+    },
+    "gyeongnam": {
+      "label": "Gyeongsangnam-do",
+      "subLabel": "Tongyeong, Geoje, Jinju, Changwon, etc."
+    },
+    "jeju": {
+      "label": "Jeju-do",
+      "subLabel": "Jeju Special Self-Governing Province"
+    }
+  },
+  "sidebar": {
+    "tourstar": "Bintang Wisata",
+    "planner": "Perencana Perjalanan",
+    "schedule": "Rencana Saya",
+    "guide": "Jelajahi",
+    "groupchat": "Obrolan Grup",
+    "friends": "Daftar teman",
+    "whisper": "Bisikan",
+    "profile": "Profil Saya",
+    "customer": "Pusat Pelanggan",
+    "logout": "Keluar",
+    "section_category": "Kategori",
+    "settings_short": "Pengaturan"
+  },
+  "screens": {
+    "unknown": "Unknown",
+    "user_fallback": "User",
+    "tourstar": {
+      "subtitle": "AI memilih foto perjalanan terbaik Anda; tambahkan komentar singkat agar postingan lebih menarik.",
+      "search_placeholder": "Ketik untuk mencari...",
+      "tab_all": "Semua",
+      "tab_mine_n": "Postingan saya ({count})",
+      "tab_friends_n": "Postingan teman ({count})",
+      "tab_bookmarked_n": "Simpan ({count})",
+      "sort_latest": "Terbaru",
+      "sort_honor": "Paling banyak disukai",
+      "sort_comments": "Paling banyak komentar",
+      "fab_new_post": "Posting Baru",
+      "author_caption_self": "Catat dan bagikan momen perjalanan berharga Anda",
+      "author_caption_other": "Postingan dari pengguna ini",
+      "stat_posts": "Postingan",
+      "stat_scraps": "Simpan",
+      "stat_friends": "Teman",
+      "friend_badge": "Teman",
+      "empty_title": "Belum ada perjalanan yang dicatat",
+      "empty_hint": "Gunakan tombol \"Posting Baru\" di atas untuk mencatat perjalanan pertama Anda",
+      "empty_cta": "Catat perjalanan",
+      "ai_banner_title": "AI secara otomatis memilih foto terbaik Anda",
+      "ai_banner_body": "Unggah foto perjalanan dan AI menyarankan yang terbaik; tambahkan komentar singkat agar postingan rapi.",
+      "back_short": "Kembali ke semua feed",
+      "friends_only_feed": "Hanya teman yang dapat melihat feed penulis ini.",
+      "delete_post_title": "Hapus posting?",
+      "delete_post_confirm": "Yakin ingin menghapus posting ini?",
+      "delete_post_failed": "Gagal menghapus posting.",
+      "create_title": "Buat posting perjalanan baru",
+      "create_subtitle": "AI memilih foto terbaik ✨",
+      "photos_selected_n": "Foto ({count} dipilih)",
+      "pick_processing": "Memproses…",
+      "pick_photos": "Pilih foto",
+      "date_range_placeholder": "Rentang tanggal",
+      "date_range_summary": "{start} ~ {end} ({count} foto)",
+      "clear": "Hapus",
+      "upload_ai": "Unggah + analisis AI",
+      "ai_ranking_title": "Peringkat AI",
+      "ai_ranking_pick_n": "{selected}/{total} dipilih",
+      "comment_one_line": "Komentar singkat",
+      "comment_ai_hint": "Tulis sebentar—AI akan merapikannya",
+      "auto": "Otomatis",
+      "tone_mbti": "Gaya tulis (MBTI)",
+      "tone_auto_default": "Otomatis (default)",
+      "visibility_title": "Visibilitas",
+      "visibility_public": "Publik",
+      "visibility_private": "Privat",
+      "posting": "Memposting…",
+      "publish": "Posting",
+      "max_photos_snackbar": "Maksimal {max} foto.",
+      "title_required": "Masukkan judul.",
+      "upload_new_failed": "Gagal mengunggah foto baru.",
+      "edit_failed": "Tidak dapat menyimpan.",
+      "save_error": "Error saat menyimpan: {error}",
+      "add_photo": "Tambah foto",
+      "photos_label": "Foto",
+      "photos_edit_hint": "Ketuk × untuk hapus · tambah dari galeri.",
+      "edit_post_title": "Edit posting",
+      "field_title": "Judul",
+      "field_place": "Tempat",
+      "field_content": "Isi",
+      "field_tags": "Tag (pisahkan koma)",
+      "edit_save": "Simpan",
+      "mbti_group_nt": "Analis / NT",
+      "mbti_group_nf": "Diplomat / NF",
+      "mbti_group_sj": "Sentinel / SJ",
+      "mbti_group_sp": "Penjelajah / SP",
+      "time_just_now": "Baru saja",
+      "time_minutes_ago": "{n} mnt lalu",
+      "time_hours_ago": "{n} jam lalu",
+      "time_days_ago": "{n} hari lalu",
+      "share_link_copied": "Tautan berbagi disalin.",
+      "net_likes": "Bersih {likes}",
+      "action_edit": "Edit",
+      "comments_inline": "Komentar {count}",
+      "photos_inline": "{count} foto",
+      "comments_heading_n": "Komentar ({count})",
+      "first_comment": "Jadilah yang pertama berkomentar.",
+      "comment_hint": "Tulis komentar",
+      "comment_submit": "Kirim",
+      "share": "Bagikan",
+      "status_hint_select_upload": "Pilih foto untuk mulai mengunggah.",
+      "status_picked_exif_checking": "Membaca tanggal foto… ({count} foto)",
+      "status_pick_photos_first": "Pilih foto terlebih dahulu.",
+      "status_date_filter_applied": "Filter tanggal diterapkan.",
+      "status_date_filter_cleared": "Filter tanggal dihapus.",
+      "status_need_login": "Silakan masuk.",
+      "status_cannot_resolve_user": "Tidak dapat memverifikasi akun.",
+      "status_upload_analyze_start": "Mengunggah dan menganalisis…",
+      "status_upload_done_analyzing": "Diunggah. Menganalisis…",
+      "status_analyze_done_ranked": "Peringkat siap ({count} item).",
+      "status_upload_error": "Kesalahan unggah/analisis: {detail}",
+      "status_pick_ranked_first": "Pilih foto dari peringkat AI terlebih dahulu.",
+      "status_generating_auto_comment": "Membuat komentar…",
+      "status_auto_comment_done": "Komentar dibuat.",
+      "status_auto_comment_empty": "Tidak ada komentar otomatis.",
+      "status_auto_comment_error": "Komentar otomatis gagal: {error}",
+      "status_editing_post": "Mengedit postingan…",
+      "status_post_updated": "Postingan diperbarui.",
+      "status_post_update_error": "Pembaruan gagal: {error}",
+      "status_deleting_post": "Menghapus…",
+      "status_post_deleted": "Dihapus.",
+      "status_delete_forbidden": "Anda tidak dapat menghapus postingan ini.",
+      "status_post_delete_error": "Penghapusan gagal: {detail}",
+      "status_cannot_vote_own": "Tidak dapat memilih postingan sendiri.",
+      "status_honor_vote_error": "Pemilihan gagal: {error}",
+      "status_saving_post": "Menyimpan…",
+      "status_post_saved": "Disimpan.",
+      "status_post_save_error": "Penyimpanan gagal: {error}",
+      "status_comment_required": "Masukkan komentar.",
+      "status_mbti_generating": "Membuat dengan gaya yang dipilih…",
+      "status_post_generate_done": "Selesai.",
+      "status_post_generate_error": "Pembuatan gagal: {error}",
+      "status_select_ai_rank_first": "Pilih foto peringkat AI terlebih dahulu.",
+      "status_comment_draft_required": "Masukkan draf komentar.",
+      "status_publish_generating": "Menerbitkan…",
+      "status_publish_error": "Penerbitan gagal: {error}",
+      "status_no_exif_fallback": "Tidak ada tanggal di EXIF. Mengurutkan menurut nama file.",
+      "status_shot_date_done": "Tanggal pengambilan {range} (EXIF {known}/{total} foto)"
+    },
+    "planner": {
+      "tab_standard": "Standard",
+      "tab_user_content": "User content",
+      "tab_k_content": "K-Content",
+      "search_hint": "Cari kota/tempat (mis. Gangneung, Desa Hanok)",
+      "section_metro": "Akses cepat kota besar",
+      "section_province": "Per provinsi/wilayah",
+      "top_spots_row": "Populer TOP",
+      "more_destinations": "More destinations",
+      "start_date": "Mulai {date}",
+      "end_date": "Selesai {date}",
+      "transport_car": "🚗 Mobil",
+      "transport_transit": "🚇 Transport umum",
+      "transport_walk": "🚶 Jalan kaki",
+      "generate_route": "✨ Buat rute",
+      "generating": "Mencari info akurat…",
+      "hint_set_date": "Atur tanggal lalu\nbuat rute",
+      "ai_routes_title": "Rute rekomendasi AI",
+      "making_schedule_progress": "AI sedang membuat jadwal untuk {name}…",
+      "boost_web_search": "Perkuat rekomendasi dengan pencarian web",
+      "schedule_title": "Jadwal perjalanan",
+      "status_enter_region": "Masukkan kode wilayah untuk saran rute (mis. seoul, busan)",
+      "status_region_required": "Masukkan kode wilayah.",
+      "status_pick_route": "Pilih wilayah dan rute terlebih dahulu.",
+      "msg_generating_routes": "Membuat rute rekomendasi...",
+      "msg_no_routes": "Tidak bisa mendapatkan rute rekomendasi.",
+      "msg_routes_received": "Menerima {count} rute rekomendasi.",
+      "msg_route_failed": "Gagal mengambil rute: {error}",
+      "msg_schedule_generating": "Membuat jadwal untuk rute terpilih...",
+      "msg_no_schedule": "Tidak bisa mendapatkan jadwal.",
+      "msg_schedule_done": "Jadwal siap ({count} item)",
+      "msg_schedule_failed": "Gagal mengambil jadwal: {error}",
+      "msg_nothing_to_save": "Tidak ada jadwal untuk disimpan.",
+      "msg_saving_plan": "Menyimpan jadwal...",
+      "msg_saved_plan": "Tersimpan (plan id: {id})",
+      "msg_save_failed": "Gagal menyimpan: {error}",
+      "dest_plan_cta": "Rencanakan perjalanan {name} dengan AI",
+      "save_plan": "💾 Simpan",
+      "saved_goto_schedule": "✅ Tersimpan · Buka pengelola jadwal",
+      "schedule_pick_route_hint": "Pilih sebuah rute",
+      "schedule_item_count": "{count} item",
+      "route_name_fallback": "rute terpilih",
+      "grid_header_metro": "Kota metropolitan",
+      "grid_header_province": "Wilayah provinsi",
+      "search_empty": "Tidak ada hasil",
+      "search_result": "“{query}”: {count} tempat"
+    },
+    "schedule": {
+      "new_route": "+ New route",
+      "empty_no_plans": "Belum ada rencana yang disimpan.",
+      "empty_go_planner": "Buat rute AI di Perencana Perjalanan.",
+      "show_all": "Lihat semua",
+      "plan_items": "{count} jadwal"
+    },
+    "guide": {
+      "landing_title": "Place picks",
+      "landing_subtitle": "Choose food spots or events and explore in one place.",
+      "restaurant_label": "Restaurant picks",
+      "restaurant_desc": "Browse by area",
+      "event_label": "Event picks",
+      "event_desc": "Culture festivals nationwide"
+    },
+    "profile": {
+      "honor": "Honor {score}",
+      "account_info": "Account",
+      "travel_profile": "Travel profile",
+      "label_gender": "Jenis kelamin",
+      "label_age": "Kelompok usia",
+      "label_diet": "Preferensi makanan",
+      "label_religion": "Agama",
+      "label_nationality": "Kewarganegaraan",
+      "label_account_mgmt": "Kelola akun",
+      "msg_initial": "Tarik ke bawah atau ketuk segarkan untuk memuat profil.",
+      "msg_loading": "Memuat profil…",
+      "msg_loaded": "Profil dimuat.",
+      "msg_load_failed": "Tidak dapat memuat profil: {error}",
+      "msg_no_user_save": "Tidak ada informasi pengguna untuk disimpan.",
+      "msg_saving_account": "Menyimpan akun…",
+      "msg_account_saved": "Akun disimpan.",
+      "msg_account_save_failed": "Tidak dapat menyimpan akun: {error}",
+      "msg_no_app_user": "Tidak dapat menemukan ID pengguna aplikasi.",
+      "msg_saving_travel": "Menyimpan profil perjalanan…",
+      "msg_travel_saved": "Profil perjalanan disimpan.",
+      "msg_travel_save_failed": "Tidak dapat menyimpan profil perjalanan: {error}",
+      "msg_no_user_id": "Tidak dapat menemukan ID pengguna.",
+      "msg_deleting_account": "Menghapus akun…",
+      "msg_account_deleted": "Akun dihapus.",
+      "msg_delete_failed": "Tidak dapat menghapus akun: {error}"
+    },
+    "friends": {
+      "pending_title": "Friend requests",
+      "list_title": "Friends",
+      "empty_title": "No friends yet",
+      "empty_hint": "Tap a nickname on Travel Feed posts to add friends.",
+      "banner_hint": "Tap a nickname on Travel Feed posts to send a friend request.",
+      "delete_dialog_title": "Remove friend",
+      "delete_dialog_body": "Remove {{name}} from your friends list?",
+      "load_error": "Could not load friends: {{error}}",
+      "request_sent": "Sent you a friend request",
+      "accept": "Accept",
+      "badge_friend": "Friend",
+      "delete_tooltip": "Remove friend",
+      "friend_honor": "Honor {score}"
+    },
+    "chat": {
+      "room_list_header": "Ruang obrolan grup",
+      "cannot_load_rooms": "Could not load chat rooms.",
+      "honor_rooms_note": "Ruang yang bisa diakses bergantung pada level honor. Peringkat lebih tinggi juga bisa memasuki ruang peringkat lebih rendah.",
+      "group_room_title": "Ruang {tier}",
+      "no_messages": "No messages yet.",
+      "hint_message": "Type a message",
+      "min_honor_required": "Min honor {min}+",
+      "open_to_all": "Open to all",
+      "honor_insufficient": "Not enough honor",
+      "me": "Me",
+      "post_loading": "Loading post...",
+      "post_load_failed": "Could not load the post.",
+      "post_load_failed_nav": "Could not load the post. (Tap to open)",
+      "tourstar_post_badge": "Travel Feed post",
+      "tap_to_view_post": "Tap to view post",
+      "tap_to_view_short": "Tap to view",
+      "whisper_to": "Whisper to {{name}}",
+      "send_whisper": "Send whisper",
+      "sending": "Sending...",
+      "tab_inbox": "Inbox",
+      "tab_sent": "Sent",
+      "refreshing_snackbar": "Refreshing...",
+      "refresh": "Refresh",
+      "inbox_empty": "No messages in inbox.",
+      "sent_empty": "No sent messages.",
+      "compose_title": "New whisper",
+      "recipient_id_label": "Recipient user ID",
+      "recipient_id_hint": "Long-press a message in chat to whisper",
+      "message_body_hint": "Enter your message",
+      "send": "Send",
+      "from_line": "From: {{name}}",
+      "to_line": "To: {{name}}",
+      "tier_silver": "Silver",
+      "tier_gold": "Gold",
+      "tier_platinum": "Platinum",
+      "tier_diamond": "Diamond"
+    },
+    "guide_explore": {
+      "gemini_notice": "AI menyarankan tempat baru berdasarkan preferensi dan konteks Anda.",
+      "cat_all": "Semua",
+      "cat_festival": "Acara",
+      "cat_activity": "Aktivitas K",
+      "cat_historic": "Sejarah & warisan",
+      "cat_culture": "Budaya lokal",
+      "cat_nature": "Alam & penyegaran",
+      "cat_restaurant": "Kuliner",
+      "cat_cafe": "Kafe",
+      "prompt_activity": "Rekomendasikan aktivitas K dan pengalaman menarik yang bisa saya coba di Korea.",
+      "prompt_historic": "Rekomendasikan situs bersejarah, warisan budaya, dan landmark di Korea.",
+      "prompt_culture": "Rekomendasikan tempat untuk merasakan budaya Korea, pasar, dan suasana lingkungan.",
+      "prompt_nature": "Rekomendasikan alam, taman, dan tempat santai untuk perjalanan penyegaran di Korea.",
+      "prompt_restaurant": "Rekomendasikan restoran enak dan tempat makan lokal di Korea.",
+      "prompt_cafe": "Rekomendasikan kafe aesthetic, dessert, dan spot kopi di Korea.",
+      "places_none": "Tidak ada tempat untuk direkomendasikan.",
+      "places_extra": ", dan {{n}} lainnya",
+      "places_summary": "{{list}} — {{count}} places in total.\nTap a map marker for details.",
+      "dur_min": "~{{m}} min",
+      "dur_hr": "~{{h}} h {{rm}} min",
+      "rate_limit": "Too many requests. Try again in 1 second.",
+      "no_coords_hint": "\n\n*Could not find coordinates for the map. Try a clearer place name.*",
+      "answer_failed": "Could not load the answer.",
+      "festival_ok": "Showing {{n}} events on the map ({{year}}-{{month}}).",
+      "festival_empty": "No events with coordinates, or empty API response.",
+      "festival_err": "Could not load events: {{error}}",
+      "loading_guide": "Generating guide…",
+      "loading_festival": "Loading events…",
+      "chat_expand": "Open chat & details",
+      "chat_collapse": "Collapse chat & details",
+      "input_hint": "Tanyakan tentang suatu tempat…",
+      "replying": "Writing reply…",
+      "address_copied": "Address copied",
+      "copy_address": "Copy address",
+      "close": "Close",
+      "driving_route": "Driving route",
+      "period": "Dates: {{start}} – {{end}}",
+      "venue": "Venue: {{name}}",
+      "homepage": "Website",
+      "category_label": "Category",
+      "nearby_title": "Nearby restaurants & cafes",
+      "driving_loading": "Loading route…",
+      "driving_unsupported": "Driving directions not available for this segment.",
+      "driving_line": "Drive: {{duration}} · {{distance}}",
+      "toll": "Toll about ₩{{amount}}",
+      "no_detail": "No description available.",
+      "info_none": "Tidak ada informasi",
+      "food_category_fallback": "Restoran · kafe"
+    },
+    "k_content": {
+      "app_title": "K-Content · {{id}}",
+      "date_settings": "Dates",
+      "start_date": "Start {{date}}",
+      "end_date": "End {{date}}",
+      "generating": "Generating…",
+      "generate_schedule": "Build itinerary",
+      "image_loading": "Loading image…",
+      "recommended_schedule": "Suggested itinerary",
+      "saved_view_plan": "Saved · Open My Plan",
+      "save": "Save",
+      "save_failed": "Save failed: {{error}}"
+    }
+  },
+  "home": {
+    "profile_banner": "✨ Complete your travel profile for personalized picks",
+    "setup_profile": "Set up",
+    "news_pending": "Analisis AI masih berlangsung.",
+    "rebate_period": "2026.4 ~ 6 · Program percontohan",
+    "rebate_title": "🎫 Pengembalian hingga 50% untuk perjalanan pedesaan tertentu",
+    "rebate_rich_a": "Get back about ",
+    "rebate_rich_half": "half",
+    "rebate_rich_b": " of spending as local gift certificates. Up to ",
+    "rebate_rich_10": "₩100,000",
+    "rebate_rich_c": " per person, up to ",
+    "rebate_rich_20": "₩200,000",
+    "rebate_rich_d": " for groups of 2+.",
+    "visit_korea": "Visit Korea ↗",
+    "rebate_expand": "Cara pakai · Wilayah yang memenuhi syarat",
+    "rebate_collapse": "Sembunyikan cara pakai",
+    "rebate_notice": "Catatan: Wajib pendaftaran & persetujuan awal. Dapat ditutup lebih awal jika anggaran habis. Detail berbeda per daerah; cek situs resmi awal April.",
+    "rebate_regions": "16 wilayah memenuhi syarat · Lihat rute di Perencana atau panduan resmi",
+    "k_content_title": "🎭 Perjalanan tema K-content",
+    "rebate_s1t": "Apply",
+    "rebate_s1d": "Check eligible areas on visitkorea.or.kr and get approval before travel.",
+    "rebate_s2t": "Travel",
+    "rebate_s2d": "Spend on food, lodging, etc. in approved areas (keep receipts).",
+    "rebate_s3t": "Submit proof",
+    "rebate_s3d": "Submit receipts per local government instructions.",
+    "rebate_s4t": "Rebate",
+    "rebate_s4d": "Receive ~50% as mobile local gift certificates.",
+    "rebate_s5t": "Use",
+    "rebate_s5d": "Use at local shops, cafes, online malls this year."
+  },
+  "settings": {
+    "title": "Pengaturan",
+    "saved": "Tersimpan.",
+    "error": {
+      "load_user": "Tidak dapat memuat data pengguna.",
+      "save": "Gagal menyimpan.",
+      "save_during": "Terjadi kesalahan saat menyimpan."
+    },
+    "account": {
+      "title": "Informasi akun",
+      "email": "Email",
+      "nickname": "Nama panggilan",
+      "default": "(default)",
+      "nickname_placeholder": "Kosongkan untuk menampilkan nama",
+      "nickname_hint": "Jika kosong, nama Anda akan ditampilkan.",
+      "honor": "Kehormatan",
+      "point": "poin",
+      "provider": "Penyedia"
+    },
+    "withdraw": {
+      "title": "Hapus akun",
+      "desc": "Menghapus akun akan menghapus data dan tidak dapat dipulihkan.",
+      "button": "Hapus akun",
+      "confirm_desc": "Yakin ingin menghapus? Ketik Delete account di bawah untuk melanjutkan.",
+      "placeholder": "Delete account",
+      "submit": "Hapus",
+      "error": "Gagal menghapus akun.",
+      "error_during": "Terjadi kesalahan saat menghapus akun."
+    },
+    "profile": {
+      "title": "Profil perjalanan",
+      "subtitle": "Digunakan untuk rekomendasi AI yang dipersonalisasi",
+      "save": "Simpan profil perjalanan",
+      "saved": "Profil perjalanan disimpan."
+    }
+  },
+  "customer": {
+    "subscription": {
+      "title_mobile": "Langganan",
+      "title": "Layanan langganan",
+      "subtitle": "Setelah masa uji coba gratis, pilih paket yang Anda inginkan.",
+      "safety": "Pembayaran aman · Batal kapan saja",
+      "free": {
+        "kicker": "Mulai gratis hari ini",
+        "note": "Setelah 7 hari gratis, akan beralih otomatis ke paket yang dipilih."
+      },
+      "plan_monthly": {
+        "title": "Paket bulanan",
+        "badge": "Dasar",
+        "price": "₩5.900 / bulan",
+        "note": "Ditagih bulanan",
+        "features": {
+          "1": "Ringkasan rekomendasi ahli",
+          "2": "Balasan prioritas untuk pertanyaan/panduan",
+          "3": "Termasuk pembaruan fitur terbaru"
+        }
+      },
+      "plan_yearly": {
+        "title": "Paket tahunan",
+        "badge": "Direkomendasikan",
+        "price": "₩46.800 / tahun",
+        "note": "Ditagih tahunan",
+        "oldPrice": "Setara sekitar ₩7.000/bulan",
+        "features": {
+          "1": "Semua manfaat paket bulanan",
+          "2": "Diskon untuk periode setahun",
+          "3": "Dukungan prioritas dan stabilitas lebih baik"
+        }
+      },
+      "cta_monthly": "Mulai langganan bulanan",
+      "cta_yearly": "Mulai langganan tahunan",
+      "selected": {
+        "title": "Paket terpilih",
+        "compare": "Bandingkan: ",
+        "includes": "Manfaat yang termasuk"
+      },
+      "agree": {
+        "service_title": "Setuju penggunaan layanan",
+        "service_desc": "Diperlukan untuk pembayaran dan penggunaan langganan.",
+        "billing_title": "Setuju pemberitahuan penagihan",
+        "billing_desc": "Informasi tentang pergantian otomatis dan siklus penagihan."
+      },
+      "demo_alert": "(UI demo) API pembayaran nyata akan diintegrasikan berikutnya.",
+      "demo_note": "Ini layar demo. Pembayaran/ pergantian otomatis nyata di produksi."
+    },
+    "emergency": {
+      "title_mobile": "Bantuan darurat",
+      "title": "Bantuan darurat & tips perjalanan",
+      "subtitle": "Panduan per kategori untuk keadaan darurat yang mungkin dialami orang asing di Korea.",
+      "share_button": "Bagikan keadaan darurat",
+      "consulate": {
+        "title": "Kedutaan / Konsulat",
+        "nationality": "Kewarganegaraan",
+        "find_contact": "Cari kontak konsulat",
+        "callcenter": "Pusat panggilan konsuler 24 jam 02-3210-0404",
+        "unknown_nationality": "Tidak diketahui"
+      },
+      "categories": {
+        "title": "Kategori darurat",
+        "selected": "Dipilih",
+        "view": "Lihat",
+        "items": {
+          "passport": {
+            "title": "Paspor / visa & tinggal",
+            "short": "Kehilangan paspor atau butuh bantuan visa/tinggal",
+            "steps": {
+              "1": "Jika bisa, siapkan salinan/foto dan konfirmasi kehilangan di penginapan/polisi.",
+              "2": "Hubungi kedutaan/konsulat untuk penggantian atau dokumen sementara.",
+              "3": "Siapkan nomor laporan polisi jika diperlukan."
+            }
+          },
+          "lost": {
+            "title": "Laporan kehilangan / pencurian",
+            "short": "Dompet, ponsel, atau barang penting hilang",
+            "steps": {
+              "1": "Jika ponsel/akun mungkin disalahgunakan, hentikan autentikasi dan ubah sandi.",
+              "2": "Lapor ke polisi/pusat barang hilang dan dapatkan nomor perkara.",
+              "3": "Jika paspor/kartu ikut hilang, segera hubungi konsulat."
+            }
+          },
+          "safety": {
+            "title": "Kejahatan / kekerasan / ancaman",
+            "short": "Penipuan, pemukulan, ancaman, atau bahaya di sekitar",
+            "steps": {
+              "1": "Segera pindah ke tempat aman dan minta bantuan.",
+              "2": "Jika terluka hubungi 119 (medis) atau 112 (polisi).",
+              "3": "Catat waktu/tempat dan simpan bukti (foto, pesan)."
+            }
+          },
+          "medical": {
+            "title": "Medis darurat / kecelakaan",
+            "short": "Sakit mendadak atau cedera kecelakaan",
+            "steps": {
+              "1": "Hubungi 119 atau 112 sesuai kebutuhan dan dapatkan pertolongan pertama.",
+              "2": "Jika rumah sakit butuh penerjemah, minta bantuan kedutaan/konsulat.",
+              "3": "Beritahu alergi, obat, dan penyakit kronis ke staf medis."
+            }
+          },
+          "disaster": {
+            "title": "Kebakaran / bencana / evakuasi",
+            "short": "Kebakaran, hujan lebat, mati listrik, dll.",
+            "steps": {
+              "1": "Ikuti alarm/petunjuk menuju jalur evakuasi aman.",
+              "2": "Ada korban luka: amankan dulu, lalu minta penyelamatan.",
+              "3": "Bagikan lokasi dan situasi ke kedutaan/penginapan."
+            }
+          },
+          "immigration": {
+            "title": "Imigrasi / deportasi & tinggal",
+            "short": "Overstay, risiko deportasi, masalah administrasi",
+            "steps": {
+              "1": "Jangan menangani sendiri; foto dokumen/pemberitahuan dan hubungi konsulat cepat.",
+              "2": "Minta bantuan hukum/penerjemah jika perlu.",
+              "3": "Hindari tindakan liar yang memengaruhi prosedur imigrasi."
+            }
+          },
+          "interpreter": {
+            "title": "Konsulat / permintaan penerjemah",
+            "short": "Hambatan bahasa menyulitkan permintaan bantuan",
+            "steps": {
+              "1": "Ringkas situasi (kapan/di mana/apa) dan bagikan ke konsulat.",
+              "2": "Siapkan nomor telepon, alamat, dan info penginapan.",
+              "3": "Mungkin perlu menelepon darurat (polisi/medis) secara paralel."
+            }
+          }
+        }
+      },
+      "detail": {
+        "badge": "Panduan respons",
+        "call_police": "112 Polisi",
+        "call_119": "119 Darurat",
+        "call_1339": "1339 KDCA (konsultasi medis)",
+        "call_consulate": "Kontak konsulat"
+      },
+      "share": {
+        "title_mobile": "Bagikan darurat",
+        "title": "Berbagi darurat publik",
+        "type_title": "Jenis darurat",
+        "type_subtitle": "Pilih jenis dan lampirkan foto/audio untuk berbagi cepat.",
+        "aria": {
+          "select_reason": "Pilih {{id}}"
+        },
+        "attach_title": "Lampiran",
+        "attach_subtitle": "Foto atau audio mempercepat berbagi.",
+        "photo_section": "Tambah foto",
+        "photo_pick": "Pilih foto",
+        "photo_empty": "Silakan pilih foto.",
+        "audio_section": "Rekam audio",
+        "recording": "Merekam: {{s}} dtk",
+        "record_ready": "Siap",
+        "optional": "Opsional",
+        "audio_start": "Mulai rekam",
+        "audio_stop": "Berhenti",
+        "audio_delete": "Hapus audio",
+        "audio_perm": "Izin mikrofon mungkin diperlukan.",
+        "now_title": "Bagikan sekarang",
+        "now_subtitle": "Demo: menampilkan konfirmasi, bukan pengiriman nyata.",
+        "call_emergency": "Panggilan darurat",
+        "start_button": "Mulai berbagi darurat",
+        "reason": {
+          "location": {
+            "label": "Butuh bantuan lokasi/keamanan",
+            "desc": "Minta bantuan berdasarkan lokasi saat ini."
+          },
+          "medical": {
+            "label": "Butuh bantuan medis",
+            "desc": "Dukungan medis darurat karena sakit atau cedera."
+          },
+          "danger": {
+            "label": "Situasi berbahaya mendesak",
+            "desc": "Keamanan segera karena kekerasan/penipuan/ancaman."
+          }
+        },
+        "alert": {
+          "audio_permission": "Periksa izin rekaman audio.",
+          "select_reason": "Pilih setidaknya satu jenis darurat.",
+          "attach_required": "Lampirkan foto atau audio.",
+          "start_demo": "Memulai berbagi darurat. (Demo)\nDipilih: {{selected}}"
+        }
+      }
+    },
+    "notices": {
+      "title": "Pengumuman",
+      "subtitle": "Periksa pengumuman terbaru.",
+      "new_button": "Tulis pengumuman baru",
+      "new_button_alert": "Fitur «Tulis pengumuman baru» akan ditambahkan nanti.",
+      "search_placeholder": "Cari pengumuman (judul/konten)",
+      "search_button": "Cari",
+      "count": "{{count}} item",
+      "no_results": "Tidak ada hasil.",
+      "seed": {
+        "3": {
+          "title": "Rilis v1.0.2 (peningkatan UX pertanyaan)",
+          "content": "Tab untuk layar pertanyaan dan riwayat."
+        },
+        "4": {
+          "title": "Diperbaiki: unggah gambar lambat di beberapa lingkungan",
+          "content": "Masalah keterlambatan unggah telah diperbaiki.\nLaporkan jika masih terjadi."
+        },
+        "5": {
+          "title": "Pembaruan filter pengumuman",
+          "content": "Filter jenis dan pencarian membantu menemukan info lebih cepat."
+        },
+        "6": {
+          "title": "Pemeliharaan server terjadwal",
+          "content": "Beberapa fitur mungkin tidak tersedia sementara.\nWaktu dan dampak lihat bagian bawah pengumuman."
+        },
+        "7": {
+          "title": "Rilis v1.0.3 (kinerja & perbaikan bug)",
+          "content": "Pembaruan ini mempercepat pemuatan dan memperbaiki bug.\nJika masalah berlanjut, hubungi pusat bantuan."
+        },
+        "author": {
+          "ops": "Tim operasi"
+        }
+      },
+      "table": {
+        "no": "No.",
+        "title": "Judul",
+        "author": "Penulis",
+        "date": "Tanggal",
+        "views": "Dilihat"
+      },
+      "aria": {
+        "select_all": "Pilih semua",
+        "select_row": "Pilih pengumuman {{id}}"
+      },
+      "modal": {
+        "meta": "oleh {{author}} · {{date}}",
+        "close": "Tutup"
+      }
+    },
+    "inquiry": {
+      "title": "Hubungi kami",
+      "tabs": {
+        "write": "Pertanyaan 1:1",
+        "list": "Pertanyaan saya"
+      },
+      "form": {
+        "subject": "Subjek",
+        "subject_placeholder": "Masukkan subjek",
+        "content": "Pesan",
+        "content_placeholder": "Jelaskan detailnya",
+        "attachments": "Lampiran",
+        "attachment_help": "Gambar (GIF, PNG, JPG) maks. 10MB per file, maks. 3",
+        "privacy_agree": "Setuju pengumpulan dan penggunaan data pribadi",
+        "sending": "Mengirim…",
+        "submit": "Kirim"
+      },
+      "list": {
+        "search_label": "Cari",
+        "search_placeholder": "Cari berdasarkan judul/konten/status",
+        "no_results": "Tidak ada hasil."
+      },
+      "status": {
+        "answered": "Dijawab",
+        "pending": "Diproses"
+      },
+      "submit_done": "Pertanyaan Anda telah dikirim.",
+      "seed": {
+        "10001": {
+          "title": "Tidak bisa mengunggah foto profil",
+          "content": "Setelah memilih gambar, unggahan berulang kali gagal."
+        },
+        "10002": {
+          "title": "Bagaimana mengubah jadwal?",
+          "content": "Ingin mengubah hanya satu hari dalam rencana tersimpan.",
+          "answer": "Buka Jadwal, pilih tanggal, lalu gunakan gulir ulang atau modifikasi AI."
+        }
+      }
+    },
+    "inquiries": {
+      "title": "Pertanyaan saya",
+      "mobile_title": "Riwayat pertanyaan",
+      "subtitle": "Lihat pertanyaan yang dikirim dan jawabannya.",
+      "my_list": "Daftar pertanyaan",
+      "write": "Tulis pertanyaan",
+      "search_placeholder": "Cari berdasarkan judul/konten/status",
+      "no_results": "Tidak ada hasil.",
+      "status": {
+        "answered": "Dijawab",
+        "pending": "Diproses"
+      },
+      "seed": {
+        "10001": {
+          "title": "Tidak bisa mengunggah foto profil",
+          "content": "Setelah memilih gambar, unggahan berulang kali gagal."
+        },
+        "10002": {
+          "title": "Bagaimana mengubah jadwal?",
+          "content": "Ingin mengubah hanya satu hari dalam rencana tersimpan.",
+          "answer": "Buka Jadwal, pilih tanggal, lalu gunakan gulir ulang atau modifikasi AI."
+        }
+      },
+      "detail": {
+        "title": "Detail pertanyaan",
+        "mobile_title": "Detail pertanyaan",
+        "back_to_list": "Kembali ke daftar",
+        "received_at": "Diterima: {{date}}",
+        "content": "Isi",
+        "attachments": "Lampiran",
+        "no_attachments": "Tidak ada lampiran.",
+        "answer": "Jawaban",
+        "answer_pending": "Jawaban sedang disiapkan, mohon tunggu.",
+        "not_found": "Pertanyaan tidak ditemukan."
+      }
+    },
+    "faq": {
+      "count": "{{count}} item",
+      "title": "Pertanyaan umum",
+      "no_results": "Tidak ada hasil pencarian.",
+      "items": {
+        "login_help": {
+          "category": "Pertanyaan",
+          "question": "Tidak bisa masuk, apa yang harus dilakukan?",
+          "answer": "Segarkan aplikasi dan coba lagi. Jika masih gagal, hubungi dukungan."
+        },
+        "first_steps": {
+          "category": "Panduan",
+          "question": "Pengguna baru harus mulai dari mana?",
+          "answer": "Gunakan Perencana Perjalanan dan Jelajahi dari beranda, lalu Kelola Jadwal."
+        },
+        "update_notes": {
+          "category": "Pengumuman",
+          "question": "Di mana melihat catatan pembaruan?",
+          "answer": "Di kategori Pengumuman Pusat Bantuan."
+        },
+        "refund_flow": {
+          "category": "Pembayaran & layanan",
+          "question": "Bagaimana pembatalan pembayaran (refund)?",
+          "answer": "Kirim pertanyaan dengan detail pembayaran dan nomor pesanan."
+        },
+        "emergency_help": {
+          "category": "Darurat & tips perjalanan",
+          "question": "Bantuan apa saat darurat dalam perjalanan?",
+          "answer": "Periksa kontak darurat dan panduan dasar, lalu hubungi dukungan jika perlu."
+        }
+      }
+    },
+    "center": {
+      "title": "Pusat bantuan",
+      "subtitle": "Temukan bantuan yang Anda butuhkan dengan cepat."
+    },
+    "search": {
+      "label": "Apa yang bisa kami bantu?",
+      "placeholder": "Masukkan kata kunci"
+    },
+    "categories": {
+      "title": "Kategori",
+      "items": {
+        "inquiry": {
+          "title": "Pertanyaan",
+          "desc": "Akun, fitur, error — pertanyaan umum"
+        },
+        "guide": {
+          "title": "Panduan pengguna",
+          "desc": "Cara menggunakan layanan dan memulai"
+        },
+        "notices": {
+          "title": "Pengumuman",
+          "desc": "Pemeliharaan, rilis, dan perubahan"
+        },
+        "payment": {
+          "title": "Pembayaran & penggunaan",
+          "desc": "Pembayaran, refund, dan langganan"
+        },
+        "emergency": {
+          "title": "Bantuan darurat & tips perjalanan",
+          "desc": "Tanggap darurat dan keselamatan"
+        }
+      }
+    },
+    "guide": {
+      "title": "Panduan pengguna",
+      "subtitle": "Lima fitur inti yang bisa dimulai dari beranda.",
+      "hero": {
+        "kicker": "Perjalanan pertama Anda bisa seperti ini",
+        "title": "Buat rute → atur jadwal → bagikan dan obrol jika perlu",
+        "steps": {
+          "planner": "Perencana perjalanan",
+          "schedule": "Jadwal",
+          "guide": "Rekomendasi tempat",
+          "social": "Tourstar / Obrolan grup"
+        },
+        "cta_planner": "Mulai perencana perjalanan",
+        "cta_groupchat": "Lihat obrolan grup"
+      },
+      "cards": {
+        "tourstar": {
+          "title": "Tourstar",
+          "subtitle": "Catat, ulas, dan bagikan perjalanan di satu tempat.",
+          "cta": "Ke Tourstar",
+          "items": {
+            "1": {
+              "title": "1) Siapkan foto/catatan",
+              "body": "Unggah foto, AI membantu judul dan ringkasan."
+            },
+            "2": {
+              "title": "2) Pilih visibilitas",
+              "body": "Publik atau privat sesuai kebutuhan."
+            },
+            "3": {
+              "title": "3) Dapatkan respons",
+              "body": "Tukar tips lewat suka/komentar, hubungkan teman."
+            }
+          },
+          "tip": {
+            "title": "Tips",
+            "body": "Judul pendek; isi urut: kapan/di mana/apa yang disukai."
+          }
+        },
+        "planner": {
+          "title": "Perencana perjalanan",
+          "subtitle": "AI merekomendasikan rute dan jadwal sesuai gaya Anda.",
+          "cta": "Ke perencana perjalanan",
+          "items": {
+            "1": {
+              "label": "Standar / K-content / Konten pengguna",
+              "body": "Pilih salah satu untuk mulai."
+            },
+            "2": {
+              "label": "Pilih tujuan (atau tema)",
+              "body": "Semakin jelas konteks, semakin akurat saran."
+            },
+            "3": {
+              "body": "Jadwal yang disarankan tersimpan otomatis, disempurnakan di Jadwal."
+            }
+          }
+        },
+        "schedule": {
+          "title": "Kelola jadwal",
+          "subtitle": "Lihat rencana di kalender; gulir ulang atau ubah dengan AI.",
+          "cta": "Buka jadwal",
+          "items": {
+            "1": {
+              "title": "1) Pilih tanggal di kalender",
+              "body": "Ketuk tanggal untuk melihat rencana hari itu."
+            },
+            "2": {
+              "title": "2) Gulir ulang untuk versi lain",
+              "body": "Hanya buat ulang bagian yang tidak disukai."
+            },
+            "3": {
+              "title": "3) Minta AI mengubah",
+              "body": "Jelaskan permintaan untuk menyesuaikan jadwal."
+            }
+          },
+          "tip": {
+            "title": "Peta / Cuaca",
+            "body": "Lihat peta dan ringkasan cuaca di kartu jadwal."
+          }
+        },
+        "discover": {
+          "title": "Rekomendasi tempat",
+          "subtitle": "Restoran, acara, dan lainnya dalam satu layar.",
+          "cta": "Ke rekomendasi tempat",
+          "items": {
+            "1": {
+              "title": "1) Pilih panduan",
+              "body": "Tab restoran atau acara."
+            },
+            "2": {
+              "title": "2) Jelajahi kartu/daftar",
+              "body": "Ketuk tempat untuk detail."
+            },
+            "3": {
+              "body": "Untuk rencana: sesuaikan di perencana/jadwal."
+            }
+          }
+        },
+        "groupchat": {
+          "title": "Obrolan grup",
+          "subtitle": "Ruang sesuai tingkat kehormatan — bagikan cerita perjalanan.",
+          "cta": "Ke obrolan grup",
+          "items": {
+            "1": {
+              "title": "1) Masuk dari daftar ruang",
+              "body": "Akses dapat bergantung pada kehormatan."
+            },
+            "2": {
+              "title": "2) Kirim pesan",
+              "body": "Ketik dan kirim secara real-time."
+            },
+            "3": {
+              "title": "3) Teman / bisikan / kehormatan",
+              "body": "Menu pesan: bisikan, tambah teman, kehormatan."
+            }
+          }
+        }
+      }
+    }
+  },
+  "planner": {
+    "title": "Perencana Perjalanan",
+    "subtitle": "Pilih gaya perjalanan yang Anda inginkan",
+    "modes": {
+      "standard": {
+        "title": "Standar",
+        "desc": "Rute dan itinerary rekomendasi AI"
+      },
+      "kcontent": {
+        "title": "K-Content",
+        "desc": "Trip ke lokasi syuting drama/film"
+      },
+      "usercontent": {
+        "title": "Konten pengguna",
+        "desc": "Rute rekomendasi dari traveler"
+      }
+    },
+    "schedule": {
+      "title": "Rencana Saya",
+      "subtitle_with_count": "{{count}} rencana tersimpan · Klik tanggal untuk melihat hari itu",
+      "new_route": "+ Rute baru",
+      "prev_month": "Bulan sebelumnya",
+      "next_month": "Bulan berikutnya",
+      "year_month": "{{year}}-{{month}}",
+      "legend": "Keterangan rencana",
+      "reroll_fail": "Gagal membuat ulang.",
+      "modify_fail": "Gagal mengubah.",
+      "view_all_route": "Lihat rute untuk semua pemberhentian",
+      "all_route": "🗺️ Rute lengkap",
+      "in_trip_period": "Dalam periode perjalanan",
+      "rerolled": "🔄 Dibuat ulang",
+      "generating": "Membuat…",
+      "reroll_this_item": "Buat ulang item ini",
+      "view_on_map": "Lihat di peta",
+      "ask_ai_modify": "Minta AI mengubah itinerary",
+      "modify_placeholder": "contoh: \"Ganti tur Changdeokgung Secret Garden dengan tempat lain\"",
+      "ai_modifying": "AI sedang mengubah…",
+      "item_regenerating": "Membuat ulang item…",
+      "modify_login_needed": "Login diperlukan untuk menggunakan fitur ubah",
+      "date_ymd": "{{year}}-{{month}}-{{day}}",
+      "item_count": "{{count}} item",
+      "no_items_on_day": "Tidak ada item untuk hari ini",
+      "delete_confirm": "Hapus rencana ini?",
+      "saved_at": "Disimpan {{date}}",
+      "weather_forecast": "🌤 Prakiraan cuaca",
+      "within_5days": "· dalam 5 hari",
+      "view_schedule": "Lihat itinerary",
+      "view_day_route": "Lihat rute Hari {{day}}",
+      "route": "🗺️ Rute",
+      "ai_modified": "✨ Diubah oleh AI",
+      "load_fail": "Gagal memuat rencana.",
+      "delete_fail": "Gagal menghapus.",
+      "login_note": "Rencana perjalanan disimpan otomatis setelah login SNS",
+      "login_needed": "Login diperlukan",
+      "empty_title": "Tidak ada rencana tersimpan",
+      "empty_desc": "Pilih rute di Trip Planner\nmaka AI akan menyimpan rencana secara otomatis",
+      "go_planner": "Buka Trip Planner",
+      "list_hint": "Semua rencana · Klik tanggal untuk melihat hari itu"
+    },
+    "kcontent": {
+      "title": "Perencana K-Content",
+      "subtitle": "Jelajahi Korea lewat K-Pop, drama, kuliner, dan kecantikan",
+      "hero_title": "Perencana K-Content",
+      "hero_subtitle": "Jelajahi Korea lewat K-Pop, drama, kuliner, dan kecantikan",
+      "hero_cta": "Buat rute AI",
+      "back": "Kembali ke perencana",
+      "row_kpop": "K-POP",
+      "row_kdrama": "K-Drama / Film",
+      "row_kfood": "K-Food",
+      "row_kbeauty": "K-Beauty",
+      "sample_itinerary": "Contoh itinerary",
+      "search_bar": "Cari",
+      "quick_selection": "Pilihan cepat",
+      "vibe_grid": "Pilih suasana",
+      "date": "Tanggal",
+      "generating": "Membuat…",
+      "generate": "✨ Buat jadwal",
+      "ai_recommended": "Jadwal rekomendasi AI",
+      "region_select": "Pilih wilayah",
+      "traditional_market": "Pasar tradisional",
+      "market_generate": "Buat itinerary kuliner pasar ini",
+      "cafe_question": "Suasana apa yang kamu inginkan hari ini?",
+      "cafe_hint": "Pilih suasana atau ketik nama kafe untuk membuat kursus AI.",
+      "cafe_placeholder": "Ketik nama kafe (mis. Seongsu Tongue Planet)",
+      "cafe_generate": "Buat itinerary AI",
+      "trending_items": "Item trending",
+      "my_recipe": "Resep mix andalan",
+      "convenience_q": "Apa yang paling sulit didapat di minimarket sekarang?",
+      "trending_placeholder": "mis. roti krim susu Yonsei",
+      "recipe_q": "Kombinasi rasa apa yang ingin kamu coba?",
+      "extra_keywords": "Kata kunci tambahan",
+      "recipe_placeholder": "mis. tantangan pedas, dessert asin-manis",
+      "recipe_generate": "Buat resep mix AI",
+      "set_date_and_generate": "Atur tanggal lalu\nbuat itinerary",
+      "start_generate": "✨ Mulai buat itinerary",
+      "making_schedule": "AI sedang membuat itinerary <b>{{title}}</b>…",
+      "recommended_schedule_title": "{{title}} — Itinerary rekomendasi",
+      "save_plan": "💾 Simpan itinerary",
+      "total_cost": "Perkiraan total biaya",
+      "cost_per_day": "Hari ke-{{day}} {{total}}",
+      "no_schedule": "Itinerary tidak terbuat. Coba lagi.",
+      "saved_goto_schedule": "Tersimpan · Ke jadwal",
+      "find_nearby_store": "Cari tempat jual terdekat",
+      "recipe_hashtags": "#modisumer #tantanganminimarket #resepAI",
+      "description_fallback": "Spot rekomendasi untuk dinikmati di {{place}}.",
+      "challenge_location": "Lokasi tantangan",
+      "challenge_location_desc": "Spot tantangan pilihan AI (dalam 100 km) — area bangku depan Hutan Seoul, Seongsu",
+      "subtotal": "Subtotal {{total}}",
+      "schedule_item_default": "Jadwal",
+      "schedule_load_fail": "Gagal memuat itinerary.",
+      "save_fail": "Gagal menyimpan.",
+      "cafe_place_hint": "Petunjuk kafe/tempat",
+      "convenience_trending": "Item trending minimarket",
+      "recipe_title_with_vibe": "Tantangan {{vibe}} ver. 2026",
+      "recipe_title_default": "Mark set ver. 2026",
+      "region_tab.all": "Semua",
+      "region_tab.seoul": "Seoul",
+      "region_tab.gangwon": "Gangwon",
+      "region_tab.jeonla": "Jeolla",
+      "region_tab.gyeongsang": "Gyeongsang",
+      "region_tab.jeju": "Jeju",
+      "cafe_vibe.industrial_raw.label": "Industrial/Kasar",
+      "cafe_vibe.industrial_raw.description": "Suasana beton dan baja yang keren.",
+      "cafe_vibe.traditional_zen.label": "Tradisional/Zen",
+      "cafe_vibe.traditional_zen.description": "Istirahat tenang dengan hanok dan kayu.",
+      "cafe_vibe.nature_botanical.label": "Alam/Botani",
+      "cafe_vibe.nature_botanical.description": "Ruang penuh hijau dan cahaya.",
+      "cafe_vibe.retro_newtro.label": "Retro/Newtro",
+      "cafe_vibe.retro_newtro.description": "Nostalgia dan gang vintage.",
+      "cafe_vibe.modern_minimal.label": "Modern/Minimal",
+      "cafe_vibe.modern_minimal.description": "Estetika monokrom yang halus.",
+      "brand.seveneleven": "7-Eleven",
+      "brand.emart24": "emart24",
+      "market": {
+        "SEOUL": {
+          "0": {
+            "name": "Pasar Gwangjang",
+            "description": "Ibu kota yukhoe dan bindaetteok."
+          },
+          "1": {
+            "name": "Pasar Mangwon",
+            "description": "Pasar trendi favorit generasi muda."
+          },
+          "2": {
+            "name": "Pasar Tongin",
+            "description": "Pengalaman kotak makan koin legendaris."
+          }
+        },
+        "GANGWON": {
+          "0": {
+            "name": "Pasar Yeongwol Jungang",
+            "description": "Pancake soba dan mie olchaengi."
+          },
+          "1": {
+            "name": "Pasar wisata Sokcho",
+            "description": "Ayam goreng Korea dan jajanan laut."
+          }
+        },
+        "JEONLA": {
+          "0": {
+            "name": "Pasar Selatan Jeonju",
+            "description": "Asal sundae dan sup tauge."
+          },
+          "1": {
+            "name": "Pasar Stasiun Songjeong Gwangju 1913",
+            "description": "Suasana retro-newtro."
+          }
+        },
+        "GYEONGSANG": {
+          "0": {
+            "name": "Pasar Gukje Busan",
+            "description": "Kenangan film dan bibim dangmyeon."
+          },
+          "1": {
+            "name": "Pasar Seomun Daegu",
+            "description": "Skala dan rasa pasar top 3 Korea."
+          }
+        },
+        "JEJU": {
+          "0": {
+            "name": "Pasar Dongmun Jeju",
+            "description": "Kue omegi dan gangjeong babi hitam."
+          }
+        }
+      },
+      "fallback": {
+        "kfood": {
+          "KF_MARKET": {
+            "title": "Tur kuliner pasar tradisional nasional",
+            "description": "Jelajahi rasa lokal hangat di seluruh Korea."
+          },
+          "KF_CAFE": {
+            "title": "Tur K-dessert & suasana kafe",
+            "description": "Rute emosional menghubungkan kafe dan toko pilihan."
+          },
+          "KF_CONVENIENCE": {
+            "title": "Tantangan combo minimarket K",
+            "description": "Dari barang baru habis hingga resep rahasia — jadi modisumer sejati!"
+          }
+        },
+        "kbeauty": {
+          "KBEAUTY_01": {
+            "title": "Flagship Olive Young",
+            "description": "Bandingkan dan beli tren skincare & makeup."
+          },
+          "KBEAUTY_02": {
+            "title": "Jalan kecantikan Myeongdong",
+            "description": "Jelajahi bestseller di sekitar toko utama."
+          },
+          "KBEAUTY_03": {
+            "title": "Toko pengalaman skincare",
+            "description": "Perawatan personal dan program kecantikan interaktif."
+          }
+        },
+        "kpop": {
+          "KPOP_01": {
+            "title": "BTS: HYYH Abadi",
+            "description": "BTS, ARMY, Gangnam, HYBE"
+          },
+          "KPOP_02": {
+            "title": "BLACKPINK: Hip & Mewah",
+            "description": "BLACKPINK, YG, mewah, tren"
+          },
+          "KPOP_03": {
+            "title": "SEVENTEEN & Stray Kids: Energi Panggung",
+            "description": "SEVENTEEN, Stray Kids, JYP, pertunjukan"
+          },
+          "KPOP_04": {
+            "title": "NewJeans & IVE: Seoul High-Teen",
+            "description": "NewJeans, IVE, Y2K, Seongsu, Hannam"
+          },
+          "KPOP_05": {
+            "title": "SM: Kwangya Express",
+            "description": "SM, aespa, NCT, Kwangya, Seongsu"
+          },
+          "KPOP_06": {
+            "title": "Pengalaman Idol",
+            "description": "Pengalaman, tari, rekaman, kehidupan idol"
+          },
+          "KPOP_07": {
+            "title": "Hongdae: Pusat Budaya Fan",
+            "description": "Hongdae, busking, album, penggemar"
+          },
+          "KPOP_08": {
+            "title": "K-OST & Seoul Penyembuhan",
+            "description": "IU, OST, penyembuhan, retro, Seoul"
+          }
+        },
+        "kdrama": {
+          "KD_01": {
+            "title": "Goblin",
+            "description": "Goblin · #GongYoo #Fantasi #Romansa"
+          },
+          "KD_02": {
+            "title": "Squid Game",
+            "description": "Squid Game · #Netflix #Survival #Thriller"
+          },
+          "KD_03": {
+            "title": "Crash Landing on You",
+            "description": "Crash Landing on You · #HyunBin #SonYeJin #Romansa"
+          },
+          "KD_04": {
+            "title": "Kingdom",
+            "description": "Kingdom · #Zombie #Sejarah #Horor"
+          },
+          "KD_05": {
+            "title": "Parasite",
+            "description": "Parasite · #Oscar #BongJoonHo #IsuSosial"
+          },
+          "KD_06": {
+            "title": "Lovely Runner",
+            "description": "Lovely Runner · #ByeonWooSeok #TimeSlip #Remaja"
+          },
+          "KD_07": {
+            "title": "Hotel Del Luna",
+            "description": "Hotel Del Luna · #IU #Fantasi #Misteri"
+          },
+          "KD_08": {
+            "title": "King the Land",
+            "description": "King the Land · #JunHo #Yoona #Mewah"
+          },
+          "KD_09": {
+            "title": "Mr. Sunshine",
+            "description": "Mr. Sunshine · #Sejarah #LeeByungHun #KimTaeri"
+          },
+          "KD_10": {
+            "title": "Descendants of the Sun",
+            "description": "Descendants of the Sun · #SongJoongKi #SongHyeKyo #Militer"
+          },
+          "KD_11": {
+            "title": "Queen of Tears",
+            "description": "Queen of Tears · #KimSooHyun #KimJiWon #Chaebol"
+          },
+          "KD_12": {
+            "title": "The Man Who Lives with the King",
+            "description": "The Man Who Lives with the King · #GangDongWon #YooHaeJin #Sejarah"
+          }
+        }
+      },
+      "recipe_vibe.spicy_fire.label": "Pedas menyala",
+      "recipe_vibe.spicy_fire.description": "Tantangan pedas untuk meluapkan stres.",
+      "recipe_vibe.sweet_salty.label": "Asin-manis klasik",
+      "recipe_vibe.sweet_salty.description": "Keseimbangan manis dan gurih.",
+      "recipe_vibe.diet_healthy.label": "Diet minimarket",
+      "recipe_vibe.diet_healthy.description": "Combo ringan tapi mengenyangkan.",
+      "recipe_vibe.night_snack.label": "Camilan malam",
+      "recipe_vibe.night_snack.description": "Resep camilan malam kecil.",
+      "recipe_vibe.hangover.label": "Combo mabuk",
+      "recipe_vibe.hangover.description": "Kombinasi untuk pemulihan.",
+      "recipe_vibe.luxury_meal.label": "Makan premium hemat",
+      "recipe_vibe.luxury_meal.description": "Makan premium dari minimarket.",
+      "shopping.ramen": "Mie cup",
+      "shopping.tuna_kimbap": "Onigiri segitiga tuna mayo",
+      "shopping.string_cheese": "Keju tarik",
+      "shopping.sparkling_water": "Air berkarbonasi",
+      "cooking.1": "Siapkan bahan, masukkan wadah microwave.",
+      "cooking.2": "Campur saus/topping, masak 1 menit 30 detik.",
+      "cooking.3": "Tambah topping sesuai selera, foto verifikasi.",
+      "trending_card.1.title": "Roti krim susu Yonsei",
+      "trending_card.2.title": "Highball cola zero cup es",
+      "trending_card.default_title": "Item trending pilihan AI",
+      "trending_card.tag.new": "#baru",
+      "trending_card.tag.soldout": "#habis",
+      "trending_card.tag.review": "#viral",
+      "trending_card.tag.repurchase": "#belilagi",
+      "meta.kf_market.title_ko": "Tur kuliner pasar tradisional nasional",
+      "meta.kf_cafe.title_ko": "Tur K-dessert & suasana kafe",
+      "meta.kf_convenience.title_ko": "Tantangan combo minimarket K",
+      "meta.kf_market.tags": "pasar tradisional, kuliner, lokal",
+      "meta.kf_cafe.tags": "kafe, dessert, toko pilihan",
+      "meta.kf_convenience.tags": "minimarket, combo, modisumer",
+      "empty.pick_market": "Pilih pasar lalu buat jadwal",
+      "empty.pick_vibe_or_cafe": "Pilih suasana atau nama kafe",
+      "empty.pick_tab_condition": "Pilih kondisi tab lalu buat",
+      "empty.pick_date": "Pilih tanggal lalu buat jadwal",
+      "empty.market_guide": "Pilih pasar di kiri, klik [Buat itinerary pasar] atau ✨ atas",
+      "empty.cafe_guide": "Pilih suasana/nama kafe di kiri, klik [Buat itinerary AI]",
+      "empty.convenience_guide": "Pilih tab mode atas, masukkan kata kunci, buat",
+      "empty.default_guide": "Klik tombol ✨ buat jadwal di atas",
+      "shopping_list_title": "Daftar belanja",
+      "cooking_steps_title": "Langkah memasak",
+      "brand": {
+        "emart24": "이마트24",
+        "seveneleven": "세븐일레븐"
+      },
+      "cooking": {
+        "1": "재료를 모두 준비하고 전자레인지 가능한 용기에 담기",
+        "2": "소스/토핑을 섞어 1분 30초 조리하기",
+        "3": "취향에 맞게 토핑 추가 후 인증샷 남기기"
+      },
+      "empty": {
+        "cafe_guide": "왼쪽에서 감성/카페명을 정하고 [AI 일정 생성하기]를 눌러주세요",
+        "convenience_guide": "상단 탭에서 모드를 고른 뒤 키워드를 입력해 생성하세요",
+        "default_guide": "상단의 ✨ 일정 생성 버튼을 눌러주세요",
+        "market_guide": "왼쪽에서 시장을 고르고 [이 시장 먹방 일정 생성하기] 또는 상단 ✨ 일정 생성을 눌러주세요",
+        "pick_date": "날짜 선택 후 일정을 생성하세요",
+        "pick_market": "시장을 선택한 뒤 일정을 생성하세요",
+        "pick_tab_condition": "탭별 조건을 선택하고 생성하세요",
+        "pick_vibe_or_cafe": "감성(Vibe) 또는 카페 이름을 선택하세요"
+      },
+      "kroaddy_pick": "Kroaddy PICK",
+      "meta": {
+        "kf_cafe": {
+          "tags": "카페, 디저트, 편집샵, 감성투어",
+          "title_ko": "K-디저트 & 카페 감성 투어"
+        },
+        "kf_convenience": {
+          "tags": "편의점, 꿀조합, 모디슈머, 챌린지",
+          "title_ko": "K-편의점 꿀조합 챌린지"
+        },
+        "kf_market": {
+          "tags": "전통시장, 먹거리, 로컬푸드",
+          "title_ko": "전국 전통시장 먹거리 탐방"
+        }
+      },
+      "region_tab": {
+        "all": "전체",
+        "gangwon": "강원",
+        "gyeongsang": "경상",
+        "jeju": "제주",
+        "jeonla": "전라",
+        "seoul": "서울"
+      },
+      "shopping": {
+        "ramen": "컵라면",
+        "sparkling_water": "탄산수",
+        "string_cheese": "스트링 치즈",
+        "tuna_kimbap": "참치마요 삼각김밥"
+      },
+      "trending_card": {
+        "1": {
+          "title": "연세우유 크림빵"
+        },
+        "2": {
+          "title": "제로콜라 얼음컵 하이볼"
+        },
+        "default_title": "AI 추천 유행템",
+        "tag": {
+          "new": "#신상",
+          "repurchase": "#재구매",
+          "review": "#리뷰폭발",
+          "soldout": "#품절주의"
+        }
+      }
+    },
+    "usercontent": {
+      "title": "Konten pengguna",
+      "subtitle": "Rute yang dibagikan traveler",
+      "upload": "Unggah rute saya",
+      "tab_all": "Semua rute",
+      "tab_mine": "Rute saya",
+      "search_placeholder": "Cari dengan nickname…",
+      "search_result": "{{count}} hasil ditemukan",
+      "empty_all_title": "Belum ada rute yang dibagikan",
+      "empty_all_sub": "Jadilah yang pertama mengunggah!",
+      "empty_mine_title": "Anda belum mengunggah rute",
+      "empty_mine_sub": "Bagikan rute dan kumpulkan suka!",
+      "cta_first_upload": "Unggah rute pertama",
+      "cta_share_first": "Bagikan rute pertama",
+      "already_liked": "Sudah disukai",
+      "like": "Suka",
+      "delete": "Hapus",
+      "delete_my_route": "Hapus rute saya",
+      "shared_route": "Rute bersama",
+      "schedule_save_fail": "Gagal menyimpan jadwal.",
+      "route": "Rute",
+      "added_to_schedule": "Ditambahkan ke jadwal saya",
+      "go_schedule": "Ke pengelola jadwal",
+      "add_to_schedule": "Tambah ke jadwal saya",
+      "login_required": "Perlu login.",
+      "no_places_to_save": "Tidak ada tempat untuk disimpan.",
+      "when_trip": "Kapan rencana berkunjung?",
+      "date_applied": "Tanggal terpilih akan diterapkan ke jadwal.",
+      "visit_date": "Tanggal kunjungan",
+      "add_with_this_date": "Tambah dengan tanggal ini",
+      "image_validate_fail": "Validasi gambar gagal",
+      "ai_polish_fail": "Polesan AI gagal",
+      "save_fail": "Simpan gagal",
+      "step_photo": "Pilih foto",
+      "step_form": "Masukkan rute",
+      "step_polish": "Poles AI",
+      "upload_my_route": "Unggah rute saya",
+      "upload_photo_hint": "Seret atau klik untuk mengunggah foto",
+      "upload_photo_types": "Mendukung JPG, PNG, WEBP",
+      "remove_photo": "Hapus foto",
+      "image_validated": "Validasi gambar selesai",
+      "validating": "Memvalidasi…",
+      "continue_without_photo": "Lanjut tanpa foto",
+      "import_saved_schedule": "Impor dari jadwal tersimpan",
+      "select_saved_schedule": "Pilih jadwal tersimpan",
+      "no_saved_schedule": "Tidak ada jadwal tersimpan.",
+      "place_count": " · {{count}} tempat",
+      "route_title_required": "Judul rute *",
+      "route_title_placeholder": "mis. Trip sehari Gangneung",
+      "destination_required": "Destinasi *",
+      "destination_placeholder": "mis. Gangneung, Pantai Gyeongpo",
+      "one_line_intro_optional": "Pengantar satu baris (opsional)",
+      "one_line_intro_placeholder": "Deskripsi singkat (AI akan memoles)",
+      "place_list_required": "Daftar tempat *",
+      "max_per_day": "(maks {{max}} per hari)",
+      "day_n": "Hari ke-{{day}}",
+      "add_place": "+ Tambah tempat",
+      "place_name_placeholder": "Nama tempat (mis. Jalan kafe Anmok)",
+      "memo_optional_placeholder": "Catatan singkat (opsional)",
+      "add_day_n": "+ Tambah hari ke-{{day}}",
+      "ai_polish": "✨ Poles dengan AI",
+      "ai_polishing": "AI sedang memoles rute",
+      "ai_polishing_sub": "Menambahkan pengantar dan tips perjalanan…",
+      "re_enter": "Edit lagi",
+      "share": "Bagikan",
+      "shared_success": "Rute dibagikan!",
+      "shared_success_sub": "Lihat di feed",
+      "delete_confirm": "Hapus rute ini?",
+      "delete_fail": "Gagal menghapus."
+    },
+    "standard": {
+      "title": "Pilih destinasi",
+      "subtitle": "Pilih destinasi dan AI akan merekomendasikan rute yang cocok.",
+      "search_placeholder": "Cari kota/tempat (mis. Gangneung, Desa Hanok)",
+      "search_result": "“{{query}}”: {{count}} tempat",
+      "no_results": "Tidak ada hasil",
+      "reset": "Atur ulang",
+      "metro_quick": "Akses cepat kota besar",
+      "metro_quick_sub": "Pilih kota populer, lihat detail di bawah.",
+      "metro_detail": "Area detail kota besar",
+      "metro_detail_sub": "Seoul, Busan, Daegu, Ulsan ditampilkan per subwilayah.",
+      "province": "Per provinsi/wilayah",
+      "province_sub": "Bandingkan Gyeonggi, Chungcheong, Jeolla, Gyeongsang, Gangwon, Jeju.",
+      "image_pending": "Gambar segera hadir",
+      "popular": "Populer",
+      "mode_label": "Standar",
+      "date": "Tanggal",
+      "mode_car": "🚗 Mobil",
+      "mode_transit": "🚇 Transport umum",
+      "mode_walk": "🚶 Jalan kaki",
+      "generate_route": "✨ Buat rute",
+      "generating_loading": "Mencari info akurat…",
+      "ai_recommended_routes": "Rute rekomendasi AI",
+      "set_date_and_generate": "Atur tanggal lalu\nbuat rute",
+      "start_generate": "✨ Mulai buat rute",
+      "route_load_fail": "Gagal memuat rute.",
+      "pick_route": "Pilih sebuah rute",
+      "range_hint": "AI akan menyusun jadwal {{start}} hingga {{end}}",
+      "select_date_then_generate": "Pilih tanggal lalu buat rute",
+      "generate_hint": "Tekan tombol ✨ kiri atas",
+      "making_schedule": "AI sedang membuat jadwal untuk <b>{{name}}</b>…",
+      "schedule_load_fail": "Gagal memuat jadwal.",
+      "recommended_schedule_title": "{{name}} — Jadwal rekomendasi",
+      "saved_goto_schedule": "✅ Tersimpan · Buka pengelola jadwal",
+      "save_plan": "💾 Simpan",
+      "save_fail": "Gagal menyimpan.",
+      "total_cost": "Perkiraan total biaya",
+      "cost_per_day": "Hari ke-{{day}} {{total}}",
+      "subtotal": "Subtotal {{total}}",
+      "theme": {
+        "event": "Acara",
+        "food": "Kuliner",
+        "spot": "Wisata",
+        "luxury": "Mewah",
+        "value": "Hemat",
+        "family": "Keluarga",
+        "couple": "Pasangan"
+      },
+      "highlight": {
+        "gyeongbokgung": "Cung Gyeongbok",
+        "hongdae": "Hongdae",
+        "hangang_park": "Công viên Hangang",
+        "cheongwadae": "Nhà Xanh",
+        "insadong": "Insadong",
+        "myeongdong_cathedral": "Nhà thờ Myeongdong",
+        "euljiro_alley": "Hẻm Euljiro",
+        "national_museum_of_korea": "Bảo tàng quốc gia",
+        "itaewon": "Itaewon",
+        "haeundae": "Haeundae",
+        "haeundae_beach": "Bãi biển Haeundae",
+        "gamcheon_village": "Làng Gamcheon",
+        "jagalchi_market": "Chợ Jagalchi",
+        "biff_square": "Quảng trường BIFF",
+        "dongseongro": "Dongseong-ro",
+        "kim_gwangseok_street": "Phố Kim Gwangseok",
+        "suseong_lake": "Hồ Suseong",
+        "songdo": "Songdo",
+        "chinatown": "Phố Tàu",
+        "gangneung": "Gangneung",
+        "gyeongpo": "Gyeongpo",
+        "anmok_coffee_street": "Phố cà phê Anmok",
+        "ojukheon": "Ojukheon",
+        "sokcho": "Sokcho",
+        "seoraksan": "Seoraksan",
+        "central_market": "Chợ trung tâm",
+        "hallasan": "Hallasan",
+        "seongsan_ilchulbong": "Seongsan Ilchulbong"
+      }
+    },
+    "region": {
+      "seoul-areas": {
+        "label": "Kota Seoul",
+        "subLabel": "Area utama per distrik"
+      },
+      "gyeonggi-north": {
+        "label": "Gyeonggi Utara",
+        "subLabel": "Goyang, Paju, Uijeongbu, Namyangju, dll."
+      },
+      "gyeonggi-south": {
+        "label": "Gyeonggi Selatan",
+        "subLabel": "Suwon, Yongin, Seongnam, Pyeongtaek, dll."
+      },
+      "gangwon": {
+        "label": "Gangwon",
+        "subLabel": "Provinsi otonom khusus Gangwon"
+      },
+      "chungbuk": {
+        "label": "Chungcheongbuk-do",
+        "subLabel": "Cheongju, Chungju, Jecheon, Danyang"
+      },
+      "chungnam": {
+        "label": "Chungcheongnam-do",
+        "subLabel": "Gongju, Buyeo, Boryeong, Taean, dll."
+      },
+      "jeonbuk": {
+        "label": "Jeonbuk",
+        "subLabel": "Provinsi otonom khusus Jeonbuk"
+      },
+      "jeonnam": {
+        "label": "Jeollanam-do",
+        "subLabel": "Yeosu, Suncheon, Mokpo, Damyang, dll."
+      },
+      "busan": {
+        "label": "Kota Busan",
+        "subLabel": "Kota metropolitan Busan"
+      },
+      "daegu": {
+        "label": "Kota Daegu",
+        "subLabel": "Kota metropolitan Daegu"
+      },
+      "ulsan": {
+        "label": "Kota Ulsan",
+        "subLabel": "Kota metropolitan Ulsan"
+      },
+      "gyeongbuk": {
+        "label": "Gyeongsangbuk-do",
+        "subLabel": "Gyeongju, Pohang, Andong, dll."
+      },
+      "gyeongnam": {
+        "label": "Gyeongsangnam-do",
+        "subLabel": "Tongyeong, Geoje, Jinju, Changwon, dll."
+      },
+      "jeju": {
+        "label": "Jeju-do",
+        "subLabel": "Provinsi otonom khusus Jeju"
+      }
+    },
+    "dest": {
+      "seoul": {
+        "name": "Kota Seoul",
+        "highlight1": "Istana Gyeongbokgung",
+        "highlight2": "Hongdae",
+        "highlight3": "Taman Sungai Han"
+      },
+      "busan": {
+        "name": "Kota Busan",
+        "highlight1": "Pantai Haeundae",
+        "highlight2": "Desa Budaya Gamcheon",
+        "highlight3": "Pasar Jagalchi"
+      },
+      "daegu": {
+        "name": "Kota Daegu",
+        "highlight1": "Jalan Dongseong-ro",
+        "highlight2": "Jalan Kim Gwangseok",
+        "highlight3": "Danau Suseong"
+      },
+      "incheon": {
+        "name": "Kota Incheon",
+        "highlight1": "Songdo",
+        "highlight2": "Pulau Ganghwa",
+        "highlight3": "Chinatown"
+      },
+      "gwangju": {
+        "name": "Kota Gwangju",
+        "highlight1": "ACC (Pusat Budaya Asia)",
+        "highlight2": "Yangnim-dong"
+      },
+      "daejeon": {
+        "name": "Kota Daejeon",
+        "highlight1": "Toko roti Seongsimdang",
+        "highlight2": "Taman Expo",
+        "highlight3": "Air panas Yuseong"
+      },
+      "ulsan": {
+        "name": "Kota Ulsan",
+        "highlight1": "Ganjeolgot",
+        "highlight2": "Taman Daewangam",
+        "highlight3": "Sungai Taehwa"
+      },
+      "sejong": {
+        "name": "Kota Sejong",
+        "highlight1": "Taman Danau Sejong",
+        "highlight2": "Kebun Raya Nasional"
+      },
+      "jongno": {
+        "name": "Kawasan Jongno · Gwanghwamun",
+        "highlight1": "Gyeongbokgung",
+        "highlight2": "Cheong Wa Dae",
+        "highlight3": "Insadong"
+      },
+      "myeongdong": {
+        "name": "Kawasan Myeongdong · Euljiro",
+        "highlight1": "Katedral Myeongdong",
+        "highlight2": "Gang Euljiro"
+      },
+      "yongsan": {
+        "name": "Kawasan Yongsan · Itaewon",
+        "highlight1": "Museum Nasional Korea",
+        "highlight2": "Itaewon"
+      },
+      "gangnam": {
+        "name": "Kawasan Gangnam · Seocho",
+        "highlight1": "COEX",
+        "highlight2": "Apgujeong Rodeo",
+        "highlight3": "Taman Dosan"
+      },
+      "jamsil": {
+        "name": "Kawasan Jamsil · Songpa",
+        "highlight1": "Lotte World",
+        "highlight2": "Taman Olimpiade",
+        "highlight3": "Danau Seokchon"
+      },
+      "seongsu": {
+        "name": "Kawasan Seongsu · Hannam",
+        "highlight1": "Jalan kafe Seongsu",
+        "highlight2": "Galeri Hannam-dong"
+      },
+      "hongdae": {
+        "name": "Kawasan Hongdae · Mapo",
+        "highlight1": "Klub Hongdae",
+        "highlight2": "Yeonnam-dong",
+        "highlight3": "Hutan jalur Gyeongui"
+      },
+      "bukchon": {
+        "name": "Kawasan Bukchon · Samcheong",
+        "highlight1": "Desa hanok Bukchon",
+        "highlight2": "Kafe Samcheong-dong"
+      },
+      "nowon": {
+        "name": "Kawasan Nowon · Dobong",
+        "highlight1": "Gunung Surak",
+        "highlight2": "Gunung Dobong",
+        "highlight3": "Gunung Bulam"
+      },
+      "haeundae": {
+        "name": "Haeundae",
+        "highlight1": "Pantai Haeundae",
+        "highlight2": "Pulau Dongbaek",
+        "highlight3": "Jalan Dalmaji"
+      },
+      "gwangalli": {
+        "name": "Gwangalli · Suyeong",
+        "highlight1": "Jembatan Gwangandaegyo",
+        "highlight2": "Pantai Gwangalli"
+      },
+      "gijang": {
+        "name": "Gijang",
+        "highlight1": "Gereja Jukseong Dream",
+        "highlight2": "Pelabuhan Daebyeon",
+        "highlight3": "Akuarium"
+      },
+      "songjeong": {
+        "name": "Songjeong · Cheongsapo",
+        "highlight1": "Pantai Songjeong",
+        "highlight2": "Menara pandang Cheongsapo"
+      },
+      "nampo": {
+        "name": "Nampo · Jung-gu",
+        "highlight1": "Pasar Jagalchi",
+        "highlight2": "Alun-alun BIFF",
+        "highlight3": "Gang buku Bosu-dong"
+      },
+      "seomyeon": {
+        "name": "Seomyeon · Bujeon",
+        "highlight1": "Jalan Seomyeon",
+        "highlight2": "Judys Taehwa",
+        "highlight3": "Pasar Bujeon"
+      },
+      "gamcheon": {
+        "name": "Desa Budaya Gamcheon",
+        "highlight1": "Desa Budaya Gamcheon",
+        "highlight2": "Sky Road"
+      },
+      "yeongdo": {
+        "name": "Yeongdo",
+        "highlight1": "Taejongdae",
+        "highlight2": "Desa Budaya Huinnyeoul",
+        "highlight3": "Gunung Bongnae"
+      },
+      "geumjeong": {
+        "name": "Geumjeong · Oncheonjang",
+        "highlight1": "Benteng Geumjeongsanseong",
+        "highlight2": "Kuil Beomeosa",
+        "highlight3": "Oncheonjang"
+      },
+      "gangseo-bs": {
+        "name": "Gangseo · Gaekdo",
+        "highlight1": "Eulsukdo",
+        "highlight2": "Dataran pasang surut Gaekdo"
+      },
+      "dadaepo": {
+        "name": "Saha · Dadaepo",
+        "highlight1": "Pantai Dadaepo",
+        "highlight2": "Muara Sungai Nakdong"
+      },
+      "dongseongno": {
+        "name": "Dongseongno · Jung-gu",
+        "highlight1": "Dongseong-ro",
+        "highlight2": "Pasar Seomun",
+        "highlight3": "Pasar obat Yakjeon"
+      },
+      "gimgwangseok": {
+        "name": "Jalan Kim Gwangseok",
+        "highlight1": "Jalan Kim Gwangseok",
+        "highlight2": "Pasar Bangcheon"
+      },
+      "suseongmot": {
+        "name": "Danau Suseong · Beomeo",
+        "highlight1": "Danau Suseong",
+        "highlight2": "Taman rekreasi Suseong"
+      },
+      "palgongsan": {
+        "name": "Gunung Palgong",
+        "highlight1": "Kuil Donghwa",
+        "highlight2": "Batu Gatbawi",
+        "highlight3": "Langit Palgong"
+      },
+      "dalseong": {
+        "name": "Bisulsan · Dalseong",
+        "highlight1": "Bunga sakura Bisulsan",
+        "highlight2": "Lahan basah Dalseong"
+      },
+      "gunwi": {
+        "name": "Gunwi",
+        "highlight1": "Taman tema Samguk Yusa",
+        "highlight2": "Benteng Hwasan"
+      },
+      "ganjeolgot": {
+        "name": "Ganjeolgot",
+        "highlight1": "Mercusuar Ganjeolgot",
+        "highlight2": "Matahari terbit tahun baru"
+      },
+      "daewangam": {
+        "name": "Daewangam",
+        "highlight1": "Taman Daewangam",
+        "highlight2": "Pantai Ilsan"
+      },
+      "taehwagang": {
+        "name": "Sungai Taehwa",
+        "highlight1": "Taman Nasional Taehwa",
+        "highlight2": "Hutan bambu Sipri Daesup"
+      },
+      "bangudae": {
+        "name": "Bangudae",
+        "highlight1": "Ukiran batu Bangudae",
+        "highlight2": "Jipcheongjeong"
+      },
+      "jeju": {
+        "name": "Kota Jeju",
+        "highlight1": "Hallasan",
+        "highlight2": "Seongsan Ilchulbong",
+        "highlight3": "Pantai Hyeopjae"
+      },
+      "gyeongju": {
+        "name": "Gyeongju",
+        "highlight1": "Hwangridan-gil",
+        "highlight2": "Cheomseongdae",
+        "highlight3": "Bulguksa"
+      },
+      "gangneung": {
+        "name": "Gangneung",
+        "highlight1": "Pantai Gyeongpo",
+        "highlight2": "Jalan kopi Anmok",
+        "highlight3": "Ojukheon"
+      },
+      "jeonju": {
+        "name": "Jeonju",
+        "highlight1": "Desa hanok",
+        "highlight2": "Gang makgeolli"
+      },
+      "asan": {
+        "name": "Asan"
+      },
+      "cheonan": {
+        "name": "Cheonan"
+      },
+      "nonsan": {
+        "name": "Nonsan"
+      },
+      "seosan": {
+        "name": "Seosan"
+      },
+      "dangjin": {
+        "name": "Dangjin"
+      },
+      "iksan": {
+        "name": "Iksan"
+      },
+      "gochang": {
+        "name": "Gochang"
+      },
+      "jeongeup": {
+        "name": "Jeongeup"
+      },
+      "gimje": {
+        "name": "Gimje"
+      },
+      "wando": {
+        "name": "Wando"
+      },
+      "gangjin": {
+        "name": "Gangjin"
+      },
+      "yeonggwang": {
+        "name": "Yeonggwang"
+      },
+      "haenam": {
+        "name": "Haenam"
+      },
+      "goheung": {
+        "name": "Goheung"
+      },
+      "yeongam": {
+        "name": "Yeongam"
+      },
+      "gwangyang": {
+        "name": "Gwangyang"
+      },
+      "boseong": {
+        "name": "Boseong"
+      },
+      "naju": {
+        "name": "Naju"
+      },
+      "goyang": {
+        "name": "Goyang"
+      },
+      "paju": {
+        "name": "Paju"
+      },
+      "gimpo": {
+        "name": "Gimpo"
+      },
+      "uijeongbu": {
+        "name": "Uijeongbu"
+      },
+      "namyangju": {
+        "name": "Namyangju"
+      },
+      "guri": {
+        "name": "Guri"
+      },
+      "gapyeong": {
+        "name": "Gapyeong"
+      },
+      "yangpyeong": {
+        "name": "Yangpyeong"
+      },
+      "pocheon": {
+        "name": "Pocheon"
+      },
+      "yangju": {
+        "name": "Yangju"
+      },
+      "dongducheon": {
+        "name": "Dongducheon"
+      },
+      "suwon": {
+        "name": "Suwon"
+      },
+      "hwaseong": {
+        "name": "Hwaseong"
+      },
+      "ansan": {
+        "name": "Ansan"
+      },
+      "siheung": {
+        "name": "Siheung"
+      },
+      "anyang": {
+        "name": "Anyang"
+      },
+      "gunpo": {
+        "name": "Gunpo"
+      },
+      "pyeongtaek": {
+        "name": "Pyeongtaek"
+      },
+      "yongin": {
+        "name": "Yongin"
+      },
+      "seongnam": {
+        "name": "Seongnam"
+      },
+      "hanam": {
+        "name": "Hanam"
+      },
+      "icheon": {
+        "name": "Icheon"
+      },
+      "yeoju": {
+        "name": "Yeoju"
+      },
+      "anseong": {
+        "name": "Anseong"
+      },
+      "osan": {
+        "name": "Osan"
+      },
+      "uiwang": {
+        "name": "Uiwang"
+      },
+      "gwacheon": {
+        "name": "Gwacheon"
+      },
+      "bucheon": {
+        "name": "Bucheon"
+      },
+      "gwangmyeong": {
+        "name": "Gwangmyeong"
+      },
+      "chuncheon": {
+        "name": "Chuncheon"
+      },
+      "wonju": {
+        "name": "Wonju"
+      },
+      "pyeongchang": {
+        "name": "Pyeongchang"
+      },
+      "yeongwol": {
+        "name": "Yeongwol"
+      },
+      "hoengseong": {
+        "name": "Hoengseong"
+      },
+      "jeongseon": {
+        "name": "Jeongseon"
+      },
+      "inje": {
+        "name": "Inje"
+      },
+      "taebaek": {
+        "name": "Taebaek"
+      },
+      "sokcho": {
+        "name": "Sokcho"
+      },
+      "yangyang": {
+        "name": "Yangyang"
+      },
+      "donghae": {
+        "name": "Donghae"
+      },
+      "samcheok": {
+        "name": "Samcheok"
+      },
+      "goseong-gw": {
+        "name": "Goseong Gw"
+      },
+      "cheongju": {
+        "name": "Cheongju"
+      },
+      "chungju": {
+        "name": "Chungju"
+      },
+      "jecheon": {
+        "name": "Jecheon"
+      },
+      "danyang": {
+        "name": "Danyang"
+      },
+      "gongju": {
+        "name": "Gongju"
+      },
+      "buyeo": {
+        "name": "Buyeo"
+      },
+      "boryeong": {
+        "name": "Boryeong"
+      },
+      "taean": {
+        "name": "Taean"
+      },
+      "gunsan": {
+        "name": "Gunsan"
+      },
+      "namwon": {
+        "name": "Namwon"
+      },
+      "yeosu": {
+        "name": "Yeosu"
+      },
+      "suncheon": {
+        "name": "Suncheon"
+      },
+      "mokpo": {
+        "name": "Mokpo"
+      },
+      "damyang": {
+        "name": "Damyang"
+      },
+      "andong": {
+        "name": "Andong"
+      },
+      "yeongju": {
+        "name": "Yeongju"
+      },
+      "mungyeong": {
+        "name": "Mungyeong"
+      },
+      "pohang": {
+        "name": "Pohang"
+      },
+      "yeongdeok": {
+        "name": "Yeongdeok"
+      },
+      "uljin": {
+        "name": "Uljin"
+      },
+      "dokdo": {
+        "name": "Dokdo"
+      },
+      "gumi": {
+        "name": "Gumi"
+      },
+      "gimcheon": {
+        "name": "Gimcheon"
+      },
+      "yeongcheon": {
+        "name": "Yeongcheon"
+      },
+      "sangju": {
+        "name": "Sangju"
+      },
+      "gyeongsan": {
+        "name": "Gyeongsan"
+      },
+      "tongyeong": {
+        "name": "Tongyeong"
+      },
+      "geoje": {
+        "name": "Geoje"
+      },
+      "namhae": {
+        "name": "Namhae"
+      },
+      "goseong-gn": {
+        "name": "Goseong Gn"
+      },
+      "jinju": {
+        "name": "Jinju"
+      },
+      "changwon": {
+        "name": "Changwon"
+      },
+      "hapcheon": {
+        "name": "Hapcheon"
+      },
+      "miryang": {
+        "name": "Miryang"
+      },
+      "hamyang": {
+        "name": "Hamyang"
+      },
+      "sancheong": {
+        "name": "Sancheong"
+      },
+      "hadong": {
+        "name": "Hadong"
+      },
+      "geochang": {
+        "name": "Geochang"
+      },
+      "gimhae": {
+        "name": "Gimhae"
+      },
+      "yangsan": {
+        "name": "Yangsan"
+      },
+      "changnyeong": {
+        "name": "Changnyeong"
+      },
+      "uiryeong": {
+        "name": "Uiryeong"
+      },
+      "seogwipo": {
+        "name": "Seogwipo"
+      }
+    },
+    "api": {
+      "ai_busy": "AI 서버가 바쁩니다. 잠시 후 다시 시도해 주세요.",
+      "ai_rate_limited": "AI 사용량이 초과됐습니다. 잠시 후 다시 시도해 주세요.",
+      "modify_error": "일정 수정 API 오류",
+      "plan_delete_error": "플랜 삭제 API 오류",
+      "plan_list_error": "플랜 목록 API 오류",
+      "reroll_error": "리롤 API 오류",
+      "route_error": "루트 API 오류",
+      "save_error": "저장 API 오류",
+      "schedule_error": "일정 API 오류"
+    }
+  },
+  "guide": {
+    "title": "Jelajahi",
+    "subtitle": "Pilih Restoran atau Acara di satu tempat.",
+    "restaurant": {
+      "title": "Restoran",
+      "soon": "Restaurant recommendations will be available soon."
+    },
+    "event": {
+      "title": "Acara",
+      "subtitle": "Berdasarkan data Festival Budaya Nasional · Klik tanggal untuk melihat acara pada hari itu",
+      "prev_month": "Previous month",
+      "next_month": "Next month",
+      "legend_hint": "● Has events · Click a date to filter that day",
+      "list_title_day": "{{y}}-{{m}}-{{d}} Events",
+      "list_title_all": "{{y}}-{{m}} All events",
+      "count": "{{count}} items",
+      "show_all": "Tampilkan semua",
+      "no_data_period": "Tidak ada acara terdaftar untuk periode ini.",
+      "no_data_day": "Tidak ada acara yang berlangsung pada hari ini.",
+      "no_data": "Tidak ada acara.",
+      "hosted_by": "Diselenggarakan oleh: {{name}}",
+      "year_month": "{{m}}/{{y}}",
+      "untitled": "(Untitled)",
+      "homepage": "Homepage",
+      "error": {
+        "load": "Gagal memuat daftar acara.",
+        "connection": "Unable to load event information. Please try again shortly."
+      }
+    },
+    "tabs": {
+      "restaurant": {
+        "label": "Restaurant Picks",
+        "description": "Explore restaurants by region"
+      },
+      "event": {
+        "label": "Event Picks",
+        "description": "Nationwide cultural festival calendar"
+      }
+    },
+    "mobile_title": "Jelajahi",
+    "category_tabs_aria": "Kategori panduan",
+    "gemini_notice": "AI menyarankan tempat baru berdasarkan preferensi dan konteks Anda.",
+    "places_none": "Tidak ada tempat untuk direkomendasikan.",
+    "places_extra": ", dan {{n}} lainnya",
+    "places_summary": "{{listed}}{{extra}} — {{count}} tempat direkomendasikan.\nKetuk penanda di peta untuk detail.",
+    "coords_hint": "Koordinat yang bisa ditampilkan tidak ditemukan. Coba nama tempat yang lebih jelas.",
+    "answer_empty": "Tidak bisa mendapatkan jawaban.",
+    "guide_error": "Tidak bisa mendapatkan respons panduan.",
+    "directions_no_location": "Kami membutuhkan lokasi Anda untuk rute berkendara. Izinkan lokasi lalu coba lagi.",
+    "festival_on_map": "Menampilkan {{count}} acara di peta ({{year}}/{{month}}).",
+    "festival_map_empty": "Tidak ada acara dengan koordinat, atau API tidak mengembalikan data.",
+    "festival_load_error": "Tidak bisa memuat acara: {{message}}",
+    "festival_loading_overlay": "Memuat acara…",
+    "marker_event": "Acara",
+    "marker_place": "Tempat",
+    "nearby_category_fallback": "Restoran · kafe",
+    "badge_event": "Acara",
+    "badge_spot": "Tempat rekomendasi",
+    "keyword_default": "Rekomendasi",
+    "info_none": "Tidak ada informasi",
+    "category": {
+      "all": "Semua",
+      "festival": "Acara",
+      "activity": "Aktivitas K",
+      "historic": "Sejarah & warisan",
+      "culture": "Budaya lokal",
+      "nature": "Alam & penyegaran",
+      "restaurant": "Kuliner",
+      "cafe": "Kafe"
+    },
+    "prompt": {
+      "activity": "Rekomendasikan aktivitas K dan pengalaman menarik yang bisa saya coba di Korea.",
+      "historic": "Rekomendasikan situs bersejarah, warisan budaya, dan landmark di Korea.",
+      "culture": "Rekomendasikan tempat untuk merasakan budaya Korea, pasar, dan suasana lingkungan.",
+      "nature": "Rekomendasikan alam, taman, dan tempat santai untuk perjalanan penyegaran di Korea.",
+      "restaurant": "Rekomendasikan restoran enak dan tempat makan lokal di Korea.",
+      "cafe": "Rekomendasikan kafe aesthetic, dessert, dan spot kopi di Korea."
+    },
+    "placeholder": {
+      "festival": "Festival",
+      "cafe": "Kafe",
+      "restaurant": "Restoran",
+      "heritage": "Warisan",
+      "nature": "Alam",
+      "shopping": "Belanja",
+      "default": "Tempat"
+    },
+    "route": {
+      "minutes": "{{m}} mnt",
+      "hours": "{{h}} jam",
+      "hours_minutes": "{{h}} jam {{m}} mnt",
+      "car_km_only": "🚗 ~{{km}} km dengan mobil",
+      "car_summary": "🚗 ~{{dur}} ({{km}} km)",
+      "won": "₩{{amount}}",
+      "won_zero": "₩0"
+    },
+    "chat": {
+      "placeholder": "Tanyakan tentang suatu tempat…",
+      "role_user": "Anda",
+      "role_bot": "Kroaddy",
+      "collapse": "Ciutkan chat",
+      "open": "Buka chat",
+      "input_aria": "Pertanyaan ke panduan AI",
+      "send_wait": "Harap tunggu respons.",
+      "send_empty": "Masukkan pertanyaan.",
+      "send": "Kirim",
+      "send_aria_busy": "Memproses",
+      "send_aria_empty": "Masukkan pertanyaan",
+      "send_aria": "Kirim pertanyaan"
+    },
+    "map": {
+      "my_location": "Lokasi saya",
+      "aria_map": "Peta",
+      "loading": "Memuat peta…",
+      "load_error": "Tidak bisa memuat peta.",
+      "load_error_hint": "Periksa jaringan dan NEXT_PUBLIC_NAVER_MAP_CLIENT_ID."
+    },
+    "searching": {
+      "chat": "Kroaddy sedang mencari",
+      "map": "Kroaddy mencari tempat terbaik"
+    },
+    "sheet": {
+      "driving_route": "Rute berkendara",
+      "driving_route_aria": "Tampilkan rute berkendara",
+      "route_loading": "Memuat rute…",
+      "route_unavailable": "Rute berkendara tidak tersedia untuk segmen ini. Coba mode lain.",
+      "retry": "Coba lagi",
+      "retry_route": "Muat ulang rute",
+      "route_summary_aria": "Ringkasan berkendara",
+      "drive_duration_label": "Waktu berkendara",
+      "distance_label": "Jarak",
+      "km_suffix": "{{km}} km",
+      "fuel_label": "Perkiraan bahan bakar",
+      "toll_label": "Tol",
+      "taxi_label": "Taksi (perkiraan)",
+      "route_detail_missing": "Tidak bisa memuat detail waktu dan jarak untuk segmen ini.",
+      "nearby_load_fail": "Tidak bisa memuat tempat di sekitar.",
+      "share_ok": "Dibagikan atau disalin ke clipboard.",
+      "share_fail": "Berbagi gagal.",
+      "image_prep": "Memuat gambar",
+      "festival_label": "Festival",
+      "keywords_aria": "Kata kunci tempat",
+      "place_info_aria": "Informasi tempat",
+      "info_loading": "Memuat informasi…",
+      "address_copied": "Disalin",
+      "address_tap_copy": "Ketuk untuk menyalin",
+      "visit_homepage": "Kunjungi situs web",
+      "naver_partial": "Tidak ada kecocokan pencarian lokal; menampilkan info sebagian. Lihat tips AI dan peta.",
+      "why_recommend": "Mengapa Kroaddy merekomendasikan",
+      "points_aria": "Sorotan",
+      "desc_collapse": "Lebih sedikit",
+      "desc_expand": "Lebih banyak",
+      "ai_why": "Rekomendasi AI",
+      "no_ai_desc": "Belum ada deskripsi AI. Tanya lagi atau pilih penanda lain.",
+      "nearby_section_aria": "Restoran dan kafe di sekitar",
+      "nearby_title": "Tempat di sekitar untuk dikunjungi bersama",
+      "nearby_type_aria": "Jenis tempat di sekitar",
+      "nearby_empty": "Tidak ada restoran atau kafe di sekitar. Coba filter lain.",
+      "distance_about": "~{{dist}}",
+      "est_cost": "Perkiraan biaya",
+      "visit_duration": "Kunjungan / durasi",
+      "photo_spot": "Spot foto",
+      "copy_address": "Salin alamat",
+      "done": "Selesai",
+      "coords_aria": "Koordinat acara",
+      "lat_label": "Lintang",
+      "lng_label": "Bujur",
+      "venue_label": "Venue",
+      "period_label": "Tanggal",
+      "event_info": "Detail acara",
+      "event_desc_fail": "Tidak bisa memuat deskripsi. Tanya lagi atau pilih penanda lain.",
+      "official_site": "Situs resmi",
+      "share": "Bagikan"
+    }
+  },
+  "chat": {
+    "tier": {
+      "silver": "Silver",
+      "gold": "Gold",
+      "platinum": "Platinum",
+      "diamond": "Diamond"
+    },
+    "group": {
+      "title_list": "Ruang obrolan grup",
+      "title_room": "Obrolan grup - {{room}}",
+      "back_to_list": "Daftar ruang",
+      "loading_rooms": "Memuat ruang...",
+      "rooms_hint": "Ruang yang bisa diakses bergantung pada level honor. Peringkat lebih tinggi juga bisa memasuki ruang peringkat lebih rendah.",
+      "table": {
+        "room": "Ruang",
+        "honor": "Honor minimum",
+        "access": "Bisa diakses"
+      },
+      "room_label": "Ruang {{label}}",
+      "or_more": "atau lebih",
+      "access_yes": "Ya",
+      "access_no": "Honor tidak cukup",
+      "enter": "Masuk",
+      "loading_messages": "Memuat pesan...",
+      "user_fallback": "Pengguna {{id}}",
+      "open_tourstar": "Buka posting Tourstar",
+      "menu": {
+        "whisper": "Kirim bisikan",
+        "honor_up": "Vote honor naik",
+        "honor_down": "Vote honor turun",
+        "add_friend": "Tambah teman"
+      },
+      "input_placeholder": "Ketik pesan...",
+      "send": "Kirim",
+      "dev_add_dummy": "Dev: tambah pesan uji (pihak lain)",
+      "whisper": {
+        "title": "Kirim bisikan",
+        "to": "Kepada: {{username}}"
+      },
+      "sending": "Mengirim...",
+      "submit": "Kirim",
+      "action_failed": "Permintaan gagal.",
+      "friend_failed": "Permintaan pertemanan gagal.",
+      "error_load_messages": "Gagal memuat pesan.",
+      "error_load_messages_runtime": "Terjadi kesalahan saat memuat pesan.",
+      "error_auth_sse": "Autentikasi sambungan obrolan gagal. Coba lagi nanti.",
+      "error_send": "Gagal mengirim.",
+      "error_send_runtime": "Terjadi kesalahan saat mengirim.",
+      "error_whisper_send": "Gagal mengirim bisikan.",
+      "error_whisper_send_runtime": "Terjadi kesalahan saat mengirim bisikan.",
+      "test_user": "Pengguna uji",
+      "test_message": "Yang mau liburan bareng bisa DM ya! (Pesan uji — ketuk untuk melihat)"
+    },
+    "whisper": {
+      "user_fallback": "Pengguna {{id}}",
+      "title": "Bisikan",
+      "new_chat": "Percakapan baru",
+      "no_conversations": "Belum ada percakapan",
+      "start": "Kirim bisikan",
+      "blocked_user": "Pengguna diblokir",
+      "delete_conv": "Hapus percakapan",
+      "unblock": "Buka blokir",
+      "block": "Blokir pengguna",
+      "empty_thread": "Mulai percakapan dengan {{name}}",
+      "view_tourstar": "Lihat posting Tourstar",
+      "read": "Dibaca",
+      "cannot_send_blocked": "Tidak dapat mengirim pesan ke pengguna yang diblokir.",
+      "input_placeholder": "Ketik pesan… (Enter kirim, Shift+Enter baris baru)",
+      "pick_or_start": "Pilih percakapan atau kirim bisikan baru",
+      "new_whisper": "+ Bisikan baru",
+      "new_whisper_title": "Bisikan baru",
+      "no_friends": "Belum ada teman.",
+      "add_friend": "Tambah teman",
+      "delete_confirm": "Hapus semua percakapan dengan {{name}}?\nTindakan ini tidak dapat dibatalkan."
+    },
+    "friends": {
+      "title": "Daftar teman",
+      "whisper_box": "Kotak bisikan",
+      "error_list": "Tidak dapat memuat daftar.",
+      "list_title": "Teman ({{count}})",
+      "empty": "Belum ada teman. Di obrolan grup, ketuk pesan untuk mengirim permintaan pertemanan.",
+      "pending_title": "Permintaan pertemanan ({{count}})",
+      "pending_empty": "Tidak ada permintaan tertunda.",
+      "whisper": "Bisikan",
+      "remove_title": "Hapus teman",
+      "block_title": "Blokir pengguna",
+      "whisper_to_suffix": " — kirim bisikan",
+      "whisper_placeholder": "Ketik pesan bisikan…",
+      "counter_send_hint": "{{len}} / 500 · Ctrl+Enter untuk kirim",
+      "sending": "Mengirim…",
+      "send": "Kirim",
+      "honor": "Kehormatan {value}",
+      "user_fallback": "Pengguna {{id}}",
+      "accept_ok": "Permintaan pertemanan diterima.",
+      "accept_fail": "Gagal menerima.",
+      "accept_err": "Gagal memproses penerimaan.",
+      "remove_confirm": "Hapus {{name}} dari daftar teman?",
+      "remove_ok": "{{name}} dihapus dari daftar teman.",
+      "remove_fail": "Gagal menghapus teman.",
+      "remove_err": "Gagal menghapus teman.",
+      "block_confirm": "Blokir {{name}}?\nAkan dihapus dari teman dan tidak menerima bisikan.",
+      "block_ok": "{{name}} diblokir.",
+      "block_fail": "Gagal memblokir.",
+      "block_err": "Gagal memblokir.",
+      "whisper_ok": "Bisikan terkirim ke {{name}}.",
+      "whisper_fail": "Gagal mengirim bisikan.",
+      "whisper_err": "Gagal mengirim bisikan."
+    }
+  },
+  "tourstar": {
+    "title": "TourStar",
+    "subtitle": "AI memilih foto perjalanan terbaik Anda; tambahkan komentar singkat agar postingan lebih menarik.",
+    "new_post": "Posting Baru",
+    "back_to_feed_title": "Kembali ke semua feed",
+    "friend_badge": "Teman",
+    "author": {
+      "self_caption": "Catat dan bagikan momen perjalanan berharga Anda",
+      "other_caption": "Postingan dari pengguna ini"
+    },
+    "stats": {
+      "posts": "Postingan",
+      "scraps": "Simpan",
+      "friends": "Teman"
+    },
+    "search": {
+      "all": "Semua",
+      "author": "Nama pengguna",
+      "title": "Judul",
+      "content": "Isi",
+      "tags": "Tag",
+      "location": "Lokasi",
+      "placeholder": "Ketik untuk mencari..."
+    },
+    "tabs": {
+      "all": "Semua",
+      "mine": "Postingan saya",
+      "friends": "Postingan teman",
+      "bookmarked": "Simpan"
+    },
+    "sort": {
+      "latest": "Terbaru",
+      "likes": "Paling banyak disukai",
+      "comments": "Paling banyak komentar"
+    },
+    "empty": {
+      "author": "Tidak ada postingan dari {{name}}",
+      "mine": "Anda belum membuat postingan",
+      "bookmarked": "Belum ada postingan tersimpan",
+      "friends": "Tidak ada postingan dari teman",
+      "search": "Tidak ada hasil",
+      "none": "Belum ada perjalanan yang dicatat",
+      "help_bookmarked": "Tekan tombol bookmark pada postingan orang lain",
+      "help_friends": "Tambahkan teman untuk melihat catatan perjalanan mereka",
+      "help_new": "Gunakan tombol \"Posting Baru\" di atas untuk mencatat perjalanan pertama Anda",
+      "cta": "Catat perjalanan"
+    },
+    "ai_banner": {
+      "title": "AI secara otomatis memilih foto terbaik Anda",
+      "body": "Unggah foto perjalanan dan AI menyarankan yang terbaik; tambahkan komentar singkat agar postingan rapi."
+    },
+    "status": {
+      "photo_queued": "Analisis foto AI dalam antrean...",
+      "photo_running": "Analisis foto AI berjalan...",
+      "photo_failed": "Analisis AI gagal",
+      "photo_done_pick": "Analisis selesai (periksa peringkat dan pilih foto)",
+      "comment_draft_running": "Analisis selesai (membuat draf komentar...)",
+      "comment_draft_done": "Analisis selesai (draf komentar siap)",
+      "photo_done": "Analisis AI selesai",
+      "upload_failed": "Gagal mengunggah",
+      "checking_metadata": "Memeriksa metadata tanggal pemotretan...",
+      "no_photo_in_range": "Tidak ada foto dalam rentang yang dipilih",
+      "filtered_uploading": "{{excludedCount}} tersaring oleh filter tanggal, mengunggah otomatis {{filteredCount}} foto...",
+      "uploading_count": "Mengunggah {{count}} foto...",
+      "post_generating": "Membuat postingan AI...",
+      "post_generated": "Postingan AI dibuat",
+      "post_save_failed": "Gagal menyimpan postingan"
+    },
+    "create": {
+      "title": "Buat catatan perjalanan baru",
+      "subtitle": "Unggah foto dan AI akan otomatis memilih jepretan terbaik ✨",
+      "file_upload": "Unggah berkas",
+      "photo_selected_count": "Foto ({{selected}}/{{total}} dipilih)",
+      "date_filter_note": "Jika mengisi tanggal, hanya foto pada periode itu yang diunggah otomatis (tanpa OpenAI).",
+      "start_date": "Tanggal mulai",
+      "end_date": "Tanggal selesai",
+      "include_unknown_shot_date": "Sertakan foto tanpa metadata tanggal pemotretan",
+      "style_preset": "Preset gaya (MBTI)",
+      "user_template_optional": "Templat pengguna (opsional)",
+      "style_auto": "Otomatis (default)",
+      "style_group": {
+        "nt": "Analyst/Strategist (NT)",
+        "nf": "Diplomat/Emotional (NF)",
+        "sj": "Manager/Practical (SJ)",
+        "sp": "Explorer/Spontaneous (SP)"
+      },
+      "checking_shot_date": "Memeriksa tanggal pemotretan...",
+      "uploading": "Mengunggah...",
+      "upload_files": "+ Unggah berkas foto",
+      "filter_by_date": "Saring otomatis berdasarkan tanggal pemotretan (metadata)",
+      "location_optional": "Lokasi (opsional)",
+      "location_placeholder": "mis. Gangnam Seoul, Haeundae Busan (AI memperkirakan jika kosong)",
+      "one_line_comment": "Komentar singkat",
+      "comment_placeholder": "Tulis komentar singkat agar postingan rapi",
+      "style_template_placeholder": "mis. nada tenang dengan spasi, 3 tagar",
+      "generated_title": "Catatan perjalanan rekomendasi AI {{date}}",
+      "location_empty": "Tujuan belum diisi",
+      "comment_default": "Merekam momen perjalanan berharga.",
+      "generating": "Membuat...",
+      "submit": "Posting"
+    },
+    "error": {
+      "upload_photo": "Gagal mengunggah foto. Silakan periksa apakah server tourstar sedang berjalan.",
+      "upload_photo_simple": "Gagal mengunggah foto.",
+      "like_failed": "Gagal memproses suka. Silakan coba lagi sebentar lagi.",
+      "cannot_delete_no_login": "Tidak dapat memverifikasi info login, sehingga postingan tidak dapat dihapus.",
+      "delete_failed": "Gagal menghapus. Periksa apakah ini postingan Anda atau coba lagi nanti.",
+      "delete_retry": "Gagal menghapus. Silakan coba lagi sebentar lagi.",
+      "edit_failed_with_detail": "Gagal mengedit postingan.\n{{detail}}",
+      "author_not_found": "Tidak dapat menemukan akun untuk {{name}}.",
+      "friend_request_failed": "Gagal mengirim permintaan pertemanan.",
+      "friend_request_failed_with_detail": "Gagal mengirim permintaan pertemanan.\n{{detail}}",
+      "friends_only": "Hanya teman.",
+      "no_photo_for_period": "Tidak ada foto untuk periode yang dipilih.\n(Tanpa metadata: {{unknownCount}}, disaring: {{excludedCount}})",
+      "partial_upload_failed": "{{count}}장의 사진 업로드에 실패했습니다. 성공한 사진만 저장됩니다.",
+      "upload_failed_count": "사진 업로드에 실패했습니다. ({{count}}장 실패)"
+    },
+    "confirm": {
+      "delete_post": "Delete this post? This cannot be undone."
+    },
+    "share": {
+      "copied": "Tautan berbagi disalin. Tempel di chat.",
+      "copy_prompt": "Salin tautan di bawah dan bagikan di chat."
+    },
+    "edit": {
+      "title": "Edit postingan",
+      "field_title": "Judul",
+      "title_placeholder": "Masukkan judul",
+      "field_location": "Lokasi",
+      "location_placeholder": "mis. Gangnam Seoul, Haeundae Busan",
+      "field_body": "Isi",
+      "body_placeholder": "Masukkan isi postingan",
+      "photo_edit": "Edit foto",
+      "add_photo": "+ Tambah foto",
+      "click_to_remove": "Klik untuk menghapus dari daftar.",
+      "new": "Baru",
+      "photo_help": "Klik foto lama untuk simpan/hapus. Klik foto baru untuk menghapus.",
+      "tags_label": "Tag (pisahkan dengan koma atau spasi)",
+      "tags_placeholder": "mis. winterwalk, healing, travelrecord",
+      "deleting": "Menghapus...",
+      "delete_post": "Hapus postingan",
+      "saving": "Menyimpan..."
+    },
+    "placeholder": {
+      "location_unknown": "Lokasi tidak diketahui",
+      "anonymous": "Anonim"
+    },
+    "time": {
+      "now": "baru saja",
+      "minutes_ago": "{{count}} menit yang lalu",
+      "hours_ago": "{{count}} jam yang lalu",
+      "days_ago": "{{count}} hari yang lalu"
+    },
+    "bookmarked": "Disimpan",
+    "bookmark": "Simpan",
+    "comments_count": "{{count}} komentar",
+    "photos_count": "{{count}} foto",
+    "first_comment": "Jadilah yang pertama berkomentar.",
+    "comment_placeholder": "Tulis komentar",
+    "copy_share_link": "Salin tautan berbagi",
+    "friend_request_sent": "Permintaan pertemanan dikirim ke {{name}}.",
+    "already_friend": "Pengguna ini sudah menjadi teman Anda.",
+    "requesting": "Mengirim permintaan...",
+    "send_friend_request": "Kirim permintaan pertemanan",
+    "view_posts": "Lihat postingan",
+    "cancel_bookmark": "Hapus bookmark",
+    "my_post": "Postingan saya",
+    "change_profile_photo": "Ubah foto profil",
+    "api": {
+      "auto_comment_error": "투어스타 자동 코멘트 API 오류",
+      "create_comment_error": "투어스타 댓글 저장 API 오류",
+      "create_post_error": "투어스타 게시물 저장 API 오류",
+      "delete_post_error": "투어스타 게시물 삭제 API 오류",
+      "finalize_upload_error": "사진 S3 업로드 사전 처리 실패",
+      "generate_post_error": "투어스타 게시글 생성 API 오류",
+      "job_status_error": "투어스타 작업 조회 API 오류",
+      "like_toggle_error": "투어스타 좋아요 API 오류",
+      "list_posts_error": "투어스타 게시물 조회 API 오류",
+      "profile_upload_error": "프로필 사진 업로드 실패",
+      "share_preview_error": "투어스타 공유 미리보기 API 오류",
+      "update_post_error": "투어스타 게시물 수정 API 오류",
+      "upload_error": "투어스타 업로드 API 오류"
+    }
+  },
+  "calendar": {
+    "weekday": {
+      "0": "Min",
+      "1": "Sen",
+      "2": "Sel",
+      "3": "Rab",
+      "4": "Kam",
+      "5": "Jum",
+      "6": "Sab"
+    }
+  },
+  "map": {
+    "mode": {
+      "car": "Mobil",
+      "walk": "Jalan kaki",
+      "transit": "Transportasi umum"
+    },
+    "duration_min": "sekitar {{min}} mnt",
+    "duration_hour_min": "sekitar {{hour}}j {{min}}m",
+    "total_route_stops": "Rute penuh · {{count}} pemberhentian",
+    "searching_locations": "Mencari lokasi… {{resolved}} / {{total}}",
+    "routing_car": "Menghitung rute jalan…",
+    "drawing_route": "Menggambar rute…",
+    "car_estimate": "(car estimate)",
+    "walk_estimate": "(walk estimate)",
+    "route_failed": "Tidak dapat menampilkan rute",
+    "segment_route": "Rute {{from}}→{{to}}",
+    "view_map": "Lihat peta",
+    "same_place": "📌 Lokasi sama",
+    "open_in_naver_title": "Lihat {{name}} di Naver Map",
+    "loading": "Memuat peta…",
+    "static_failed": "Tidak dapat memuat peta statis",
+    "open_in_naver": "Lihat di Naver Map",
+    "note_new_schedule": "Jadwal yang baru dibuat menampilkan peta secara otomatis",
+    "zoom_in": "Perbesar",
+    "zoom_out": "Perkecil",
+    "zoom_reset": "Atur ulang zoom",
+    "open_in_naver_with_arrow": "Buka di Naver Map ↗"
+  },
+  "options": {
+    "gender": {
+      "male": "Pria",
+      "female": "Wanita",
+      "other": "Lainnya",
+      "no_answer": "Memilih untuk tidak menjawab"
+    },
+    "age": {
+      "teens": "Remaja",
+      "twenties": "20-an",
+      "thirties": "30-an",
+      "forties": "40-an",
+      "fifties": "50-an",
+      "sixties_plus": "60+"
+    },
+    "diet": {
+      "normal": "Reguler",
+      "vegetarian": "Vegetarian",
+      "vegan": "Vegan",
+      "halal": "Halal",
+      "allergy": "Alergi"
+    },
+    "religion": {
+      "none": "Tidak ada",
+      "christian": "Kristen",
+      "buddhist": "Buddha",
+      "catholic": "Katolik",
+      "islam": "Islam",
+      "other": "Lainnya"
+    },
+    "nationality": {
+      "korea": "Korea",
+      "japan": "Jepang",
+      "china": "Tiongkok",
+      "usa": "AS",
+      "united_kingdom": "Inggris Raya",
+      "france": "Prancis",
+      "germany": "Jerman",
+      "canada": "Kanada",
+      "australia": "Australia",
+      "vietnam": "Vietnam",
+      "thailand": "Thailand",
+      "philippines": "Filipina",
+      "indonesia": "Indonesia",
+      "singapore": "Singapura",
+      "malaysia": "Malaysia",
+      "india": "India",
+      "other": "Lainnya"
+    }
+  },
+  "api": {
+    "backend_not_connected": "백엔드가 연결되지 않았습니다. 배포 후에는 Vercel 환경 변수에 NEXT_PUBLIC_API_URL 을 설정하세요.",
+    "server_unreachable": "서버에 연결할 수 없습니다. 네트워크와 백엔드 실행 여부를 확인해 주세요.",
+    "timeout": "요청 시간이 초과되었습니다."
+  },
+  "festival": {
+    "api": {
+      "error": "행사 API 오류"
+    }
+  },
+  "news": {
+    "api": {
+      "error": "뉴스 API 오류"
+    }
+  },
+  "usercontent": {
+    "api": {
+      "ai_polish_error": "AI 폴리시 오류",
+      "delete_error": "삭제 오류",
+      "feed_load_error": "피드 로드 오류",
+      "like_error": "좋아요 오류",
+      "s3_upload_error": "S3 업로드 실패",
+      "save_error": "저장 오류",
+      "validate_image_error": "이미지 검증 오류"
+    }
+  },
+  "userprofile": {
+    "api": {
+      "fetch_error": "프로필 조회 오류",
+      "save_error": "프로필 저장 오류"
+    }
+  },
+  "planner_dest": {
+    "seoul": {
+      "name": "Kota Seoul",
+      "highlight1": "Istana Gyeongbokgung",
+      "highlight2": "Hongdae",
+      "highlight3": "Taman Sungai Han"
+    },
+    "busan": {
+      "name": "Kota Busan",
+      "highlight1": "Pantai Haeundae",
+      "highlight2": "Desa Budaya Gamcheon",
+      "highlight3": "Pasar Jagalchi"
+    },
+    "daegu": {
+      "name": "Kota Daegu",
+      "highlight1": "Jalan Dongseong-ro",
+      "highlight2": "Jalan Kim Gwangseok",
+      "highlight3": "Danau Suseong"
+    },
+    "incheon": {
+      "name": "Kota Incheon",
+      "highlight1": "Songdo",
+      "highlight2": "Pulau Ganghwa",
+      "highlight3": "Chinatown"
+    },
+    "gwangju": {
+      "name": "Kota Gwangju",
+      "highlight1": "ACC (Pusat Budaya Asia)",
+      "highlight2": "Yangnim-dong"
+    },
+    "daejeon": {
+      "name": "Kota Daejeon",
+      "highlight1": "Toko roti Seongsimdang",
+      "highlight2": "Taman Expo",
+      "highlight3": "Air panas Yuseong"
+    },
+    "ulsan": {
+      "name": "Kota Ulsan",
+      "highlight1": "Ganjeolgot",
+      "highlight2": "Taman Daewangam",
+      "highlight3": "Sungai Taehwa"
+    },
+    "sejong": {
+      "name": "Kota Sejong",
+      "highlight1": "Taman Danau Sejong",
+      "highlight2": "Kebun Raya Nasional"
+    },
+    "jongno": {
+      "name": "Kawasan Jongno · Gwanghwamun",
+      "highlight1": "Gyeongbokgung",
+      "highlight2": "Cheong Wa Dae",
+      "highlight3": "Insadong"
+    },
+    "myeongdong": {
+      "name": "Kawasan Myeongdong · Euljiro",
+      "highlight1": "Katedral Myeongdong",
+      "highlight2": "Gang Euljiro"
+    },
+    "yongsan": {
+      "name": "Kawasan Yongsan · Itaewon",
+      "highlight1": "Museum Nasional Korea",
+      "highlight2": "Itaewon"
+    },
+    "gangnam": {
+      "name": "Kawasan Gangnam · Seocho",
+      "highlight1": "COEX",
+      "highlight2": "Apgujeong Rodeo",
+      "highlight3": "Taman Dosan"
+    },
+    "jamsil": {
+      "name": "Kawasan Jamsil · Songpa",
+      "highlight1": "Lotte World",
+      "highlight2": "Taman Olimpiade",
+      "highlight3": "Danau Seokchon"
+    },
+    "seongsu": {
+      "name": "Kawasan Seongsu · Hannam",
+      "highlight1": "Jalan kafe Seongsu",
+      "highlight2": "Galeri Hannam-dong"
+    },
+    "hongdae": {
+      "name": "Kawasan Hongdae · Mapo",
+      "highlight1": "Klub Hongdae",
+      "highlight2": "Yeonnam-dong",
+      "highlight3": "Hutan jalur Gyeongui"
+    },
+    "bukchon": {
+      "name": "Kawasan Bukchon · Samcheong",
+      "highlight1": "Desa hanok Bukchon",
+      "highlight2": "Kafe Samcheong-dong"
+    },
+    "nowon": {
+      "name": "Kawasan Nowon · Dobong",
+      "highlight1": "Gunung Surak",
+      "highlight2": "Gunung Dobong",
+      "highlight3": "Gunung Bulam"
+    },
+    "haeundae": {
+      "name": "Haeundae",
+      "highlight1": "Pantai Haeundae",
+      "highlight2": "Pulau Dongbaek",
+      "highlight3": "Jalan Dalmaji"
+    },
+    "gwangalli": {
+      "name": "Gwangalli · Suyeong",
+      "highlight1": "Jembatan Gwangandaegyo",
+      "highlight2": "Pantai Gwangalli"
+    },
+    "gijang": {
+      "name": "Gijang",
+      "highlight1": "Gereja Jukseong Dream",
+      "highlight2": "Pelabuhan Daebyeon",
+      "highlight3": "Akuarium"
+    },
+    "songjeong": {
+      "name": "Songjeong · Cheongsapo",
+      "highlight1": "Pantai Songjeong",
+      "highlight2": "Menara pandang Cheongsapo"
+    },
+    "nampo": {
+      "name": "Nampo · Jung-gu",
+      "highlight1": "Pasar Jagalchi",
+      "highlight2": "Alun-alun BIFF",
+      "highlight3": "Gang buku Bosu-dong"
+    },
+    "seomyeon": {
+      "name": "Seomyeon · Bujeon",
+      "highlight1": "Jalan Seomyeon",
+      "highlight2": "Judys Taehwa",
+      "highlight3": "Pasar Bujeon"
+    },
+    "gamcheon": {
+      "name": "Desa Budaya Gamcheon",
+      "highlight1": "Desa Budaya Gamcheon",
+      "highlight2": "Sky Road"
+    },
+    "yeongdo": {
+      "name": "Yeongdo",
+      "highlight1": "Taejongdae",
+      "highlight2": "Desa Budaya Huinnyeoul",
+      "highlight3": "Gunung Bongnae"
+    },
+    "geumjeong": {
+      "name": "Geumjeong · Oncheonjang",
+      "highlight1": "Benteng Geumjeongsanseong",
+      "highlight2": "Kuil Beomeosa",
+      "highlight3": "Oncheonjang"
+    },
+    "gangseo-bs": {
+      "name": "Gangseo · Gaekdo",
+      "highlight1": "Eulsukdo",
+      "highlight2": "Dataran pasang surut Gaekdo"
+    },
+    "dadaepo": {
+      "name": "Saha · Dadaepo",
+      "highlight1": "Pantai Dadaepo",
+      "highlight2": "Muara Sungai Nakdong"
+    },
+    "dongseongno": {
+      "name": "Dongseongno · Jung-gu",
+      "highlight1": "Dongseong-ro",
+      "highlight2": "Pasar Seomun",
+      "highlight3": "Pasar obat Yakjeon"
+    },
+    "gimgwangseok": {
+      "name": "Jalan Kim Gwangseok",
+      "highlight1": "Jalan Kim Gwangseok",
+      "highlight2": "Pasar Bangcheon"
+    },
+    "suseongmot": {
+      "name": "Danau Suseong · Beomeo",
+      "highlight1": "Danau Suseong",
+      "highlight2": "Taman rekreasi Suseong"
+    },
+    "palgongsan": {
+      "name": "Gunung Palgong",
+      "highlight1": "Kuil Donghwa",
+      "highlight2": "Batu Gatbawi",
+      "highlight3": "Langit Palgong"
+    },
+    "dalseong": {
+      "name": "Bisulsan · Dalseong",
+      "highlight1": "Bunga sakura Bisulsan",
+      "highlight2": "Lahan basah Dalseong"
+    },
+    "gunwi": {
+      "name": "Gunwi",
+      "highlight1": "Taman tema Samguk Yusa",
+      "highlight2": "Benteng Hwasan"
+    },
+    "ganjeolgot": {
+      "name": "Ganjeolgot",
+      "highlight1": "Mercusuar Ganjeolgot",
+      "highlight2": "Matahari terbit tahun baru"
+    },
+    "daewangam": {
+      "name": "Daewangam",
+      "highlight1": "Taman Daewangam",
+      "highlight2": "Pantai Ilsan"
+    },
+    "taehwagang": {
+      "name": "Sungai Taehwa",
+      "highlight1": "Taman Nasional Taehwa",
+      "highlight2": "Hutan bambu Sipri Daesup"
+    },
+    "bangudae": {
+      "name": "Bangudae",
+      "highlight1": "Ukiran batu Bangudae",
+      "highlight2": "Jipcheongjeong"
+    },
+    "jeju": {
+      "name": "Kota Jeju",
+      "highlight1": "Hallasan",
+      "highlight2": "Seongsan Ilchulbong",
+      "highlight3": "Pantai Hyeopjae"
+    },
+    "gyeongju": {
+      "name": "Gyeongju",
+      "highlight1": "Hwangridan-gil",
+      "highlight2": "Cheomseongdae",
+      "highlight3": "Bulguksa"
+    },
+    "gangneung": {
+      "name": "Gangneung",
+      "highlight1": "Pantai Gyeongpo",
+      "highlight2": "Jalan kopi Anmok",
+      "highlight3": "Ojukheon"
+    },
+    "jeonju": {
+      "name": "Jeonju",
+      "highlight1": "Desa hanok",
+      "highlight2": "Gang makgeolli"
+    },
+    "asan": {
+      "name": "Asan"
+    },
+    "cheonan": {
+      "name": "Cheonan"
+    },
+    "nonsan": {
+      "name": "Nonsan"
+    },
+    "seosan": {
+      "name": "Seosan"
+    },
+    "dangjin": {
+      "name": "Dangjin"
+    },
+    "iksan": {
+      "name": "Iksan"
+    },
+    "gochang": {
+      "name": "Gochang"
+    },
+    "jeongeup": {
+      "name": "Jeongeup"
+    },
+    "gimje": {
+      "name": "Gimje"
+    },
+    "wando": {
+      "name": "Wando"
+    },
+    "gangjin": {
+      "name": "Gangjin"
+    },
+    "yeonggwang": {
+      "name": "Yeonggwang"
+    },
+    "haenam": {
+      "name": "Haenam"
+    },
+    "goheung": {
+      "name": "Goheung"
+    },
+    "yeongam": {
+      "name": "Yeongam"
+    },
+    "gwangyang": {
+      "name": "Gwangyang"
+    },
+    "boseong": {
+      "name": "Boseong"
+    },
+    "naju": {
+      "name": "Naju"
+    },
+    "goyang": {
+      "name": "Goyang"
+    },
+    "paju": {
+      "name": "Paju"
+    },
+    "gimpo": {
+      "name": "Gimpo"
+    },
+    "uijeongbu": {
+      "name": "Uijeongbu"
+    },
+    "namyangju": {
+      "name": "Namyangju"
+    },
+    "guri": {
+      "name": "Guri"
+    },
+    "gapyeong": {
+      "name": "Gapyeong"
+    },
+    "yangpyeong": {
+      "name": "Yangpyeong"
+    },
+    "pocheon": {
+      "name": "Pocheon"
+    },
+    "yangju": {
+      "name": "Yangju"
+    },
+    "dongducheon": {
+      "name": "Dongducheon"
+    },
+    "suwon": {
+      "name": "Suwon"
+    },
+    "hwaseong": {
+      "name": "Hwaseong"
+    },
+    "ansan": {
+      "name": "Ansan"
+    },
+    "siheung": {
+      "name": "Siheung"
+    },
+    "anyang": {
+      "name": "Anyang"
+    },
+    "gunpo": {
+      "name": "Gunpo"
+    },
+    "pyeongtaek": {
+      "name": "Pyeongtaek"
+    },
+    "yongin": {
+      "name": "Yongin"
+    },
+    "seongnam": {
+      "name": "Seongnam"
+    },
+    "hanam": {
+      "name": "Hanam"
+    },
+    "icheon": {
+      "name": "Icheon"
+    },
+    "yeoju": {
+      "name": "Yeoju"
+    },
+    "anseong": {
+      "name": "Anseong"
+    },
+    "osan": {
+      "name": "Osan"
+    },
+    "uiwang": {
+      "name": "Uiwang"
+    },
+    "gwacheon": {
+      "name": "Gwacheon"
+    },
+    "bucheon": {
+      "name": "Bucheon"
+    },
+    "gwangmyeong": {
+      "name": "Gwangmyeong"
+    },
+    "chuncheon": {
+      "name": "Chuncheon"
+    },
+    "wonju": {
+      "name": "Wonju"
+    },
+    "pyeongchang": {
+      "name": "Pyeongchang"
+    },
+    "yeongwol": {
+      "name": "Yeongwol"
+    },
+    "hoengseong": {
+      "name": "Hoengseong"
+    },
+    "jeongseon": {
+      "name": "Jeongseon"
+    },
+    "inje": {
+      "name": "Inje"
+    },
+    "taebaek": {
+      "name": "Taebaek"
+    },
+    "sokcho": {
+      "name": "Sokcho"
+    },
+    "yangyang": {
+      "name": "Yangyang"
+    },
+    "donghae": {
+      "name": "Donghae"
+    },
+    "samcheok": {
+      "name": "Samcheok"
+    },
+    "goseong-gw": {
+      "name": "Goseong Gw"
+    },
+    "cheongju": {
+      "name": "Cheongju"
+    },
+    "chungju": {
+      "name": "Chungju"
+    },
+    "jecheon": {
+      "name": "Jecheon"
+    },
+    "danyang": {
+      "name": "Danyang"
+    },
+    "gongju": {
+      "name": "Gongju"
+    },
+    "buyeo": {
+      "name": "Buyeo"
+    },
+    "boryeong": {
+      "name": "Boryeong"
+    },
+    "taean": {
+      "name": "Taean"
+    },
+    "gunsan": {
+      "name": "Gunsan"
+    },
+    "namwon": {
+      "name": "Namwon"
+    },
+    "yeosu": {
+      "name": "Yeosu"
+    },
+    "suncheon": {
+      "name": "Suncheon"
+    },
+    "mokpo": {
+      "name": "Mokpo"
+    },
+    "damyang": {
+      "name": "Damyang"
+    },
+    "andong": {
+      "name": "Andong"
+    },
+    "yeongju": {
+      "name": "Yeongju"
+    },
+    "mungyeong": {
+      "name": "Mungyeong"
+    },
+    "pohang": {
+      "name": "Pohang"
+    },
+    "yeongdeok": {
+      "name": "Yeongdeok"
+    },
+    "uljin": {
+      "name": "Uljin"
+    },
+    "dokdo": {
+      "name": "Dokdo"
+    },
+    "gumi": {
+      "name": "Gumi"
+    },
+    "gimcheon": {
+      "name": "Gimcheon"
+    },
+    "yeongcheon": {
+      "name": "Yeongcheon"
+    },
+    "sangju": {
+      "name": "Sangju"
+    },
+    "gyeongsan": {
+      "name": "Gyeongsan"
+    },
+    "tongyeong": {
+      "name": "Tongyeong"
+    },
+    "geoje": {
+      "name": "Geoje"
+    },
+    "namhae": {
+      "name": "Namhae"
+    },
+    "goseong-gn": {
+      "name": "Goseong Gn"
+    },
+    "jinju": {
+      "name": "Jinju"
+    },
+    "changwon": {
+      "name": "Changwon"
+    },
+    "hapcheon": {
+      "name": "Hapcheon"
+    },
+    "miryang": {
+      "name": "Miryang"
+    },
+    "hamyang": {
+      "name": "Hamyang"
+    },
+    "sancheong": {
+      "name": "Sancheong"
+    },
+    "hadong": {
+      "name": "Hadong"
+    },
+    "geochang": {
+      "name": "Geochang"
+    },
+    "gimhae": {
+      "name": "Gimhae"
+    },
+    "yangsan": {
+      "name": "Yangsan"
+    },
+    "changnyeong": {
+      "name": "Changnyeong"
+    },
+    "uiryeong": {
+      "name": "Uiryeong"
+    },
+    "seogwipo": {
+      "name": "Seogwipo"
+    }
+  },
+  "planner_region": {
+    "seoul_areas": {
+      "label": "Kota Seoul",
+      "subLabel": "Area utama per distrik"
+    },
+    "gyeonggi_north": {
+      "label": "Gyeonggi Utara",
+      "subLabel": "Goyang, Paju, Uijeongbu, Namyangju, dll."
+    },
+    "gyeonggi_south": {
+      "label": "Gyeonggi Selatan",
+      "subLabel": "Suwon, Yongin, Seongnam, Pyeongtaek, dll."
+    },
+    "gangwon": {
+      "label": "Gangwon",
+      "subLabel": "Provinsi otonom khusus Gangwon"
+    },
+    "chungbuk": {
+      "label": "Chungcheongbuk-do",
+      "subLabel": "Cheongju, Chungju, Jecheon, Danyang"
+    },
+    "chungnam": {
+      "label": "Chungcheongnam-do",
+      "subLabel": "Gongju, Buyeo, Boryeong, Taean, dll."
+    },
+    "jeonbuk": {
+      "label": "Jeonbuk",
+      "subLabel": "Provinsi otonom khusus Jeonbuk"
+    },
+    "jeonnam": {
+      "label": "Jeollanam-do",
+      "subLabel": "Yeosu, Suncheon, Mokpo, Damyang, dll."
+    },
+    "busan": {
+      "label": "Kota Busan",
+      "subLabel": "Kota metropolitan Busan"
+    },
+    "daegu": {
+      "label": "Kota Daegu",
+      "subLabel": "Kota metropolitan Daegu"
+    },
+    "ulsan": {
+      "label": "Kota Ulsan",
+      "subLabel": "Kota metropolitan Ulsan"
+    },
+    "gyeongbuk": {
+      "label": "Gyeongsangbuk-do",
+      "subLabel": "Gyeongju, Pohang, Andong, dll."
+    },
+    "gyeongnam": {
+      "label": "Gyeongsangnam-do",
+      "subLabel": "Tongyeong, Geoje, Jinju, Changwon, dll."
+    },
+    "jeju": {
+      "label": "Jeju-do",
+      "subLabel": "Provinsi otonom khusus Jeju"
+    }
+  }
+}
