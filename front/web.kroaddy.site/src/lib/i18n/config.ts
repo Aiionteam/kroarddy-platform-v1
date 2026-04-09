@@ -16,6 +16,7 @@ export type Lang = "ko" | "en" | "ja" | "zh" | "de" | "fr" | "vi" | "th" | "id" 
 
 export const NATIONALITY_TO_LANG: Record<string, Lang> = {
   "한국": "ko",
+  "Korea": "ko",
   // English locales
   "USA": "en",
   "United States": "en",
@@ -45,8 +46,10 @@ export const NATIONALITY_TO_LANG: Record<string, Lang> = {
   // Other languages
   "日本": "ja",
   "일본": "ja",
+  "Japan": "ja",
   "中国": "zh",
   "중국": "zh",
+  "China": "zh",
   "Deutschland": "de",
   "독일": "de",
   "France": "fr",

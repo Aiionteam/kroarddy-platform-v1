@@ -57,9 +57,9 @@ function DestCard({ dest, onClick }: { dest: Destination; onClick: () => void })
   const [imgError, setImgError] = React.useState(false);
   const isKorean = (i18n.language || "").toLowerCase().startsWith("ko");
   const translatedName = t(`planner.dest.${dest.slug}.name`, { defaultValue: dest.name });
-  const nameForUi = !isKorean && translatedName === dest.name
-    ? (DEST_NAME_FALLBACK_EN[dest.slug] ?? humanizeSlug(dest.slug))
-    : translatedName;
+  // Non-KO locales: if a translation is missing, prefer original Korean name
+  // over English fallbacks to avoid leaking English into other languages.
+  const nameForUi = translatedName;
   const highlightsForUi = (dest.highlights ?? [])
     .map((h, idx) => {
       const translated = t(`planner.dest.${dest.slug}.highlight${idx + 1}`, { defaultValue: h });
@@ -281,9 +281,8 @@ export default function StandardPage() {
                       <span className="mr-1.5">{city.emoji ?? "📍"}</span>
                       {(() => {
                         const translated = t(`planner.dest.${city.slug}.name`, { defaultValue: city.name });
-                        return !isKorean && translated === city.name
-                          ? (DEST_NAME_FALLBACK_EN[city.slug] ?? humanizeSlug(city.slug))
-                          : translated;
+                      // Non-KO locales: fall back to original Korean name (not English).
+                      return translated;
                       })()}
                     </button>
                   ))}
@@ -301,9 +300,8 @@ export default function StandardPage() {
                   key={group.id}
                   label={(() => {
                     const translated = t(`planner.region.${group.id}.label`, { defaultValue: group.label });
-                    return !isKorean && translated === group.label
-                      ? (REGION_LABEL_FALLBACK_EN[group.id] ?? humanizeSlug(group.id))
-                      : translated;
+                    // Non-KO locales: fall back to original Korean group label (not English).
+                    return translated;
                   })()}
                   subLabel={group.subLabel
                     ? (() => {
@@ -327,9 +325,8 @@ export default function StandardPage() {
                   key={group.id}
                   label={(() => {
                     const translated = t(`planner.region.${group.id}.label`, { defaultValue: group.label });
-                    return !isKorean && translated === group.label
-                      ? (REGION_LABEL_FALLBACK_EN[group.id] ?? humanizeSlug(group.id))
-                      : translated;
+                    // Non-KO locales: fall back to original Korean group label (not English).
+                    return translated;
                   })()}
                   subLabel={group.subLabel
                     ? (() => {
