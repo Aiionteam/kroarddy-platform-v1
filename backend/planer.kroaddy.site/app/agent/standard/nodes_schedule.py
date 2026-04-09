@@ -24,10 +24,13 @@ from app.agent.standard.nodes_common import (
 )
 from app.agent.standard.state import PlannerState
 from app.core.config import settings
+from app.core.database.session import _get_async_session_factory
+from app.services.festival_client import fetch_festivals_for_period_with_db_cache
 from app.services.naver_map_client import geocode, keyword_search
 from app.services.naver_place_hours import enrich_schedule_items_with_hours
-from app.services.news_client import build_news_block_for_prompt
-from app.services.weather_client import build_weather_block_for_prompt
+from app.services.news_client import build_news_block_for_prompt, fetch_news_top10
+from app.services.user_info_client import fetch_user_profile
+from app.services.weather_client import build_weather_block_for_prompt, fetch_weather_for_planner
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +39,104 @@ _TRAVEL_DAYS_DEFAULT = 2
 _WEB_CONTEXT_MAX_CHARS = 2000
 # 선행 검색만 1분 미만으로 제한 (초과 시 빈 맥락으로 일정 생성 계속)
 _WEB_GATHER_TIMEOUT_SEC = 55.0
+
+
+async def gather_context_node(state: PlannerState) -> PlannerState:
+    """프로필 · 행사 · 뉴스 · 날씨 · 웹 서칭을 **동시에** 수집하는 LangGraph 노드.
+
+    각 데이터 소스는 독립적으로 비동기 실행되어 전체 대기 시간은
+    가장 느린 소스 1개의 시간만큼만 걸린다.
+
+    수집 결과는 PlannerState 필드에 저장되어 generate_schedule_node로 전달된다.
+    """
+    t0 = perf_counter()
+    location = state["location"]
+    location_name = state.get("location_name") or location
+    user_id = state.get("user_id")
+    start_date = state.get("start_date")
+    end_date = state.get("end_date")
+    use_search: bool = bool(state.get("use_search"))
+
+    # ── 각 에이전트 코루틴 정의 ───────────────────────────────────────────────
+
+    async def _fetch_profile() -> dict | None:
+        try:
+            return await fetch_user_profile(user_id) if user_id else None
+        except Exception as e:
+            logger.warning("프로필 조회 실패: %s", e)
+            return None
+
+    async def _fetch_festivals() -> list:
+        try:
+            # gather_context_node는 자체 DB 세션을 생성해 사용한다
+            factory = _get_async_session_factory()
+            async with factory() as session:
+                return await fetch_festivals_for_period_with_db_cache(
+                    session,
+                    location=location,
+                    location_name=location_name,
+                    start_date=start_date,
+                    end_date=end_date,
+                ) or []
+        except Exception as e:
+            logger.warning("행사 조회 실패: %s", e)
+            return []
+
+    async def _fetch_news() -> list:
+        # 프론트에서 넘어온 뉴스가 있으면 그것을 우선 사용 (API 호출 생략)
+        existing = state.get("news_top10")
+        if existing:
+            return existing
+        try:
+            return await fetch_news_top10(start_date, end_date) or []
+        except Exception as e:
+            logger.warning("뉴스 조회 실패: %s", e)
+            return []
+
+    async def _fetch_weather() -> dict | None:
+        try:
+            return await fetch_weather_for_planner(location_name, None, start_date, end_date)
+        except Exception as e:
+            logger.warning("날씨 조회 실패: %s", e)
+            return None
+
+    # ── 5개 에이전트 병렬 실행 ────────────────────────────────────────────────
+    # web_search는 profile이 있어야 lang을 확정할 수 있어, 프로필과 함께 먼저 실행
+    profile, festivals, news, weather = await asyncio.gather(
+        _fetch_profile(),
+        _fetch_festivals(),
+        _fetch_news(),
+        _fetch_weather(),
+    )
+
+    # 프로필 언어 확정 후 웹 검색 (언어에 맞는 쿼리를 써야 정확)
+    web_ctx = ""
+    if use_search:
+        lang = _get_lang(profile)
+        route_name = state.get("route_name") or ""
+        try:
+            web_ctx = await _gather_web_search_context(
+                location_name=location_name,
+                route_name=route_name,
+                start_date=start_date,
+                end_date=end_date,
+                lang=lang,
+            )
+        except Exception as e:
+            logger.warning("웹 검색 수집 실패: %s", e)
+
+    logger.info(
+        "컨텍스트 수집 완료: 행사=%d, 뉴스=%d, 날씨=%s, 웹검색=%d자 (%.2fs)",
+        len(festivals), len(news), "O" if weather else "X", len(web_ctx), perf_counter() - t0,
+    )
+    return {
+        **state,
+        "user_profile": profile,
+        "festivals": festivals,
+        "news_top10": news,
+        "weather_forecast": weather,
+        "web_search_context": web_ctx or None,
+    }
 
 
 def _format_web_search_block(raw: str, lang: str) -> str:
@@ -295,6 +396,11 @@ async def _fix_duplicate_days(
 
 
 async def generate_schedule(state: PlannerState) -> PlannerState:
+    """gather_context_node가 수집한 데이터를 받아 Day별 병렬 일정을 생성한다.
+
+    - gather_context_node가 먼저 실행되었다면 state에 이미 모든 컨텍스트가 있다.
+    - 직접 호출(스트리밍 엔드포인트 등) 시에도 state에서 데이터를 읽어 동작한다.
+    """
     t0 = perf_counter()
     location_name = state.get("location_name") or state["location"]
     route_name = state.get("route_name") or ""
@@ -305,7 +411,6 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
     news_top10: list = state.get("news_top10") or []
     weather_forecast: dict | None = state.get("weather_forecast")
     transport_mode: str | None = state.get("transport_mode")
-    use_search: bool = bool(state.get("use_search"))
 
     lang = _get_lang(user_profile)
     lang_dir = _lang_directive(lang)
@@ -316,9 +421,10 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
     festival_block = _build_festival_block(festivals, lang=lang)
     date_list = _build_date_list(start_date, end_date)
 
-    # Google 웹 검색은 Day 생성 **이전에 1회만** (정확도 우선, Day별 검색 도구 반복 없음)
-    web_search_block = ""
-    if use_search:
+    # gather_context_node에서 이미 수집된 웹 검색 컨텍스트를 우선 사용한다.
+    # 없으면 use_search=True 일 때 직접 수집 (generate_schedule 단독 호출 호환).
+    raw_ctx = state.get("web_search_context") or ""
+    if not raw_ctx and bool(state.get("use_search")):
         raw_ctx = await _gather_web_search_context(
             location_name=location_name,
             route_name=route_name,
@@ -326,7 +432,7 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
             end_date=end_date,
             lang=lang,
         )
-        web_search_block = _format_web_search_block(raw_ctx, lang)
+    web_search_block = _format_web_search_block(raw_ctx, lang) if raw_ctx else ""
 
     if date_list:
         num_days = len(date_list)
