@@ -1,9 +1,14 @@
+import "dart:async";
+
+import "package:easy_localization/easy_localization.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
+import "../../../core/locale/locale_from_nationality.dart";
 import "../../../core/preferences/onboarding_prefs.dart";
 import "../data/profile_models.dart";
+import "../data/profile_option_labels.dart";
 import "../data/profile_repository.dart";
 
 class OnboardingPage extends ConsumerStatefulWidget {
@@ -19,23 +24,24 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   String message = "";
   ProfileForm form = ProfileForm.empty();
 
-  static const steps = <({String key, String title, List<String> options})>[
-    (key: "nationality", title: "어느 나라에서 오셨나요?", options: nationalityOptions),
-    (key: "gender", title: "성별을 알려주세요", options: genderOptions),
-    (key: "age_band", title: "나이대를 선택해주세요", options: ageBandOptions),
-    (key: "dietary_pref", title: "식습관을 알려주세요", options: dietaryOptions),
-    (key: "religion", title: "종교가 있으신가요?", options: religionOptions),
-  ];
+  List<({String key, String title, List<String> options})> get _steps => [
+        (key: "nationality", title: "onboarding.steps.nationality".tr(), options: nationalityOptions),
+        (key: "gender", title: "onboarding.steps.gender".tr(), options: genderOptions),
+        (key: "age_band", title: "onboarding.steps.age_band".tr(), options: ageBandOptions),
+        (key: "dietary_pref", title: "onboarding.steps.dietary_pref".tr(), options: dietaryOptions),
+        (key: "religion", title: "onboarding.steps.religion".tr(), options: religionOptions),
+      ];
 
   @override
   Widget build(BuildContext context) {
     final repo = ref.read(profileRepositoryProvider);
+    final steps = _steps;
     final current = steps[step];
     final isLast = step == steps.length - 1;
     final selected = _valueByKey(current.key);
 
     return Scaffold(
-      appBar: AppBar(title: const Text("여행 취향 설정")),
+      appBar: AppBar(title: Text("onboarding.title".tr())),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -51,9 +57,15 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               children: current.options
                   .map(
                     (opt) => ChoiceChip(
-                      label: Text(opt),
+                      label: Text(_optionLabel(current.key, opt)),
                       selected: selected == opt,
-                      onSelected: (_) => setState(() => _setByKey(current.key, selected == opt ? "" : opt)),
+                      onSelected: (_) {
+                        final next = selected == opt ? "" : opt;
+                        setState(() => _setByKey(current.key, next));
+                        if (current.key == "nationality") {
+                          unawaited(LocaleFromNationality.apply(next, fromSavedProfile: false));
+                        }
+                      },
                     ),
                   )
                   .toList(),
@@ -78,7 +90,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                               setState(() => step -= 1);
                             }
                           },
-                    child: const Text("이전"),
+                    child: Text("onboarding.prev".tr()),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -94,7 +106,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                             }
                             setState(() {
                               loading = true;
-                              message = "저장 중...";
+                              message = "onboarding.saving".tr();
                             });
                             try {
                               final ids = await repo.resolveIds();
@@ -108,11 +120,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                             } catch (e) {
                               setState(() {
                                 loading = false;
-                                message = "저장 실패: $e";
+                                message = "${"settings.error.save".tr()}: $e";
                               });
                             }
                           },
-                    child: Text(isLast ? "완료" : "다음"),
+                    child: Text(isLast ? "common.done".tr() : "common.next".tr()),
                   ),
                 ),
               ],
@@ -127,7 +139,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                         if (!context.mounted) return;
                         context.go("/home");
                       },
-                child: const Text("나중에 할게요"),
+                child: Text("onboarding.skip_later".tr()),
               ),
             ),
           ],
@@ -150,6 +162,23 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         return form.religion;
       default:
         return "";
+    }
+  }
+
+  String _optionLabel(String stepKey, String opt) {
+    switch (stepKey) {
+      case "nationality":
+        return optionLabelNationality(opt);
+      case "gender":
+        return optionLabelGender(opt);
+      case "age_band":
+        return optionLabelAge(opt);
+      case "dietary_pref":
+        return optionLabelDiet(opt);
+      case "religion":
+        return optionLabelReligion(opt);
+      default:
+        return opt;
     }
   }
 

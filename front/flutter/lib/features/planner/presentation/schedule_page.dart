@@ -1,5 +1,6 @@
 import "dart:math" as math;
 
+import "package:easy_localization/easy_localization.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_naver_map/flutter_naver_map.dart";
@@ -22,6 +23,15 @@ const _kKoreaLatMax = 38.7;
 const _kKoreaLngMin = 124.5;
 const _kKoreaLngMax = 132.0;
 const _routeDedupeThresholdM = 50.0;
+
+/// `intl` DateFormat용 BCP 47 스타일 코드 (예: `ja`, `zh_CN`).
+String _intlLocaleTag(BuildContext context) {
+  final l = context.locale;
+  if (l.countryCode != null && l.countryCode!.isNotEmpty) {
+    return "${l.languageCode}_${l.countryCode}";
+  }
+  return l.languageCode;
+}
 
 bool _isValidKoreaMapCoord(double lat, double lng) {
   if (lat == 0 && lng == 0) return false;
@@ -376,6 +386,13 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = _intlLocaleTag(context);
+    final monthTitle = DateFormat.yMMMM(loc).format(_focusedMonth);
+    final weekdayLabels = List.generate(7, (i) {
+      final d = DateTime(2023, 1, 1).add(Duration(days: i));
+      return DateFormat.E(loc).format(d);
+    });
+
     return Scaffold(
       backgroundColor: _bgPage,
       appBar: AppBar(
@@ -386,9 +403,9 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
           icon: const Icon(Icons.menu, color: _textPrimary),
           onPressed: () => mainScaffoldKey.currentState?.openDrawer(),
         ),
-        title: const Text(
-          "마이플랜",
-          style: TextStyle(color: _textPrimary, fontWeight: FontWeight.bold, fontSize: 18),
+        title: Text(
+          "sidebar.schedule".tr(),
+          style: const TextStyle(color: _textPrimary, fontWeight: FontWeight.bold, fontSize: 18),
         ),
         actions: [
           TextButton(
@@ -397,7 +414,7 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
               foregroundColor: _purple,
               textStyle: const TextStyle(fontWeight: FontWeight.w700),
             ),
-            child: const Text("+ 새 루트"),
+            child: Text("screens.schedule.new_route".tr()),
           ),
         ],
       ),
@@ -429,7 +446,7 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
                       }),
                     ),
                     Text(
-                      "${_focusedMonth.year}년 ${_focusedMonth.month}월",
+                      monthTitle,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -446,9 +463,11 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
                 ),
                 const SizedBox(height: 8),
                 Row(
-                  children: ["일", "월", "화", "수", "목", "금", "토"].map((d) {
-                    final isSun = d == "일";
-                    final isSat = d == "토";
+                  children: weekdayLabels.asMap().entries.map((e) {
+                    final i = e.key;
+                    final d = e.value;
+                    final isSun = i == 0;
+                    final isSat = i == 6;
                     return Expanded(
                       child: Center(
                         child: Text(
@@ -493,6 +512,7 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
     required List<TravelPlanRecord> plans,
     required DateTime? selectedDate,
   }) {
+    final loc = _intlLocaleTag(context);
     final totalItems = selectedDate == null
         ? null
         : plans.fold<int>(0, (acc, p) => acc + _itemsOnDate(p, selectedDate).length);
@@ -519,14 +539,15 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
               children: [
                 Expanded(
                   child: Text(
-                    "${selectedDate.year}년 ${selectedDate.month}월 ${selectedDate.day}일 · ${totalItems ?? 0}개 일정",
+                    "${DateFormat.yMMMd(loc).format(selectedDate)} · "
+                    "${"screens.schedule.plan_items".tr(namedArgs: {"count": "${totalItems ?? 0}"})}",
                     style: const TextStyle(fontWeight: FontWeight.w800, color: _textPrimary),
                   ),
                 ),
                 TextButton(
                   onPressed: () => setState(() => _selectedDate = null),
                   style: TextButton.styleFrom(foregroundColor: _purple),
-                  child: const Text("전체 보기"),
+                  child: Text("screens.schedule.show_all".tr()),
                 ),
               ],
             ),
@@ -859,20 +880,25 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
   }
 
   Widget _buildEmptyState() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text("📋", style: TextStyle(fontSize: 48)),
-          SizedBox(height: 12),
+          const Text("📋", style: TextStyle(fontSize: 48)),
+          const SizedBox(height: 12),
           Text(
-            "저장된 플랜이 없습니다.",
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
+            "screens.schedule.empty_no_plans".tr(),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
+            textAlign: TextAlign.center,
           ),
-          SizedBox(height: 6),
-          Text(
-            "여행플래너에서 AI 루트를 생성해보세요",
-            style: TextStyle(fontSize: 13, color: _textSecondary),
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              "screens.schedule.empty_go_planner".tr(),
+              style: const TextStyle(fontSize: 13, color: _textSecondary),
+              textAlign: TextAlign.center,
+            ),
           ),
         ],
       ),

@@ -1,3 +1,4 @@
+import "package:easy_localization/easy_localization.dart";
 import "package:flutter/material.dart";
 import "package:go_router/go_router.dart";
 
@@ -10,27 +11,27 @@ const _bgPage = Color(0xFFF8F7FF);
 class GuideLandingPage extends StatelessWidget {
   const GuideLandingPage({super.key});
 
-  static const _options = [
-    _GuideOption(
-      emoji: "🍜",
-      label: "맛집 추천",
-      description: "지역별 맛집 탐색",
-      path: "/guide/restaurant",
-      color: Color(0xFFD97706),
-      bg: Color(0xFFFEF3C7),
-    ),
-    _GuideOption(
-      emoji: "🎪",
-      label: "행사 추천",
-      description: "전국 문화 축제 캘린더",
-      path: "/guide/event",
-      color: Color(0xFFDB2777),
-      bg: Color(0xFFFCE7F3),
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final options = [
+      _GuideOption(
+        emoji: "🍜",
+        label: "screens.guide.restaurant_label".tr(),
+        description: "screens.guide.restaurant_desc".tr(),
+        path: "/guide/restaurant",
+        color: const Color(0xFFD97706),
+        bg: const Color(0xFFFEF3C7),
+      ),
+      _GuideOption(
+        emoji: "🎪",
+        label: "screens.guide.event_label".tr(),
+        description: "screens.guide.event_desc".tr(),
+        path: "/guide/event",
+        color: const Color(0xFFDB2777),
+        bg: const Color(0xFFFCE7F3),
+      ),
+    ];
+
     return Scaffold(
       backgroundColor: _bgPage,
       appBar: AppBar(
@@ -40,9 +41,9 @@ class GuideLandingPage extends StatelessWidget {
           icon: const Icon(Icons.menu, color: _textPrimary),
           onPressed: () => mainScaffoldKey.currentState?.openDrawer(),
         ),
-        title: const Text(
-          "장소 추천",
-          style: TextStyle(
+        title: Text(
+          "screens.guide.landing_title".tr(),
+          style: const TextStyle(
             color: _textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -56,18 +57,18 @@ class GuideLandingPage extends StatelessWidget {
           children: [
             const SizedBox(height: 8),
             Text(
-              "맛집과 행사를 한 화면에서 선택해서 살펴보세요.",
-              style: TextStyle(fontSize: 14, color: _textSecondary),
+              "screens.guide.landing_subtitle".tr(),
+              style: const TextStyle(fontSize: 14, color: _textSecondary),
             ),
             const SizedBox(height: 24),
             Row(
-              children: _options
+              children: options
                   .map(
                     (opt) => Expanded(
                       child: Padding(
                         padding: EdgeInsets.only(
-                          right: opt == _options.first ? 8 : 0,
-                          left: opt == _options.last ? 8 : 0,
+                          right: opt == options.first ? 8 : 0,
+                          left: opt == options.last ? 8 : 0,
                         ),
                         child: _GuideOptionCard(option: opt),
                       ),
@@ -83,7 +84,7 @@ class GuideLandingPage extends StatelessWidget {
 }
 
 class _GuideOption {
-  const _GuideOption({
+  _GuideOption({
     required this.emoji,
     required this.label,
     required this.description,

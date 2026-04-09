@@ -1,22 +1,52 @@
+import "package:easy_localization/easy_localization.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
+import "../locale/locale_from_nationality.dart";
 import "../theme/kroaddy_colors.dart";
 import "../../features/auth/presentation/state/auth_controller.dart";
+import "../../features/profile/data/profile_repository.dart";
 
 final mainScaffoldKey = GlobalKey<ScaffoldState>();
 
-class MainShell extends StatelessWidget {
+class MainShell extends ConsumerStatefulWidget {
   const MainShell({required this.child, super.key});
   final Widget child;
+
+  @override
+  ConsumerState<MainShell> createState() => _MainShellState();
+}
+
+class _MainShellState extends ConsumerState<MainShell> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncLocaleFromSavedProfile());
+  }
+
+  /// 웹 `useAutoLocaleFromProfile` 과 같이, 로그인 후 저장된 국적으로 언어를 한 번 맞춥니다.
+  Future<void> _syncLocaleFromSavedProfile() async {
+    try {
+      final repo = ref.read(profileRepositoryProvider);
+      final ids = await repo.resolveIds();
+      final travel = await repo.fetchTravelProfile(ids.$2);
+      if (!mounted) return;
+      await LocaleFromNationality.apply(
+        travel?.nationality ?? "",
+        fromSavedProfile: true,
+      );
+    } catch (_) {
+      // 토큰 없음·API 실패 시 기존 로케일 유지
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: mainScaffoldKey,
       drawer: const _AppDrawer(),
-      body: child,
+      body: widget.child,
     );
   }
 }
@@ -58,11 +88,11 @@ class _AppDrawer extends ConsumerWidget {
             const SizedBox(height: 8),
 
             // ── 카테고리 레이블 ──────────────────────────────────
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 4, 20, 6),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 6),
               child: Text(
-                "카테고리",
-                style: TextStyle(
+                "sidebar.section_category".tr(),
+                style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: Color(0xFF9CA3AF),
@@ -73,32 +103,32 @@ class _AppDrawer extends ConsumerWidget {
 
             // ── 메인 메뉴 항목 ───────────────────────────────────
             _DrawerItem(
-              label: "장소탐색",
+              label: "sidebar.guide".tr(),
               path: "/guide",
               current: location,
               leadingAsset: "icons/sidebar/jangso.png",
             ),
             _DrawerItem(
-              label: "여행피드",
+              label: "sidebar.tourstar".tr(),
               path: "/tourstar",
               current: location,
               leadingAsset: "icons/sidebar/feed.png",
             ),
             _DrawerItem(
-              label: "여행플래너",
+              label: "sidebar.planner".tr(),
               path: "/planner",
               excludePrefixes: const ["/planner/schedule"],
               current: location,
               leadingAsset: "icons/sidebar/planner.png",
             ),
             _DrawerItem(
-              label: "마이플랜",
+              label: "sidebar.schedule".tr(),
               path: "/planner/schedule",
               current: location,
               leadingAsset: "icons/sidebar/myplan.png",
             ),
             _DrawerItem(
-              label: "그룹톡",
+              label: "sidebar.groupchat".tr(),
               path: "/chat",
               // 하단 메뉴(/chat/friends, /chat/whisper)에서는 그룹톡이 선택되지 않게 제외
               excludePrefixes: const ["/chat/friends", "/chat/whisper"],
@@ -106,7 +136,7 @@ class _AppDrawer extends ConsumerWidget {
               leadingAsset: "icons/sidebar/grouptalk.png",
             ),
             _DrawerItem(
-              label: "개인톡",
+              label: "sidebar.whisper".tr(),
               path: "/chat/whisper",
               current: location,
               leadingAsset: "icons/sidebar/talk.png",
@@ -119,14 +149,21 @@ class _AppDrawer extends ConsumerWidget {
             _DrawerItem(
               icon: Icons.people_outline,
               activeIcon: Icons.people,
-              label: "친구목록",
+              label: "sidebar.friends".tr(),
               path: "/chat/friends",
+              current: location,
+            ),
+            _DrawerItem(
+              icon: Icons.support_agent_outlined,
+              activeIcon: Icons.support_agent,
+              label: "sidebar.customer".tr(),
+              path: "/customer",
               current: location,
             ),
             _DrawerItem(
               icon: Icons.settings_outlined,
               activeIcon: Icons.settings,
-              label: "설정",
+              label: "sidebar.settings_short".tr(),
               path: "/profile",
               current: location,
             ),
@@ -134,9 +171,9 @@ class _AppDrawer extends ConsumerWidget {
             // ── 로그아웃 ────────────────────────────────────────
             ListTile(
               leading: const Icon(Icons.logout, color: Color(0xFFEF4444), size: 22),
-              title: const Text(
-                "로그아웃",
-                style: TextStyle(
+              title: Text(
+                "common.logout".tr(),
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFFEF4444),

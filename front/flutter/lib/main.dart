@@ -1,3 +1,4 @@
+import "package:easy_localization/easy_localization.dart";
 import "package:flutter/widgets.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_naver_map/flutter_naver_map.dart";
@@ -31,6 +32,7 @@ void _logNaverMapAuthFailed(NAuthFailedException ex) {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await EasyLocalization.ensureInitialized();
 
   if (_naverMapClientId.isNotEmpty) {
     await FlutterNaverMap().init(
@@ -44,5 +46,25 @@ Future<void> main() async {
     );
   }
 
-  runApp(const ProviderScope(child: KroaddyApp()));
+  runApp(
+    EasyLocalization(
+      supportedLocales: const [
+        Locale("ko"),
+        Locale("en"),
+        Locale("ja"),
+        Locale("zh"),
+        Locale("de"),
+        Locale("fr"),
+        Locale("vi"),
+        Locale("th"),
+        Locale("id"),
+        Locale("hi"),
+      ],
+      path: "assets/translations",
+      fallbackLocale: const Locale("ko"),
+      startLocale: const Locale("ko"),
+      saveLocale: true,
+      child: const ProviderScope(child: KroaddyApp()),
+    ),
+  );
 }

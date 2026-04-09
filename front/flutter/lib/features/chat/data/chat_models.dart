@@ -14,7 +14,7 @@ class ChatRoomInfo {
   factory ChatRoomInfo.fromJson(Map<String, dynamic> json) {
     return ChatRoomInfo(
       roomType: json["roomType"]?.toString() ?? "SILVER",
-      label: json["label"]?.toString() ?? "실버",
+      label: json["label"]?.toString() ?? "",
       minHonor: (json["minHonor"] as num?)?.toInt() ?? 0,
       accessible: json["accessible"] == true,
     );

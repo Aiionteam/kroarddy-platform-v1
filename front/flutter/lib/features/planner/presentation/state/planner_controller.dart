@@ -1,3 +1,4 @@
+import "package:easy_localization/easy_localization.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
 import "../../../../core/auth/jwt_claims.dart";
@@ -143,14 +144,14 @@ class PlannerController extends Notifier<PlannerState> {
         selectedRouteName: routes.isNotEmpty ? routes.first.name : null,
         routesError: routes.isEmpty ? result.error : null,
         statusMessage: routes.isEmpty
-            ? (result.error ?? "추천 루트를 받지 못했습니다.")
-            : "추천 루트 ${routes.length}개를 받았습니다.",
+            ? (result.error ?? "screens.planner.msg_no_routes".tr())
+            : "screens.planner.msg_routes_received".tr(namedArgs: {"count": "${routes.length}"}),
       );
     } catch (e) {
       state = state.copyWith(
         routesLoading: false,
-        routesError: "루트 조회 실패: $e",
-        statusMessage: "루트 조회 실패: $e",
+        routesError: "screens.planner.msg_route_failed".tr(namedArgs: {"error": "$e"}),
+        statusMessage: "screens.planner.msg_route_failed".tr(namedArgs: {"error": "$e"}),
       );
     }
   }
@@ -164,13 +165,13 @@ class PlannerController extends Notifier<PlannerState> {
     final location = state.location.trim();
     final routeName = state.selectedRouteName?.trim() ?? "";
     if (location.isEmpty || routeName.isEmpty) {
-      state = state.copyWith(statusMessage: "지역과 루트를 먼저 선택해 주세요.");
+      state = state.copyWith(statusMessage: "screens.planner.status_pick_route".tr());
       return;
     }
 
     state = state.copyWith(
       scheduleLoading: true,
-      statusMessage: "선택 루트 일정 생성 중...",
+      statusMessage: "screens.planner.msg_schedule_generating".tr(),
       clearScheduleError: true,
       schedule: const [],
       clearCostSummary: true,
@@ -210,10 +211,10 @@ class PlannerController extends Notifier<PlannerState> {
     final userId = _currentAppUserId();
     final routeName = state.selectedRouteName;
     if (routeName == null || routeName.isEmpty || state.schedule.isEmpty) {
-      state = state.copyWith(statusMessage: "저장할 일정이 없습니다.");
+      state = state.copyWith(statusMessage: "screens.planner.msg_nothing_to_save".tr());
       return;
     }
-    state = state.copyWith(saving: true, statusMessage: "일정 저장 중...");
+    state = state.copyWith(saving: true, statusMessage: "screens.planner.msg_saving_plan".tr());
     try {
       final res = await _repo.savePlan(
         location: state.location,
@@ -226,12 +227,12 @@ class PlannerController extends Notifier<PlannerState> {
       state = state.copyWith(
         saving: false,
         savedPlanId: res.planId,
-        statusMessage: "저장 완료 (plan_id: ${res.planId})",
+        statusMessage: "screens.planner.msg_saved_plan".tr(namedArgs: {"id": "${res.planId}"}),
       );
     } catch (e) {
       state = state.copyWith(
         saving: false,
-        statusMessage: "저장 실패: $e",
+        statusMessage: "screens.planner.msg_save_failed".tr(namedArgs: {"error": "$e"}),
       );
     }
   }
