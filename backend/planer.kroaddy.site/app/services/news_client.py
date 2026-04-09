@@ -64,33 +64,34 @@ def build_news_block_for_prompt(
     *,
     for_k_content: bool = False,
     lang: str = "Korean",
+    max_items: int = 3,
 ) -> str:
     """뉴스 Top10 → 프롬프트 삽입용 텍스트 블록 생성.
 
     for_k_content=True이면 날짜가 여행 기간 내인 항목 강조 + 지시어 강화.
     lang에 따라 헤더/푸터 언어를 분기한다.
+    max_items: 프롬프트에 포함할 최대 뉴스 수 (기본 3).
     """
     if not news_top10:
         return ""
 
     lines: list[str] = []
-    for n in news_top10[:10]:
+    for n in news_top10[:max_items]:
         title = n.get("title", "")
         loc = n.get("location", "")
         date_m = n.get("date_mentioned", "") or ""
         cat = n.get("category", "")
-        summary = (n.get("gpt_summary") or n.get("summary", ""))[:80]
+        summary = (n.get("gpt_summary") or n.get("summary", ""))[:40]
 
-        line = f"  • [{cat}] {title}"
         meta: list[str] = []
         if loc and loc != "전국":
             meta.append(loc)
         if date_m:
             meta.append(f"📅{date_m}")
-        if meta:
-            line += f" ({', '.join(meta)})"
+        meta_str = f" ({', '.join(meta)})" if meta else ""
+        line = f"  • [{cat}] {title}{meta_str}"
         if summary:
-            line += f"\n      → {summary}"
+            line += f" – {summary}"
         lines.append(line)
 
     if lang == "Korean":
