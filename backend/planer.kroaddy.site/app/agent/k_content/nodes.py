@@ -137,15 +137,6 @@ def _get_llm_with_search():
     return llm.bind_tools([{"google_search": {}}])
 
 
-def _get_fallback_llm():
-    from langchain_openai import ChatOpenAI  # lazy import
-
-    return ChatOpenAI(
-        model="gpt-5-mini",
-        openai_api_key=settings.openai_api_key,
-    )
-
-
 _DAILY_QUOTA_MARKERS = (
     "GenerateRequestsPerDayPerProjectPerModel",
     "You exceeded your current quota",
@@ -167,8 +158,7 @@ async def _invoke(llm: Any, messages: list, *, max_retries: int = 2, plain_fallb
 
     - Semaphore로 워커당 동시 Gemini 호출 수 제한 (429 예방)
     - 일시적 429 (분당 제한): 지수 백오프 + jitter 재시도
-    - 일일 쿼터 초과: OpenAI gpt-5-mini 자동 폴백 (OPENAI_API_KEY 설정 시)
-    - grounding 호출 중 429/미지원 에러 시: 일반 LLM 즉시 폴백
+    - grounding 호출 중 429/미지원 에러 시: 일반 Gemini(비검색) 즉시 폴백
     """
     try:
         await asyncio.wait_for(_GEMINI_SEMAPHORE.acquire(), timeout=_SEMAPHORE_WAIT_TIMEOUT)
@@ -184,7 +174,7 @@ async def _invoke(llm: Any, messages: list, *, max_retries: int = 2, plain_fallb
 
 
 async def _invoke_inner(llm: Any, messages: list, *, max_retries: int, plain_fallback: bool) -> Any:
-    """실제 Gemini/GPT 호출 로직 (Semaphore 제어는 _invoke에서 담당)."""
+    """실제 Gemini 호출 로직 (Semaphore 제어는 _invoke에서 담당)."""
     for attempt in range(max_retries + 1):
         try:
             return await llm.ainvoke(messages)
@@ -196,35 +186,7 @@ async def _invoke_inner(llm: Any, messages: list, *, max_retries: int, plain_fal
                 logger.warning("Google Search grounding 미지원 – 일반 LLM으로 즉시 폴백")
                 return await _get_llm().ainvoke(messages)
 
-            # 일일 한도 초과 → OpenAI 폴백
             if _is_daily_quota(e):
-                if settings.openai_api_key:
-                    logger.warning("Gemini 일일 쿼터 초과 → gpt-5-mini 폴백 시도")
-                    fallback = _get_fallback_llm()
-                    result = await fallback.ainvoke(messages)
-
-                    # reasoning 모델은 content 대신 additional_kwargs에 응답이 담길 수 있음
-                    if not result.content:
-                        ak = getattr(result, "additional_kwargs", {})
-                        alt = (
-                            ak.get("reasoning_content")
-                            or ak.get("content")
-                            or ak.get("text")
-                            or ""
-                        )
-                        logger.warning(
-                            "gpt-5-mini content 비어있음. additional_kwargs=%r, alt=%r",
-                            {k: str(v)[:200] for k, v in ak.items()},
-                            alt[:200] if alt else "",
-                        )
-                        if alt:
-                            from langchain_core.messages import AIMessage
-
-                            result = AIMessage(content=alt)
-
-                    logger.info("gpt-5-mini 폴백 완료 (content_len=%d)", len(result.content or ""))
-                    return result
-                # API 키 없으면 원래 에러 그대로 올림
                 raise
 
             # 일시적 429 (분당 제한)

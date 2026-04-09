@@ -1,8 +1,8 @@
 """KOBIS (한국영화진흥위원회) 영화 상영 정보 클라이언트.
 
 영화 관련 일정 수정 요청 시 실시간 박스오피스 데이터를 LLM 프롬프트에 주입한다.
-Gemini는 Google Search grounding으로 자체 검색하지만, GPT fallback은 외부 데이터가
-없으므로 이 클라이언트로 KOBIS 실시간 정보를 직접 공급한다.
+Gemini grounding만으로는 부족할 수 있어, 영화 일정 보강용으로 KOBIS 실시간 정보를
+직접 공급한다.
 """
 import logging
 from datetime import datetime, timedelta

@@ -1,9 +1,9 @@
 """LangGraph 그래프 정의 – Standard 플래너."""
 from langgraph.graph import END, StateGraph
 
-from app.agent.standard.nodes import (
+from app.agent.standard.nodes_routes import generate_routes
+from app.agent.standard.nodes_schedule import (
     enrich_business_hours_schedule,
-    generate_routes,
     generate_schedule,
     geocode_schedule,
 )

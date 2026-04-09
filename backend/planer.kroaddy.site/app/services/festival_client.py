@@ -8,12 +8,16 @@ import logging
 import re
 import time
 from calendar import monthrange
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import httpx
+from sqlalchemy import delete, select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.models.plan_cache import FestivalCache
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +29,11 @@ _CACHE_EXPIRES_AT: float = 0.0
 _CACHE_TTL = 600        # 10분 신선
 _CACHE_STALE_TTL = 3600 # 1시간 stale fallback
 _CACHE_LOCK = asyncio.Lock()
+_DB_CACHE_TTL_DAYS = 7
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 # ─── 지역 슬러그 → 축제 필터 키워드 ─────────────────────────
 _LOCATION_KEYWORDS: dict[str, list[str]] = {
@@ -308,13 +317,25 @@ async def fetch_festivals_for_period(
     end_date: Optional[str],
 ) -> list[dict]:
     """여행 기간·지역에 해당하는 행사 목록 반환."""
+    raw = await _get_raw_cached()
+    return _filter_festivals_for_period(raw, location, location_name, start_date, end_date)
+
+
+def _filter_festivals_for_period(
+    raw: list[dict],
+    location: str,
+    location_name: str,
+    start_date: Optional[str],
+    end_date: Optional[str],
+) -> list[dict]:
     if not start_date or not end_date:
         return []
-
     try:
         start_dt = datetime.strptime(start_date, "%Y-%m-%d")
-        end_dt   = datetime.strptime(end_date,   "%Y-%m-%d")
+        end_dt = datetime.strptime(end_date, "%Y-%m-%d")
     except ValueError:
+        return []
+    if not raw:
         return []
 
     # 여행 기간에 걸친 월 목록
@@ -323,10 +344,6 @@ async def fetch_festivals_for_period(
     while cur <= end_dt:
         months.add((cur.year, cur.month))
         cur = cur.replace(month=cur.month + 1) if cur.month < 12 else cur.replace(year=cur.year + 1, month=1)
-
-    raw = await _get_raw_cached()
-    if not raw:
-        return []
 
     keywords = _LOCATION_KEYWORDS.get(location, [location_name])
 
@@ -366,3 +383,106 @@ async def fetch_festivals_for_period(
         location_name, start_date, end_date, len(all_items),
     )
     return all_items
+
+
+def _current_week_cache_key() -> str:
+    now = _utc_now()
+    iso = now.isocalendar()
+    return f"weekly:{iso.year}-W{iso.week:02d}"
+
+
+def _current_week_bounds() -> tuple[str, str]:
+    now = _utc_now()
+    monday = now - timedelta(days=now.weekday())
+    sunday = monday + timedelta(days=6)
+    return monday.strftime("%Y-%m-%d"), sunday.strftime("%Y-%m-%d")
+
+
+async def _cleanup_festival_cache(db: AsyncSession, current_week_key: str) -> None:
+    await db.execute(
+        delete(FestivalCache).where(
+            (FestivalCache.expires_at < _utc_now()) | (FestivalCache.cache_key != current_week_key)
+        )
+    )
+
+
+async def _get_weekly_raw_cache_db(
+    db: AsyncSession,
+    *,
+    cache_key: str,
+) -> list[dict] | None:
+    result = await db.execute(
+        select(FestivalCache).where(FestivalCache.cache_key == cache_key)
+    )
+    row = result.scalar_one_or_none()
+    if row is None:
+        return None
+    if row.expires_at < _utc_now():
+        await db.execute(delete(FestivalCache).where(FestivalCache.cache_key == cache_key))
+        return None
+    return row.festivals
+
+
+async def _save_weekly_raw_cache_db(
+    db: AsyncSession,
+    *,
+    cache_key: str,
+    raw_items: list[dict],
+) -> None:
+    start_date, end_date = _current_week_bounds()
+    expires_at = _utc_now() + timedelta(days=_DB_CACHE_TTL_DAYS)
+    stmt = (
+        pg_insert(FestivalCache)
+        .values(
+            cache_key=cache_key,
+            location="__all__",
+            start_date=start_date,
+            end_date=end_date,
+            festivals=raw_items,
+            expires_at=expires_at,
+        )
+        .on_conflict_do_update(
+            index_elements=["cache_key"],
+            set_={
+                "location": "__all__",
+                "start_date": start_date,
+                "end_date": end_date,
+                "festivals": raw_items,
+                "expires_at": expires_at,
+            },
+        )
+    )
+    await db.execute(stmt)
+
+
+async def fetch_festivals_for_period_with_db_cache(
+    db: AsyncSession,
+    *,
+    location: str,
+    location_name: str,
+    start_date: Optional[str],
+    end_date: Optional[str],
+) -> list[dict]:
+    """DB 우선 행사 조회 (주 단위 원본 캐시).
+
+    1) 이번 주 원본 행사 데이터(전국) DB 조회
+    2) 미스 시 외부 API 전체 조회 후 DB 저장
+    3) 요청 시점에 지역/기간 필터링
+    4) 이전 주/만료 데이터 정리
+    """
+    if not start_date or not end_date:
+        return []
+
+    week_key = _current_week_cache_key()
+    await _cleanup_festival_cache(db, week_key)
+
+    raw = await _get_weekly_raw_cache_db(db, cache_key=week_key)
+    if raw is None:
+        raw = await _get_raw_cached()
+        if raw:
+            await _save_weekly_raw_cache_db(db, cache_key=week_key, raw_items=raw)
+            logger.info("행사 주간 DB 캐시 저장: %s (원본 %d건)", week_key, len(raw))
+    else:
+        logger.info("행사 주간 DB 캐시 히트: %s (원본 %d건)", week_key, len(raw))
+
+    return _filter_festivals_for_period(raw or [], location, location_name, start_date, end_date)
