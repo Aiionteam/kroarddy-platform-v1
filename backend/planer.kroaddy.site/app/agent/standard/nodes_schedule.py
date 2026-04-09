@@ -93,6 +93,7 @@ async def _generate_single_day(
     weather_block: str,
     transport_block: str,
     news_block: str,
+    exclude_places: list[str] | None = None,
 ) -> tuple[list[dict[str, Any]], dict]:
     t0 = perf_counter()
     if lang == "Korean":
@@ -105,6 +106,16 @@ async def _generate_single_day(
         flow_hint = "morning→lunch→afternoon→evening"
 
     day_zone_hint = f"- Day {day_num}/{num_days}: use a DIFFERENT district from other days.\n" if num_days > 1 else ""
+
+    if exclude_places:
+        excl_str = ", ".join(f'"{p}"' for p in exclude_places[:30])
+        if lang == "Korean":
+            excl_block = f"⛔ 다른 날 이미 포함된 장소 (절대 반복 금지): {excl_str}\n"
+        else:
+            excl_block = f"⛔ Already used in other days (NEVER repeat): {excl_str}\n"
+    else:
+        excl_block = ""
+
     if lang == "Korean":
         schema = (
             f'{{"day":{day_num},"date":"{date_str}","items":[{{"time":"{first_time}",'
@@ -121,7 +132,8 @@ async def _generate_single_day(
         )
     prompt = (
         f"Destination:{location_name} | Route:{route_name} | Day:{day_num} ({date_str})\n"
-        f"⚠️ ALL places must be within '{location_name}'.\n\n"
+        f"⚠️ ALL places must be within '{location_name}'.\n"
+        f"{excl_block}\n"
         f"{user_block}{festival_block}{weather_block}{transport_block}{news_block}"
         f"Create 4 schedule items. time∈[{time_labels}]. "
         f"CLUSTER in same district. Order: {flow_hint}. "
@@ -155,6 +167,7 @@ async def _generate_two_days(
     weather_block: str,
     transport_block: str,
     news_block: str,
+    exclude_places: list[str] | None = None,
 ) -> list[tuple[list[dict[str, Any]], dict]]:
     """2일치를 한 번의 LLM 호출로 생성해 호출 수를 절반으로 줄인다."""
     t0 = perf_counter()
@@ -168,6 +181,16 @@ async def _generate_two_days(
         flow_hint = "morning→lunch→afternoon→evening"
 
     days_desc = " & ".join(f"Day{d}({ds})" for d, ds in day_pairs)
+
+    if exclude_places:
+        excl_str = ", ".join(f'"{p}"' for p in exclude_places[:30])
+        if lang == "Korean":
+            excl_block = f"⛔ 다른 날 이미 포함된 장소 (절대 반복 금지): {excl_str}\n"
+        else:
+            excl_block = f"⛔ Already used in other days (NEVER repeat): {excl_str}\n"
+    else:
+        excl_block = ""
+
     if lang == "Korean":
         item_tpl = '"place":"장소명","address":"도로명주소","lat":37.5665,"lng":126.9780,"title":"활동명","description":"설명","tips":"팁","estimated_cost":"₩0"'
     else:
@@ -180,10 +203,12 @@ async def _generate_two_days(
 
     prompt = (
         f"Destination:{location_name} | Route:{route_name} | {days_desc}\n"
-        f"⚠️ ALL places must be within '{location_name}'. Total days={num_days}.\n\n"
+        f"⚠️ ALL places must be within '{location_name}'. Total days={num_days}.\n"
+        f"{excl_block}\n"
         f"{user_block}{festival_block}{weather_block}{transport_block}{news_block}"
         f"Create 4 schedule items per day for {days_desc}. "
-        f"time∈[{time_labels}]. Each day uses a DIFFERENT district. "
+        f"time∈[{time_labels}]. Each day MUST use a COMPLETELY DIFFERENT district – "
+        "NO place may appear in more than one day. "
         f"CLUSTER each day's items in same area. Order: {flow_hint}. "
         "estimated_cost in KRW. address: exact street addr. lat/lng: WGS84.\n"
         f"{lang_dir}"
@@ -206,6 +231,60 @@ async def _generate_two_days(
 
     logger.info("일정 2일묶음 생성 완료: %s (%s / %.2fs)", days_desc, location_name, perf_counter() - t0)
     return results
+
+
+async def _fix_duplicate_days(
+    schedule: list[dict[str, Any]],
+    per_day_costs: list[dict[str, Any]],
+    date_list: list[str],
+    common_kwargs: _SingleDayCommonKwargs,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """생성된 일정에서 여러 날에 중복 등장하는 장소를 감지하고,
+    나중 날짜(더 높은 day 번호)만 exclude_places를 주어 재생성한다."""
+    place_to_days: dict[str, list[int]] = {}
+    for item in schedule:
+        place = (item.get("place") or "").strip()
+        day = int(item.get("day") or 0)
+        if place and day:
+            place_to_days.setdefault(place, [])
+            if day not in place_to_days[place]:
+                place_to_days[place].append(day)
+
+    dup_days: set[int] = set()
+    for days in place_to_days.values():
+        if len(days) > 1:
+            for d in sorted(days)[1:]:
+                dup_days.add(d)
+
+    if not dup_days:
+        return schedule, per_day_costs
+
+    logger.warning("중복 장소 감지 → Day %s 재생성", sorted(dup_days))
+
+    for dup_day in sorted(dup_days):
+        # 이 날을 제외한 모든 날의 장소를 exclude 목록으로
+        exclude = list({
+            (item.get("place") or "").strip()
+            for item in schedule
+            if item.get("day") != dup_day and item.get("place")
+        })
+        date_str = date_list[dup_day - 1]
+        try:
+            new_items, new_cost = await _generate_single_day(
+                day_num=dup_day,
+                date_str=date_str,
+                exclude_places=exclude,
+                **common_kwargs,
+            )
+        except Exception as exc:
+            logger.warning("Day %d 재생성 실패(원본 유지): %s", dup_day, exc)
+            continue
+        schedule = [item for item in schedule if item.get("day") != dup_day]
+        schedule.extend(new_items)
+        per_day_costs = [c for c in per_day_costs if c.get("day") != dup_day]
+        per_day_costs.append(new_cost)
+
+    return schedule, per_day_costs
 
 
 async def generate_schedule(state: PlannerState) -> PlannerState:
@@ -273,15 +352,22 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
                 errors.append(str(raw) if isinstance(raw, BaseException) else repr(raw))
         if errors and not merged_schedule:
             return {**state, "schedule": [], "cost_summary": None, "error": "; ".join(errors)}
+
+        # 중복 장소 자동 수정
+        merged_schedule, per_day_costs = await _fix_duplicate_days(
+            merged_schedule, per_day_costs, date_list, common_kwargs
+        )
+
         merged_schedule.sort(key=lambda x: (x.get("day", 0),))
         per_day_costs.sort(key=lambda x: int(x.get("day", 0)))
+        total_krw = sum(int(c.get("total_krw") or 0) for c in per_day_costs)
         trip_total_str = f"₩{total_krw:,}" if total_krw else "N/A"
         merged_cost_summary: dict[str, Any] = {
             "per_day": [{"day": c["day"], "total": c["total"]} for c in per_day_costs],
             "trip_total": trip_total_str,
         }
         logger.info(
-            "일정 병렬 생성 완료: %d개 항목 (%s / %s), 총경비=%s%s, %.2fs",
+            "일정 생성 완료: %d개 항목 (%s / %s), 총경비=%s%s, %.2fs",
             len(merged_schedule), location_name, route_name, trip_total_str,
             f" | 부분 실패 {len(errors)}건" if errors else "", perf_counter() - t0,
         )
