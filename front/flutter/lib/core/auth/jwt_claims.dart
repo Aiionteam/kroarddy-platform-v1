@@ -15,18 +15,27 @@ Map<String, dynamic>? decodeJwtPayload(String token) {
   }
 }
 
+int? _positiveIntFromClaim(dynamic raw) {
+  if (raw == null) return null;
+  if (raw is int) return raw > 0 ? raw : null;
+  if (raw is num) {
+    final v = raw.toInt();
+    return v > 0 ? v : null;
+  }
+  final id = int.tryParse(raw.toString());
+  return (id != null && id > 0) ? id : null;
+}
+
 int? getUserIdFromToken(String token) {
   final payload = decodeJwtPayload(token);
   final raw = payload?["sub"] ?? payload?["userId"] ?? payload?["id"];
-  final id = int.tryParse(raw?.toString() ?? "");
-  return (id != null && id > 0) ? id : null;
+  return _positiveIntFromClaim(raw);
 }
 
 int? getAppUserIdFromToken(String token) {
   final payload = decodeJwtPayload(token);
   final raw = payload?["app_user_id"] ?? payload?["appUserId"] ?? payload?["userId"];
-  final id = int.tryParse(raw?.toString() ?? "");
-  return (id != null && id > 0) ? id : null;
+  return _positiveIntFromClaim(raw);
 }
 
 String? getNicknameFromToken(String token) {

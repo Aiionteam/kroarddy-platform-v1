@@ -23,8 +23,11 @@ class ProfileRepository {
     if (token == null || token.isEmpty) {
       throw Exception("로그인이 필요합니다.");
     }
-    final userId = getUserIdFromToken(token);
-    final appUserId = getAppUserIdFromToken(token);
+    var userId = getUserIdFromToken(token);
+    var appUserId = getAppUserIdFromToken(token);
+    // 구버전/이상 토큰에서 sub와 app_user_id 중 하나만 채워진 경우
+    userId ??= appUserId;
+    appUserId ??= userId;
     if (userId == null || appUserId == null) {
       throw Exception("토큰에서 사용자 ID를 확인할 수 없습니다.");
     }
