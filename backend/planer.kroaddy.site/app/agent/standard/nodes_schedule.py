@@ -51,8 +51,8 @@ def _parse_item_wgs84(item: dict[str, Any]) -> tuple[float, float] | None:
     return (lat, lng)
 
 _TRAVEL_DAYS_DEFAULT = 2
-# 웹 검색 선행 단계 응답 길이 상한 (토큰·지연 절약)
-_WEB_CONTEXT_MAX_CHARS = 2000
+# 웹 검색 선행 단계 응답 길이 상한 – 4000자로 여유 확대 (메인 LLM 참고 품질 향상)
+_WEB_CONTEXT_MAX_CHARS = 4000
 # 선행 검색만 1분 미만으로 제한 (초과 시 빈 맥락으로 일정 생성 계속)
 _WEB_GATHER_TIMEOUT_SEC = 55.0
 
@@ -191,7 +191,8 @@ async def _gather_web_search_context(
             f"{date_clause}"
             "Google 검색으로, 위 조건에 맞는 **실제 존재하는** 식당·카페·명소·이벤트·"
             "최근 오픈·휴업·축제 등 검증 가능한 최신 정보를 조사하세요.\n"
-            "불릿 목록으로만 간결히 정리하세요. JSON 금지. 한국어. 약 1200자 이내.\n"
+            "아래 항목별로 구분해 불릿 목록으로 정리하세요. JSON 금지. 한국어. 약 2500자 이내.\n"
+            "항목: 추천 명소/카페/맛집(이름·특징·주소), 현재 축제·이벤트, 교통·주의사항, 최근 변동사항.\n"
             "출력은 본문만 (제목 없이)."
         )
     else:
@@ -199,9 +200,11 @@ async def _gather_web_search_context(
             f"Destination: {location_name}\n"
             f"Route theme: {route_name}\n"
             f"{date_clause}"
-            "Use Google Search to find verifiable, current places and events "
-            f"relevant to this trip within {location_name}. Bullet points only, no JSON, "
-            f"~1200 chars max, in {lang}."
+            "Use Google Search to find verifiable, current information for this trip. "
+            "Organize as bullet points (no JSON) under these sections: "
+            "Recommended spots/cafes/restaurants (name, feature, address), "
+            "Current festivals/events, Transport tips, Recent changes/closures. "
+            f"~2500 chars max, in {lang}."
         )
 
     # max_output_tokens=600 전용 LLM 사용 → GoogleSearchAPIWrapper(k=5)와 동일한 효과
@@ -333,7 +336,7 @@ async def _generate_single_day(
     else:
         schema = (
             f'{{"day":{day_num},"date":"{date_str}","items":[{{"time":"{first_time}",'
-            '"place":"name","address":"street addr","lat":37.5665,"lng":126.9780,'
+            f'"place":"name in {lang}","place_ko":"한국어 장소명(지오코딩 전용)","address":"도로명주소(한국어)","lat":37.5665,"lng":126.9780,'
             '"title":"activity","description":"desc","tips":"tip","estimated_cost":"₩0"}'
             f'],"day_total":"₩0","day_total_krw":0}}'
         )
@@ -348,6 +351,9 @@ async def _generate_single_day(
             "【Coordinates REQUIRED】Every item MUST include lat and lng (WGS84, ≥5 decimal places). "
             f"Use real coordinates for places inside {location_name}. "
             "Do NOT copy example Seoul City Hall coordinates (37.5665,126.978).\n"
+            "【place_ko REQUIRED】Every item MUST include place_ko: the Korean name of the place "
+            "(used for Naver geocoding). e.g. '울산암각화박물관', '경복궁'. "
+            "address field MUST also be in Korean (도로명주소).\n"
         )
 
     prompt = (
@@ -602,13 +608,19 @@ async def _geocode_item(item: dict[str, Any], location_name: str = "") -> dict[s
     끝까지 매칭되지 않으면 ``naver_verified=False`` (LLM이 넣은 lat/lng 유지).
     """
     place = (item.get("place") or "").strip()
+    # 비한국어 일정에서 LLM이 지오코딩용으로 제공하는 한국어 장소명
+    place_ko = (item.get("place_ko") or "").strip()
     address = (item.get("address") or "").strip()
     region = (location_name or "").strip()
     llm_coords = _parse_item_wgs84(item)
 
-    for q in [x for x in [address, place] if x]:
+    # 1단계: 한국어 주소/장소명으로 지오코딩 (place_ko 우선 → address → place 순)
+    # 비한국어 place명("Musée des Pétroglyphes...")은 Naver에서 검색 안 되므로 place_ko를 먼저 사용
+    geocode_candidates = [x for x in [address, place_ko, place] if x]
+    for q in geocode_candidates:
         result = await geocode(q)
         if result:
+            logger.info("지오코딩 성공: %s → (%.5f, %.5f)", q, float(result["y"]), float(result["x"]))
             return {
                 **item,
                 "lat": float(result["y"]),
@@ -618,9 +630,39 @@ async def _geocode_item(item: dict[str, Any], location_name: str = "") -> dict[s
                 "naver_source": "geocode",
             }
 
-    # 텍스트 지오코딩 실패 시 LLM 좌표로 역지오코딩 (주소 보강 + 좌표가 육지인지 확인)
+    # 2단계: 장소 검색 API (place_ko 우선) - geocoding보다 place DB 커버리지 넓음
+    search_place = place_ko or place
+    if search_place:
+        local_queries = [f"{search_place} {region}", search_place] if region else [search_place]
+        for q in local_queries:
+            ks = await keyword_search(q)
+            if not ks:
+                continue
+            logger.info("장소검색 성공: %s → (%.5f, %.5f)", q, float(ks["y"]), float(ks["x"]))
+            out: dict[str, Any] = {
+                **item,
+                "lat": float(ks["y"]),
+                "lng": float(ks["x"]),
+                "address": ks.get("address") or item.get("address", ""),
+                "naver_verified": True,
+                "naver_source": "local_search",
+            }
+            if ks.get("name"):
+                out["naver_place_name"] = ks["name"]
+            if ks.get("place_id"):
+                out["naver_place_id"] = ks["place_id"]
+            return out
+
+    # 3단계: 텍스트 검색 전부 실패 → LLM 좌표로 역지오코딩
+    # 주의: 역지오코딩은 좌표를 주소로 바꿀 뿐 장소가 맞는지 보장하지 않음
+    # place_ko가 있다면 LLM 좌표 신뢰도가 상대적으로 낮으므로 경고 로그
     if llm_coords:
         lat, lng = llm_coords
+        if place_ko:
+            logger.warning(
+                "장소 '%s'(%s) 검색 실패 – LLM 좌표(%.5f,%.5f) 사용 중, 좌표 정확도 낮을 수 있음",
+                place_ko, place, lat, lng,
+            )
         rev = await reverse_geocode(lng, lat)
         if rev:
             road = (rev.get("road_address") or "").strip()
@@ -631,37 +673,15 @@ async def _geocode_item(item: dict[str, Any], location_name: str = "") -> dict[s
                 "lat": lat,
                 "lng": lng,
                 "address": merged_addr,
-                "naver_verified": True,
-                "naver_source": "reverse_geocode",
+                "naver_verified": False,   # 역지오코딩은 장소 일치 보장 안 됨
+                "naver_source": "reverse_geocode_fallback",
             }
 
-    if not place:
-        return {
-            **item,
-            "naver_verified": False,
-            "naver_source": "llm_coord_only" if llm_coords else "none",
-        }
-
-    local_queries = [f"{place} {region}", place] if region else [place]
-    for q in local_queries:
-        ks = await keyword_search(q)
-        if not ks:
-            continue
-        out: dict[str, Any] = {
-            **item,
-            "lat": float(ks["y"]),
-            "lng": float(ks["x"]),
-            "address": ks.get("address") or item.get("address", ""),
-            "naver_verified": True,
-            "naver_source": "local_search",
-        }
-        if ks.get("name"):
-            out["naver_place_name"] = ks["name"]
-        if ks.get("place_id"):
-            out["naver_place_id"] = ks["place_id"]
-        return out
-
-    return {**item, "naver_verified": False, "naver_source": "none"}
+    return {
+        **item,
+        "naver_verified": False,
+        "naver_source": "llm_coord_only" if llm_coords else "none",
+    }
 
 
 async def geocode_schedule(state: PlannerState) -> PlannerState:
