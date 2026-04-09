@@ -2183,6 +2183,315 @@
         "name": "Jeonju",
         "highlight1": "Village hanok",
         "highlight2": "Ruelle du makgeolli"
+      },
+      "asan": {
+        "name": "Asan"
+      },
+      "cheonan": {
+        "name": "Cheonan"
+      },
+      "nonsan": {
+        "name": "Nonsan"
+      },
+      "seosan": {
+        "name": "Seosan"
+      },
+      "dangjin": {
+        "name": "Dangjin"
+      },
+      "iksan": {
+        "name": "Iksan"
+      },
+      "gochang": {
+        "name": "Gochang"
+      },
+      "jeongeup": {
+        "name": "Jeongeup"
+      },
+      "gimje": {
+        "name": "Gimje"
+      },
+      "wando": {
+        "name": "Wando"
+      },
+      "gangjin": {
+        "name": "Gangjin"
+      },
+      "yeonggwang": {
+        "name": "Yeonggwang"
+      },
+      "haenam": {
+        "name": "Haenam"
+      },
+      "goheung": {
+        "name": "Goheung"
+      },
+      "yeongam": {
+        "name": "Yeongam"
+      },
+      "gwangyang": {
+        "name": "Gwangyang"
+      },
+      "boseong": {
+        "name": "Boseong"
+      },
+      "naju": {
+        "name": "Naju"
+      },
+      "goyang": {
+        "name": "Goyang"
+      },
+      "paju": {
+        "name": "Paju"
+      },
+      "gimpo": {
+        "name": "Gimpo"
+      },
+      "uijeongbu": {
+        "name": "Uijeongbu"
+      },
+      "namyangju": {
+        "name": "Namyangju"
+      },
+      "guri": {
+        "name": "Guri"
+      },
+      "gapyeong": {
+        "name": "Gapyeong"
+      },
+      "yangpyeong": {
+        "name": "Yangpyeong"
+      },
+      "pocheon": {
+        "name": "Pocheon"
+      },
+      "yangju": {
+        "name": "Yangju"
+      },
+      "dongducheon": {
+        "name": "Dongducheon"
+      },
+      "suwon": {
+        "name": "Suwon"
+      },
+      "hwaseong": {
+        "name": "Hwaseong"
+      },
+      "ansan": {
+        "name": "Ansan"
+      },
+      "siheung": {
+        "name": "Siheung"
+      },
+      "anyang": {
+        "name": "Anyang"
+      },
+      "gunpo": {
+        "name": "Gunpo"
+      },
+      "pyeongtaek": {
+        "name": "Pyeongtaek"
+      },
+      "yongin": {
+        "name": "Yongin"
+      },
+      "seongnam": {
+        "name": "Seongnam"
+      },
+      "hanam": {
+        "name": "Hanam"
+      },
+      "icheon": {
+        "name": "Icheon"
+      },
+      "yeoju": {
+        "name": "Yeoju"
+      },
+      "anseong": {
+        "name": "Anseong"
+      },
+      "osan": {
+        "name": "Osan"
+      },
+      "uiwang": {
+        "name": "Uiwang"
+      },
+      "gwacheon": {
+        "name": "Gwacheon"
+      },
+      "bucheon": {
+        "name": "Bucheon"
+      },
+      "gwangmyeong": {
+        "name": "Gwangmyeong"
+      },
+      "chuncheon": {
+        "name": "Chuncheon"
+      },
+      "wonju": {
+        "name": "Wonju"
+      },
+      "pyeongchang": {
+        "name": "Pyeongchang"
+      },
+      "yeongwol": {
+        "name": "Yeongwol"
+      },
+      "hoengseong": {
+        "name": "Hoengseong"
+      },
+      "jeongseon": {
+        "name": "Jeongseon"
+      },
+      "inje": {
+        "name": "Inje"
+      },
+      "taebaek": {
+        "name": "Taebaek"
+      },
+      "sokcho": {
+        "name": "Sokcho"
+      },
+      "yangyang": {
+        "name": "Yangyang"
+      },
+      "donghae": {
+        "name": "Donghae"
+      },
+      "samcheok": {
+        "name": "Samcheok"
+      },
+      "goseong-gw": {
+        "name": "Goseong Gw"
+      },
+      "cheongju": {
+        "name": "Cheongju"
+      },
+      "chungju": {
+        "name": "Chungju"
+      },
+      "jecheon": {
+        "name": "Jecheon"
+      },
+      "danyang": {
+        "name": "Danyang"
+      },
+      "gongju": {
+        "name": "Gongju"
+      },
+      "buyeo": {
+        "name": "Buyeo"
+      },
+      "boryeong": {
+        "name": "Boryeong"
+      },
+      "taean": {
+        "name": "Taean"
+      },
+      "gunsan": {
+        "name": "Gunsan"
+      },
+      "namwon": {
+        "name": "Namwon"
+      },
+      "yeosu": {
+        "name": "Yeosu"
+      },
+      "suncheon": {
+        "name": "Suncheon"
+      },
+      "mokpo": {
+        "name": "Mokpo"
+      },
+      "damyang": {
+        "name": "Damyang"
+      },
+      "andong": {
+        "name": "Andong"
+      },
+      "yeongju": {
+        "name": "Yeongju"
+      },
+      "mungyeong": {
+        "name": "Mungyeong"
+      },
+      "pohang": {
+        "name": "Pohang"
+      },
+      "yeongdeok": {
+        "name": "Yeongdeok"
+      },
+      "uljin": {
+        "name": "Uljin"
+      },
+      "dokdo": {
+        "name": "Dokdo"
+      },
+      "gumi": {
+        "name": "Gumi"
+      },
+      "gimcheon": {
+        "name": "Gimcheon"
+      },
+      "yeongcheon": {
+        "name": "Yeongcheon"
+      },
+      "sangju": {
+        "name": "Sangju"
+      },
+      "gyeongsan": {
+        "name": "Gyeongsan"
+      },
+      "tongyeong": {
+        "name": "Tongyeong"
+      },
+      "geoje": {
+        "name": "Geoje"
+      },
+      "namhae": {
+        "name": "Namhae"
+      },
+      "goseong-gn": {
+        "name": "Goseong Gn"
+      },
+      "jinju": {
+        "name": "Jinju"
+      },
+      "changwon": {
+        "name": "Changwon"
+      },
+      "hapcheon": {
+        "name": "Hapcheon"
+      },
+      "miryang": {
+        "name": "Miryang"
+      },
+      "hamyang": {
+        "name": "Hamyang"
+      },
+      "sancheong": {
+        "name": "Sancheong"
+      },
+      "hadong": {
+        "name": "Hadong"
+      },
+      "geochang": {
+        "name": "Geochang"
+      },
+      "gimhae": {
+        "name": "Gimhae"
+      },
+      "yangsan": {
+        "name": "Yangsan"
+      },
+      "changnyeong": {
+        "name": "Changnyeong"
+      },
+      "uiryeong": {
+        "name": "Uiryeong"
+      },
+      "seogwipo": {
+        "name": "Seogwipo"
       }
     }
   },
