@@ -363,45 +363,127 @@ def _format_festival_date(d: str) -> str:
 
 
 def _build_user_profile_block(profile: dict | None, lang: str = "Korean") -> str:
-    """사용자 프로필 → 프롬프트 삽입 텍스트. 프로필이 없으면 빈 문자열."""
+    """사용자 프로필 → 프롬프트 삽입 텍스트 (언어별 분기 + 나이/성별/식습관/종교 개인화).
+
+    프로필이 없으면 빈 문자열 반환.
+    """
     if not profile:
         return ""
 
-    gender = profile.get("gender") or "N/A"
-    age_band = profile.get("age_band") or "N/A"
-    dietary = profile.get("dietary_pref") or "regular"
-    religion = profile.get("religion") or "none"
+    gender = profile.get("gender") or ""
+    age_band = profile.get("age_band") or ""
+    dietary = profile.get("dietary_pref") or ""
+    religion = profile.get("religion") or ""
     nationality = profile.get("nationality") or ""
 
-    lines = [
-        "【User Travel Profile (consider for route recommendations)】",
-        f"  • Nationality: {nationality}",
-        f"  • Gender: {gender}",
-        f"  • Age group: {age_band}",
-        f"  • Diet: {dietary}",
-        f"  • Religion: {religion}",
-        "",
-    ]
+    is_korean = (lang == "Korean")
+
+    if is_korean:
+        header = "【여행자 프로필 (루트·일정 개인화에 반드시 반영)】"
+        fields = []
+        if nationality:
+            fields.append(f"  • 국적: {nationality}")
+        if gender:
+            fields.append(f"  • 성별: {gender}")
+        if age_band:
+            fields.append(f"  • 나이대: {age_band}")
+        if dietary:
+            fields.append(f"  • 식습관: {dietary}")
+        if religion:
+            fields.append(f"  • 종교: {religion}")
+    else:
+        header = "【Traveler Profile (MUST be reflected in routes and itinerary)】"
+        fields = []
+        if nationality:
+            fields.append(f"  • Nationality: {nationality}")
+        if gender:
+            fields.append(f"  • Gender: {gender}")
+        if age_band:
+            fields.append(f"  • Age group: {age_band}")
+        if dietary:
+            fields.append(f"  • Diet: {dietary}")
+        if religion:
+            fields.append(f"  • Religion: {religion}")
+
+    if not fields:
+        return ""
+
+    lines = [header] + fields + [""]
 
     notes: list[str] = []
-    if dietary in ("채식", "비건", "Vegetarian", "Vegan"):
-        notes.append("- Food routes: focus on vegetarian/vegan-friendly markets and streets.")
-    if dietary in ("할랄", "Halal"):
-        notes.append("- Food routes: focus on halal-certified or Muslim-friendly restaurants.")
+
+    # ── 식습관 ──────────────────────────────────────────────────────
+    if dietary in ("채식", "Vegetarian"):
+        notes.append(
+            "- 식사 장소는 채식 메뉴가 있는 곳 우선 선택." if is_korean
+            else "- Prioritize restaurants with vegetarian menu options."
+        )
+    elif dietary in ("비건", "Vegan"):
+        notes.append(
+            "- 식사 장소는 완전 비건 식당 또는 비건 옵션 명확한 곳만 선택." if is_korean
+            else "- Only include fully vegan restaurants or venues with clear vegan options."
+        )
+    elif dietary in ("할랄", "Halal"):
+        notes.append(
+            "- 식사 장소는 할랄 인증 또는 무슬림 친화 식당만 선택. 돼지고기·주류 제공 업소 제외." if is_korean
+            else "- Only include halal-certified or Muslim-friendly restaurants. Exclude pork/alcohol venues."
+        )
+    elif dietary in ("알레르기있음", "Allergy"):
+        notes.append(
+            "- 식사 장소 tips 필드에 주요 알레르기 유발 식재료 주의 안내 포함." if is_korean
+            else "- Include allergy warnings (common allergens) in tips for food-related schedule items."
+        )
+
+    # ── 종교 ──────────────────────────────────────────────────────
     if religion in ("이슬람", "Muslim"):
-        notes.append("- Avoid pork/alcohol venues; prioritize halal restaurants and Muslim-friendly attractions.")
-    if religion in ("불교", "Buddhist"):
-        notes.append("- Include Buddhist temples, cultural sites, and temple-stay experiences in sightseeing routes.")
-    if religion in ("기독교", "천주교", "Christian", "Catholic"):
-        notes.append("- Include churches, cathedrals, or Christian heritage sites in sightseeing routes.")
+        notes.append(
+            "- 할랄 식당·이슬람 문화 시설 우선. 주류·돼지고기 취급 장소 배제." if is_korean
+            else "- Prioritize halal restaurants and Islamic cultural sites. Avoid alcohol/pork venues."
+        )
+    elif religion in ("불교", "Buddhist"):
+        notes.append(
+            "- 명소 루트에 불교 사찰·템플스테이·문화 체험 포함 권장." if is_korean
+            else "- Include Buddhist temples, cultural sites, or temple-stay experiences in sightseeing routes."
+        )
+    elif religion in ("기독교", "Christian"):
+        notes.append(
+            "- 명소 루트에 교회·기독교 역사 유적지 포함 권장." if is_korean
+            else "- Include churches or Christian heritage sites in sightseeing routes."
+        )
+    elif religion in ("천주교", "Catholic"):
+        notes.append(
+            "- 명소 루트에 성당·천주교 성지 포함 권장." if is_korean
+            else "- Include cathedrals or Catholic pilgrimage sites in sightseeing routes."
+        )
+
+    # ── 나이대 ─────────────────────────────────────────────────────
+    if age_band in ("10대",):
+        notes.append(
+            "- 저예산 명소·체험형 활동 중심. 이동 효율 높은 동선 구성." if is_korean
+            else "- Focus on budget-friendly attractions and hands-on activities with efficient routing."
+        )
+    elif age_band in ("60대이상", "60대 이상"):
+        notes.append(
+            "- 계단·오르막 최소화. 실내 관광지·편의시설 접근성 좋은 장소 우선. 이동 거리 짧게 구성." if is_korean
+            else "- Minimize stairs/steep climbs. Prioritize indoor venues and accessible facilities. Keep distances short."
+        )
+    elif age_band in ("50대",):
+        notes.append(
+            "- 과도한 도보 일정 지양. 여유로운 동선과 고품질 식사 장소 반영." if is_korean
+            else "- Avoid excessive walking. Include relaxed pacing and quality dining options."
+        )
+
+    # ── 성별 ──────────────────────────────────────────────────────
+    if gender in ("여성", "Female"):
+        notes.append(
+            "- 야간 일정은 안전하고 유동인구가 많은 장소 우선. tips에 안전 팁 포함 권장." if is_korean
+            else "- For evening items, prioritize safe and busy areas. Consider adding safety tips in the tips field."
+        )
 
     if notes:
-        lines.append("Personalization notes:")
+        label = "개인화 지침:" if is_korean else "Personalization notes:"
+        lines.append(label)
         lines.extend(notes)
-        lines.append("")
-
-    if lang != "Korean":
-        lines.append(f"Response language: {lang}")
         lines.append("")
 
     return "\n".join(lines) + "\n"
@@ -438,13 +520,11 @@ async def generate_routes(state: PlannerState) -> PlannerState:
     """노드 1: 여행지 루트 7개 추천 (행사/먹거리/명소/럭셔리/가성비/가족/커플 테마)."""
     location_name = state.get("location_name") or state["location"]
     festivals: list = state.get("festivals") or []
-    news_top10: list = state.get("news_top10") or []
     user_profile: dict | None = state.get("user_profile")
     existing_routes: list = state.get("existing_routes") or []
     start_date = state.get("start_date")
     end_date = state.get("end_date")
-    weather_forecast: dict | None = state.get("weather_forecast")
-    transport_mode: str | None = state.get("transport_mode")
+    # 뉴스·날씨·이동수단은 루트 생성 프롬프트에 포함하지 않음 (일정 생성 단계에서 반영)
 
     if start_date and end_date:
         period_clause = f"여행 기간: {start_date} ~ {end_date}\n"
@@ -476,9 +556,10 @@ async def generate_routes(state: PlannerState) -> PlannerState:
     lang = _get_lang(user_profile)
     user_block = _build_user_profile_block(user_profile, lang)
     lang_dir = _lang_directive(lang)
-    news_block = build_news_block_for_prompt(news_top10, location_name, for_k_content=False)
-    weather_block = build_weather_block_for_prompt(weather_forecast or {}, start_date, end_date)
-    transport_block = _build_transport_block(transport_mode)
+
+    # 루트 생성은 테마·이름·대표 장소 3곳만 결정하면 된다.
+    # 날씨·뉴스·이동수단은 일정 생성 단계에서 반영하므로 여기서는 제외 → 프롬프트 경량화 + 속도 개선.
+    # Google Search grounding도 불필요: 테마가 고정되어 있고 JSON 파싱 안정성이 더 중요함.
 
     if existing_routes:
         quoted = ", ".join(f'"{r}"' for r in existing_routes)
@@ -489,7 +570,6 @@ async def generate_routes(state: PlannerState) -> PlannerState:
     else:
         exclude_block = ""
 
-    # 언어별 테마 라벨 (JSON 스키마에 들어가는 theme 열거값)
     if lang == "Korean":
         themes_desc = (
             f"1.{festival_theme_desc.split(':',1)[-1].strip()}\n"
@@ -535,7 +615,7 @@ async def generate_routes(state: PlannerState) -> PlannerState:
     prompt = (
         f"Destination:{location_name} | {period_clause.strip()}\n"
         f"{constraint_line}\n\n"
-        f"{user_block}{exclude_block}{festival_block}{weather_block}{transport_block}{news_block}"
+        f"{user_block}{exclude_block}{festival_block}"
         f"{themes_intro}\n"
         f"{themes_desc}\n"
         f"{highlights_rule}\n"
@@ -544,11 +624,11 @@ async def generate_routes(state: PlannerState) -> PlannerState:
         f"{schema_example}"
     )
 
-    use_search: bool = state.get("use_search", False)
-    llm = _get_llm_with_search() if use_search else _get_llm()
-    logger.info("루트 생성 LLM: %s", "Google Search grounding" if use_search else "기본 Gemini")
+    # 루트 생성은 기본 Gemini 고정 (Search grounding 불필요 – 테마 고정, JSON 안정성 우선)
+    llm = _get_llm()
+    logger.info("루트 생성 LLM: 기본 Gemini (Search grounding 미사용)")
     try:
-        response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=use_search)
+        response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=False)
         data = _parse_json(response)
         routes = data.get("routes", [])
         logger.info(
@@ -582,15 +662,15 @@ class _SingleDayCommonKwargs(TypedDict):
     route_name: str
     lang: str
     lang_dir: str
+    user_block: str
     festival_block: str
     weather_block: str
     transport_block: str
     news_block: str
-    use_search: bool
 
 
-def _build_festival_block(festivals: list) -> str:
-    """행사 목록 → 프롬프트 블록."""
+def _build_festival_block(festivals: list, lang: str = "Korean") -> str:
+    """행사 목록 → 프롬프트 블록 (lang에 따라 언어 분기)."""
     if not festivals:
         return ""
     fest_lines: list[str] = []
@@ -604,11 +684,13 @@ def _build_festival_block(festivals: list) -> str:
         if content:
             line += f" – {content}"
         fest_lines.append(line)
-    return (
-        "【Local Events During Trip】\n"
-        + "\n".join(fest_lines)
-        + "\n- If any event matches the route theme, include it as a schedule item on the relevant day.\n\n"
-    )
+    if lang == "Korean":
+        header = "【여행 기간 내 해당 지역 행사】"
+        footer = "- 위 행사가 루트 테마와 관련 있으면 해당 날짜 일정 항목으로 반드시 포함하세요.\n"
+    else:
+        header = "【Local Events During Trip】"
+        footer = "- If any event matches the route theme, include it as a schedule item on the relevant day.\n"
+    return header + "\n" + "\n".join(fest_lines) + "\n" + footer + "\n"
 
 
 async def _generate_single_day(
@@ -620,11 +702,11 @@ async def _generate_single_day(
     route_name: str,
     lang: str,
     lang_dir: str,
+    user_block: str,
     festival_block: str,
     weather_block: str,
     transport_block: str,
     news_block: str,
-    use_search: bool,
 ) -> tuple[list[dict[str, Any]], dict]:
     """하루치 일정 4개 항목을 Gemini로 생성한다.
 
@@ -651,7 +733,7 @@ async def _generate_single_day(
         f"Destination:{location_name} | Route:{route_name} | Day:{day_num} ({date_str})\n"
         f"⚠️ GEOGRAPHIC CONSTRAINT (CRITICAL): ALL places must be physically located within "
         f"'{location_name}'. Never use places from other cities or regions.\n\n"
-        f"{festival_block}{weather_block}{transport_block}{news_block}"
+        f"{user_block}{festival_block}{weather_block}{transport_block}{news_block}"
         f"Create exactly 4 schedule items for Day {day_num}.\n\n"
         "Rules:\n"
         f"- date field must be exactly: {date_str}\n"
@@ -684,8 +766,10 @@ async def _generate_single_day(
         )
     )
 
-    llm = _get_llm_with_search() if use_search else _get_llm()
-    response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=use_search)
+    # 일정 생성은 항상 Google Search grounding 강제
+    # → 실시간 영업 여부·행사 날짜·현재 메뉴 등 시점 의존 정보 정확도 최대화
+    llm = _get_llm_with_search()
+    response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=True)
     data = _parse_json(response)
 
     raw_items = data.get("items", [])
@@ -715,14 +799,14 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
     news_top10: list = state.get("news_top10") or []
     weather_forecast: dict | None = state.get("weather_forecast")
     transport_mode: str | None = state.get("transport_mode")
-    use_search: bool = state.get("use_search", False)
 
     lang = _get_lang(user_profile)
     lang_dir = _lang_directive(lang)
-    news_block = build_news_block_for_prompt(news_top10, location_name, for_k_content=False)
+    user_block = _build_user_profile_block(user_profile, lang)
+    news_block = build_news_block_for_prompt(news_top10, location_name, for_k_content=False, lang=lang)
     weather_block = build_weather_block_for_prompt(weather_forecast or {}, start_date, end_date)
     transport_block = _build_transport_block(transport_mode)
-    festival_block = _build_festival_block(festivals)
+    festival_block = _build_festival_block(festivals, lang=lang)
 
     date_list = _build_date_list(start_date, end_date)
 
@@ -730,8 +814,8 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
     if date_list:
         num_days = len(date_list)
         logger.info(
-            "일정 병렬 생성 시작: %s / %s (%d일, use_search=%s)",
-            location_name, route_name, num_days, use_search,
+            "일정 병렬 생성 시작: %s / %s (%d일, Google Search grounding 강제)",
+            location_name, route_name, num_days,
         )
 
         common_kwargs: _SingleDayCommonKwargs = {
@@ -740,11 +824,11 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
             "route_name": route_name,
             "lang": lang,
             "lang_dir": lang_dir,
+            "user_block": user_block,
             "festival_block": festival_block,
             "weather_block": weather_block,
             "transport_block": transport_block,
             "news_block": news_block,
-            "use_search": use_search,
         }
         tasks = [
             _generate_single_day(day_num=i + 1, date_str=date_str, **common_kwargs)
@@ -820,7 +904,7 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         f"Destination:{location_name} | Route:{route_name}\n"
         f"⚠️ GEOGRAPHIC CONSTRAINT (CRITICAL): ALL places must be physically located within "
         f"'{location_name}'. Never use places from other cities or regions, even if names are similar.\n\n"
-        f"{festival_block}{weather_block}{transport_block}{news_block}"
+        f"{user_block}{festival_block}{weather_block}{transport_block}{news_block}"
         f"Create a detailed travel itinerary ({num_days} days, 4 items per day).\n\n"
         "Rules:\n"
         f"- Use only real existing places/restaurants/attractions within {location_name}\n"
@@ -839,10 +923,11 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         f"{fb_schema}"
     )
 
-    llm = _get_llm_with_search() if use_search else _get_llm()
-    logger.info("일정 단일 생성(폴백) LLM: %s", "Google Search grounding" if use_search else "기본 Gemini")
+    # 단일 호출 폴백도 Google Search grounding 강제
+    llm = _get_llm_with_search()
+    logger.info("일정 단일 생성(폴백) LLM: Google Search grounding 강제")
     try:
-        response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=use_search)
+        response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=True)
         data = _parse_json(response)
         fb_schedule = data.get("schedule") or []
         if not isinstance(fb_schedule, list):

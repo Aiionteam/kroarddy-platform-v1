@@ -20,6 +20,7 @@ from app.agent.standard.nodes import (
     _geocode_item,
     _get_lang,
     _lang_directive,
+    _build_user_profile_block,
     _build_festival_block,
     _build_transport_block,
     _generate_single_day,
@@ -352,7 +353,7 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
     location_name = SLUG_TO_NAME.get(location, location)
     existing_routes: list[str] = req.existing_routes or []
     eh = _existing_hash(existing_routes)
-    search_tag = "s1" if req.use_search else "s0"
+    # 루트 생성은 기본 Gemini 고정이므로 search_tag 불필요 → 캐시 키 단순화
     transport_tag = req.transport_mode or "any"
 
     # ── user_profile을 먼저 조회해야 lang_code가 확정되고
@@ -363,7 +364,7 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
     user_profile = await fetch_user_profile(req.user_id)
     nationality = (user_profile or {}).get("nationality", "")
     lang_code = nationality[:3].lower() if nationality else "ko"
-    cache_key = f"{location}:{req.start_date}:{req.end_date}:{eh}:{lang_code}:{search_tag}:{transport_tag}"
+    cache_key = f"{location}:{req.start_date}:{req.end_date}:{eh}:{lang_code}:{transport_tag}"
 
     cached = _routes_cache.get(cache_key)
     if cached and time.time() - cached[1] < _ROUTES_TTL:
@@ -383,22 +384,13 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
             logger.info("루트 L2(DB)캐시 히트: %s (%d건)", cache_key, len(db_routes))
             return {"location": location, "location_name": location_name, "routes": db_routes}
 
-        # 뉴스 Top10: 프론트에서 이미 가져온 데이터가 있으면 재사용 (API 호출 절약)
-        _has_client_news = bool(req.news_top10)
-        festivals, news_top10, weather_forecast = await asyncio.gather(
-            fetch_festivals_for_period(location, location_name, req.start_date, req.end_date),
-            asyncio.sleep(0) if _has_client_news else fetch_news_top10(req.start_date, req.end_date),
-            fetch_weather_for_planner(location_name, None, req.start_date, req.end_date),
-        )
-        if _has_client_news:
-            news_top10 = req.news_top10  # type: ignore[assignment]
+        # 루트 생성: 행사 정보만 조회 (뉴스·날씨는 프롬프트에 포함하지 않으므로 건너뜀 → 속도 개선)
+        festivals = await fetch_festivals_for_period(location, location_name, req.start_date, req.end_date)
 
         logger.info(
-            "행사 연동: location=%s, 건수=%d | 뉴스 Top10: %d건(%s) | 유저 프로필: %s (국적=%s, lang=%s) | 기존 제외=%d건 | 날씨=%s | 이동수단=%s",
-            location, len(festivals), len(news_top10 or []),
-            "client" if _has_client_news else "fetched",
+            "루트 생성 연동: location=%s, 행사=%d건 | 유저 프로필: %s (국적=%s, lang=%s) | 기존 제외=%d건 | 이동수단=%s",
+            location, len(festivals),
             bool(user_profile), nationality, lang_code, len(existing_routes),
-            "available" if (weather_forecast or {}).get("available") else "unavailable",
             transport_tag,
         )
 
@@ -407,9 +399,6 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
             "festivals": festivals,
             "user_profile": user_profile,
             "existing_routes": existing_routes,
-            "use_search": req.use_search,
-            "news_top10": news_top10,
-            "weather_forecast": weather_forecast,
             "transport_mode": req.transport_mode,
         }
         try:
@@ -447,9 +436,9 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
     user_profile = await fetch_user_profile(req.user_id)
     nationality = (user_profile or {}).get("nationality", "")
     lang_code = nationality[:3].lower() if nationality else "ko"
-    sched_search_tag = "s1" if req.use_search else "s0"
     sched_transport_tag = req.transport_mode or "any"
-    sched_key = f"{location}:{req.route_name}:{req.start_date}:{req.end_date}:{lang_code}:{sched_search_tag}:{sched_transport_tag}"
+    # 일정은 항상 Search grounding 사용하므로 search_tag 불필요
+    sched_key = f"{location}:{req.route_name}:{req.start_date}:{req.end_date}:{lang_code}:{sched_transport_tag}"
 
     cached_sched = _schedule_cache.get(sched_key)
     if cached_sched and time.time() - cached_sched[1] < _SCHEDULE_TTL:
@@ -510,7 +499,6 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
             "route_name": req.route_name,
             "user_profile": user_profile,
             "festivals": festivals,
-            "use_search": req.use_search,
             "news_top10": news_top10,
             "weather_forecast": weather_forecast_s,
             "transport_mode": req.transport_mode,
@@ -567,11 +555,11 @@ async def stream_schedule(
     user_profile = await fetch_user_profile(req.user_id)
     nationality = (user_profile or {}).get("nationality", "")
     lang_code = nationality[:3].lower() if nationality else "ko"
-    search_tag = "s1" if req.use_search else "s0"
     transport_tag = req.transport_mode or "any"
+    # 일정은 항상 Search grounding 사용하므로 search_tag 불필요
     sched_key = (
         f"{location}:{req.route_name}:{req.start_date}:{req.end_date}"
-        f":{lang_code}:{search_tag}:{transport_tag}"
+        f":{lang_code}:{transport_tag}"
     )
 
     def _sse(obj: dict) -> str:
@@ -620,10 +608,11 @@ async def stream_schedule(
         # ── LLM 프롬프트 블록 ────────────────────────────────────────
         lang = _get_lang(user_profile)
         lang_dir = _lang_directive(lang)
-        news_block = build_news_block_for_prompt(news_top10 or [], location_name, for_k_content=False)
+        user_block = _build_user_profile_block(user_profile, lang)
+        news_block = build_news_block_for_prompt(news_top10 or [], location_name, for_k_content=False, lang=lang)
         weather_block = build_weather_block_for_prompt(weather_forecast or {}, req.start_date, req.end_date)
         transport_block = _build_transport_block(req.transport_mode or "")
-        festival_block = _build_festival_block(festivals or [])
+        festival_block = _build_festival_block(festivals or [], lang=lang)
 
         num_days = len(date_list)
         common_kwargs = dict(
@@ -632,11 +621,11 @@ async def stream_schedule(
             route_name=req.route_name,
             lang=lang,
             lang_dir=lang_dir,
+            user_block=user_block,
             festival_block=festival_block,
             weather_block=weather_block,
             transport_block=transport_block,
             news_block=news_block,
-            use_search=req.use_search,
         )
 
         # ── Day별 병렬 생성 → 완료된 Day 즉시 스트리밍 + 즉시 Geocoding 시작 ──
