@@ -32,6 +32,7 @@ from app.agent.standard.nodes_schedule import (
     _gather_web_search_context,
     _generate_single_day,
     _geocode_item,
+    gather_context_node,
 )
 from app.services.news_client import build_news_block_for_prompt
 from app.services.weather_client import build_weather_block_for_prompt
@@ -39,11 +40,8 @@ from app.core.config import settings
 from app.core.database.session import get_db
 from app.models.travel_plan import TravelPlan
 from app.models.plan_cache import RouteCache, ScheduleCache
-from app.services.festival_client import fetch_festivals_for_period_with_db_cache
-from app.services.news_client import fetch_news_top10
 from app.services.naver_place_hours import enrich_schedule_items_with_hours
 from app.services.user_info_client import fetch_user_profile
-from app.services.weather_client import fetch_weather_for_planner
 from .schemas import ModifyRequest, RerollItemRequest, RoutesRequest, SavePlanRequest, ScheduleRequest
 
 logger = logging.getLogger(__name__)
@@ -322,20 +320,22 @@ def _base_state(location: str, start_date: Optional[str], end_date: Optional[str
     return {
         "location": location,
         "location_name": SLUG_TO_NAME.get(location, location),
+        "user_id": None,
         "route_name": None,
         "start_date": start_date,
         "end_date": end_date,
+        "transport_mode": None,
+        "use_search": False,
+        "user_profile": None,
+        "festivals": [],
+        "news_top10": [],
+        "weather_forecast": None,
+        "web_search_context": None,
         "routes": [],
         "schedule": [],
         "cost_summary": None,
-        "festivals": [],
-        "user_profile": None,
-        "existing_routes": [],
-        "use_search": False,
-        "news_top10": [],
-        "weather_forecast": None,
-        "transport_mode": None,
         "error": None,
+        "existing_routes": [],
     }
 
 
@@ -385,33 +385,14 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
             logger.info("루트 L2(DB)캐시 히트: %s (%d건)", cache_key, len(db_routes))
             return {"location": location, "location_name": location_name, "routes": db_routes}
 
-        # 루트 생성: 행사 + 뉴스 반영 (프로필 개인화는 제외)
-        _has_client_news_r = bool(req.news_top10)
-        festivals, news_top10 = await asyncio.gather(
-            fetch_festivals_for_period_with_db_cache(
-                db,
-                location=location,
-                location_name=location_name,
-                start_date=req.start_date,
-                end_date=req.end_date,
-            ),
-            asyncio.sleep(0) if _has_client_news_r else fetch_news_top10(req.start_date, req.end_date),
-        )
-        if _has_client_news_r:
-            news_top10 = req.news_top10  # type: ignore[assignment]
-
+        # 루트 생성은 순수 LLM만 사용 (행사·뉴스는 generate_routes 노드에서 불필요)
+        # → 외부 API 호출 없이 즉시 그래프 실행
         logger.info(
-            "루트 생성 연동: location=%s, 행사=%d건, 뉴스Top10=%d건(%s) | lang=%s | 기존 제외=%d건 | 이동수단=%s",
-            location, len(festivals),
-            len(news_top10 or []), "client" if _has_client_news_r else "fetched", lang_code, len(existing_routes),
-            transport_tag,
+            "루트 생성 시작: location=%s | lang=%s | 기존 제외=%d건 | 이동수단=%s",
+            location, lang_code, len(existing_routes), transport_tag,
         )
-
         state = {
             **_base_state(location, req.start_date, req.end_date),
-            "festivals": festivals,
-            "news_top10": news_top10,
-            "user_profile": user_profile,
             "existing_routes": existing_routes,
             "transport_mode": req.transport_mode,
         }
@@ -444,9 +425,14 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
 
 @router.post("/{location}/schedule", summary="선택 루트 AI 일정 생성 (저장 없음)")
 async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = Depends(get_db)):
+    """일정 생성 엔드포인트.
+
+    캐시 키 확정을 위해 user_profile을 먼저 조회한 뒤,
+    행사·뉴스·날씨·웹검색 수집은 LangGraph gather_context_node에서 병렬로 처리한다.
+    """
     location_name = SLUG_TO_NAME.get(location, location)
 
-    # user_profile 조회 (언어 결정 및 개인화용)
+    # 캐시 키 확정을 위해 프로필만 먼저 조회
     user_profile = await fetch_user_profile(req.user_id)
     nationality = (user_profile or {}).get("nationality", "")
     lang_code = nationality[:3].lower() if nationality else "ko"
@@ -492,38 +478,15 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
                 "error": None,
             }
 
-        # 일정 생성에도 행사·뉴스·날씨 정보 반영
-        # 뉴스 Top10: 프론트에서 이미 가져온 데이터가 있으면 재사용
-        _has_client_news_s = bool(req.news_top10)
-        festivals, news_top10, weather_forecast_s = await asyncio.gather(
-            fetch_festivals_for_period_with_db_cache(
-                db,
-                location=location,
-                location_name=location_name,
-                start_date=req.start_date,
-                end_date=req.end_date,
-            ),
-            asyncio.sleep(0) if _has_client_news_s else fetch_news_top10(req.start_date, req.end_date),
-            fetch_weather_for_planner(location_name, None, req.start_date, req.end_date),
-        )
-        if _has_client_news_s:
-            news_top10 = req.news_top10  # type: ignore[assignment]
-
-        logger.info(
-            "일정 생성 연동: location=%s, 행사=%d건, 뉴스Top10=%d건(%s), 날씨=%s, 이동수단=%s",
-            location, len(festivals), len(news_top10 or []),
-            "client" if _has_client_news_s else "fetched",
-            "available" if (weather_forecast_s or {}).get("available") else "unavailable",
-            sched_transport_tag,
-        )
-
+        # 행사·뉴스·날씨·웹검색은 gather_context_node에서 병렬 수집
+        # 프론트에서 넘어온 뉴스가 있으면 state에 담아 gather_context_node가 재사용
+        logger.info("일정 생성 시작: %s/%s (lang=%s, search=%s)", location, req.route_name, lang_code, search_tag)
         state = {
             **_base_state(location, req.start_date, req.end_date),
+            "user_id": req.user_id,
+            "user_profile": user_profile,   # 이미 조회된 프로필 재사용
+            "news_top10": req.news_top10 or [],   # 프론트 제공 뉴스 선반영
             "route_name": req.route_name,
-            "user_profile": user_profile,
-            "festivals": festivals,
-            "news_top10": news_top10,
-            "weather_forecast": weather_forecast_s,
             "transport_mode": req.transport_mode,
             "use_search": req.use_search,
         }
@@ -606,27 +569,27 @@ async def stream_schedule(
             yield _sse({"type": "done"})
             return
 
-        # ── 행사·뉴스·날씨 병렬 수집 ────────────────────────────────
-        yield _sse({"type": "status", "message": "행사·날씨 정보 수집 중…"})
-        _has_client_news = bool(req.news_top10)
+        # ── gather_context_node 재사용: 행사·뉴스·날씨·웹서칭 병렬 수집 ─────
+        yield _sse({"type": "status", "message": "행사·날씨·최신 정보 수집 중…"})
+        ctx_state: dict = {
+            **_base_state(location, req.start_date, req.end_date),
+            "user_id": req.user_id,
+            "user_profile": user_profile,
+            "news_top10": req.news_top10 or [],
+            "route_name": req.route_name,
+            "use_search": req.use_search,
+        }
         try:
-            festivals, news_top10, weather_forecast = await asyncio.gather(
-                fetch_festivals_for_period_with_db_cache(
-                    db,
-                    location=location,
-                    location_name=location_name,
-                    start_date=req.start_date,
-                    end_date=req.end_date,
-                ),
-                asyncio.sleep(0) if _has_client_news else fetch_news_top10(req.start_date, req.end_date),
-                fetch_weather_for_planner(location_name, None, req.start_date, req.end_date),
-            )
+            ctx_state = await gather_context_node(ctx_state)  # type: ignore[assignment]
         except Exception as e:
-            yield _sse({"type": "error", "message": f"사전 데이터 수집 실패: {e}"})
+            yield _sse({"type": "error", "message": f"컨텍스트 수집 실패: {e}"})
             yield _sse({"type": "done"})
             return
-        if _has_client_news:
-            news_top10 = req.news_top10  # type: ignore[assignment]
+
+        festivals = ctx_state.get("festivals") or []
+        news_top10 = ctx_state.get("news_top10") or []
+        weather_forecast = ctx_state.get("weather_forecast")
+        raw_web_ctx = ctx_state.get("web_search_context") or ""
 
         # ── 날짜 목록 ────────────────────────────────────────────────
         date_list = _build_date_list(req.start_date, req.end_date)
@@ -639,23 +602,11 @@ async def stream_schedule(
         lang = _get_lang(user_profile)
         lang_dir = _lang_directive(lang)
         user_block = _build_user_profile_block(user_profile, lang)
-        news_block = build_news_block_for_prompt(news_top10 or [], location_name, for_k_content=False, lang=lang)
+        news_block = build_news_block_for_prompt(news_top10, location_name, for_k_content=False, lang=lang)
         weather_block = build_weather_block_for_prompt(weather_forecast or {}, req.start_date, req.end_date)
         transport_block = _build_transport_block(req.transport_mode or "")
-        festival_block = _build_festival_block(festivals or [], lang=lang)
-
-        # 선행 웹 검색 1회(옵션) → Day별로는 일반 Gemini만 사용 (nodes_schedule과 동일)
-        web_search_block = ""
-        if req.use_search:
-            yield _sse({"type": "status", "message": "웹에서 최신 정보 수집 중…"})
-            raw_ctx = await _gather_web_search_context(
-                location_name=location_name,
-                route_name=req.route_name,
-                start_date=req.start_date,
-                end_date=req.end_date,
-                lang=lang,
-            )
-            web_search_block = _format_web_search_block(raw_ctx, lang)
+        festival_block = _build_festival_block(festivals, lang=lang)
+        web_search_block = _format_web_search_block(raw_web_ctx, lang)
 
         num_days = len(date_list)
         common_kwargs = dict(
