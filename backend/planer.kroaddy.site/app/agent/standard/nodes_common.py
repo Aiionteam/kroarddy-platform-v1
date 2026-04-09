@@ -56,7 +56,12 @@ _SEMAPHORE_WAIT_TIMEOUT = 10
 _llm_instance: "ChatGoogleGenerativeAI | None" = None
 _llm_search_instance: "ChatGoogleGenerativeAI | None" = None
 _llm_search_ctx_instance: "ChatGoogleGenerativeAI | None" = None
-_llm_fallback_instance: "ChatGoogleGenerativeAI | None" = None
+# 메인(settings.gemini_model) 404/503 소진 시 순서대로 시도
+_GEMINI_FALLBACK_MODELS: tuple[str, ...] = (
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+)
+_llm_by_model: dict[str, ChatGoogleGenerativeAI] = {}
 
 # 단일 LLM 호출 타임아웃 – SDK 내부 재시도가 수분씩 대기하는 것을 방지
 _INVOKE_TIMEOUT_SEC = 25.0
@@ -175,17 +180,74 @@ def _get_llm_search_context():
 
 
 
-def _get_llm_fallback() -> ChatGoogleGenerativeAI:
-    """3.1-flash 503 소진 또는 404 시 즉시 대체 – gemini-2.0-flash-lite."""
-    global _llm_fallback_instance
-    if _llm_fallback_instance is None:
-        _llm_fallback_instance = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash-lite",
-            temperature=0.4,
+def _llm_for_model(model_name: str, *, temperature: float = 0.4) -> ChatGoogleGenerativeAI:
+    """모델명별 싱글턴 (폴백 체인용)."""
+    key = f"{model_name}:{temperature}"
+    if key not in _llm_by_model:
+        _llm_by_model[key] = ChatGoogleGenerativeAI(
+            model=model_name,
+            temperature=temperature,
             google_api_key=settings.gemini_api_key,
             max_retries=0,
         )
-    return _llm_fallback_instance
+    return _llm_by_model[key]
+
+
+def _fallback_model_order() -> list[str]:
+    """메인과 동일한 이름은 제외해 중복 호출을 피한다."""
+    primary = (settings.gemini_model or "").strip()
+    return [m for m in _GEMINI_FALLBACK_MODELS if m != primary]
+
+
+async def _ainvoke_fallback_chain(messages: list) -> Any:
+    """404/503·타임아웃 소진 후 폴백 모델 체인을 순서대로 시도.
+
+    - 404: 즉시 다음 모델로
+    - 503/timeout: 해당 모델을 _503_MAX_RETRIES 회 재시도 후 다음 모델로
+    """
+    names = _fallback_model_order()
+    if not names:
+        raise RuntimeError("폴백 모델 후보가 없습니다 (메인과 동일).")
+    last_err: Exception | None = None
+    for model_name in names:
+        logger.warning("Gemini 폴백 시도: %s", model_name)
+        unavail_count = 0
+        while True:
+            try:
+                return await asyncio.wait_for(
+                    _llm_for_model(model_name).ainvoke(messages),
+                    timeout=_INVOKE_TIMEOUT_SEC,
+                )
+            except asyncio.TimeoutError as e:
+                last_err = e
+                if unavail_count < _503_MAX_RETRIES:
+                    unavail_count += 1
+                    logger.warning("폴백 %s 타임아웃 – %d초 후 재시도 (%d/%d)",
+                                   model_name, _503_RETRY_WAIT_SEC, unavail_count, _503_MAX_RETRIES)
+                    await asyncio.sleep(_503_RETRY_WAIT_SEC)
+                    continue
+                logger.warning("폴백 %s 타임아웃 재시도 소진 — 다음 후보", model_name)
+                break
+            except Exception as e:
+                last_err = e
+                msg = str(e)
+                if "NOT_FOUND" in msg:
+                    logger.warning("폴백 %s 404 — 다음 후보", model_name)
+                    break
+                if any(m in msg for m in _UNAVAILABLE_MARKERS):
+                    if unavail_count < _503_MAX_RETRIES:
+                        unavail_count += 1
+                        logger.warning("폴백 %s 503 – %d초 후 재시도 (%d/%d)",
+                                       model_name, _503_RETRY_WAIT_SEC, unavail_count, _503_MAX_RETRIES)
+                        await asyncio.sleep(_503_RETRY_WAIT_SEC)
+                        continue
+                    logger.warning("폴백 %s 503 재시도 소진 — 다음 후보", model_name)
+                    break
+                raise
+    if last_err:
+        logger.error("폴백 체인 전체 실패: %s", last_err)
+        raise last_err
+    raise RuntimeError("Gemini 폴백 체인 실패")
 
 
 def _is_daily_quota(err: Exception) -> bool:
@@ -232,11 +294,8 @@ async def _invoke_inner(llm: Any, messages: list, *, max_retries: int, plain_fal
                 )
                 await asyncio.sleep(_503_RETRY_WAIT_SEC)
                 continue
-            logger.warning("Gemini 타임아웃 재시도(%d) 소진 → lite 모델로 폴백", _503_MAX_RETRIES)
-            return await asyncio.wait_for(
-                _get_llm_fallback().ainvoke(messages),
-                timeout=_INVOKE_TIMEOUT_SEC,
-            )
+            logger.warning("Gemini 타임아웃 재시도(%d) 소진 → 폴백 체인", _503_MAX_RETRIES)
+            return await _ainvoke_fallback_chain(messages)
         except Exception as e:
             msg = str(e)
 
@@ -249,14 +308,11 @@ async def _invoke_inner(llm: Any, messages: list, *, max_retries: int, plain_fal
 
             # 404 NOT_FOUND: 재시도 무의미 → 즉시 fallback
             if "NOT_FOUND" in msg:
-                logger.warning("Gemini 404 NOT_FOUND → 즉시 fallback 모델로 전환")
+                logger.warning("Gemini 404 NOT_FOUND → 폴백 체인 (2.5-flash 계열)")
                 try:
-                    return await asyncio.wait_for(
-                        _get_llm_fallback().ainvoke(messages),
-                        timeout=_INVOKE_TIMEOUT_SEC,
-                    )
+                    return await _ainvoke_fallback_chain(messages)
                 except Exception as fb_err:
-                    logger.error("fallback 모델도 실패: %s", fb_err)
+                    logger.error("폴백 체인 실패: %s", fb_err)
                     raise
 
             # 503 UNAVAILABLE: 독립 카운터로 재시도 후 소진 시 fallback
@@ -269,14 +325,11 @@ async def _invoke_inner(llm: Any, messages: list, *, max_retries: int, plain_fal
                     )
                     await asyncio.sleep(_503_RETRY_WAIT_SEC)
                     continue
-                logger.warning("Gemini 503 재시도(%d) 소진 → fallback 모델로 폴백", _503_MAX_RETRIES)
+                logger.warning("Gemini 503 재시도(%d) 소진 → 폴백 체인", _503_MAX_RETRIES)
                 try:
-                    return await asyncio.wait_for(
-                        _get_llm_fallback().ainvoke(messages),
-                        timeout=_INVOKE_TIMEOUT_SEC,
-                    )
+                    return await _ainvoke_fallback_chain(messages)
                 except Exception as fb_err:
-                    logger.error("fallback 모델도 실패: %s", fb_err)
+                    logger.error("폴백 체인 실패: %s", fb_err)
                     raise
 
             if "429" in msg or "RESOURCE_EXHAUSTED" in msg:

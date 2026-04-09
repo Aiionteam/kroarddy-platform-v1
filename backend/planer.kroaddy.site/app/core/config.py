@@ -37,7 +37,7 @@ def _adapt_url(url: str, driver: str) -> str:
 
 class Settings(BaseSettings):
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-3.1-flash"
+    gemini_model: str = "gemini-2.5-flash"
     openai_api_key: str = ""
     database_url: str = ""
     # 로컬: localhost / 프로덕션: https://api.kroaddy.site
@@ -79,6 +79,9 @@ class Settings(BaseSettings):
     # 네이버 플레이스 영업시간 (Playwright + pcmap.place.naver.com, Chromium 필요)
     naver_place_hours_enabled: bool = False
     naver_place_hours_page_timeout_ms: int = 25000
+
+    # 카카오 REST API 키 – 장소 키워드 검색 (POI → 좌표), developers.kakao.com
+    kakao_rest_api_key: str = ""
 
     # OpenWeatherMap (5-day forecast) – https://openweathermap.org/api
     openweather_api_key: str = ""
