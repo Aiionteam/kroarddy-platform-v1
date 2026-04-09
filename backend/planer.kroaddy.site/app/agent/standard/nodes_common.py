@@ -176,11 +176,11 @@ def _get_llm_search_context():
 
 
 def _get_llm_fallback() -> ChatGoogleGenerativeAI:
-    """2.5-flash 503 소진 또는 404 시 즉시 대체 – gemini-2.0-flash."""
+    """3.1-flash 503 소진 또는 404 시 즉시 대체 – gemini-2.0-flash-lite."""
     global _llm_fallback_instance
     if _llm_fallback_instance is None:
         _llm_fallback_instance = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
+            model="gemini-2.0-flash-lite",
             temperature=0.4,
             google_api_key=settings.gemini_api_key,
             max_retries=0,
