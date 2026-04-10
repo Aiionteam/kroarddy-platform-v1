@@ -6,7 +6,7 @@ import { useLoginStore } from "@/store";
 import { AppLayout } from "@/components/organisms/AppLayout";
 import {
   fetchRoutes,
-  fetchSchedule,
+  streamSchedule,
   fetchMyPlans,
   savePlan,
   type PlanRoute,
@@ -178,6 +178,8 @@ export default function LocationPlannerPage() {
   const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
   const [costSummary, setCostSummary] = useState<CostSummary | null>(null);
   const [scheduleLoading, setScheduleLoading] = useState(false);
+  /** SSE 진행 메시지(백엔드 status 이벤트) */
+  const [scheduleStreamStatus, setScheduleStreamStatus] = useState<string | null>(null);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [savedPlanId, setSavedPlanId] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -259,6 +261,7 @@ export default function LocationPlannerPage() {
       setSchedule([]);
       setCostSummary(null);
       setScheduleError(null);
+      setScheduleStreamStatus(null);
       setSavedPlanId(null);
       setScheduleLoading(true);
       try {
@@ -271,29 +274,76 @@ export default function LocationPlannerPage() {
           return;
         }
 
-        const res = await fetchSchedule(location, route.name, {
+        let merged: ScheduleItem[] = [];
+        let perDayCosts: { day: number; total: string; total_krw: number }[] = [];
+        let streamErr: string | null = null;
+        let lastCostSummary: CostSummary | null = null;
+
+        for await (const ev of streamSchedule(location, route.name, {
           startDate,
           endDate,
           userId: appUserId ?? undefined,
           useSearch,
           newsTop10: newsTop10.length > 0 ? newsTop10 : undefined,
           transportMode,
-        });
-        setSchedule(res.schedule);
-        if (res.cost_summary) setCostSummary(res.cost_summary);
-        if (res.error && res.schedule.length === 0) {
-          setScheduleError(res.error);
-        } else if (res.schedule.length > 0) {
-          writeSchedule(location, route.name, startDate, endDate, useSearch, { schedule: res.schedule, cost_summary: res.cost_summary });
+        })) {
+          if (ev.type === "status") {
+            setScheduleStreamStatus(ev.message);
+          } else if (ev.type === "day") {
+            merged = [...merged, ...ev.items].sort((a, b) => (a.day ?? 1) - (b.day ?? 1));
+            setSchedule(merged);
+            const c = ev.cost;
+            perDayCosts = [...perDayCosts.filter((p) => p.day !== c.day), c];
+            perDayCosts.sort((a, b) => a.day - b.day);
+            const sumKrw = perDayCosts.reduce((s, p) => s + (p.total_krw || 0), 0);
+            const interim: CostSummary = {
+              per_day: perDayCosts.map(({ day, total }) => ({ day, total })),
+              trip_total: sumKrw ? `₩${sumKrw.toLocaleString("ko-KR")}` : "…",
+            };
+            setCostSummary(interim);
+          } else if (ev.type === "geocoded") {
+            merged = ev.items;
+            setSchedule(ev.items);
+          } else if (ev.type === "cost_summary") {
+            lastCostSummary = ev.data;
+            setCostSummary(ev.data);
+          } else if (ev.type === "cached") {
+            merged = ev.schedule;
+            lastCostSummary = ev.cost_summary ?? null;
+            setSchedule(ev.schedule);
+            setCostSummary(ev.cost_summary ?? null);
+          } else if (ev.type === "error") {
+            streamErr = ev.message;
+            setScheduleError(ev.message);
+          }
+        }
+
+        if (streamErr) setScheduleError(streamErr);
+        else setScheduleError(null);
+
+        if (merged.length > 0 && !lastCostSummary && perDayCosts.length > 0) {
+          const sumKrw = perDayCosts.reduce((s, p) => s + (p.total_krw || 0), 0);
+          lastCostSummary = {
+            per_day: perDayCosts.map(({ day, total }) => ({ day, total })),
+            trip_total: sumKrw ? `₩${sumKrw.toLocaleString("ko-KR")}` : "N/A",
+          };
+        }
+
+        if (merged.length > 0) {
+          writeSchedule(location, route.name, startDate, endDate, useSearch, {
+            schedule: merged,
+            cost_summary: lastCostSummary ?? undefined,
+          });
           console.info("[plannerCache] schedule cache saved:", route.name);
         }
       } catch (e) {
         setScheduleError(e instanceof Error ? e.message : t("planner.standard.schedule_load_fail", { defaultValue: "일정을 불러오지 못했습니다." }));
       } finally {
         setScheduleLoading(false);
+        setScheduleStreamStatus(null);
       }
     },
-    [location, startDate, endDate, appUserId, useSearch, transportMode]
+    [location, startDate, endDate, appUserId, useSearch, transportMode, t, newsTop10]
   );
 
   const handleSavePlan = useCallback(async () => {
@@ -538,12 +588,15 @@ export default function LocationPlannerPage() {
               </div>
             )}
 
-            {scheduleLoading && (
+            {scheduleLoading && schedule.length === 0 && (
               <div className="flex flex-1 flex-col items-center justify-center gap-3">
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-500" />
                 <p className="text-sm text-gray-500">
                   {t("planner.standard.making_schedule", { defaultValue: "AI가 <b>{{name}}</b> 일정을 만드는 중…", name: selectedRoute?.name ?? "", interpolation: { escapeValue: false } })}
                 </p>
+                {scheduleStreamStatus && (
+                  <p className="max-w-sm text-center text-xs text-indigo-500">{scheduleStreamStatus}</p>
+                )}
                 <p className="text-xs text-gray-400">{startDate} ~ {endDate}</p>
               </div>
             )}
@@ -554,8 +607,19 @@ export default function LocationPlannerPage() {
               </div>
             )}
 
-            {!scheduleLoading && schedule.length > 0 && (
+            {schedule.length > 0 && (
               <div className="flex flex-col md:flex-1 md:overflow-hidden">
+                {scheduleLoading && (
+                  <div className="shrink-0 border-b border-amber-100 bg-amber-50 px-5 py-2">
+                    <div className="flex items-center gap-2 text-xs text-amber-900">
+                      <span className="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-amber-400 border-t-amber-700" />
+                      <span>
+                        {scheduleStreamStatus ||
+                          t("planner.standard.stream_finishing", { defaultValue: "좌표·경로 정리 중…" })}
+                      </span>
+                    </div>
+                  </div>
+                )}
                 <div className="shrink-0 border-b border-gray-200 bg-white px-5 py-3">
                   <div className="flex items-center justify-between gap-3">
                     <div>

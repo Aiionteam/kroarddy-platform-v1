@@ -25,7 +25,7 @@ public class RestTemplateConfig {
                 new HttpComponentsClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofSeconds(15));
         factory.setConnectionRequestTimeout(Duration.ofSeconds(15));
-        factory.setReadTimeout(Duration.ofSeconds(300)); // 5분 – AI 응답 대기
+        factory.setReadTimeout(Duration.ofSeconds(900)); // 15분 – 긴 AI/프록시 응답과 게이트움이 정렬
 
         return new RestTemplate(factory);
     }
