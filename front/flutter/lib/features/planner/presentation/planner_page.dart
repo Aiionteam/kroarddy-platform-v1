@@ -1,5 +1,7 @@
 import "dart:io";
+import "dart:math" show Random;
 
+import "package:easy_localization/easy_localization.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
@@ -12,6 +14,7 @@ import "../data/planner_models.dart";
 import "../data/user_content_models.dart";
 import "state/planner_controller.dart";
 import "state/user_content_controller.dart";
+import "planner_dest_i18n.dart";
 
 // ── 색상 상수 ─────────────────────────────────────────────────
 const _primary = KroaddyColors.primary;
@@ -20,24 +23,33 @@ const _textPrimary = Color(0xFF1F2937);
 const _textSecondary = Color(0xFF6B7280);
 const _bgPage = Color(0xFFF8F7FF);
 
-// ── 여행지 데이터 모델 ─────────────────────────────────────────
+// ── 여행지 데이터 모델 (이름·하이라이트는 웹 동기화 `planner_dest.*`) ──
 class _Destination {
-  const _Destination(this.slug, this.name, this.emoji, {
-    this.highlights = const [],
-    this.popular = false,
-  });
+  const _Destination(this.slug, this.emoji, {this.popular = false});
   final String slug;
-  final String name;
   final String emoji;
-  final List<String> highlights;
   final bool popular;
 }
 
 class _DestGroup {
-  const _DestGroup(this.label, this.subLabel, this.items);
-  final String label;
-  final String subLabel;
+  const _DestGroup(this.regionKey, this.items);
+  /// Web `planner.region` key with `-` → `_` (e.g. seoul_areas).
+  final String regionKey;
   final List<_Destination> items;
+}
+
+/// 광역 카드: `slug`는 `planner_dest` 키(예: seoul). 드릴다운이 있으면 [drillRegionKey].
+class _MetroCity {
+  const _MetroCity({
+    required this.slug,
+    required this.emoji,
+    required this.drillRegionKey,
+    this.popular = false,
+  });
+  final String slug;
+  final String emoji;
+  final String? drillRegionKey;
+  final bool popular;
 }
 
 // ── 이미지 Base URL (웹 서버와 공유) ──────────────────────────
@@ -184,161 +196,161 @@ String? _getImageUrl(String slug) {
   return _imageBase + Uri.encodeFull(path);
 }
 
-// ── 광역시 바로가기 ────────────────────────────────────────────
+// ── 광역시 바로가기 (`planner_dest.{slug}`) ─────────────────────
 const _metroCities = [
-  _Destination("jongno",    "서울",  "🏙️", highlights: ["경복궁", "홍대", "한강공원"],        popular: true),
-  _Destination("busan",     "부산",  "🌊", highlights: ["해운대", "감천마을", "자갈치시장"],   popular: true),
-  _Destination("daegu",     "대구",  "🌹", highlights: ["동성로", "김광석거리", "수성못"],     popular: true),
-  _Destination("incheon",   "인천",  "✈️", highlights: ["송도", "강화도", "차이나타운"],       popular: true),
-  _Destination("gwangju",   "광주",  "🎨", highlights: ["국립아시아문화전당", "양림동"],       popular: true),
-  _Destination("daejeon",   "대전",  "🍞", highlights: ["성심당", "엑스포공원", "유성온천"],   popular: true),
-  _Destination("ulsan",     "울산",  "🐋", highlights: ["간절곶", "대왕암", "태화강"]),
-  _Destination("sejong",    "세종",  "🌿", highlights: ["세종호수공원", "국립수목원"]),
+  _MetroCity(slug: "seoul", emoji: "🏙️", drillRegionKey: "seoul_areas", popular: true),
+  _MetroCity(slug: "busan", emoji: "🌊", drillRegionKey: "busan", popular: true),
+  _MetroCity(slug: "daegu", emoji: "🌹", drillRegionKey: "daegu", popular: true),
+  _MetroCity(slug: "incheon", emoji: "✈️", drillRegionKey: null, popular: true),
+  _MetroCity(slug: "gwangju", emoji: "🎨", drillRegionKey: null, popular: true),
+  _MetroCity(slug: "daejeon", emoji: "🍞", drillRegionKey: null, popular: true),
+  _MetroCity(slug: "ulsan", emoji: "🐋", drillRegionKey: "ulsan"),
+  _MetroCity(slug: "sejong", emoji: "🌿", drillRegionKey: null),
 ];
 
-// ── Netflix 스타일 지역 그룹 데이터 ─────────────────────────────
+// ── Netflix 스타일 지역 그룹 (`planner_region.{regionKey}`) ───
 final _metroGroups = [
-  _DestGroup("서울", "권역별 대표 지역", const [
-    _Destination("jongno",    "종로·광화문", "🏛️", highlights: ["경복궁", "청와대", "인사동"],      popular: true),
-    _Destination("myeongdong","명동·을지로",  "🛍️", highlights: ["명동성당", "을지로골목"],          popular: true),
-    _Destination("yongsan",   "용산·이태원",  "🌍", highlights: ["국립중앙박물관", "이태원"],         popular: true),
-    _Destination("gangnam",   "강남·서초",   "💼", highlights: ["코엑스", "압구정로데오"],           popular: true),
-    _Destination("jamsil",    "잠실·송파",   "🎡", highlights: ["롯데월드", "올림픽공원"],           popular: true),
-    _Destination("seongsu",   "성수·한남",   "☕", highlights: ["성수카페거리", "한남동 갤러리"],     popular: true),
-    _Destination("hongdae",   "홍대·마포",   "🎸", highlights: ["홍대클럽", "연남동"],              popular: true),
-    _Destination("bukchon",   "북촌·삼청",   "🏮", highlights: ["북촌한옥마을", "삼청동카페"],       popular: true),
-    _Destination("nowon",     "노원·도봉",   "⛰️", highlights: ["수락산", "도봉산"]),
+  _DestGroup("seoul_areas", const [
+    _Destination("jongno", "🏛️", popular: true),
+    _Destination("myeongdong", "🛍️", popular: true),
+    _Destination("yongsan", "🌍", popular: true),
+    _Destination("gangnam", "💼", popular: true),
+    _Destination("jamsil", "🎡", popular: true),
+    _Destination("seongsu", "☕", popular: true),
+    _Destination("hongdae", "🎸", popular: true),
+    _Destination("bukchon", "🏮", popular: true),
+    _Destination("nowon", "⛰️"),
   ]),
-  _DestGroup("부산", "부산광역시", const [
-    _Destination("haeundae",  "해운대",       "🏖️", highlights: ["해운대해수욕장", "동백섬"],         popular: true),
-    _Destination("gwangalli", "광안리·수영",  "🌉", highlights: ["광안대교", "광안리해수욕장"],        popular: true),
-    _Destination("gijang",    "기장",         "🦀", highlights: ["죽성드림성당", "아쿠아리움"],        popular: true),
-    _Destination("nampo",     "남포·중구",    "🎬", highlights: ["자갈치시장", "BIFF광장"],           popular: true),
-    _Destination("gamcheon",  "감천문화마을",  "🏘️", highlights: ["감천문화마을", "하늘마루"],          popular: true),
-    _Destination("seomyeon",  "서면·부전",    "🛍️", highlights: ["서면거리", "부전시장"]),
-    _Destination("yeongdo",   "영도",         "⚓", highlights: ["태종대", "흰여울문화마을"]),
-    _Destination("geumjeong", "금정·온천장",  "♨️", highlights: ["금정산성", "범어사"]),
-    _Destination("dadaepo",   "사하·다대포",  "🌅", highlights: ["다대포해수욕장", "낙동강 하구"]),
+  _DestGroup("busan", const [
+    _Destination("haeundae", "🏖️", popular: true),
+    _Destination("gwangalli", "🌉", popular: true),
+    _Destination("gijang", "🦀", popular: true),
+    _Destination("nampo", "🎬", popular: true),
+    _Destination("gamcheon", "🏘️", popular: true),
+    _Destination("seomyeon", "🛍️"),
+    _Destination("yeongdo", "⚓"),
+    _Destination("geumjeong", "♨️"),
+    _Destination("dadaepo", "🌅"),
   ]),
-  _DestGroup("대구", "대구광역시", const [
-    _Destination("dongseongno","동성로·중구",  "🛍️", highlights: ["동성로", "서문시장"],              popular: true),
-    _Destination("gimgwangseok","김광석거리",  "🎵", highlights: ["김광석거리", "방천시장"],           popular: true),
-    _Destination("suseongmot", "수성못·범어",  "🦢", highlights: ["수성못", "수성유원지"],             popular: true),
-    _Destination("palgongsan", "팔공산",       "⛰️", highlights: ["동화사", "갓바위"],                popular: true),
-    _Destination("dalseong",   "비슬산·달성",  "🌸", highlights: ["비슬산 참꽃", "달성습지"],          popular: true),
+  _DestGroup("daegu", const [
+    _Destination("dongseongno", "🛍️", popular: true),
+    _Destination("gimgwangseok", "🎵", popular: true),
+    _Destination("suseongmot", "🦢", popular: true),
+    _Destination("palgongsan", "⛰️", popular: true),
+    _Destination("dalseong", "🌸", popular: true),
   ]),
-  _DestGroup("울산", "울산광역시", const [
-    _Destination("ganjeolgot", "간절곶",       "🌅", highlights: ["간절곶등대", "새해 일출"],          popular: true),
-    _Destination("daewangam",  "대왕암",       "🐉", highlights: ["대왕암공원", "일산해수욕장"],        popular: true),
-    _Destination("taehwagang", "태화강",       "🐦", highlights: ["태화강국가정원", "십리대숲"]),
-    _Destination("bangudae",   "반구대",       "🦣", highlights: ["반구대 암각화"]),
+  _DestGroup("ulsan", const [
+    _Destination("ganjeolgot", "🌅", popular: true),
+    _Destination("daewangam", "🐉", popular: true),
+    _Destination("taehwagang", "🐦"),
+    _Destination("bangudae", "🦣"),
   ]),
 ];
 
 final _provinceGroups = [
-  _DestGroup("경기 북부", "고양·파주·가평·양평 등", const [
-    _Destination("goyang",      "고양",     "🌸", highlights: ["킨텍스", "행주산성"]),
-    _Destination("paju",        "파주",     "📚", highlights: ["헤이리마을", "임진각"],              popular: true),
-    _Destination("namyangju",   "남양주",   "🌿", highlights: ["두물머리", "다산길"],               popular: true),
-    _Destination("gapyeong",    "가평",     "🚣", highlights: ["남이섬", "자라섬"],                 popular: true),
-    _Destination("yangpyeong",  "양평",     "☕", highlights: ["두물머리", "카페거리"],             popular: true),
-    _Destination("pocheon",     "포천",     "🌳", highlights: ["산정호수", "허브아일랜드"],          popular: true),
-    _Destination("uijeongbu",   "의정부",   "🍖", highlights: ["부대찌개거리", "회룡사"]),
-    _Destination("yangju",      "양주",     "🌻", highlights: ["나리공원"]),
-    _Destination("dongducheon", "동두천",   "🎶", highlights: ["소요산"]),
-    _Destination("gimpo",       "김포",     "🌾", highlights: ["아라뱃길"]),
-    _Destination("guri",        "구리",     "🌸", highlights: ["한강시민공원", "아차산"]),
+  _DestGroup("gyeonggi_north", const [
+    _Destination("goyang", "🌸"),
+    _Destination("paju", "📚", popular: true),
+    _Destination("namyangju", "🌿", popular: true),
+    _Destination("gapyeong", "🚣", popular: true),
+    _Destination("yangpyeong", "☕", popular: true),
+    _Destination("pocheon", "🌳", popular: true),
+    _Destination("uijeongbu", "🍖"),
+    _Destination("yangju", "🌻"),
+    _Destination("dongducheon", "🎶"),
+    _Destination("gimpo", "🌾"),
+    _Destination("guri", "🌸"),
   ]),
-  _DestGroup("경기 남부", "수원·용인·성남·이천 등", const [
-    _Destination("suwon",       "수원",     "🏯", highlights: ["화성행궁", "행리단길"],              popular: true),
-    _Destination("yongin",      "용인",     "🎡", highlights: ["에버랜드", "한국민속촌"],            popular: true),
-    _Destination("icheon",      "이천",     "🍚", highlights: ["도자기마을"],                       popular: true),
-    _Destination("seongnam",    "성남",     "🏢", highlights: ["판교테크노밸리"]),
-    _Destination("hanam",       "하남",     "🛍️", highlights: ["스타필드하남"]),
-    _Destination("hwaseong",    "화성",     "🌅", highlights: ["궁평항", "제부도"]),
-    _Destination("ansan",       "안산",     "🎨", highlights: ["대부도", "시화호"]),
-    _Destination("pyeongtaek",  "평택",     "🚢", highlights: ["평택항"]),
-    _Destination("yeoju",       "여주",     "👑", highlights: ["세종대왕릉", "신륵사"]),
-    _Destination("gunpo",       "군포",     "🌲", highlights: ["수리산"]),
-    _Destination("anyang",      "안양",     "⛰️", highlights: ["삼성산"]),
-    _Destination("anseong",     "안성",     "🎭", highlights: ["안성맞춤랜드"]),
-    _Destination("siheung",     "시흥",     "🦢", highlights: ["갯골생태공원", "오이도"]),
-    _Destination("osan",        "오산",     "🏛️", highlights: ["물향기수목원"]),
+  _DestGroup("gyeonggi_south", const [
+    _Destination("suwon", "🏯", popular: true),
+    _Destination("yongin", "🎡", popular: true),
+    _Destination("icheon", "🍚", popular: true),
+    _Destination("seongnam", "🏢"),
+    _Destination("hanam", "🛍️"),
+    _Destination("hwaseong", "🌅"),
+    _Destination("ansan", "🎨"),
+    _Destination("pyeongtaek", "🚢"),
+    _Destination("yeoju", "👑"),
+    _Destination("gunpo", "🌲"),
+    _Destination("anyang", "⛰️"),
+    _Destination("anseong", "🎭"),
+    _Destination("siheung", "🦢"),
+    _Destination("osan", "🏛️"),
   ]),
-  _DestGroup("강원도", "강원특별자치도", const [
-    _Destination("gangneung",   "강릉",     "☕", highlights: ["경포대", "안목커피거리", "오죽헌"],   popular: true),
-    _Destination("sokcho",      "속초",     "🏔️", highlights: ["설악산", "중앙시장"],               popular: true),
-    _Destination("chuncheon",   "춘천",     "🍗", highlights: ["남이섬", "닭갈비골목"],              popular: true),
-    _Destination("yangyang",    "양양",     "🏄", highlights: ["서피비치", "낙산사"],                popular: true),
-    _Destination("pyeongchang", "평창",     "🐑", highlights: ["대관령양떼목장", "오대산"],           popular: true),
-    _Destination("wonju",       "원주",     "🎨", highlights: ["뮤지엄산", "소금산출렁다리"],         popular: true),
-    _Destination("donghae",     "동해",     "🌊", highlights: ["망상해변", "추암촛대바위"]),
-    _Destination("samcheok",    "삼척",     "🐉", highlights: ["해신당공원", "죽서루"]),
-    _Destination("taebaek",     "태백",     "⛏️", highlights: ["태백산", "용연동굴"]),
-    _Destination("jeongseon",   "정선",     "⛰️", highlights: ["민둥산", "레일바이크"]),
-    _Destination("inje",        "인제",     "🦌", highlights: ["내린천", "자작나무숲"]),
+  _DestGroup("gangwon", const [
+    _Destination("gangneung", "☕", popular: true),
+    _Destination("sokcho", "🏔️", popular: true),
+    _Destination("chuncheon", "🍗", popular: true),
+    _Destination("yangyang", "🏄", popular: true),
+    _Destination("pyeongchang", "🐑", popular: true),
+    _Destination("wonju", "🎨", popular: true),
+    _Destination("donghae", "🌊"),
+    _Destination("samcheok", "🐉"),
+    _Destination("taebaek", "⛏️"),
+    _Destination("jeongseon", "⛰️"),
+    _Destination("inje", "🦌"),
   ]),
-  _DestGroup("충청북도", "청주·충주·제천·단양", const [
-    _Destination("danyang",     "단양",     "🪂", highlights: ["단양팔경", "도담삼봉", "패러글라이딩"], popular: true),
-    _Destination("jecheon",     "제천",     "🌸", highlights: ["청풍호", "의림지"],                  popular: true),
-    _Destination("cheongju",    "청주",     "📜", highlights: ["고인쇄박물관", "상당산성"]),
-    _Destination("chungju",     "충주",     "🌊", highlights: ["충주호", "탄금대"]),
+  _DestGroup("chungbuk", const [
+    _Destination("danyang", "🪂", popular: true),
+    _Destination("jecheon", "🌸", popular: true),
+    _Destination("cheongju", "📜"),
+    _Destination("chungju", "🌊"),
   ]),
-  _DestGroup("충청남도", "공주·부여·보령·태안 등", const [
-    _Destination("gongju",      "공주",     "👑", highlights: ["공산성", "무령왕릉"],                popular: true),
-    _Destination("buyeo",       "부여",     "🏛️", highlights: ["부소산성", "낙화암"],               popular: true),
-    _Destination("boryeong",    "보령",     "🌊", highlights: ["머드축제", "대천해수욕장"],           popular: true),
-    _Destination("taean",       "태안",     "🐚", highlights: ["안면도", "꽃지해수욕장"],            popular: true),
-    _Destination("asan",        "아산",     "♨️", highlights: ["온양온천", "현충사"]),
-    _Destination("cheonan",     "천안",     "🍓", highlights: ["독립기념관"]),
-    _Destination("seosan",      "서산",     "🦢", highlights: ["서산마애삼존불", "간월암"]),
-    _Destination("nonsan",      "논산",     "🍓", highlights: ["관촉사"]),
-    _Destination("dangjin",     "당진",     "🌅", highlights: ["왜목마을"]),
+  _DestGroup("chungnam", const [
+    _Destination("gongju", "👑", popular: true),
+    _Destination("buyeo", "🏛️", popular: true),
+    _Destination("boryeong", "🌊", popular: true),
+    _Destination("taean", "🐚", popular: true),
+    _Destination("asan", "♨️"),
+    _Destination("cheonan", "🍓"),
+    _Destination("seosan", "🦢"),
+    _Destination("nonsan", "🍓"),
+    _Destination("dangjin", "🌅"),
   ]),
-  _DestGroup("전북", "전북특별자치도", const [
-    _Destination("jeonju",      "전주",     "🏮", highlights: ["한옥마을", "막걸리골목"],            popular: true),
-    _Destination("gunsan",      "군산",     "🚢", highlights: ["근대문화유산거리", "이성당"],          popular: true),
-    _Destination("namwon",      "남원",     "💕", highlights: ["광한루원", "지리산"]),
-    _Destination("iksan",       "익산",     "🏛️", highlights: ["미륵사지", "왕궁리유적"]),
-    _Destination("jeongeup",    "정읍",     "🌸", highlights: ["내장산"]),
-    _Destination("gimje",       "김제",     "🌾", highlights: ["지평선축제"]),
+  _DestGroup("jeonbuk", const [
+    _Destination("jeonju", "🏮", popular: true),
+    _Destination("gunsan", "🚢", popular: true),
+    _Destination("namwon", "💕"),
+    _Destination("iksan", "🏛️"),
+    _Destination("jeongeup", "🌸"),
+    _Destination("gimje", "🌾"),
   ]),
-  _DestGroup("전라남도", "여수·순천·목포·담양 등", const [
-    _Destination("yeosu",       "여수",     "🦀", highlights: ["해상케이블카", "오동도", "밤바다"],   popular: true),
-    _Destination("suncheon",    "순천",     "🦢", highlights: ["순천만국가정원", "낙안읍성"],          popular: true),
-    _Destination("mokpo",       "목포",     "🌉", highlights: ["해상케이블카", "유달산"],             popular: true),
-    _Destination("damyang",     "담양",     "🎋", highlights: ["죽녹원", "메타세쿼이아길"],           popular: true),
-    _Destination("boseong",     "보성",     "🍵", highlights: ["녹차밭"],                           popular: true),
-    _Destination("wando",       "완도",     "🐟", highlights: ["청산도"]),
-    _Destination("gwangyang",   "광양",     "🌸", highlights: ["매화마을"]),
-    _Destination("naju",        "나주",     "🍐", highlights: ["영산강"]),
+  _DestGroup("jeonnam", const [
+    _Destination("yeosu", "🦀", popular: true),
+    _Destination("suncheon", "🦢", popular: true),
+    _Destination("mokpo", "🌉", popular: true),
+    _Destination("damyang", "🎋", popular: true),
+    _Destination("boseong", "🍵", popular: true),
+    _Destination("wando", "🐟"),
+    _Destination("gwangyang", "🌸"),
+    _Destination("naju", "🍐"),
   ]),
-  _DestGroup("경상북도", "경주·포항·안동 등", const [
-    _Destination("gyeongju",    "경주",     "🌸", highlights: ["황리단길", "첨성대", "불국사"],        popular: true),
-    _Destination("andong",      "안동",     "🎭", highlights: ["하회마을", "도산서원"],               popular: true),
-    _Destination("pohang",      "포항",     "🌅", highlights: ["호미곶", "스페이스워크"],             popular: true),
-    _Destination("mungyeong",   "문경",     "⛩️", highlights: ["문경새재"],                         popular: true),
-    _Destination("yeongju",     "영주",     "🍎", highlights: ["부석사", "소수서원"]),
-    _Destination("gimcheon",    "김천",     "🍑", highlights: ["직지사", "황악산"]),
-    _Destination("yeongcheon",  "영천",     "🍇", highlights: ["영천와인", "보현산천문과학관"]),
-    _Destination("gyeongsan",   "경산",     "🌿", highlights: ["반곡지", "갓바위"]),
-    _Destination("sangju",      "상주",     "🚴", highlights: ["상주자전거박물관"]),
+  _DestGroup("gyeongbuk", const [
+    _Destination("gyeongju", "🌸", popular: true),
+    _Destination("andong", "🎭", popular: true),
+    _Destination("pohang", "🌅", popular: true),
+    _Destination("mungyeong", "⛩️", popular: true),
+    _Destination("yeongju", "🍎"),
+    _Destination("gimcheon", "🍑"),
+    _Destination("yeongcheon", "🍇"),
+    _Destination("gyeongsan", "🌿"),
+    _Destination("sangju", "🚴"),
   ]),
-  _DestGroup("경상남도", "통영·거제·진주·창원 등", const [
-    _Destination("tongyeong",   "통영",     "⛵", highlights: ["루지", "동피랑마을", "다도해"],        popular: true),
-    _Destination("geoje",       "거제",     "🌬️", highlights: ["바람의언덕", "외도", "해금강"],       popular: true),
-    _Destination("namhae",      "남해",     "🇩🇪", highlights: ["독일마을", "다랭이마을"],             popular: true),
-    _Destination("jinju",       "진주",     "🪔", highlights: ["유등축제", "진주성"],                popular: true),
-    _Destination("hapcheon",    "합천",     "🌸", highlights: ["해인사", "황매산"]),
-    _Destination("changwon",    "창원",     "🌸", highlights: ["진해군항제"]),
-    _Destination("miryang",     "밀양",     "🌿", highlights: ["얼음골", "영남루"]),
-    _Destination("gimhae",      "김해",     "👑", highlights: ["가야테마파크"]),
-    _Destination("yangsan",     "양산",     "🏔️", highlights: ["통도사"]),
-    _Destination("hadong",      "하동",     "🍵", highlights: ["화개장터", "쌍계사"],                popular: true),
+  _DestGroup("gyeongnam", const [
+    _Destination("tongyeong", "⛵", popular: true),
+    _Destination("geoje", "🌬️", popular: true),
+    _Destination("namhae", "🇩🇪", popular: true),
+    _Destination("jinju", "🪔", popular: true),
+    _Destination("hapcheon", "🌸"),
+    _Destination("changwon", "🌸"),
+    _Destination("miryang", "🌿"),
+    _Destination("gimhae", "👑"),
+    _Destination("yangsan", "🏔️"),
+    _Destination("hadong", "🍵", popular: true),
   ]),
-  _DestGroup("제주도", "제주특별자치도", const [
-    _Destination("jeju",        "제주",     "🌺", highlights: ["한라산", "성산일출봉", "협재해변"],    popular: true),
-    _Destination("seogwipo",    "서귀포",   "🌊", highlights: ["천지연폭포", "올레길", "중문해변"],   popular: true),
+  _DestGroup("jeju", const [
+    _Destination("jeju", "🌺", popular: true),
+    _Destination("seogwipo", "🌊", popular: true),
   ]),
 ];
 
@@ -362,23 +374,23 @@ class PlannerPage extends ConsumerWidget {
             icon: const Icon(Icons.menu, color: _textPrimary),
             onPressed: () => mainScaffoldKey.currentState?.openDrawer(),
           ),
-          title: const Text(
-            "여행플래너",
-            style: TextStyle(
+          title: Text(
+            "sidebar.planner".tr(),
+            style: const TextStyle(
               color: _textPrimary,
               fontWeight: FontWeight.bold,
               fontSize: 18,
             ),
           ),
-          bottom: const TabBar(
+          bottom: TabBar(
             labelColor: _primary,
             unselectedLabelColor: _textSecondary,
             indicatorColor: _primary,
             indicatorWeight: 3,
             tabs: [
-              Tab(text: "스탠다드"),
-              Tab(text: "유저 컨텐츠"),
-              Tab(text: "K-콘텐츠"),
+              Tab(text: "screens.planner.tab_standard".tr()),
+              Tab(text: "screens.planner.tab_user_content".tr()),
+              Tab(text: "screens.planner.tab_k_content".tr()),
             ],
           ),
         ),
@@ -499,21 +511,16 @@ class _DestinationSelectorState extends State<_DestinationSelector> {
   String _query = "";
 
   List<_Destination> get _allDests => [
-        ..._metroCities,
+        ..._metroCities.map(
+          (c) => _Destination(c.slug, c.emoji, popular: c.popular),
+        ),
         ..._metroGroups.expand((g) => g.items),
         ..._provinceGroups.expand((g) => g.items),
       ];
 
   List<_Destination> get _filtered {
     if (_query.isEmpty) return [];
-    final q = _query.toLowerCase();
-    return _allDests
-        .where((d) =>
-            d.name.contains(_query) ||
-            d.slug.contains(q) ||
-            d.highlights.any((h) => h.contains(_query)))
-        .toSet()
-        .toList();
+    return _allDests.where((d) => plannerDestMatchesQuery(d.slug, _query)).toSet().toList();
   }
 
   @override
@@ -527,7 +534,7 @@ class _DestinationSelectorState extends State<_DestinationSelector> {
             child: TextField(
               onChanged: (v) => setState(() => _query = v),
               decoration: InputDecoration(
-                hintText: "도시·명소 검색 (예: 강릉, 한옥마을, 해운대)",
+                hintText: "screens.planner.search_hint".tr(),
                 hintStyle: const TextStyle(color: _textSecondary, fontSize: 13),
                 prefixIcon: const Icon(Icons.search, color: _textSecondary, size: 20),
                 suffixIcon: _query.isNotEmpty
@@ -560,10 +567,13 @@ class _DestinationSelectorState extends State<_DestinationSelector> {
         if (_query.isNotEmpty)
           SliverToBoxAdapter(
             child: _filtered.isEmpty
-                ? const Padding(
-                    padding: EdgeInsets.all(32),
+                ? Padding(
+                    padding: const EdgeInsets.all(32),
                     child: Center(
-                      child: Text("검색 결과가 없습니다.", style: TextStyle(color: _textSecondary)),
+                      child: Text(
+                        "screens.planner.search_empty".tr(),
+                        style: const TextStyle(color: _textSecondary),
+                      ),
                     ),
                   )
                 : Padding(
@@ -572,7 +582,9 @@ class _DestinationSelectorState extends State<_DestinationSelector> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '"$_query" 검색 결과 ${_filtered.length}곳',
+                          "screens.planner.search_result".tr(
+                            namedArgs: {"query": _query, "count": "${_filtered.length}"},
+                          ),
                           style: const TextStyle(fontSize: 12, color: _textSecondary),
                         ),
                         const SizedBox(height: 12),
@@ -582,7 +594,7 @@ class _DestinationSelectorState extends State<_DestinationSelector> {
                           children: _filtered
                               .map((d) => ActionChip(
                                     avatar: Text(d.emoji),
-                                    label: Text(d.name),
+                                    label: Text(plannerDestName(d.slug)),
                                     backgroundColor: Colors.white,
                                     side: BorderSide(color: Colors.grey.shade200),
                                     onPressed: () => widget.onSelect(d),
@@ -596,12 +608,12 @@ class _DestinationSelectorState extends State<_DestinationSelector> {
 
         if (_query.isEmpty) ...[
           // ── 광역시·특별시 섹션 ───────────────────────────────
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(16, 12, 16, 10),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
               child: Text(
-                "광역시·특별시",
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
+                "screens.planner.grid_header_metro".tr(),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
               ),
             ),
           ),
@@ -612,37 +624,35 @@ class _DestinationSelectorState extends State<_DestinationSelector> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
-                childAspectRatio: 1.55,
+                childAspectRatio: 1.22,
               ),
               delegate: SliverChildListDelegate([
                 ..._metroCities.map((city) {
-                  final group = _metroGroups.cast<_DestGroup?>().firstWhere(
-                        (g) => g!.label == city.name,
-                        orElse: () => null,
-                      );
+                  final group = city.drillRegionKey != null
+                      ? _metroGroups.cast<_DestGroup?>().firstWhere(
+                            (g) => g!.regionKey == city.drillRegionKey,
+                            orElse: () => null,
+                          )
+                      : null;
                   final subtitle = group != null
-                      ? group.items.take(3).map((i) => i.name).join(' · ')
-                      : city.highlights.take(2).join(' · ');
+                      ? group.items
+                          .take(3)
+                          .map((i) => plannerDestName(i.slug))
+                          .join(" · ")
+                      : plannerDestHighlightsLine(city.slug, maxItems: 2);
+                  final title = plannerDestName(city.slug);
                   return _RegionTileCard(
                     emoji: city.emoji,
-                    title: city.name,
-                    backgroundAssetPath: _metroCardBackgroundAsset(city.name),
-                    assetPath: switch (city.name) {
-                      "서울" => "icons/seoul.png",
-                      "부산" => "icons/busan.png",
-                      "대구" => "icons/daegu.png",
-                      "인천" => "icons/inchoen.png",
-                      "광주" => "icons/gwangju.png",
-                      "대전" => "icons/daejun.png",
-                      "울산" => "icons/ulsan.png",
-                      "세종" => "icons/sejong.png",
-                      _ => null,
-                    },
+                    title: title,
+                    backgroundAssetPath: _metroCardBackgroundAssetBySlug(city.slug),
+                    assetPath: _metroIconAssetBySlug(city.slug),
                     subtitle: subtitle,
                     hasDrill: group != null,
                     onTap: group != null
                         ? () => widget.onGroupTap(group)
-                        : () => widget.onSelect(city),
+                        : () => widget.onSelect(
+                              _Destination(city.slug, city.emoji, popular: city.popular),
+                            ),
                   );
                 }),
               ]),
@@ -652,12 +662,12 @@ class _DestinationSelectorState extends State<_DestinationSelector> {
           const SliverToBoxAdapter(child: SizedBox(height: 20)),
 
           // ── 도 단위 지역 섹션 ───────────────────────────────
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
               child: Text(
-                "도 단위 지역",
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
+                "screens.planner.grid_header_province".tr(),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
               ),
             ),
           ),
@@ -668,30 +678,20 @@ class _DestinationSelectorState extends State<_DestinationSelector> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
-                childAspectRatio: 1.55,
+                childAspectRatio: 1.22,
               ),
               delegate: SliverChildListDelegate([
-                ..._provinceGroups.map((g) => _RegionTileCard(
-                      emoji: g.items.first.emoji,
-                      title: g.label,
-                      backgroundAssetPath: _provinceCardBackgroundAsset(g.label),
-                      assetPath: switch (g.label) {
-                        "경기 북부" => "icons/gyeongi.png",
-                        "경기 남부" => "icons/gyeongi2.png",
-                        "강원도" => "icons/gangwon.png",
-                        "충청남도" => "icons/chungnam-Photoroom.png",
-                        "충청북도" => "icons/chungbukk.png",
-                        "전라남도" => "icons/zunra-Photoroom.png",
-                        "전북" => "icons/zunbuk.png",
-                        "제주도" => "icons/zezudo-Photoroom.png",
-                        "경상남도" => "icons/gyeongnam.png",
-                        "경상북도" => "icons/gyeongbuk.png",
-                        _ => null,
-                      },
-                      subtitle: g.subLabel,
-                      hasDrill: true,
-                      onTap: () => widget.onGroupTap(g),
-                    )),
+                ..._provinceGroups.map(
+                  (g) => _RegionTileCard(
+                    emoji: g.items.first.emoji,
+                    title: plannerRegionLabel(g.regionKey),
+                    backgroundAssetPath: _provinceCardBackgroundAssetByRegionKey(g.regionKey),
+                    assetPath: _provinceIconAssetByRegionKey(g.regionKey),
+                    subtitle: plannerRegionSubLabel(g.regionKey),
+                    hasDrill: true,
+                    onTap: () => widget.onGroupTap(g),
+                  ),
+                ),
               ]),
             ),
           ),
@@ -702,34 +702,62 @@ class _DestinationSelectorState extends State<_DestinationSelector> {
   }
 }
 
-/// 광역시·특별시 카드 배경 (서울과 동일 스타일: `_RegionTileCard`)
-String? _metroCardBackgroundAsset(String cityName) {
-  return switch (cityName) {
-    "서울" => "icons/bg/seoul_bg.jpg",
-    "부산" => "icons/bg/busan_bg.jpg",
-    "대구" => "icons/bg/daegu_bg.jpg",
-    "인천" => "icons/bg/incheon_bg.jpg",
-    "광주" => "icons/bg/gwangu_bg.jpg",
-    "대전" => "icons/bg/daejun_bg.jpg",
-    "울산" => "icons/bg/ulsan_bg.jpg",
-    "세종" => "icons/bg/sejong_bg.jpg",
+String? _metroCardBackgroundAssetBySlug(String slug) {
+  return switch (slug) {
+    "seoul" => "icons/bg/seoul_bg.jpg",
+    "busan" => "icons/bg/busan_bg.jpg",
+    "daegu" => "icons/bg/daegu_bg.jpg",
+    "incheon" => "icons/bg/incheon_bg.jpg",
+    "gwangju" => "icons/bg/gwangu_bg.jpg",
+    "daejeon" => "icons/bg/daejun_bg.jpg",
+    "ulsan" => "icons/bg/ulsan_bg.jpg",
+    "sejong" => "icons/bg/sejong_bg.jpg",
     _ => null,
   };
 }
 
-/// 도 단위 지역 카드 배경 (`_RegionTileCard`와 광역시와 동일 스타일)
-String? _provinceCardBackgroundAsset(String label) {
-  return switch (label) {
-    "경기 북부" => "icons/bg/gyungi1_bg.jpg",
-    "경기 남부" => "icons/bg/gyungi2_bg.jpg",
-    "강원도" => "icons/bg/gangwondo_bg.jpg",
-    "충청북도" => "icons/bg/chungju_bg.jpg",
-    "충청남도" => "icons/bg/chunan_bg.jpg",
-    "전북" => "icons/bg/junbuk_bg.jpg",
-    "전라남도" => "icons/bg/junam_bg.jpg",
-    "경상북도" => "icons/bg/gyungbuk_bg.jpg",
-    "경상남도" => "icons/bg/gyungnam_bg.jpg",
-    "제주도" => "icons/bg/jejudo_bg.jpg",
+String? _metroIconAssetBySlug(String slug) {
+  return switch (slug) {
+    "seoul" => "icons/seoul.png",
+    "busan" => "icons/busan.png",
+    "daegu" => "icons/daegu.png",
+    "incheon" => "icons/inchoen.png",
+    "gwangju" => "icons/gwangju.png",
+    "daejeon" => "icons/daejun.png",
+    "ulsan" => "icons/ulsan.png",
+    "sejong" => "icons/sejong.png",
+    _ => null,
+  };
+}
+
+String? _provinceCardBackgroundAssetByRegionKey(String regionKey) {
+  return switch (regionKey) {
+    "gyeonggi_north" => "icons/bg/gyungi1_bg.jpg",
+    "gyeonggi_south" => "icons/bg/gyungi2_bg.jpg",
+    "gangwon" => "icons/bg/gangwondo_bg.jpg",
+    "chungbuk" => "icons/bg/chungju_bg.jpg",
+    "chungnam" => "icons/bg/chunan_bg.jpg",
+    "jeonbuk" => "icons/bg/junbuk_bg.jpg",
+    "jeonnam" => "icons/bg/junam_bg.jpg",
+    "gyeongbuk" => "icons/bg/gyungbuk_bg.jpg",
+    "gyeongnam" => "icons/bg/gyungnam_bg.jpg",
+    "jeju" => "icons/bg/jejudo_bg.jpg",
+    _ => null,
+  };
+}
+
+String? _provinceIconAssetByRegionKey(String regionKey) {
+  return switch (regionKey) {
+    "gyeonggi_north" => "icons/gyeongi.png",
+    "gyeonggi_south" => "icons/gyeongi2.png",
+    "gangwon" => "icons/gangwon.png",
+    "chungnam" => "icons/chungnam-Photoroom.png",
+    "chungbuk" => "icons/chungbukk.png",
+    "jeonnam" => "icons/zunra-Photoroom.png",
+    "jeonbuk" => "icons/zunbuk.png",
+    "jeju" => "icons/zezudo-Photoroom.png",
+    "gyeongnam" => "icons/gyeongnam.png",
+    "gyeongbuk" => "icons/gyeongbuk.png",
     _ => null,
   };
 }
@@ -820,9 +848,12 @@ class _RegionTileCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     title,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.bold,
+                      height: 1.15,
                       color: _textPrimary,
                       shadows: backgroundAssetPath != null
                           ? [
@@ -935,7 +966,7 @@ class _RankedCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      dest.name,
+                      plannerDestName(dest.slug),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 14,
@@ -943,9 +974,9 @@ class _RankedCard extends StatelessWidget {
                         shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
                       ),
                     ),
-                    if (dest.highlights.isNotEmpty)
+                    if (plannerDestHighlights(dest.slug).isNotEmpty)
                       Text(
-                        dest.highlights.take(2).join(" · "),
+                        plannerDestHighlightsLine(dest.slug, maxItems: 2),
                         style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 10),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1018,10 +1049,13 @@ class _DrillDownScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    group.label,
+                    plannerRegionLabel(group.regionKey),
                     style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: _textPrimary),
                   ),
-                  Text(group.subLabel, style: const TextStyle(fontSize: 12, color: _textSecondary)),
+                  Text(
+                    plannerRegionSubLabel(group.regionKey),
+                    style: const TextStyle(fontSize: 12, color: _textSecondary),
+                  ),
                 ],
               ),
             ],
@@ -1034,13 +1068,13 @@ class _DrillDownScreen extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
               // TOP 섹션 헤더
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.local_fire_department, color: Colors.orange, size: 18),
-                  SizedBox(width: 4),
+                  const Icon(Icons.local_fire_department, color: Colors.orange, size: 18),
+                  const SizedBox(width: 4),
                   Text(
-                    "인기 TOP 여행지",
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _textPrimary),
+                    "screens.planner.top_spots_row".tr(),
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _textPrimary),
                   ),
                 ],
               ),
@@ -1071,9 +1105,9 @@ class _DrillDownScreen extends StatelessWidget {
               // ── 4위 이하: 가로 스크롤 포스터 ─────────────────
               if (rest.isNotEmpty) ...[
                 const SizedBox(height: 20),
-                const Text(
-                  "더 많은 여행지",
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _textPrimary),
+                Text(
+                  "screens.planner.more_destinations".tr(),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _textPrimary),
                 ),
                 const SizedBox(height: 10),
                 SizedBox(
@@ -1198,7 +1232,7 @@ class _PlannerWorkspace extends ConsumerWidget {
                   children: [
                     const Icon(Icons.chevron_left, color: _primary),
                     Text(
-                      "${dest.emoji} ${dest.name}",
+                      "${dest.emoji} ${plannerDestName(dest.slug)}",
                       style: const TextStyle(
                         color: _primary,
                         fontWeight: FontWeight.w600,
@@ -1224,6 +1258,10 @@ class _PlannerWorkspace extends ConsumerWidget {
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
+              final loc = state.location.trim();
+              final displayPlannerStatus = state.statusMessage.isNotEmpty
+                  ? state.statusMessage
+                  : (loc.isEmpty ? "screens.planner.status_region_required".tr() : "");
               if (constraints.maxWidth >= 980) {
                 return Row(
                   children: [
@@ -1249,7 +1287,7 @@ class _PlannerWorkspace extends ConsumerWidget {
                                         onPressed: () => _pickDate(context, ref, isStart: true),
                                         icon: const Icon(Icons.event, size: 16),
                                         label: Text(
-                                          "시작일 ${state.startDate}",
+                                          "screens.planner.start_date".tr(namedArgs: {"date": state.startDate}),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -1270,7 +1308,7 @@ class _PlannerWorkspace extends ConsumerWidget {
                                         onPressed: () => _pickDate(context, ref, isStart: false),
                                         icon: const Icon(Icons.event, size: 16),
                                         label: Text(
-                                          "종료일 ${state.endDate}",
+                                          "screens.planner.end_date".tr(namedArgs: {"date": state.endDate}),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -1289,7 +1327,7 @@ class _PlannerWorkspace extends ConsumerWidget {
                                 Row(
                                   children: [
                                     _TransportButton(
-                                      label: "🚗 차량",
+                                      label: "screens.planner.transport_car".tr(),
                                       mode: "car",
                                       selected: state.transportMode == "car",
                                       disabled: state.routesLoading || state.scheduleLoading,
@@ -1297,7 +1335,7 @@ class _PlannerWorkspace extends ConsumerWidget {
                                     ),
                                     const SizedBox(width: 6),
                                     _TransportButton(
-                                      label: "🚌 대중교통",
+                                      label: "screens.planner.transport_transit".tr(),
                                       mode: "transit",
                                       selected: state.transportMode == "transit",
                                       disabled: state.routesLoading || state.scheduleLoading,
@@ -1305,7 +1343,7 @@ class _PlannerWorkspace extends ConsumerWidget {
                                     ),
                                     const SizedBox(width: 6),
                                     _TransportButton(
-                                      label: "🚶 도보",
+                                      label: "screens.planner.transport_walk".tr(),
                                       mode: "walk",
                                       selected: state.transportMode == "walk",
                                       disabled: state.routesLoading || state.scheduleLoading,
@@ -1317,31 +1355,50 @@ class _PlannerWorkspace extends ConsumerWidget {
                                 FilledButton.icon(
                                   onPressed: state.routesLoading ? null : ctrl.fetchRoutes,
                                   icon: const Icon(Icons.auto_awesome),
-                                  label: Text(state.routesLoading ? "생성 중..." : "✨ 루트 생성"),
+                                  label: Text(
+                                    state.routesLoading
+                                        ? "screens.planner.generating".tr()
+                                        : "screens.planner.generate_route".tr(),
+                                  ),
                                   style: FilledButton.styleFrom(backgroundColor: _primary),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.travel_explore, size: 16, color: _primary),
-                                    const SizedBox(width: 8),
-                                    const Expanded(
-                                      child: Text(
-                                        "웹 검색(use_search)",
-                                        style: TextStyle(fontSize: 12, color: _textPrimary),
-                                      ),
-                                    ),
-                                    Switch(
-                                      value: state.useSearch,
-                                      onChanged:
-                                          state.routesLoading || state.scheduleLoading ? null : ctrl.setUseSearch,
-                                      activeThumbColor: _primary,
-                                    ),
-                                  ],
                                 ),
                               ],
                             ),
                           ),
+                          if (!state.routesTriggered && !state.routesLoading)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text("📅", style: TextStyle(fontSize: 40)),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      "screens.planner.hint_set_date".tr(),
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: _textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "${state.startDate} ~ ${state.endDate}",
+                                      style: const TextStyle(fontSize: 11, color: _textSecondary),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    FilledButton.icon(
+                                      onPressed: state.routesLoading ? null : ctrl.fetchRoutes,
+                                      icon: const Icon(Icons.auto_awesome, size: 18),
+                                      label: Text("screens.planner.standard_start_generate".tr()),
+                                      style: FilledButton.styleFrom(backgroundColor: _primary),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           if (state.routesError != null)
                             Container(
                               padding: const EdgeInsets.all(10),
@@ -1356,9 +1413,9 @@ class _PlannerWorkspace extends ConsumerWidget {
                               ),
                             ),
                           if (state.routes.isNotEmpty && !state.routesLoading) ...[
-                            const Text(
-                              "AI 추천 루트",
-                              style: TextStyle(
+                            Text(
+                              "screens.planner.ai_routes_title".tr(),
+                              style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
                                 color: _textPrimary,
@@ -1407,7 +1464,12 @@ class _PlannerWorkspace extends ConsumerWidget {
                                   ),
                                   const SizedBox(height: 10),
                                   Text(
-                                    "AI가 ${state.selectedRouteName ?? "선택한 루트"} 일정을 만드는 중...",
+                                    "screens.planner.making_schedule_progress".tr(
+                                      namedArgs: {
+                                        "name": state.selectedRouteName ??
+                                            "screens.planner.route_name_fallback".tr(),
+                                      },
+                                    ),
                                     style: const TextStyle(fontSize: 12, color: _textSecondary),
                                   ),
                                 ],
@@ -1416,9 +1478,9 @@ class _PlannerWorkspace extends ConsumerWidget {
                           if (state.schedule.isNotEmpty) ...[
                             Row(
                               children: [
-                                const Text(
-                                  "여행 일정",
-                                  style: TextStyle(
+                                Text(
+                                  "screens.planner.schedule_title".tr(),
+                                  style: const TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.bold,
                                     color: _textPrimary,
@@ -1426,7 +1488,9 @@ class _PlannerWorkspace extends ConsumerWidget {
                                 ),
                                 const Spacer(),
                                 Text(
-                                  "${state.schedule.length}개 항목",
+                                  "screens.planner.schedule_item_count".tr(
+                                    namedArgs: {"count": "${state.schedule.length}"},
+                                  ),
                                   style: const TextStyle(fontSize: 12, color: _textSecondary),
                                 ),
                               ],
@@ -1437,7 +1501,11 @@ class _PlannerWorkspace extends ConsumerWidget {
                             FilledButton.icon(
                               onPressed: state.saving ? null : ctrl.savePlan,
                               icon: const Icon(Icons.save),
-                              label: Text(state.saving ? "저장 중..." : "💾 저장하기"),
+                              label: Text(
+                                state.saving
+                                    ? "screens.planner.msg_saving_plan".tr()
+                                    : "screens.planner.save_plan".tr(),
+                              ),
                               style: FilledButton.styleFrom(backgroundColor: _primary),
                             ),
                             if (state.savedPlanId != null)
@@ -1445,10 +1513,10 @@ class _PlannerWorkspace extends ConsumerWidget {
                                 padding: const EdgeInsets.only(top: 8),
                                 child: OutlinedButton(
                                   onPressed: () => context.push("/planner/schedule"),
-                                  child: const Text("✅ 저장됨 · 마이플랜 보기"),
+                                  child: Text("screens.planner.saved_goto_schedule".tr()),
                                 ),
                               ),
-                          ] else
+                          ] else if (!state.scheduleLoading)
                             Container(
                               padding: const EdgeInsets.all(24),
                               decoration: BoxDecoration(
@@ -1456,10 +1524,33 @@ class _PlannerWorkspace extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: Colors.grey.shade200),
                               ),
-                              child: const Text(
-                                "루트를 선택하면 우측에 일정이 표시됩니다.",
-                                style: TextStyle(color: _textSecondary),
-                                textAlign: TextAlign.center,
+                              child: Column(
+                                children: [
+                                  Text(
+                                    state.routesTriggered && state.routes.isNotEmpty
+                                        ? "screens.planner.schedule_pick_route_hint".tr()
+                                        : "screens.planner.standard_map_need_generate".tr(),
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: _textPrimary,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    state.routesTriggered && state.routes.isNotEmpty
+                                        ? "screens.planner.standard_map_range_hint".tr(
+                                            namedArgs: {
+                                              "start": state.startDate,
+                                              "end": state.endDate,
+                                            },
+                                          )
+                                        : "screens.planner.standard_map_tap_generate".tr(),
+                                    style: const TextStyle(fontSize: 13, color: _textSecondary),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
                               ),
                             ),
                         ],
@@ -1488,7 +1579,7 @@ class _PlannerWorkspace extends ConsumerWidget {
                             onPressed: () => _pickDate(context, ref, isStart: true),
                             icon: const Icon(Icons.event, size: 16),
                             label: Text(
-                              "시작일 ${state.startDate}",
+                              "screens.planner.start_date".tr(namedArgs: {"date": state.startDate}),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -1509,7 +1600,7 @@ class _PlannerWorkspace extends ConsumerWidget {
                             onPressed: () => _pickDate(context, ref, isStart: false),
                             icon: const Icon(Icons.event, size: 16),
                             label: Text(
-                              "종료일 ${state.endDate}",
+                              "screens.planner.end_date".tr(namedArgs: {"date": state.endDate}),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -1528,7 +1619,7 @@ class _PlannerWorkspace extends ConsumerWidget {
                     Row(
                       children: [
                         _TransportButton(
-                          label: "🚗 차량",
+                          label: "screens.planner.transport_car".tr(),
                           mode: "car",
                           selected: state.transportMode == "car",
                           disabled: state.routesLoading || state.scheduleLoading,
@@ -1536,7 +1627,7 @@ class _PlannerWorkspace extends ConsumerWidget {
                         ),
                         const SizedBox(width: 6),
                         _TransportButton(
-                          label: "🚌 대중교통",
+                          label: "screens.planner.transport_transit".tr(),
                           mode: "transit",
                           selected: state.transportMode == "transit",
                           disabled: state.routesLoading || state.scheduleLoading,
@@ -1544,7 +1635,7 @@ class _PlannerWorkspace extends ConsumerWidget {
                         ),
                         const SizedBox(width: 6),
                         _TransportButton(
-                          label: "🚶 도보",
+                          label: "screens.planner.transport_walk".tr(),
                           mode: "walk",
                           selected: state.transportMode == "walk",
                           disabled: state.routesLoading || state.scheduleLoading,
@@ -1559,7 +1650,11 @@ class _PlannerWorkspace extends ConsumerWidget {
                           child: FilledButton.icon(
                             onPressed: state.routesLoading ? null : ctrl.fetchRoutes,
                             icon: const Icon(Icons.auto_awesome),
-                            label: Text(state.routesLoading ? "생성 중..." : "✨ 루트 생성"),
+                            label: Text(
+                              state.routesLoading
+                                  ? "screens.planner.generating".tr()
+                                  : "screens.planner.generate_route".tr(),
+                            ),
                             style: FilledButton.styleFrom(backgroundColor: _primary),
                           ),
                         ),
@@ -1570,7 +1665,7 @@ class _PlannerWorkspace extends ConsumerWidget {
               ),
 
               // 상태 메시지
-              if (state.statusMessage.isNotEmpty)
+              if (displayPlannerStatus.isNotEmpty)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   margin: const EdgeInsets.only(bottom: 12),
@@ -1579,38 +1674,10 @@ class _PlannerWorkspace extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    state.statusMessage,
+                    displayPlannerStatus,
                     style: const TextStyle(fontSize: 13, color: _primary),
                   ),
                 ),
-
-              // 웹과 동일: 검색 기반 보강 옵션
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.travel_explore, size: 16, color: _primary),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        "웹 검색 기반 추천 강화 (use_search)",
-                        style: TextStyle(fontSize: 12, color: _textPrimary),
-                      ),
-                    ),
-                    Switch(
-                      value: state.useSearch,
-                      onChanged: state.routesLoading || state.scheduleLoading ? null : ctrl.setUseSearch,
-                      activeThumbColor: _primary,
-                    ),
-                  ],
-                ),
-              ),
 
               if (state.routesError != null)
                 Container(
@@ -1637,9 +1704,9 @@ class _PlannerWorkspace extends ConsumerWidget {
                   ),
                   child: Column(
                     children: [
-                      const Text(
-                        "날짜를 설정하고 루트를 생성해주세요",
-                        style: TextStyle(fontSize: 13, color: _textSecondary),
+                      Text(
+                        "screens.planner.hint_set_date".tr(),
+                        style: const TextStyle(fontSize: 13, color: _textSecondary),
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -1669,9 +1736,9 @@ class _PlannerWorkspace extends ConsumerWidget {
 
               // 루트 목록
               if (state.routes.isNotEmpty && !state.routesLoading) ...[
-                const Text(
-                  "AI 추천 루트",
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
+                Text(
+                  "screens.planner.ai_routes_title".tr(),
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
                 ),
                 const SizedBox(height: 8),
                 SizedBox(
@@ -1709,9 +1776,9 @@ class _PlannerWorkspace extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: Colors.grey.shade200),
                   ),
-                  child: const Text(
-                    "루트를 선택하면 일정이 생성됩니다.",
-                    style: TextStyle(fontSize: 12, color: _textSecondary),
+                  child: Text(
+                    "screens.planner.schedule_pick_route_hint".tr(),
+                    style: const TextStyle(fontSize: 12, color: _textSecondary),
                   ),
                 ),
 
@@ -1733,7 +1800,11 @@ class _PlannerWorkspace extends ConsumerWidget {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        "AI가 ${state.selectedRouteName ?? "선택한 루트"} 일정을 만드는 중...",
+                        "screens.planner.making_schedule_progress".tr(
+                          namedArgs: {
+                            "name": state.selectedRouteName ?? "screens.planner.route_name_fallback".tr(),
+                          },
+                        ),
                         style: const TextStyle(fontSize: 12, color: _textSecondary),
                         textAlign: TextAlign.center,
                       ),
@@ -1750,13 +1821,15 @@ class _PlannerWorkspace extends ConsumerWidget {
               if (state.schedule.isNotEmpty) ...[
                 Row(
                   children: [
-                    const Text(
-                      "여행 일정",
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
+                    Text(
+                      "screens.planner.schedule_title".tr(),
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
                     ),
                     const Spacer(),
                     Text(
-                      "${state.schedule.length}개 항목",
+                      "screens.planner.schedule_item_count".tr(
+                        namedArgs: {"count": "${state.schedule.length}"},
+                      ),
                       style: const TextStyle(fontSize: 12, color: _textSecondary),
                     ),
                   ],
@@ -1804,7 +1877,11 @@ class _PlannerWorkspace extends ConsumerWidget {
                 FilledButton.icon(
                   onPressed: state.saving ? null : ctrl.savePlan,
                   icon: const Icon(Icons.save),
-                  label: Text(state.saving ? "저장 중..." : "💾 저장하기"),
+                  label: Text(
+                    state.saving
+                        ? "screens.planner.msg_saving_plan".tr()
+                        : "screens.planner.save_plan".tr(),
+                  ),
                   style: FilledButton.styleFrom(backgroundColor: _primary),
                 ),
                 if (state.savedPlanId != null)
@@ -1812,7 +1889,7 @@ class _PlannerWorkspace extends ConsumerWidget {
                     padding: const EdgeInsets.only(top: 8),
                     child: OutlinedButton(
                       onPressed: () => context.push("/planner/schedule"),
-                      child: const Text("✅ 저장됨 · 마이플랜 보기"),
+                      child: Text("screens.planner.saved_goto_schedule".tr()),
                     ),
                   ),
               ],
@@ -1839,14 +1916,14 @@ class _PlannerWorkspace extends ConsumerWidget {
                       Text(dest.emoji, style: const TextStyle(fontSize: 48)),
                       const SizedBox(height: 12),
                       Text(
-                        "${dest.name} 여행을 AI로 계획해보세요",
+                        "screens.planner.dest_plan_cta".tr(namedArgs: {"name": plannerDestName(dest.slug)}),
                         style: const TextStyle(fontSize: 14, color: _textSecondary),
                       ),
                       const SizedBox(height: 16),
                       FilledButton.icon(
                         onPressed: ctrl.fetchRoutes,
                         icon: const Icon(Icons.auto_awesome),
-                        label: const Text("루트 생성"),
+                        label: Text("screens.planner.generate_route".tr()),
                         style: FilledButton.styleFrom(backgroundColor: _primary),
                       ),
                     ],
@@ -3087,6 +3164,13 @@ class _KItem {
   final List<Color> gradient;
 }
 
+/// K-FOOD 플래너 행: id·그라데이션만 상수로 두고, 제목·설명은 `screens.k_content.fallback.kfood.*` (웹 `planner.kcontent.fallback.kfood`)
+class _KFoodRowSpec {
+  const _KFoodRowSpec(this.id, this.gradient);
+  final String id;
+  final List<Color> gradient;
+}
+
 const _kpopItems = [
   _KItem("KPOP_01", "HYBE Building", "HYBE Insight museum and label headquarters.", [Color(0xFFFF4D6D), Color(0xFFD63384)]),
   _KItem("KPOP_02", "SM Entertainment", "SM Town and SM Entertainment building.", [KroaddyColors.primary, Color(0xFF9333EA)]),
@@ -3101,12 +3185,25 @@ const _kdramaItems = [
   _KItem("KDRAMA_04", "Bukchon Hanok Village", "Traditional hanok alleys.", [Color(0xFFD97706), Color(0xFFE11D48)]),
 ];
 
-const _kfoodItems = [
-  _KItem("KFOOD_01", "Gwangjang Market", "Bindaetteok, mayak gimbap, street food.", [Color(0xFFF97316), Color(0xFFD97706)]),
-  _KItem("KFOOD_02", "Myeongdong Street Food", "Tteokbokki, odeng, and sweet treats.", [Color(0xFFEF4444), Color(0xFFF97316)]),
-  _KItem("KFOOD_03", "Korean BBQ", "Samgyeopsal and galbi grill experience.", [Color(0xFFDC2626), Color(0xFFBE185D)]),
-  _KItem("KFOOD_04", "Convenience Store Combo", "Triangle kimbap, ramyeon, soju.", [Color(0xFF84CC16), Color(0xFF22C55E)]),
+/// 웹 `K_CONTENT_KFOOD_FALLBACK_ITEMS` (`constants.ts`) — 동일 id·그라데이션 톤; 카피는 i18n
+const _kfoodRowSpecs = [
+  _KFoodRowSpec("KF_MARKET", [Color(0xFFF59E0B), Color(0xFFEA580C)]),
+  _KFoodRowSpec("KF_CAFE", [Color(0xFFF43F5E), Color(0xFFD946EF)]),
+  _KFoodRowSpec("KF_CONVENIENCE", [Color(0xFFA3E635), Color(0xFF10B981), Color(0xFF7C3AED)]),
 ];
+
+List<_KItem> _localizedKfoodRowItems() {
+  return _kfoodRowSpecs
+      .map(
+        (s) => _KItem(
+          s.id,
+          "screens.k_content.fallback.kfood.${s.id}.title".tr(),
+          "screens.k_content.fallback.kfood.${s.id}.description".tr(),
+          s.gradient,
+        ),
+      )
+      .toList();
+}
 
 const _kbeautyItems = [
   _KItem("KBEAUTY_01", "Olive Young", "K-Beauty flagship. Skincare and makeup.", [Color(0xFFEC4899), Color(0xFFE11D48)]),
@@ -3114,6 +3211,65 @@ const _kbeautyItems = [
   _KItem("KBEAUTY_03", "K-Beauty Store", "Sheet masks, serums, cushion compacts.", [KroaddyColors.primary, Color(0xFF9333EA)]),
   _KItem("KBEAUTY_04", "Skincare Experience Shop", "Facials and personalized skincare.", [Color(0xFFFB7185), Color(0xFFEC4899)]),
 ];
+
+/// 웹 `k-content/page.tsx` 의 그라데이션 풀과 동일한 역할
+const _kpopGradientPool = <List<Color>>[
+  [Color(0xFFFF4D6D), Color(0xFFD63384)],
+  [KroaddyColors.primary, Color(0xFF9333EA)],
+  [Color(0xFFD63384), Color(0xFFE11D74)],
+  [Color(0xFF4F46E5), KroaddyColors.primary],
+  [Color(0xFFF43F5E), Color(0xFFEC4899)],
+  [Color(0xFF10B981), Color(0xFF0D9488)],
+  [Color(0xFF0EA5E9), Color(0xFF3B82F6)],
+  [Color(0xFFF59E0B), Color(0xFFEA580C)],
+];
+
+const _kdramaGradientPool = <List<Color>>[
+  [Color(0xFFF59E0B), Color(0xFFEA580C)],
+  [Color(0xFF10B981), Color(0xFF0D9488)],
+  [Color(0xFF0EA5E9), Color(0xFF3B82F6)],
+  [Color(0xFFD97706), Color(0xFFE11D48)],
+  [Color(0xFFA855F7), Color(0xFF6366F1)],
+  [Color(0xFFF472B6), Color(0xFFDB2777)],
+  [Color(0xFF34D399), Color(0xFF059669)],
+  [Color(0xFF60A5FA), Color(0xFF2563EB)],
+];
+
+void _shuffleKItems(List<_KItem> list) {
+  final r = Random();
+  for (var i = list.length - 1; i > 0; i--) {
+    final j = r.nextInt(i + 1);
+    final t = list[i];
+    list[i] = list[j];
+    list[j] = t;
+  }
+}
+
+/// 백엔드 `GET /api/v1/k-content/packages` 한 카테고리 분량 → 카드 모델 (웹 `mapKpopPackages` / `mapDramaMoviePackages` 대응)
+List<_KItem> _mapKContentApiToItems(
+  List<Map<String, dynamic>> raw,
+  List<List<Color>> gradientPool,
+  bool preferKorean,
+) {
+  final out = <_KItem>[];
+  for (var i = 0; i < raw.length; i++) {
+    final p = raw[i];
+    final id = p["package_id"]?.toString() ?? "";
+    if (id.isEmpty) continue;
+    final titleKo = p["title_ko"]?.toString();
+    final titleEn = p["title_en"]?.toString();
+    final title = preferKorean
+        ? ((titleKo != null && titleKo.isNotEmpty) ? titleKo : (titleEn ?? ""))
+        : ((titleEn != null && titleEn.isNotEmpty) ? titleEn : (titleKo ?? ""));
+    final tags = p["tags"]?.toString();
+    final descEn = p["description_en"]?.toString();
+    final description = preferKorean
+        ? ((tags != null && tags.isNotEmpty) ? tags : (descEn ?? ""))
+        : ((descEn != null && descEn.isNotEmpty) ? descEn : (tags ?? ""));
+    out.add(_KItem(id, title, description, gradientPool[i % gradientPool.length]));
+  }
+  return out;
+}
 
 class _KContentTab extends ConsumerStatefulWidget {
   const _KContentTab();
@@ -3126,24 +3282,75 @@ class _KContentTabState extends ConsumerState<_KContentTab> {
   String? _heroImageUrl;
   final Map<String, String> _cardImageMap = <String, String>{};
   bool _loadingImages = false;
+  bool _loadingPackages = true;
+  List<_KItem> _kpopRow = [];
+  List<_KItem> _kdramaRow = [];
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadImages());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
   }
 
-  Future<void> _loadImages() async {
+  Future<void> _bootstrap() async {
+    await _loadPackageRows();
+    if (!mounted) return;
+    await _loadBannerAndCardImages();
+  }
+
+  /// 웹 `fetchKContentPackages('KPOP'|'KDRAMA'|'KMOVIE')` + 드라마·영화 행 병합
+  Future<void> _loadPackageRows() async {
+    final repo = ref.read(kContentRepositoryProvider);
+    final isKo = context.locale.languageCode == "ko";
+    setState(() => _loadingPackages = true);
+    try {
+      final bundles = await Future.wait([
+        repo.fetchPackages(category: "KPOP"),
+        repo.fetchPackages(category: "KDRAMA"),
+        repo.fetchPackages(category: "KMOVIE"),
+      ]);
+      var kpop = _mapKContentApiToItems(bundles[0], _kpopGradientPool, isKo);
+      var kdrama = <_KItem>[
+        ..._mapKContentApiToItems(bundles[1], _kdramaGradientPool, isKo),
+        ..._mapKContentApiToItems(bundles[2], _kdramaGradientPool, isKo),
+      ];
+      if (kpop.isEmpty) kpop = List<_KItem>.from(_kpopItems);
+      if (kdrama.isEmpty) kdrama = List<_KItem>.from(_kdramaItems);
+      _shuffleKItems(kpop);
+      _shuffleKItems(kdrama);
+      if (!mounted) return;
+      setState(() {
+        _kpopRow = kpop;
+        _kdramaRow = kdrama;
+        _loadingPackages = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _kpopRow = List<_KItem>.from(_kpopItems);
+        _kdramaRow = List<_KItem>.from(_kdramaItems);
+        _loadingPackages = false;
+      });
+    }
+  }
+
+  Future<void> _loadBannerAndCardImages() async {
     if (_loadingImages) return;
     setState(() => _loadingImages = true);
     final repo = ref.read(kContentRepositoryProvider);
     try {
       final banner = await repo.fetchBannerImages();
       final nextCardMap = <String, String>{};
-      for (final item in _kpopItems) {
-        final imgs = await repo.fetchPackageImages(item.id);
+      final ids = <String>{
+        ..._kpopRow.map((e) => e.id),
+        ..._kdramaRow.map((e) => e.id),
+        ..._kfoodRowSpecs.map((e) => e.id),
+        ..._kbeautyItems.map((e) => e.id),
+      };
+      for (final id in ids) {
+        final imgs = await repo.fetchPackageImages(id);
         final picked = repo.pickRandomImage(imgs);
-        if (picked.isNotEmpty) nextCardMap[item.id] = picked;
+        if (picked.isNotEmpty) nextCardMap[id] = picked;
       }
       if (!mounted) return;
       setState(() {
@@ -3157,8 +3364,27 @@ class _KContentTabState extends ConsumerState<_KContentTab> {
     }
   }
 
+  String get _heroCtaTargetId =>
+      _kpopRow.isNotEmpty ? _kpopRow.first.id : _kpopItems.first.id;
+
   @override
   Widget build(BuildContext context) {
+    if (_loadingPackages && _kpopRow.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 12),
+            Text(
+              "screens.k_content.tab_loading".tr(),
+              style: const TextStyle(fontSize: 13, color: _textSecondary),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView(
       children: [
         // ── 히어로 배너 ────────────────────────────────────────
@@ -3189,9 +3415,9 @@ class _KContentTabState extends ConsumerState<_KContentTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "K-Content Travel",
-                  style: TextStyle(
+                Text(
+                  "screens.k_content.hero_title".tr(),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -3199,7 +3425,7 @@ class _KContentTabState extends ConsumerState<_KContentTab> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  "Explore Korea through K-Pop, Drama, Food and Beauty",
+                  "screens.k_content.hero_subtitle".tr(),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 13,
@@ -3208,7 +3434,7 @@ class _KContentTabState extends ConsumerState<_KContentTab> {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () => context.push("/planner/k-content/KPOP_01"),
+                  onPressed: () => context.push("/planner/k-content/$_heroCtaTargetId"),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: KroaddyColors.primary,
@@ -3217,7 +3443,7 @@ class _KContentTabState extends ConsumerState<_KContentTab> {
                     elevation: 0,
                   ),
                   child: Text(
-                    _loadingImages ? "Loading..." : "Generate AI Route",
+                    _loadingImages ? "common.loading".tr() : "screens.k_content.hero_cta".tr(),
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -3225,11 +3451,27 @@ class _KContentTabState extends ConsumerState<_KContentTab> {
             ),
           ),
         ),
-        // ── 콘텐츠 행 ──────────────────────────────────────────
-        _KContentRow(title: "KPOP TOUR", items: _kpopItems, cardImageMap: _cardImageMap),
-        _KContentRow(title: "KDRAMA TOUR", items: _kdramaItems, cardImageMap: _cardImageMap),
-        _KContentRow(title: "KFOOD TOUR", items: _kfoodItems, cardImageMap: _cardImageMap),
-        _KContentRow(title: "KBEAUTY TOUR", items: _kbeautyItems, cardImageMap: _cardImageMap),
+        // ── 콘텐츠 행 (웹과 동일: K-POP / K-DRAMA·K-MOVIE 병합 / K-FOOD·K-BEAUTY 폴백) ──
+        _KContentRow(
+          title: "screens.k_content.row_kpop".tr(),
+          items: _kpopRow,
+          cardImageMap: _cardImageMap,
+        ),
+        _KContentRow(
+          title: "screens.k_content.row_kdrama".tr(),
+          items: _kdramaRow,
+          cardImageMap: _cardImageMap,
+        ),
+        _KContentRow(
+          title: "screens.k_content.row_kfood".tr(),
+          items: _localizedKfoodRowItems(),
+          cardImageMap: _cardImageMap,
+        ),
+        _KContentRow(
+          title: "screens.k_content.row_kbeauty".tr(),
+          items: _kbeautyItems,
+          cardImageMap: _cardImageMap,
+        ),
         const SizedBox(height: 24),
       ],
     );
@@ -3273,15 +3515,7 @@ class _KContentRow extends StatelessWidget {
             itemBuilder: (context, i) {
               final item = items[i];
               return GestureDetector(
-                onTap: () {
-                  if (item.id.startsWith("KPOP_")) {
-                    context.push("/planner/k-content/${item.id}");
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("해당 카테고리는 준비 중입니다.")),
-                    );
-                  }
-                },
+                onTap: () => context.push("/planner/k-content/${item.id}"),
                 child: Container(
                   width: 160,
                   decoration: BoxDecoration(

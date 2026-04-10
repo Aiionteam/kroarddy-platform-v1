@@ -1,5 +1,6 @@
 import "dart:io";
 
+import "package:easy_localization/easy_localization.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
@@ -9,10 +10,12 @@ import "package:image_picker/image_picker.dart";
 
 import "../../../core/router/main_shell.dart";
 import "../../../core/theme/kroaddy_colors.dart";
+import "../../chat/data/friend_repository.dart";
 import "../data/tourstar_models.dart";
 import "../data/tourstar_repository.dart";
 import "state/tourstar_controller.dart";
 import "state/tourstar_state.dart";
+import "tourstar_status_text.dart";
 
 // ── Design tokens (강조·버튼·선택: Kroaddy 남색) ─────────────────
 const _kPurple = KroaddyColors.primary;
@@ -27,18 +30,18 @@ const _kGray500 = Color(0xFF6B7280);
 const _kGray700 = Color(0xFF374151);
 const _kGray800 = Color(0xFF1F2937);
 
-// ── MBTI groups ──────────────────────────────────────────────
+// ── MBTI groups (labels: screens.tourstar.mbti_group_*) ───────
 class _MbtiGroup {
-  const _MbtiGroup(this.title, this.items);
-  final String title;
+  const _MbtiGroup(this.key, this.items);
+  final String key;
   final List<String> items;
 }
 
 const _mbtiGroups = [
-  _MbtiGroup("분석/전략형 (NT)", ["INTJ", "INTP", "ENTJ", "ENTP"]),
-  _MbtiGroup("외교/감성형 (NF)", ["INFJ", "INFP", "ENFJ", "ENFP"]),
-  _MbtiGroup("관리/실무형 (SJ)", ["ISTJ", "ISFJ", "ESTJ", "ESFJ"]),
-  _MbtiGroup("탐험/즉흥형 (SP)", ["ISTP", "ISFP", "ESTP", "ESFP"]),
+  _MbtiGroup("nt", ["INTJ", "INTP", "ENTJ", "ENTP"]),
+  _MbtiGroup("nf", ["INFJ", "INFP", "ENFJ", "ENFP"]),
+  _MbtiGroup("sj", ["ISTJ", "ISFJ", "ESTJ", "ESFJ"]),
+  _MbtiGroup("sp", ["ISTP", "ISFP", "ESTP", "ESFP"]),
 ];
 
 // ═════════════════════════════════════════════════════════════
@@ -62,6 +65,7 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
   String _viewAuthorName = "";
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _searchCtrl = TextEditingController();
+  bool _friendRequestSending = false;
 
   bool get _authorFeedOpen => _viewAuthorName.isNotEmpty;
 
@@ -82,6 +86,61 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
     return mn.isNotEmpty && mn == _viewAuthorName;
   }
 
+  /// 작성자 피드 주인이 내 친구인지 (웹 `isViewingFriend`와 동일)
+  bool _isViewingFriend(TourstarState s) {
+    if (!_authorFeedOpen || _isSelfAuthorFeed(s)) return false;
+    final n = _viewAuthorName.trim();
+    if (n.isEmpty) return false;
+    return s.friendNicknames.contains(n);
+  }
+
+  Future<void> _sendFriendRequestForViewingAuthor() async {
+    if (_friendRequestSending) return;
+    final tourState = ref.read(tourstarControllerProvider);
+    final name = _viewAuthorName.trim();
+    if (name.isEmpty || _isSelfAuthorFeed(tourState) || _isViewingFriend(tourState)) return;
+    final myId = tourState.myUserId;
+    if (myId == null) return;
+    setState(() => _friendRequestSending = true);
+    final repo = ref.read(friendRepositoryProvider);
+    try {
+      var targetId = _viewAuthorUserId;
+      targetId ??= await repo.findUserIdByNickname(name);
+      if (!mounted) return;
+      if (targetId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("screens.tourstar.error_author_not_found".tr(namedArgs: {"name": name}))),
+        );
+        return;
+      }
+      if (targetId == myId) return;
+      final ok = await repo.sendFriendRequest(targetId);
+      if (!mounted) return;
+      if (ok) {
+        await ref.read(tourstarControllerProvider.notifier).loadFriends();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("screens.tourstar.friend_request_sent".tr(namedArgs: {"name": name}))),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("screens.tourstar.friend_request_failed".tr())),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _friendRequestSending = false);
+    }
+  }
+
+  /// 작성자 피드 헤더에 표시할 이름 — 본인 피드는 최신 `myNickname` 우선(설정에서 닉네임 변경 반영).
+  String _authorFeedHeaderDisplayName(TourstarState s) {
+    if (_isSelfAuthorFeed(s)) {
+      final m = (s.myNickname ?? "").trim();
+      if (m.isNotEmpty) return m;
+    }
+    return _viewAuthorName;
+  }
+
   void _leaveAuthorFeed() {
     setState(() {
       _viewAuthorUserId = null;
@@ -96,14 +155,6 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
   void _openAuthorFeed(TourstarPostRecord p, TourstarState tourState) {
     final name = (p.authorNickname ?? "").trim();
     if (name.isEmpty) return;
-    final isOwner = _isOwner(p, tourState);
-    final isFriend = tourState.friendNicknames.contains(name);
-    if (!isOwner && !isFriend) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("친구인 사용자만 피드를 볼 수 있습니다.")),
-      );
-      return;
-    }
     setState(() {
       _viewAuthorUserId = p.userId;
       _viewAuthorName = name;
@@ -124,6 +175,15 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
     if (s.myUserId != null && p.userId != null) return p.userId == s.myUserId;
     if ((s.myNickname ?? "").isNotEmpty) return p.authorNickname == s.myNickname;
     return false;
+  }
+
+  /// 카드·그리드에 표시할 작성자명 — 내 글이면 최신 `myNickname` 우선.
+  String _displayAuthorNickname(TourstarPostRecord p, TourstarState s) {
+    if (_isMyPost(p, s)) {
+      final m = (s.myNickname ?? "").trim();
+      if (m.isNotEmpty) return m;
+    }
+    return (p.authorNickname ?? "").trim();
   }
 
   List<TourstarPostRecord> _getFiltered(TourstarState tourState) {
@@ -217,8 +277,6 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
     final tourState = ref.read(tourstarControllerProvider);
     final isOwner = _isOwner(post, tourState);
     final nick = (post.authorNickname ?? "").trim();
-    final isFriend = nick.isNotEmpty && tourState.friendNicknames.contains(nick);
-    final canAuthorFeed = isOwner || isFriend;
     final effectiveImg = tourState.profileImageUrl ??
         tourState.serverPosts
             .where((p) => _isMyPost(p, tourState) && (p.authorProfileImageUrl ?? "").isNotEmpty)
@@ -242,7 +300,7 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
           return ok;
         },
         onEditPost: (p) => _openEdit(p),
-        onAuthorFeedTap: canAuthorFeed
+        onAuthorFeedTap: nick.isNotEmpty
             ? () {
                 Navigator.pop(context);
                 WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -323,6 +381,8 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
     final tourState = ref.watch(tourstarControllerProvider);
     final allPosts = tourState.serverPosts;
     final filtered = _getFiltered(tourState);
+    final authorFeedHeaderName =
+        _authorFeedOpen ? _authorFeedHeaderDisplayName(tourState) : "";
 
     // 프로필 이미지: state.profileImageUrl 없으면 내 게시물의 authorProfileImageUrl 사용
     final effectiveProfileImage = tourState.profileImageUrl ??
@@ -378,20 +438,25 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
             surfaceTintColor: Colors.transparent,
             elevation: 0,
             shadowColor: Colors.black12,
-            expandedHeight: 90,
+            expandedHeight: 112,
+            toolbarHeight: kToolbarHeight,
             leading: IconButton(
               icon: const Icon(Icons.menu, color: _kGray800),
               onPressed: () => mainScaffoldKey.currentState?.openDrawer(),
             ),
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.fromLTRB(60, 0, 20, 14),
+              titlePadding: const EdgeInsets.fromLTRB(56, 0, 16, 12),
+              centerTitle: false,
               title: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    "여행피드",
-                    style: TextStyle(
+                  Text(
+                    "sidebar.tourstar".tr(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: _kGray800,
@@ -399,9 +464,12 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    "AI가 베스트 사진을 골라드려요 ✨",
-                    style: TextStyle(
+                    "screens.tourstar.subtitle".tr(),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
                       fontSize: 10,
+                      height: 1.25,
                       fontWeight: FontWeight.normal,
                       color: _kGray400,
                     ),
@@ -434,7 +502,7 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                     TextButton.icon(
                       onPressed: _leaveAuthorFeed,
                       icon: const Icon(Icons.arrow_back_ios_new, size: 14, color: _kGray700),
-                      label: const Text("뒤로", style: TextStyle(fontSize: 13, color: _kGray700)),
+                      label: Text("screens.tourstar.back_short".tr(), style: const TextStyle(fontSize: 13, color: _kGray700)),
                       style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4)),
                     ),
                     const SizedBox(width: 4),
@@ -457,14 +525,18 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                                         fit: BoxFit.cover,
                                         errorBuilder: (_, _, _) => Center(
                                           child: Text(
-                                            _viewAuthorName.isNotEmpty ? _viewAuthorName.substring(0, 1).toUpperCase() : "T",
+                                            authorFeedHeaderName.isNotEmpty
+                                                ? authorFeedHeaderName.substring(0, 1).toUpperCase()
+                                                : "T",
                                             style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                                           ),
                                         ),
                                       )
                                     : Center(
                                         child: Text(
-                                          _viewAuthorName.isNotEmpty ? _viewAuthorName.substring(0, 1).toUpperCase() : "T",
+                                          authorFeedHeaderName.isNotEmpty
+                                              ? authorFeedHeaderName.substring(0, 1).toUpperCase()
+                                              : "T",
                                           style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                                         ),
                                       ),
@@ -500,7 +572,7 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                               ? Image.network(authorFeedAvatar, fit: BoxFit.cover)
                               : Center(
                                   child: Text(
-                                    _viewAuthorName.isNotEmpty ? _viewAuthorName.substring(0, 1).toUpperCase() : "?",
+                                    authorFeedHeaderName.isNotEmpty ? authorFeedHeaderName.substring(0, 1).toUpperCase() : "?",
                                     style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                                   ),
                                 ),
@@ -512,42 +584,80 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Flexible(
+                              Expanded(
                                 child: Text(
-                                  _viewAuthorName,
+                                  authorFeedHeaderName.isNotEmpty ? authorFeedHeaderName : _viewAuthorName,
                                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _kGray800),
                                   overflow: TextOverflow.ellipsis,
+                                  maxLines: 2,
                                 ),
                               ),
                               if (!_isSelfAuthorFeed(tourState)) ...[
                                 const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFEFF6FF),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: const Color(0xFFBFDBFE)),
+                                if (_isViewingFriend(tourState))
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFEFF6FF),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: const Color(0xFFBFDBFE)),
+                                    ),
+                                    child: Text(
+                                      "screens.tourstar.friend_badge".tr(),
+                                      style: const TextStyle(fontSize: 10, color: Color(0xFF1D4ED8), fontWeight: FontWeight.w600),
+                                    ),
+                                  )
+                                else
+                                  TextButton(
+                                    onPressed: _friendRequestSending ? null : _sendFriendRequestForViewingAuthor,
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      minimumSize: Size.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      foregroundColor: const Color(0xFF2563EB),
+                                    ),
+                                    child: _friendRequestSending
+                                        ? const SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                          )
+                                        : Text(
+                                            "screens.tourstar.send_friend_request".tr(),
+                                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+                                          ),
                                   ),
-                                  child: const Text("친구", style: TextStyle(fontSize: 10, color: Color(0xFF1D4ED8), fontWeight: FontWeight.w600)),
-                                ),
                               ],
                             ],
                           ),
                           const SizedBox(height: 4),
                           Text(
                             _isSelfAuthorFeed(tourState)
-                                ? "소중한 여행의 순간들을 기록하세요 ✈️"
-                                : "이 사용자가 올린 게시물",
+                                ? "screens.tourstar.author_caption_self".tr()
+                                : "screens.tourstar.author_caption_other".tr(),
                             style: const TextStyle(fontSize: 11, color: _kGray400),
                           ),
                           const SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _StatItem(value: "${authorPostsForHeader.length}", label: "게시물", color: _kPurple),
-                              _StatItem(value: "$authorFeedScrapCount", label: "스크랩", color: const Color(0xFFF59E0B)),
-                              _StatItem(value: "${stats['friends']}", label: "친구", color: const Color(0xFF3B82F6)),
+                              _StatItem(
+                                value: "${authorPostsForHeader.length}",
+                                label: "screens.tourstar.stat_posts".tr(),
+                                color: _kPurple,
+                              ),
+                              _StatItem(
+                                value: "$authorFeedScrapCount",
+                                label: "screens.tourstar.stat_scraps".tr(),
+                                color: const Color(0xFFF59E0B),
+                              ),
+                              _StatItem(
+                                value: "${stats['friends']}",
+                                label: "screens.tourstar.stat_friends".tr(),
+                                color: const Color(0xFF3B82F6),
+                              ),
                             ],
                           ),
                         ],
@@ -573,7 +683,7 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                   style: const TextStyle(fontSize: 13),
                   onChanged: (v) => setState(() => _searchQuery = v.trim()),
                   decoration: InputDecoration(
-                    hintText: "게시물 검색...",
+                    hintText: "screens.tourstar.search_placeholder".tr(),
                     hintStyle: const TextStyle(color: _kGray400, fontSize: 13),
                     prefixIcon: const Icon(Icons.search, size: 18, color: _kGray400),
                     suffixIcon: _searchQuery.isNotEmpty
@@ -605,10 +715,19 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                       child: Row(
                         children: [
                           for (final tab in [
-                            ("all", "전체"),
-                            ("mine", "게시물 (${stats['mine']})"),
-                            ("friends", "친구 게시물 (${stats['friendPosts']})"),
-                            ("bookmarked", "스크랩 (${stats['bookmarked']})"),
+                            ("all", "screens.tourstar.tab_all".tr()),
+                            (
+                              "mine",
+                              "screens.tourstar.tab_mine_n".tr(namedArgs: {"count": "${stats['mine']}"}),
+                            ),
+                            (
+                              "friends",
+                              "screens.tourstar.tab_friends_n".tr(namedArgs: {"count": "${stats['friendPosts']}"}),
+                            ),
+                            (
+                              "bookmarked",
+                              "screens.tourstar.tab_bookmarked_n".tr(namedArgs: {"count": "${stats['bookmarked']}"}),
+                            ),
                           ])
                             Padding(
                               padding: const EdgeInsets.only(right: 8),
@@ -660,35 +779,42 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
             ),
           ),
 
-          // ── 정렬 바 (최신순 / 좋아요순 / 댓글순) ─────────
+          // ── 정렬 바 (최신순 / 명예순 / 댓글순) ─────────────
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Row(
-                children: [
-                  for (final sort in [("latest", "최신순"), ("honor", "명예순"), ("comments", "댓글순")])
-                    Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: GestureDetector(
-                        onTap: () => setState(() => _sortBy = sort.$1),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: _sortBy == sort.$1 ? _kPurpleLight : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            sort.$2,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: _sortBy == sort.$1 ? FontWeight.w700 : FontWeight.w400,
-                              color: _sortBy == sort.$1 ? _kPurple : _kGray400,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    for (final sort in [
+                      ("latest", "screens.tourstar.sort_latest".tr()),
+                      ("honor", "screens.tourstar.sort_honor".tr()),
+                      ("comments", "screens.tourstar.sort_comments".tr()),
+                    ])
+                      Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: GestureDetector(
+                          onTap: () => setState(() => _sortBy = sort.$1),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: _sortBy == sort.$1 ? _kPurpleLight : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              sort.$2,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: _sortBy == sort.$1 ? FontWeight.w700 : FontWeight.w400,
+                                color: _sortBy == sort.$1 ? _kPurple : _kGray400,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -741,8 +867,9 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                         isFriend: isFriend,
                         isOwner: isOwner,
                         myProfileImageUrl: effectiveProfileImage,
+                        authorDisplayName: _displayAuthorNickname(p, tourState),
                         onTap: () => _openDetail(p),
-                        onAuthorTap: (isOwner || isFriend) ? () => _openAuthorFeed(p, tourState) : null,
+                        onAuthorTap: nick.isNotEmpty ? () => _openAuthorFeed(p, tourState) : null,
                         onHonorVote: isOwner
                             ? null
                             : (v) => ref.read(tourstarControllerProvider.notifier).voteHonor(p.id, v),
@@ -753,16 +880,16 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                                 final confirmed = await showDialog<bool>(
                                   context: context,
                                   builder: (dialogContext) => AlertDialog(
-                                    title: const Text("게시물 삭제"),
-                                    content: const Text("정말로 삭제하시겠습니까?"),
+                                    title: Text("screens.tourstar.delete_post_title".tr()),
+                                    content: Text("screens.tourstar.delete_post_confirm".tr()),
                                     actions: [
                                       TextButton(
                                         onPressed: () => Navigator.pop(dialogContext, false),
-                                        child: const Text("취소"),
+                                        child: Text("common.cancel".tr()),
                                       ),
                                       TextButton(
                                         onPressed: () => Navigator.pop(dialogContext, true),
-                                        child: const Text("삭제", style: TextStyle(color: Colors.red)),
+                                        child: Text("common.delete".tr(), style: const TextStyle(color: Colors.red)),
                                       ),
                                     ],
                                   ),
@@ -774,7 +901,7 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                                   if (!ok) {
                                     final msg = ref.read(tourstarControllerProvider).statusMessage;
                                     messenger.showSnackBar(
-                                      SnackBar(content: Text(msg.isNotEmpty ? msg : "게시글 삭제에 실패했습니다.")),
+                                      SnackBar(content: Text(msg.isNotEmpty ? msg : "screens.tourstar.delete_post_failed".tr())),
                                     );
                                   }
                                 }
@@ -822,23 +949,22 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                     ),
                   ),
                   const SizedBox(width: 14),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "AI가 베스트 사진을 골라드려요",
-                          style: TextStyle(
+                          "screens.tourstar.ai_banner_title".tr(),
+                          style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: _kGray800,
                           ),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
-                          "사진을 올리면 잘 나온 사진만 자동 추천하고\n"
-                          "코멘트만 남기면 예쁘게 게시됩니다",
-                          style: TextStyle(
+                          "screens.tourstar.ai_banner_body".tr(),
+                          style: const TextStyle(
                             fontSize: 11,
                             color: _kGray500,
                             height: 1.5,
@@ -859,7 +985,7 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
         backgroundColor: _kPurple,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text("내 여행기록"),
+        label: Text("screens.tourstar.fab_new_post".tr()),
         elevation: 4,
       ),
     );
@@ -954,18 +1080,18 @@ class _EmptyState extends StatelessWidget {
             color: _kGray300,
           ),
           const SizedBox(height: 16),
-          const Text(
-            "아직 기록된 여행이 없습니다",
-            style: TextStyle(
+          Text(
+            "screens.tourstar.empty_title".tr(),
+            style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: _kGray400,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            '"내 여행기록" 버튼으로 첫 번째 여행을 기록해보세요',
-            style: TextStyle(fontSize: 12, color: _kGray300),
+          Text(
+            "screens.tourstar.empty_hint".tr(),
+            style: const TextStyle(fontSize: 12, color: _kGray300),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -982,9 +1108,9 @@ class _EmptyState extends StatelessWidget {
                 ),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: const Text(
-                "여행 기록하기",
-                style: TextStyle(
+              child: Text(
+                "screens.tourstar.empty_cta".tr(),
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
@@ -1006,6 +1132,7 @@ class _FeedCard extends StatelessWidget {
     this.isFriend = false,
     this.isOwner = false,
     this.myProfileImageUrl,
+    this.authorDisplayName,
     this.onBookmark,
     this.onDelete,
     this.onHonorVote,
@@ -1016,16 +1143,21 @@ class _FeedCard extends StatelessWidget {
   final bool isFriend;
   final bool isOwner;
   final String? myProfileImageUrl;
+  /// 설정에서 닉네임 변경 직후에도 맞춤 표시 (내 글 → `myNickname` 반영).
+  final String? authorDisplayName;
   final VoidCallback? onBookmark;
   final VoidCallback? onDelete;
   /// 1 = 썸업, -1 = 썸다운 (본인 글이면 null)
   final void Function(int value)? onHonorVote;
-  /// 본인·친구 글: 닉네임 탭 시 작성자 피드
+  /// 닉네임 탭 시 작성자 피드 (닉네임이 있을 때)
   final VoidCallback? onAuthorTap;
 
   Widget _buildAvatar() {
     final imageUrl = isOwner ? myProfileImageUrl : post.authorProfileImageUrl;
-    final initial = (post.authorNickname ?? "?").substring(0, 1).toUpperCase();
+    final label = (authorDisplayName != null && authorDisplayName!.trim().isNotEmpty)
+        ? authorDisplayName!.trim()
+        : (post.authorNickname ?? "?");
+    final initial = label.isNotEmpty ? label.substring(0, 1).toUpperCase() : "?";
     return Container(
       width: 32,
       height: 32,
@@ -1044,6 +1176,9 @@ class _FeedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedAuthor = (authorDisplayName != null && authorDisplayName!.trim().isNotEmpty)
+        ? authorDisplayName!.trim()
+        : (post.authorNickname ?? "").trim();
     final thumbUrl = post.photoUrls.isNotEmpty ? post.photoUrls.first : null;
     final dateStr = post.createdAt != null
         ? "${post.createdAt!.year}-${post.createdAt!.month.toString().padLeft(2, '0')}-${post.createdAt!.day.toString().padLeft(2, '0')}"
@@ -1170,13 +1305,17 @@ class _FeedCard extends StatelessWidget {
                           behavior: HitTestBehavior.opaque,
                           child: Row(
                             children: [
-                              Text(
-                                post.authorNickname ?? "알 수 없음",
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: (isOwner || isFriend) ? _kPurple : _kGray700,
-                                  decoration: (isOwner || isFriend) ? TextDecoration.underline : TextDecoration.none,
+                              Flexible(
+                                child: Text(
+                                  resolvedAuthor.isEmpty ? "screens.unknown".tr() : resolvedAuthor,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: _kGray800,
+                                    decoration: TextDecoration.underline,
+                                  ),
                                 ),
                               ),
                               if (isFriend) ...[
@@ -1188,7 +1327,10 @@ class _FeedCard extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(6),
                                     border: Border.all(color: const Color(0xFFD8B4FE)),
                                   ),
-                                  child: const Text("친구", style: TextStyle(fontSize: 9, color: _kPurple, fontWeight: FontWeight.w600)),
+                                  child: Text(
+                                    "screens.tourstar.friend_badge".tr(),
+                                    style: const TextStyle(fontSize: 9, color: _kPurple, fontWeight: FontWeight.w600),
+                                  ),
                                 ),
                               ],
                             ],
@@ -1224,7 +1366,10 @@ class _FeedCard extends StatelessWidget {
                         ),
                         Text("${post.honorDown}", style: TextStyle(fontSize: 10, color: post.honorVote == -1 ? const Color(0xFFE11D48) : _kGray500)),
                         const SizedBox(width: 4),
-                        Text("순${post.likes}", style: const TextStyle(fontSize: 9, color: _kGray400)),
+                        Text(
+                          "screens.tourstar.net_likes".tr(namedArgs: {"likes": "${post.likes}"}),
+                          style: const TextStyle(fontSize: 9, color: _kGray400),
+                        ),
                       ],
                       const SizedBox(width: 8),
                       // 댓글 수
@@ -1382,10 +1527,16 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
 
   String _relativeTime(DateTime t) {
     final diff = DateTime.now().difference(t);
-    if (diff.inSeconds < 60) return "방금 전";
-    if (diff.inMinutes < 60) return "${diff.inMinutes}분 전";
-    if (diff.inHours < 24) return "${diff.inHours}시간 전";
-    if (diff.inDays < 7) return "${diff.inDays}일 전";
+    if (diff.inSeconds < 60) return "screens.tourstar.time_just_now".tr();
+    if (diff.inMinutes < 60) {
+      return "screens.tourstar.time_minutes_ago".tr(namedArgs: {"n": "${diff.inMinutes}"});
+    }
+    if (diff.inHours < 24) {
+      return "screens.tourstar.time_hours_ago".tr(namedArgs: {"n": "${diff.inHours}"});
+    }
+    if (diff.inDays < 7) {
+      return "screens.tourstar.time_days_ago".tr(namedArgs: {"n": "${diff.inDays}"});
+    }
     return "${t.year}-${t.month.toString().padLeft(2, '0')}-${t.day.toString().padLeft(2, '0')}";
   }
 
@@ -1400,7 +1551,7 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
     await Clipboard.setData(ClipboardData(text: url));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("공유 링크가 클립보드에 복사되었습니다.")),
+      SnackBar(content: Text("screens.tourstar.share_link_copied".tr())),
     );
   }
 
@@ -1603,18 +1754,18 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                                       GestureDetector(
                                         onTap: widget.onAuthorFeedTap,
                                         child: Text(
-                                          post.authorNickname ?? "알 수 없음",
+                                          post.authorNickname ?? "screens.unknown".tr(),
                                           style: const TextStyle(
                                             fontSize: 13,
                                             fontWeight: FontWeight.w600,
-                                            color: _kPurple,
+                                            color: _kGray800,
                                             decoration: TextDecoration.underline,
                                           ),
                                         ),
                                       )
                                     else
                                       Text(
-                                        post.authorNickname ?? "알 수 없음",
+                                        post.authorNickname ?? "screens.unknown".tr(),
                                         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _kGray800),
                                       ),
                                     if (dateStr.isNotEmpty)
@@ -1638,16 +1789,16 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                                       final confirmed = await showDialog<bool>(
                                         context: context,
                                         builder: (dialogContext) => AlertDialog(
-                                          title: const Text("게시물 삭제"),
-                                          content: const Text("정말로 삭제하시겠습니까?"),
+                                          title: Text("screens.tourstar.delete_post_title".tr()),
+                                          content: Text("screens.tourstar.delete_post_confirm".tr()),
                                           actions: [
                                             TextButton(
                                               onPressed: () => Navigator.pop(dialogContext, false),
-                                              child: const Text("취소"),
+                                              child: Text("common.cancel".tr()),
                                             ),
                                             TextButton(
                                               onPressed: () => Navigator.pop(dialogContext, true),
-                                              child: const Text("삭제", style: TextStyle(color: Colors.red)),
+                                              child: Text("common.delete".tr(), style: const TextStyle(color: Colors.red)),
                                             ),
                                           ],
                                         ),
@@ -1660,23 +1811,36 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                                         } else {
                                           final msg = ref.read(tourstarControllerProvider).statusMessage;
                                           messenger.showSnackBar(
-                                            SnackBar(content: Text(msg.isNotEmpty ? msg : "게시글 삭제에 실패했습니다.")),
+                                            SnackBar(content: Text(msg.isNotEmpty ? msg : "screens.tourstar.delete_post_failed".tr())),
                                           );
                                         }
                                       }
                                     }
                                   },
-                                  itemBuilder: (_) => const [
-                                    PopupMenuItem(value: "edit", child: Row(children: [
-                                      Icon(Icons.edit_outlined, size: 18, color: _kPurple),
-                                      SizedBox(width: 8),
-                                      Text("수정", style: TextStyle(color: _kPurple, fontWeight: FontWeight.w600)),
-                                    ])),
-                                    PopupMenuItem(value: "delete", child: Row(children: [
-                                      Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                                      SizedBox(width: 8),
-                                      Text("삭제", style: TextStyle(color: Colors.red)),
-                                    ])),
+                                  itemBuilder: (ctx) => [
+                                    PopupMenuItem(
+                                      value: "edit",
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.edit_outlined, size: 18, color: _kPurple),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            "screens.tourstar.action_edit".tr(),
+                                            style: const TextStyle(color: _kPurple, fontWeight: FontWeight.w600),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    PopupMenuItem(
+                                      value: "delete",
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                                          const SizedBox(width: 8),
+                                          Text("common.delete".tr(), style: const TextStyle(color: Colors.red)),
+                                        ],
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ],
@@ -1733,11 +1897,17 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                             children: [
                               const Icon(Icons.chat_bubble_outline, size: 18, color: _kGray400),
                               const SizedBox(width: 4),
-                              Text("댓글 ${post.comments.length}", style: const TextStyle(color: _kGray500, fontSize: 13)),
+                              Text(
+                                "screens.tourstar.comments_inline".tr(namedArgs: {"count": "${post.comments.length}"}),
+                                style: const TextStyle(color: _kGray500, fontSize: 13),
+                              ),
                               const SizedBox(width: 20),
                               const Icon(Icons.photo_library_outlined, size: 18, color: _kGray400),
                               const SizedBox(width: 4),
-                              Text("사진 ${post.photoUrls.length}장", style: const TextStyle(color: _kGray500, fontSize: 13)),
+                              Text(
+                                "screens.tourstar.photos_inline".tr(namedArgs: {"count": "${post.photoUrls.length}"}),
+                                style: const TextStyle(color: _kGray500, fontSize: 13),
+                              ),
                               const Spacer(),
                               // ── 공유 링크 복사 버튼 ──
                               GestureDetector(
@@ -1749,12 +1919,15 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(color: const Color(0xFFD8B4FE)),
                                   ),
-                                  child: const Row(
+                                  child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.share_outlined, size: 14, color: _kPurple),
-                                      SizedBox(width: 4),
-                                      Text("공유", style: TextStyle(fontSize: 12, color: _kPurple, fontWeight: FontWeight.w600)),
+                                      const Icon(Icons.share_outlined, size: 14, color: _kPurple),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        "screens.tourstar.share".tr(),
+                                        style: const TextStyle(fontSize: 12, color: _kPurple, fontWeight: FontWeight.w600),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -1763,12 +1936,15 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                           ),
                           const Divider(height: 28, color: _kGray100),
                           Text(
-                            "댓글 ${post.comments.length}개",
+                            "screens.tourstar.comments_heading_n".tr(namedArgs: {"count": "${post.comments.length}"}),
                             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _kGray700),
                           ),
                           const SizedBox(height: 8),
                           if (post.comments.isEmpty)
-                            const Text("첫 댓글을 남겨보세요.", style: TextStyle(fontSize: 12, color: _kGray400))
+                            Text(
+                              "screens.tourstar.first_comment".tr(),
+                              style: const TextStyle(fontSize: 12, color: _kGray400),
+                            )
                           else
                             ...post.comments.map(
                               (c) => Container(
@@ -1820,7 +1996,7 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                                   controller: _ctrl,
                                   style: const TextStyle(fontSize: 13),
                                   decoration: InputDecoration(
-                                    hintText: "댓글을 입력하세요",
+                                    hintText: "screens.tourstar.comment_hint".tr(),
                                     hintStyle: const TextStyle(color: _kGray400, fontSize: 13),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
@@ -1841,7 +2017,10 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                   decoration: BoxDecoration(color: _kPurple, borderRadius: BorderRadius.circular(12)),
-                                  child: const Text("등록", style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                                  child: Text(
+                                    "screens.tourstar.comment_submit".tr(),
+                                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                                  ),
                                 ),
                               ),
                             ],
@@ -1899,7 +2078,7 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
   @override
   void initState() {
     super.initState();
-    _openGroup = _mbtiGroups.first.title;
+    _openGroup = _mbtiGroups.first.key;
   }
 
   @override
@@ -1954,22 +2133,22 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
               padding: const EdgeInsets.fromLTRB(20, 4, 8, 0),
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "새 여행 기록 만들기",
-                          style: TextStyle(
+                          "screens.tourstar.create_title".tr(),
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: _kGray800,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
-                          "AI가 잘 나온 사진을 자동으로 추려드려요 ✨",
-                          style: TextStyle(fontSize: 12, color: _kGray400),
+                          "screens.tourstar.create_subtitle".tr(),
+                          style: const TextStyle(fontSize: 12, color: _kGray400),
                         ),
                       ],
                     ),
@@ -1991,7 +2170,7 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                 ),
                 color: _kPurpleLight,
                 child: Text(
-                  state.statusMessage,
+                  tourstarStatusLine(state),
                   style: const TextStyle(
                     fontSize: 12,
                     color: _kPurple,
@@ -2017,7 +2196,9 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                     Row(
                       children: [
                         Text(
-                          "사진 (${state.pickedFiles.length}장 선택됨)",
+                          "screens.tourstar.photos_selected_n".tr(
+                            namedArgs: {"count": "${state.pickedFiles.length}"},
+                          ),
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -2049,7 +2230,9 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  state.loading ? "처리중..." : "사진 선택",
+                                  state.loading
+                                      ? "screens.tourstar.pick_processing".tr()
+                                      : "screens.tourstar.pick_photos".tr(),
                                   style: const TextStyle(
                                     fontSize: 12,
                                     color: _kPurple,
@@ -2111,11 +2294,14 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                             icon: const Icon(Icons.date_range, size: 16),
                             label: Text(
                               state.filterStartDate != null
-                                  ? "${state.filterStartDate!.month}/${state.filterStartDate!.day}"
-                                      " ~ "
-                                      "${state.filterEndDate?.month}/${state.filterEndDate?.day}"
-                                      " (${state.filteredPickedFiles.length}장)"
-                                  : "기간 선택",
+                                  ? "screens.tourstar.date_range_summary".tr(namedArgs: {
+                                      "start":
+                                          "${state.filterStartDate!.month}/${state.filterStartDate!.day}",
+                                      "end":
+                                          "${state.filterEndDate?.month}/${state.filterEndDate?.day}",
+                                      "count": "${state.filteredPickedFiles.length}",
+                                    })
+                                  : "screens.tourstar.date_range_placeholder".tr(),
                               style: const TextStyle(fontSize: 12),
                             ),
                             style: OutlinedButton.styleFrom(
@@ -2130,9 +2316,9 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                           const SizedBox(width: 8),
                           TextButton(
                             onPressed: ctrl.clearDateRange,
-                            child: const Text(
-                              "해제",
-                              style: TextStyle(
+                            child: Text(
+                              "screens.tourstar.clear".tr(),
+                              style: const TextStyle(
                                 fontSize: 12,
                                 color: _kGray500,
                               ),
@@ -2153,9 +2339,9 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                           Icons.cloud_upload_outlined,
                           size: 18,
                         ),
-                        label: const Text(
-                          "업로드 + AI 분석",
-                          style: TextStyle(
+                        label: Text(
+                          "screens.tourstar.upload_ai".tr(),
+                          style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
@@ -2175,9 +2361,9 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                       const SizedBox(height: 16),
                       Row(
                         children: [
-                          const Text(
-                            "AI 랭킹 결과",
-                            style: TextStyle(
+                          Text(
+                            "screens.tourstar.ai_ranking_title".tr(),
+                            style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: _kGray700,
@@ -2185,7 +2371,10 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                           ),
                           const Spacer(),
                           Text(
-                            "${state.selectedImagePaths.length}/${state.rankedImages.length} 선택",
+                            "screens.tourstar.ai_ranking_pick_n".tr(namedArgs: {
+                              "selected": "${state.selectedImagePaths.length}",
+                              "total": "${state.rankedImages.length}",
+                            }),
                             style: const TextStyle(
                               fontSize: 12,
                               color: _kGray400,
@@ -2283,9 +2472,9 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                     ],
                     // ── Comment ──────────────────────────────
                     const SizedBox(height: 16),
-                    const Text(
-                      "한줄 코멘트",
-                      style: TextStyle(
+                    Text(
+                      "screens.tourstar.comment_one_line".tr(),
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: _kGray700,
@@ -2302,8 +2491,7 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                             style: const TextStyle(fontSize: 13),
                             onChanged: ctrl.setComment,
                             decoration: InputDecoration(
-                              hintText:
-                                  "간단한 코멘트만 남기면 AI가 예쁘게 작성해드려요",
+                              hintText: "screens.tourstar.comment_ai_hint".tr(),
                               hintStyle: const TextStyle(
                                 color: _kGray400,
                                 fontSize: 12,
@@ -2338,9 +2526,9 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                               ),
                             ),
                             const SizedBox(height: 2),
-                            const Text(
-                              "자동",
-                              style: TextStyle(
+                            Text(
+                              "screens.tourstar.auto".tr(),
+                              style: const TextStyle(
                                 fontSize: 9,
                                 color: _kPurple,
                               ),
@@ -2351,9 +2539,9 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                     ),
                     // ── MBTI ────────────────────────────────
                     const SizedBox(height: 16),
-                    const Text(
-                      "문체 프리셋 (MBTI)",
-                      style: TextStyle(
+                    Text(
+                      "screens.tourstar.tone_mbti".tr(),
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: _kGray700,
@@ -2388,7 +2576,7 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                "자동 (기본)",
+                                "screens.tourstar.tone_auto_default".tr(),
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
@@ -2403,9 +2591,9 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                           for (final group in _mbtiGroups) ...[
                             GestureDetector(
                               onTap: () => setState(
-                                () => _openGroup = _openGroup == group.title
+                                () => _openGroup = _openGroup == group.key
                                     ? null
-                                    : group.title,
+                                    : group.key,
                               ),
                               child: Padding(
                                 padding:
@@ -2413,7 +2601,7 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                                 child: Row(
                                   children: [
                                     Text(
-                                      group.title,
+                                      "screens.tourstar.mbti_group_${group.key}".tr(),
                                       style: const TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
@@ -2422,7 +2610,7 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                                     ),
                                     const Spacer(),
                                     Icon(
-                                      _openGroup == group.title
+                                      _openGroup == group.key
                                           ? Icons.expand_less
                                           : Icons.expand_more,
                                       size: 16,
@@ -2432,7 +2620,7 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                                 ),
                               ),
                             ),
-                            if (_openGroup == group.title) ...[
+                            if (_openGroup == group.key) ...[
                               const SizedBox(height: 6),
                               Wrap(
                                 spacing: 8,
@@ -2486,9 +2674,9 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                     ),
                     // ── Visibility ───────────────────────────
                     const SizedBox(height: 16),
-                    const Text(
-                      "공개 설정",
-                      style: TextStyle(
+                    Text(
+                      "screens.tourstar.visibility_title".tr(),
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: _kGray700,
@@ -2498,7 +2686,7 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                     Row(
                       children: [
                         _VisibilityBtn(
-                          label: "공개",
+                          label: "screens.tourstar.visibility_public".tr(),
                           icon: Icons.public,
                           selected: _visibility == "public",
                           onTap: () =>
@@ -2506,7 +2694,7 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                         ),
                         const SizedBox(width: 10),
                         _VisibilityBtn(
-                          label: "비공개",
+                          label: "screens.tourstar.visibility_private".tr(),
                           icon: Icons.lock_outline,
                           selected: _visibility == "private",
                           onTap: () =>
@@ -2536,7 +2724,9 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                           ),
                         ),
                         child: Text(
-                          state.loading ? "게시중..." : "게시하기",
+                          state.loading
+                              ? "screens.tourstar.posting".tr()
+                              : "screens.tourstar.publish".tr(),
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -2685,7 +2875,11 @@ class _EditPostSheetState extends ConsumerState<_EditPostSheet> {
     if (total >= _maxPhotos) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("사진은 최대 $_maxPhotos장까지 추가할 수 있습니다.")),
+        SnackBar(
+          content: Text(
+            "screens.tourstar.max_photos_snackbar".tr(namedArgs: {"max": "$_maxPhotos"}),
+          ),
+        ),
       );
       return;
     }
@@ -2717,7 +2911,7 @@ class _EditPostSheetState extends ConsumerState<_EditPostSheet> {
         .where((t) => t.isNotEmpty)
         .toList();
     if (title.isEmpty) {
-      messenger.showSnackBar(const SnackBar(content: Text("제목을 입력해 주세요.")));
+      messenger.showSnackBar(SnackBar(content: Text("screens.tourstar.title_required".tr())));
       return;
     }
     setState(() => _saving = true);
@@ -2729,7 +2923,7 @@ class _EditPostSheetState extends ConsumerState<_EditPostSheet> {
         newPaths = upload.uploaded.map(_uploadedPathForPostUpdate).where((p) => p.isNotEmpty).toList();
         if (newPaths.isEmpty && mounted) {
           messenger.showSnackBar(
-            const SnackBar(content: Text("새 사진 업로드에 실패했습니다.")),
+            SnackBar(content: Text("screens.tourstar.upload_new_failed".tr())),
           );
           setState(() => _saving = false);
           return;
@@ -2748,12 +2942,16 @@ class _EditPostSheetState extends ConsumerState<_EditPostSheet> {
       if (ok) {
         navigator.pop();
       } else {
-        messenger.showSnackBar(const SnackBar(content: Text("수정에 실패했습니다.")));
+        messenger.showSnackBar(SnackBar(content: Text("screens.tourstar.edit_failed".tr())));
       }
     } catch (e) {
       if (mounted) {
         messenger.showSnackBar(
-          SnackBar(content: Text("저장 중 오류: $e")),
+          SnackBar(
+            content: Text(
+              "screens.tourstar.save_error".tr(namedArgs: {"error": "$e"}),
+            ),
+          ),
         );
       }
     } finally {
@@ -2911,7 +3109,7 @@ class _EditPostSheetState extends ConsumerState<_EditPostSheet> {
                 Icon(Icons.add_photo_alternate_outlined, size: 32, color: full ? _kGray300 : _kPurple),
                 const SizedBox(height: 6),
                 Text(
-                  "사진 추가",
+                  "screens.tourstar.add_photo".tr(),
                   style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: full ? _kGray400 : _kPurple),
                 ),
               ],
@@ -2928,7 +3126,7 @@ class _EditPostSheetState extends ConsumerState<_EditPostSheet> {
       children: [
         Row(
           children: [
-            const Text("사진", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _kGray700)),
+            Text("screens.tourstar.photos_label".tr(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _kGray700)),
             const Spacer(),
             Text(
               "${_keepUrls.length + _newFiles.length}/$_maxPhotos",
@@ -2938,7 +3136,7 @@ class _EditPostSheetState extends ConsumerState<_EditPostSheet> {
         ),
         const SizedBox(height: 4),
         Text(
-          "× 를 눌러 삭제 · 갤러리에서 새 사진을 추가할 수 있습니다.",
+          "screens.tourstar.photos_edit_hint".tr(),
           style: TextStyle(fontSize: 11, color: _kGray400.withValues(alpha: 0.95)),
         ),
         const SizedBox(height: 8),
@@ -2985,10 +3183,10 @@ class _EditPostSheetState extends ConsumerState<_EditPostSheet> {
               padding: const EdgeInsets.fromLTRB(20, 8, 8, 0),
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      "게시물 수정",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _kGray800),
+                      "screens.tourstar.edit_post_title".tr(),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _kGray800),
                     ),
                   ),
                   IconButton(
@@ -3005,11 +3203,11 @@ class _EditPostSheetState extends ConsumerState<_EditPostSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _field("제목", _titleCtrl),
-                    _field("장소", _locationCtrl),
-                    _field("내용", _commentCtrl, maxLines: 5),
+                    _field("screens.tourstar.field_title".tr(), _titleCtrl),
+                    _field("screens.tourstar.field_place".tr(), _locationCtrl),
+                    _field("screens.tourstar.field_content".tr(), _commentCtrl, maxLines: 5),
                     _photoSection(),
-                    _field("태그 (쉼표로 구분)", _tagsCtrl),
+                    _field("screens.tourstar.field_tags".tr(), _tagsCtrl),
                   ],
                 ),
               ),
@@ -3031,7 +3229,10 @@ class _EditPostSheetState extends ConsumerState<_EditPostSheet> {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
-                      : const Text("저장하기", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                      : Text(
+                          "screens.tourstar.edit_save".tr(),
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
                 ),
               ),
             ),

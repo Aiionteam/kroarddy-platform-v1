@@ -1,11 +1,18 @@
+import "dart:async";
+
+import "package:easy_localization/easy_localization.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
+import "../../../core/locale/language_picker_sheet.dart";
+import "../../../core/locale/locale_from_nationality.dart";
 import "../../../core/router/main_shell.dart";
 import "../../auth/presentation/state/auth_controller.dart";
 import "../../../core/theme/kroaddy_colors.dart";
 import "../data/profile_models.dart";
+import "../data/profile_option_labels.dart";
+import "profile_message_keys.dart";
 import "state/profile_controller.dart";
 import "state/profile_state.dart";
 
@@ -23,6 +30,21 @@ const _tierColors = {
 };
 
 Color _tierColor(String? tier) => _tierColors[tier?.toUpperCase()] ?? const Color(0xFF9CA3AF);
+
+String _tierDisplayName(String tier) {
+  switch (tier.toUpperCase()) {
+    case "SILVER":
+      return "screens.chat.tier_silver".tr();
+    case "GOLD":
+      return "screens.chat.tier_gold".tr();
+    case "PLATINUM":
+      return "screens.chat.tier_platinum".tr();
+    case "DIAMOND":
+      return "screens.chat.tier_diamond".tr();
+    default:
+      return tier;
+  }
+}
 
 // ── 진입점 ─────────────────────────────────────────────────────
 class ProfilePage extends ConsumerStatefulWidget {
@@ -43,27 +65,34 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final state = ref.watch(profileControllerProvider);
     final ctrl = ref.read(profileControllerProvider.notifier);
 
-    ref.listen<String>(
-      profileControllerProvider.select((s) => s.message),
+    ref.listen<int>(
+      profileControllerProvider.select((s) => s.notifySeq),
       (prev, next) {
-        if (prev == next) return;
-        if (next.contains("완료")) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(next),
-              backgroundColor: const Color(0xFF059669),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-          if (next.contains("계정 정보 저장")) setState(() => _accountSaved = true);
-          if (next.contains("여행 프로필 저장")) setState(() => _profileSaved = true);
-          if (next.contains("계정 탈퇴 완료")) {
-            Future.microtask(() async {
-              await ref.read(authControllerProvider.notifier).logout();
-              if (context.mounted) context.go("/login");
-            });
-          }
+        if (next == 0 || (prev != null && prev == next)) return;
+        final st = ref.read(profileControllerProvider);
+        final key = st.snackbarKey;
+        if (key.isEmpty) return;
+        final text = key.tr(namedArgs: st.snackbarParams);
+        final messenger = ScaffoldMessenger.of(context);
+        final success = ProfileMessageKeys.successSnackbarKeys.contains(key);
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(text),
+            backgroundColor: success ? const Color(0xFF059669) : const Color(0xFFB91C1C),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        if (key == ProfileMessageKeys.msgAccountSaved) {
+          setState(() => _accountSaved = true);
+        } else if (key == ProfileMessageKeys.msgTravelSaved) {
+          setState(() => _profileSaved = true);
+        } else if (key == ProfileMessageKeys.msgAccountDeleted) {
+          Future.microtask(() async {
+            await ref.read(authControllerProvider.notifier).logout();
+            if (context.mounted) context.go("/login");
+          });
         }
+        ref.read(profileControllerProvider.notifier).clearSnackbar();
       },
     );
 
@@ -76,9 +105,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           icon: const Icon(Icons.menu, color: _textPrimary),
           onPressed: () => mainScaffoldKey.currentState?.openDrawer(),
         ),
-        title: const Text(
-          "설정",
-          style: TextStyle(color: _textPrimary, fontWeight: FontWeight.bold, fontSize: 18),
+        title: Text(
+          "sidebar.settings_short".tr(),
+          style: const TextStyle(color: _textPrimary, fontWeight: FontWeight.bold, fontSize: 18),
         ),
         actions: [
           IconButton(
@@ -110,6 +139,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
                     // 여행 프로필 카드
                     _buildTravelProfileCard(state, ctrl),
+                    const SizedBox(height: 16),
+
+                    _buildLanguageCard(context),
                     const SizedBox(height: 16),
 
                     // 탈퇴 카드
@@ -177,7 +209,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  user?.nickname ?? user?.name ?? "사용자",
+                  user?.nickname ?? user?.name ?? "screens.user_fallback".tr(),
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -203,7 +235,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   border: Border.all(color: tierColor.withValues(alpha: 0.5)),
                 ),
                 child: Text(
-                  tier,
+                  _tierDisplayName(tier),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -213,7 +245,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               ),
               const SizedBox(height: 4),
               Text(
-                "명예도 ${user?.honor ?? 0}",
+                "screens.profile.honor".tr(namedArgs: {"score": "${user?.honor ?? 0}"}),
                 style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.8)),
               ),
             ],
@@ -225,11 +257,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   Widget _buildAccountCard(ProfileState state, ProfileController ctrl) {
     return _SectionCard(
-      title: "계정 정보",
+      title: "screens.profile.account_info".tr(),
       icon: Icons.person_outline,
       child: Column(
         children: [
-          _ReadOnlyField(label: "이메일", value: state.user?.email ?? "-"),
+          _ReadOnlyField(label: "settings.account.email".tr(), value: state.user?.email ?? "-"),
           const SizedBox(height: 12),
           _EditableNicknameField(
             initial: state.nickname,
@@ -237,7 +269,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ),
           const SizedBox(height: 12),
           _ReadOnlyField(
-            label: "소셜 연동",
+            label: "settings.account.provider".tr(),
             value: state.user?.provider ?? "-",
             valueColor: _primary,
           ),
@@ -264,7 +296,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       else
                         const Icon(Icons.save_outlined, size: 16),
                       const SizedBox(width: 6),
-                      Text(_accountSaved ? "저장 완료" : (state.saving ? "저장 중..." : "저장")),
+                      Text(
+                        _accountSaved
+                            ? "settings.saved".tr()
+                            : (state.saving ? "common.saving".tr() : "common.save".tr()),
+                      ),
                     ],
                   ),
                 ),
@@ -278,14 +314,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   Widget _buildTravelProfileCard(ProfileState state, ProfileController ctrl) {
     return _SectionCard(
-      title: "여행 프로필",
+      title: "screens.profile.travel_profile".tr(),
       icon: Icons.flight_outlined,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _ProfileSection(
-            label: "성별",
+            label: "screens.profile.label_gender".tr(),
             options: genderOptions,
+            labelFor: optionLabelGender,
             selected: state.form.gender,
             onSelect: (v) {
               setState(() => _profileSaved = false);
@@ -294,8 +331,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ),
           const SizedBox(height: 14),
           _ProfileSection(
-            label: "나이대",
+            label: "screens.profile.label_age".tr(),
             options: ageBandOptions,
+            labelFor: optionLabelAge,
             selected: state.form.ageBand,
             onSelect: (v) {
               setState(() => _profileSaved = false);
@@ -304,8 +342,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ),
           const SizedBox(height: 14),
           _ProfileSection(
-            label: "식습관",
+            label: "screens.profile.label_diet".tr(),
             options: dietaryOptions,
+            labelFor: optionLabelDiet,
             selected: state.form.dietaryPref,
             onSelect: (v) {
               setState(() => _profileSaved = false);
@@ -314,8 +353,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ),
           const SizedBox(height: 14),
           _ProfileSection(
-            label: "종교",
+            label: "screens.profile.label_religion".tr(),
             options: religionOptions,
+            labelFor: optionLabelReligion,
             selected: state.form.religion,
             onSelect: (v) {
               setState(() => _profileSaved = false);
@@ -324,12 +364,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ),
           const SizedBox(height: 14),
           _ProfileSection(
-            label: "국적",
+            label: "screens.profile.label_nationality".tr(),
             options: nationalityOptions,
+            labelFor: optionLabelNationality,
             selected: state.form.nationality,
             onSelect: (v) {
               setState(() => _profileSaved = false);
-              ctrl.setNationality(v == state.form.nationality ? "" : v);
+              final next = v == state.form.nationality ? "" : v;
+              ctrl.setNationality(next);
+              unawaited(LocaleFromNationality.apply(next, fromSavedProfile: false));
             },
           ),
           const SizedBox(height: 16),
@@ -354,7 +397,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   else
                     const Icon(Icons.save_outlined, size: 16),
                   const SizedBox(width: 6),
-                  Text(_profileSaved ? "저장 완료" : (state.saving ? "저장 중..." : "여행 프로필 저장")),
+                  Text(
+                    _profileSaved
+                        ? "settings.saved".tr()
+                        : (state.saving
+                            ? "common.saving".tr()
+                            : "settings.profile.save".tr()),
+                  ),
                 ],
               ),
             ),
@@ -364,16 +413,78 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
+  Widget _buildLanguageCard(BuildContext context) {
+    final code = context.locale.languageCode.toUpperCase();
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => showAppLanguagePicker(context),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: _primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.language, color: _primary, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "common.language".tr(),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: _textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        code,
+                        style: const TextStyle(fontSize: 12, color: _textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: _textSecondary),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildWithdrawCard(ProfileState state) {
     return _SectionCard(
-      title: "계정 관리",
+      title: "screens.profile.label_account_mgmt".tr(),
       icon: Icons.manage_accounts_outlined,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "계정을 탈퇴하면 모든 데이터가 삭제되며 복구할 수 없습니다.",
-            style: TextStyle(fontSize: 12, color: _textSecondary, height: 1.5),
+          Text(
+            "settings.withdraw.desc".tr(),
+            style: const TextStyle(fontSize: 12, color: _textSecondary, height: 1.5),
           ),
           const SizedBox(height: 12),
           SizedBox(
@@ -384,7 +495,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 foregroundColor: const Color(0xFFDC2626),
                 side: const BorderSide(color: Color(0xFFDC2626)),
               ),
-              child: const Text("계정 탈퇴"),
+              child: Text("settings.withdraw.button".tr()),
             ),
           ),
         ],
@@ -510,9 +621,9 @@ class _EditableNicknameFieldState extends State<_EditableNicknameField> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const SizedBox(
+        SizedBox(
           width: 80,
-          child: Text("닉네임", style: TextStyle(fontSize: 13, color: _textSecondary)),
+          child: Text("settings.account.nickname".tr(), style: const TextStyle(fontSize: 13, color: _textSecondary)),
         ),
         Expanded(
           child: TextField(
@@ -546,11 +657,13 @@ class _ProfileSection extends StatelessWidget {
   const _ProfileSection({
     required this.label,
     required this.options,
+    required this.labelFor,
     required this.selected,
     required this.onSelect,
   });
   final String label;
   final List<String> options;
+  final String Function(String stored) labelFor;
   final String selected;
   final void Function(String) onSelect;
 
@@ -582,7 +695,7 @@ class _ProfileSection extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  opt,
+                  labelFor(opt),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,

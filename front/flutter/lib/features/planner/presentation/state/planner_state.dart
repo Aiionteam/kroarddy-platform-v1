@@ -29,7 +29,7 @@ class PlannerState {
       location: "seoul",
       startDate: "",
       endDate: "",
-      statusMessage: "지역 코드를 입력하고 루트 추천을 받아보세요. (예: seoul, busan)",
+      statusMessage: "",
       routesError: null,
       scheduleError: null,
       routesTriggered: false,
@@ -38,7 +38,7 @@ class PlannerState {
       schedule: <ScheduleItem>[],
       costSummary: null,
       savedPlanId: null,
-      useSearch: false,
+      useSearch: true,
       transportMode: "car",
     );
   }

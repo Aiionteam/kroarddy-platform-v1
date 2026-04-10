@@ -136,6 +136,8 @@ class TourstarPostRecord {
     int? honorUp,
     int? honorDown,
     int? honorVote,
+    String? authorNickname,
+    String? authorProfileImageUrl,
   }) {
     return TourstarPostRecord(
       id: id,
@@ -150,8 +152,8 @@ class TourstarPostRecord {
       updatedAt: updatedAt,
       userId: userId,
       selectedScores: selectedScores,
-      authorNickname: authorNickname,
-      authorProfileImageUrl: authorProfileImageUrl,
+      authorNickname: authorNickname ?? this.authorNickname,
+      authorProfileImageUrl: authorProfileImageUrl ?? this.authorProfileImageUrl,
       likes: likes ?? this.likes,
       liked: liked ?? this.liked,
       honorUp: honorUp ?? this.honorUp,

@@ -6,6 +6,7 @@ class TourstarState {
   const TourstarState({
     required this.loading,
     required this.statusMessage,
+    this.statusMessageParams = const {},
     required this.styleFilter,
     required this.comment,
     required this.pickedFiles,
@@ -28,7 +29,8 @@ class TourstarState {
   factory TourstarState.initial() {
     return const TourstarState(
       loading: false,
-      statusMessage: "사진을 선택하고 업로드를 시작하세요.",
+      statusMessage: "screens.tourstar.status_hint_select_upload",
+      statusMessageParams: {},
       styleFilter: "AUTO",
       comment: "",
       pickedFiles: <XFile>[],
@@ -51,6 +53,7 @@ class TourstarState {
 
   final bool loading;
   final String statusMessage;
+  final Map<String, String> statusMessageParams;
   final String styleFilter;
   final String comment;
   final List<XFile> pickedFiles;
@@ -86,6 +89,8 @@ class TourstarState {
   TourstarState copyWith({
     bool? loading,
     String? statusMessage,
+    Map<String, String>? statusMessageParams,
+    bool clearStatusParams = false,
     String? styleFilter,
     String? comment,
     List<XFile>? pickedFiles,
@@ -111,6 +116,7 @@ class TourstarState {
     return TourstarState(
       loading: loading ?? this.loading,
       statusMessage: statusMessage ?? this.statusMessage,
+      statusMessageParams: clearStatusParams ? const {} : (statusMessageParams ?? this.statusMessageParams),
       styleFilter: styleFilter ?? this.styleFilter,
       comment: comment ?? this.comment,
       pickedFiles: pickedFiles ?? this.pickedFiles,

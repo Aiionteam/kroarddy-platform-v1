@@ -1,8 +1,11 @@
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
+import "../../../../core/locale/locale_from_nationality.dart";
 import "../../../../core/preferences/onboarding_prefs.dart";
+import "../../../tourstar/presentation/state/tourstar_controller.dart";
 import "../../data/profile_models.dart";
 import "../../data/profile_repository.dart";
+import "../profile_message_keys.dart";
 import "profile_state.dart";
 
 final profileControllerProvider = NotifierProvider<ProfileController, ProfileState>(
@@ -18,8 +21,20 @@ class ProfileController extends Notifier<ProfileState> {
     return ProfileState.initial();
   }
 
+  void _emitSnackbar(String key, [Map<String, String> params = const {}]) {
+    state = state.copyWith(
+      notifySeq: state.notifySeq + 1,
+      snackbarKey: key,
+      snackbarParams: params,
+    );
+  }
+
+  void clearSnackbar() {
+    state = state.copyWith(clearSnackbar: true);
+  }
+
   Future<void> load() async {
-    state = state.copyWith(loading: true, message: "프로필 정보를 불러오는 중...");
+    state = state.copyWith(loading: true);
     try {
       final ids = await _repo.resolveIds();
       final user = await _repo.findUserById(ids.$1);
@@ -37,13 +52,14 @@ class ProfileController extends Notifier<ProfileState> {
           religion: travel?.religion ?? "",
           nationality: travel?.nationality ?? "",
         ),
-        message: "프로필 정보를 불러왔습니다.",
+      );
+      await LocaleFromNationality.apply(
+        travel?.nationality ?? "",
+        fromSavedProfile: true,
       );
     } catch (e) {
-      state = state.copyWith(
-        loading: false,
-        message: "프로필 조회 실패: $e",
-      );
+      state = state.copyWith(loading: false);
+      _emitSnackbar(ProfileMessageKeys.msgLoadFailed, {"error": "$e"});
     }
   }
 
@@ -74,10 +90,10 @@ class ProfileController extends Notifier<ProfileState> {
   Future<void> saveAccount() async {
     final user = state.user;
     if (user == null) {
-      state = state.copyWith(message: "사용자 정보가 없어 저장할 수 없습니다.");
+      _emitSnackbar(ProfileMessageKeys.msgNoUserSave);
       return;
     }
-    state = state.copyWith(saving: true, message: "계정 정보를 저장하는 중...");
+    state = state.copyWith(saving: true);
     try {
       await _repo.updateNickname(baseUser: user, nickname: state.nickname);
       state = state.copyWith(
@@ -91,36 +107,42 @@ class ProfileController extends Notifier<ProfileState> {
           honor: user.honor,
           tier: user.tier,
         ),
-        message: "계정 정보 저장 완료",
       );
+      await ref.read(tourstarControllerProvider.notifier).syncNicknameFromProfile(
+            savedNickname: state.nickname.trim(),
+          );
+      _emitSnackbar(ProfileMessageKeys.msgAccountSaved);
     } catch (e) {
-      state = state.copyWith(saving: false, message: "계정 정보 저장 실패: $e");
+      state = state.copyWith(saving: false);
+      _emitSnackbar(ProfileMessageKeys.msgAccountSaveFailed, {"error": "$e"});
     }
   }
 
   Future<void> saveTravelProfile() async {
     final appUserId = state.appUserId;
     if (appUserId == null) {
-      state = state.copyWith(message: "앱 사용자 ID를 확인할 수 없습니다.");
+      _emitSnackbar(ProfileMessageKeys.msgNoAppUser);
       return;
     }
-    state = state.copyWith(saving: true, message: "여행 프로필 저장 중...");
+    state = state.copyWith(saving: true);
     try {
       await _repo.upsertTravelProfile(appUserId: appUserId, form: state.form);
       await OnboardingPrefs.clearSkipped();
-      state = state.copyWith(saving: false, message: "여행 프로필 저장 완료");
+      state = state.copyWith(saving: false);
+      _emitSnackbar(ProfileMessageKeys.msgTravelSaved);
     } catch (e) {
-      state = state.copyWith(saving: false, message: "여행 프로필 저장 실패: $e");
+      state = state.copyWith(saving: false);
+      _emitSnackbar(ProfileMessageKeys.msgTravelSaveFailed, {"error": "$e"});
     }
   }
 
   Future<void> deleteAccount() async {
     final userId = state.userId;
     if (userId == null) {
-      state = state.copyWith(message: "사용자 ID를 확인할 수 없습니다.");
+      _emitSnackbar(ProfileMessageKeys.msgNoUserId);
       return;
     }
-    state = state.copyWith(saving: true, message: "계정 탈퇴 처리 중...");
+    state = state.copyWith(saving: true);
     try {
       await _repo.deleteUser(userId);
       state = state.copyWith(
@@ -128,10 +150,11 @@ class ProfileController extends Notifier<ProfileState> {
         clearUser: true,
         nickname: "",
         form: ProfileForm.empty(),
-        message: "계정 탈퇴 완료",
       );
+      _emitSnackbar(ProfileMessageKeys.msgAccountDeleted);
     } catch (e) {
-      state = state.copyWith(saving: false, message: "계정 탈퇴 실패: $e");
+      state = state.copyWith(saving: false);
+      _emitSnackbar(ProfileMessageKeys.msgDeleteFailed, {"error": "$e"});
     }
   }
 }

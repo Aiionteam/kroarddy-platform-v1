@@ -6,6 +6,12 @@ import "package:go_router/go_router.dart";
 
 import "../../features/auth/presentation/login_page.dart";
 import "../../features/auth/presentation/state/auth_controller.dart";
+import "../../features/customer/presentation/customer_center_page.dart";
+import "../../features/customer/presentation/customer_emergency_page.dart";
+import "../../features/customer/presentation/customer_guide_page.dart";
+import "../../features/customer/presentation/customer_inquiry_page.dart";
+import "../../features/customer/presentation/customer_notices_page.dart";
+import "../../features/customer/presentation/customer_subscription_page.dart";
 import "../../features/chat/presentation/chat_page.dart";
 import "../../features/chat/presentation/friends_page.dart";
 import "../../features/chat/presentation/whisper_page.dart";
@@ -19,11 +25,13 @@ import "../../features/profile/presentation/profile_page.dart";
 import "../../features/tourstar/presentation/tourstar_page.dart";
 import "../auth/post_auth_route.dart";
 import "../theme/kroaddy_colors.dart";
+import "app_root_navigator_key.dart";
 import "main_shell.dart";
 import "shell_back_handler.dart";
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
+    navigatorKey: appRootNavigatorKey,
     initialLocation: "/login",
     redirect: (context, state) {
       if (state.uri.path == "/") return "/login";
@@ -125,6 +133,32 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: "/profile/onboarding",
             builder: (context, state) => const OnboardingPage(),
+          ),
+          GoRoute(
+            path: "/customer",
+            builder: (context, state) => const CustomerCenterPage(),
+            routes: [
+              GoRoute(
+                path: "guide",
+                builder: (context, state) => const CustomerGuidePage(),
+              ),
+              GoRoute(
+                path: "inquiry",
+                builder: (context, state) => const CustomerInquiryPage(),
+              ),
+              GoRoute(
+                path: "notices",
+                builder: (context, state) => const CustomerNoticesPage(),
+              ),
+              GoRoute(
+                path: "subscription",
+                builder: (context, state) => const CustomerSubscriptionPage(),
+              ),
+              GoRoute(
+                path: "emergency",
+                builder: (context, state) => const CustomerEmergencyPage(),
+              ),
+            ],
           ),
         ],
       ),

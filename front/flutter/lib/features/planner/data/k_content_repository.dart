@@ -114,6 +114,34 @@ class KContentRepository {
     final res = await _dio.get<Map<String, dynamic>>("/v1/k-content/health");
     return res.data ?? const <String, dynamic>{};
   }
+
+  /// 웹 `fetchKContentPackages` — `GET /api/v1/k-content/packages`
+  Future<List<Map<String, dynamic>>> fetchPackages({String? category}) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      "/v1/k-content/packages",
+      queryParameters: category != null && category.isNotEmpty
+          ? {"category": category}
+          : null,
+    );
+    final raw = (res.data?["items"] as List?) ?? const [];
+    return raw
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
+  /// 웹 `fetchKContentPackage` — `GET /api/v1/k-content/packages/{ref}`
+  Future<Map<String, dynamic>?> fetchPackage(String packageRef) async {
+    try {
+      final res = await _dio.get<Map<String, dynamic>>(
+        "/v1/k-content/packages/${Uri.encodeComponent(packageRef)}",
+      );
+      return res.data;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      rethrow;
+    }
+  }
 }
 
 class KContentScheduleItem {
@@ -171,6 +199,7 @@ class KContentGenerateResponse {
     required this.schedule,
     required this.places,
     required this.costSummary,
+    required this.rawJson,
   });
 
   final bool success;
@@ -178,6 +207,7 @@ class KContentGenerateResponse {
   final List<KContentScheduleItem> schedule;
   final List<Map<String, dynamic>> places;
   final Map<String, dynamic>? costSummary;
+  final Map<String, dynamic> rawJson;
 
   factory KContentGenerateResponse.fromJson(Map<String, dynamic> json) {
     final rawSchedule = (json["schedule"] as List?) ?? const [];
@@ -195,6 +225,7 @@ class KContentGenerateResponse {
       costSummary: json["cost_summary"] is Map
           ? Map<String, dynamic>.from(json["cost_summary"] as Map)
           : null,
+      rawJson: Map<String, dynamic>.from(json),
     );
   }
 }

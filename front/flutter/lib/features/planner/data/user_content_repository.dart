@@ -60,13 +60,23 @@ class UserContentRepository {
   Future<List<UserRoute>> fetchRoutes({
     int limit = 20,
     int offset = 0,
+    /// 웹 `fetchUserRoutes` 와 동일 — 있으면 `liked_by_me` 채움
+    int? userId,
+    int? ownerId,
+    String? nickname,
   }) async {
+    final qp = <String, dynamic>{
+      "limit": limit,
+      "offset": offset,
+    };
+    if (userId != null) qp["user_id"] = userId;
+    if (ownerId != null) qp["owner_id"] = ownerId;
+    final nick = nickname?.trim();
+    if (nick != null && nick.isNotEmpty) qp["nickname"] = nick;
+
     final res = await _dio.get<Map<String, dynamic>>(
       "/v1/user-content/routes",
-      queryParameters: {
-        "limit": limit,
-        "offset": offset,
-      },
+      queryParameters: qp,
     );
     final routesRaw = (res.data?["routes"] as List?) ?? const [];
     return routesRaw
@@ -95,6 +105,7 @@ class UserContentRepository {
 
   Future<UserRoute> saveRoute({
     int? userId,
+    String? nickname,
     required String title,
     required String location,
     required String description,
@@ -106,6 +117,7 @@ class UserContentRepository {
       "/v1/user-content/routes",
       data: {
         "user_id": userId,
+        "nickname": nickname,
         "title": title,
         "location": location,
         "description": description,
@@ -117,8 +129,12 @@ class UserContentRepository {
     return UserRoute.fromJson(res.data ?? const {});
   }
 
-  Future<int> likeRoute(int routeId) async {
-    final res = await _dio.post<Map<String, dynamic>>("/v1/user-content/routes/$routeId/like");
+  /// 웹 `likeUserRoute` 와 동일 — `user_id` 쿼리 필수 (백엔드 `like_route`)
+  Future<int> likeRoute(int routeId, {required int userId}) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      "/v1/user-content/routes/$routeId/like",
+      queryParameters: {"user_id": userId},
+    );
     return (res.data?["likes"] as num?)?.toInt() ?? 0;
   }
 }

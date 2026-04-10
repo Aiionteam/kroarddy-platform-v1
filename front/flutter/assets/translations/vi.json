@@ -1,0 +1,4182 @@
+{
+  "app": {
+    "name": "Kroaddy"
+  },
+  "common": {
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "next": "Tiếp theo",
+    "skip": "Bỏ qua",
+    "done": "Hoàn thành",
+    "loading": "Đang tải...",
+    "saving": "Đang lưu...",
+    "processing": "Đang xử lý...",
+    "error": "Đã xảy ra lỗi",
+    "logout": "Đăng xuất",
+    "menu_open": "Open menu",
+    "search": "Search",
+    "show_all": "Xem tất cả",
+    "back": "Quay lại",
+    "close": "Đóng",
+    "retry": "Thử lại",
+    "previous": "Back",
+    "fold": "Thu gọn",
+    "view_all": "Xem tất cả",
+    "more": "Thêm",
+    "delete": "Xóa",
+    "deleting": "Đang xóa...",
+    "edit": "Edit",
+    "submit": "Submit",
+    "share": "Share",
+    "go_back": "Go back",
+    "confirm": "Confirm",
+    "coming_soon": "Coming soon",
+    "accept": "Chấp nhận",
+    "login_needed": "Cần đăng nhập.",
+    "login_required": "Cần đăng nhập",
+    "not_found": {
+      "message": "We couldn't find the page you requested.",
+      "back_home": "Go back home"
+    },
+    "unknown_error": "unknown error",
+    "language": "Ngôn ngữ"
+  },
+  "onboarding": {
+    "title": "Sở thích du lịch",
+    "subtitle": "Nhập thông tin để nhận gợi ý du lịch AI cá nhân hóa",
+    "later": "Để sau",
+    "saving": "Đang lưu...",
+    "nationality": {
+      "title": "Quốc gia / Quốc tịch",
+      "hint": "Dịch vụ sẽ được cung cấp bằng ngôn ngữ của bạn"
+    },
+    "gender": {
+      "title": "Giới tính"
+    },
+    "age": {
+      "title": "Độ tuổi"
+    },
+    "diet": {
+      "title": "Chế độ ăn uống"
+    },
+    "religion": {
+      "title": "Tôn giáo"
+    },
+    "prev": "Back",
+    "skip_later": "Maybe later",
+    "save_failed": "Save failed: {{error}}",
+    "steps": {
+      "nationality": "Which country are you from?",
+      "gender": "What is your gender?",
+      "age_band": "Choose your age range",
+      "dietary_pref": "Any dietary preferences?",
+      "religion": "Do you have a religion?"
+    }
+  },
+  "auth": {
+    "api": {
+      "naver_auth_url_fail": "Không thể lấy URL đăng nhập Naver.",
+      "naver_auth_url_missing": "Không nhận được URL đăng nhập Naver.",
+      "kakao_auth_url_fail": "Không thể lấy URL đăng nhập Kakao.",
+      "kakao_auth_url_missing": "Không nhận được URL đăng nhập Kakao.",
+      "google_auth_url_fail": "Không thể lấy URL đăng nhập Google.",
+      "google_auth_url_missing": "Không nhận được URL đăng nhập Google.",
+      "refresh_token_invalid": "Refresh token đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại."
+    },
+    "back_to_login": "로그인 페이지로 돌아가기",
+    "guest_browse": "게스트로 둘러보기",
+    "login_failed": "로그인 실패",
+    "login_failed_with_detail": "알 수 없는 오류",
+    "login_google": "Continue with Google",
+    "login_kakao": "카카오로 시작하기",
+    "login_naver": "네이버로 시작하기",
+    "login_success": "로그인 성공!",
+    "login_terms_notice": "로그인하면 서비스 이용약관 및 개인정보처리방침에 동의하는 것으로 간주합니다.",
+    "oauth_processing": "로그인 처리 중...",
+    "or": "또는",
+    "popup_blocked": "팝업이 차단되었습니다.",
+    "popup_unblock": "팝업 차단을 해제해 주세요.",
+    "provider_login_failed": "{{provider}} 로그인에 실패했습니다.",
+    "redirecting_home": "홈으로 이동 중...",
+    "social_login_heading": "소셜 계정으로 시작하기",
+    "tagline": "AI와 함께하는 스마트 여행 플래너"
+  },
+  "weather": {
+    "reason": {
+      "no_location": "No location info"
+    }
+  },
+  "planner.standard": {
+    "title": "Choose destination",
+    "subtitle": "Pick a place and AI will recommend a tailored route",
+    "mode_label": "Standard",
+    "date": "Date",
+    "mode_car": "🚗 Car",
+    "mode_transit": "🚇 Transit",
+    "mode_walk": "🚶 Walk",
+    "generating_loading": "Searching for accurate info…",
+    "generate_route": "✨ Generate route",
+    "ai_recommended_routes": "AI recommended routes",
+    "set_date_and_generate": "Set dates and\ngenerate a route",
+    "start_generate": "✨ Start generating routes",
+    "pick_route": "Please select a route",
+    "range_hint": "AI will create an itinerary for {{start}} ~ {{end}}",
+    "select_date_then_generate": "Select dates and generate a route",
+    "generate_hint": "Click the ✨ Generate route button on the top-left",
+    "making_schedule": "AI is creating the itinerary for <b>{{name}}</b>…",
+    "recommended_schedule_title": "{{name}} — Recommended itinerary",
+    "saved_goto_schedule": "✅ Saved · Open schedule manager",
+    "save_plan": "💾 Save",
+    "total_cost": "Estimated total cost",
+    "cost_per_day": "Day{{day}} {{total}}",
+    "search_placeholder": "Search city/spot (e.g., Gangneung, Hanok Village)",
+    "search_result": "“{{query}}” results {{count}} items",
+    "no_results": "No results",
+    "reset": "Reset",
+    "metro_quick": "Quick access (Metro cities)",
+    "metro_quick_sub": "Jump to popular metro cities; browse detailed regions below.",
+    "metro_detail": "Metro city regions",
+    "metro_detail_sub": "For city‑based trips like Seoul/Busan/Daegu/Ulsan, see fine‑grained areas.",
+    "province": "Provinces",
+    "province_sub": "Compare regions like Gyeonggi, Chungcheong, Jeolla, Gyeongsang, Gangwon, Jeju.",
+    "image_pending": "Image coming soon",
+    "popular": "POPULAR",
+    "route_load_fail": "Failed to load routes.",
+    "schedule_load_fail": "Failed to load schedule.",
+    "save_fail": "Failed to save.",
+    "subtotal": "Subtotal {{total}}",
+    "theme": {
+      "event": "Event",
+      "food": "Food",
+      "spot": "Attraction",
+      "luxury": "Luxury",
+      "value": "Value",
+      "family": "Family",
+      "couple": "Couple"
+    },
+    "highlight": {
+      "gyeongbokgung": "Gyeongbokgung",
+      "hongdae": "Hongdae",
+      "hangang_park": "Hangang Park",
+      "cheongwadae": "Cheongwadae",
+      "insadong": "Insadong",
+      "myeongdong_cathedral": "Myeongdong Cathedral",
+      "euljiro_alley": "Euljiro Alley",
+      "national_museum_of_korea": "National Museum of Korea",
+      "itaewon": "Itaewon",
+      "haeundae": "Haeundae",
+      "haeundae_beach": "Haeundae Beach",
+      "gamcheon_village": "Gamcheon Village",
+      "jagalchi_market": "Jagalchi Market",
+      "biff_square": "BIFF Square",
+      "dongseongro": "Dongseong-ro",
+      "kim_gwangseok_street": "Kim Gwangseok Street",
+      "suseong_lake": "Suseong Lake",
+      "songdo": "Songdo",
+      "chinatown": "Chinatown",
+      "gangneung": "Gangneung",
+      "gyeongpo": "Gyeongpo Pavilion",
+      "anmok_coffee_street": "Anmok Coffee Street",
+      "ojukheon": "Ojukheon",
+      "sokcho": "Sokcho",
+      "seoraksan": "Seoraksan",
+      "central_market": "Central Market",
+      "hallasan": "Hallasan",
+      "seongsan_ilchulbong": "Seongsan Ilchulbong"
+    }
+  },
+  "planner.dest": {
+    "seoul": {
+      "name": "Seoul",
+      "highlight1": "Gyeongbokgung",
+      "highlight2": "Hangang Park"
+    },
+    "busan": {
+      "name": "Busan",
+      "highlight1": "Haeundae Beach",
+      "highlight2": "Jagalchi Market"
+    },
+    "daegu": {
+      "name": "Daegu",
+      "highlight1": "Dongseong-ro",
+      "highlight2": "Suseong Lake"
+    },
+    "incheon": {
+      "name": "Incheon",
+      "highlight1": "Songdo",
+      "highlight2": "Chinatown"
+    },
+    "gwangju": {
+      "name": "Gwangju",
+      "highlight1": "ACC (Asia Culture Center)",
+      "highlight2": "Yangnim-dong"
+    },
+    "daejeon": {
+      "name": "Daejeon",
+      "highlight1": "Seongsimdang",
+      "highlight2": "Expo Park"
+    },
+    "ulsan": {
+      "name": "Ulsan",
+      "highlight1": "Ganjeolgot",
+      "highlight2": "Daewangam Park"
+    },
+    "sejong": {
+      "name": "Sejong",
+      "highlight1": "Sejong Lake Park",
+      "highlight2": "National Arboretum"
+    },
+    "jongno": {
+      "name": "Jongno & Gwanghwamun",
+      "highlight1": "Gyeongbokgung",
+      "highlight2": "Insadong"
+    },
+    "myeongdong": {
+      "name": "Myeongdong & Euljiro",
+      "highlight1": "Myeongdong Cathedral",
+      "highlight2": "Euljiro Alley"
+    },
+    "yongsan": {
+      "name": "Yongsan & Itaewon",
+      "highlight1": "National Museum of Korea",
+      "highlight2": "Itaewon"
+    },
+    "hongdae": {
+      "name": "Hongdae & Mapo",
+      "highlight1": "Hongdae",
+      "highlight2": "Yeonnam-dong"
+    },
+    "bukchon": {
+      "name": "Bukchon & Samcheong",
+      "highlight1": "Bukchon Hanok Village",
+      "highlight2": "Samcheong-dong"
+    },
+    "nowon": {
+      "name": "Nowon & Dobong"
+    },
+    "gangnam": {
+      "name": "Gangnam & Seocho",
+      "highlight1": "COEX",
+      "highlight2": "Apgujeong Rodeo"
+    },
+    "jamsil": {
+      "name": "Jamsil & Songpa",
+      "highlight1": "Lotte World",
+      "highlight2": "Olympic Park"
+    },
+    "seongsu": {
+      "name": "Seongsu & Hannam",
+      "highlight1": "Seongsu Cafe Street",
+      "highlight2": "Hannam-dong"
+    },
+    "goyang": {
+      "name": "Goyang"
+    },
+    "paju": {
+      "name": "Paju",
+      "highlight1": "Heyri Art Village",
+      "highlight2": "Imjingak"
+    },
+    "gimpo": {
+      "name": "Gimpo"
+    },
+    "uijeongbu": {
+      "name": "Uijeongbu"
+    },
+    "namyangju": {
+      "name": "Namyangju",
+      "highlight1": "Dumulmeori",
+      "highlight2": "Dasan-gil"
+    },
+    "guri": {
+      "name": "Guri"
+    },
+    "gapyeong": {
+      "name": "Gapyeong",
+      "highlight1": "Nami Island",
+      "highlight2": "Jara Island"
+    },
+    "yangpyeong": {
+      "name": "Yangpyeong",
+      "highlight1": "Dumulmeori",
+      "highlight2": "Yongmunsan"
+    },
+    "pocheon": {
+      "name": "Pocheon",
+      "highlight1": "Sanjeong Lake",
+      "highlight2": "Herb Island"
+    },
+    "yangju": {
+      "name": "Yangju"
+    },
+    "dongducheon": {
+      "name": "Dongducheon"
+    },
+    "suwon": {
+      "name": "Suwon",
+      "highlight1": "Hwaseong Haenggung",
+      "highlight2": "Haengnidan-gil"
+    },
+    "hwaseong": {
+      "name": "Hwaseong"
+    },
+    "ansan": {
+      "name": "Ansan"
+    },
+    "siheung": {
+      "name": "Siheung"
+    },
+    "anyang": {
+      "name": "Anyang"
+    },
+    "gunpo": {
+      "name": "Gunpo"
+    },
+    "pyeongtaek": {
+      "name": "Pyeongtaek"
+    },
+    "yongin": {
+      "name": "Yongin",
+      "highlight1": "Everland",
+      "highlight2": "Korean Folk Village"
+    },
+    "seongnam": {
+      "name": "Seongnam"
+    },
+    "hanam": {
+      "name": "Hanam"
+    },
+    "icheon": {
+      "name": "Icheon",
+      "highlight1": "Ceramics Village",
+      "highlight2": "Icheon Rice"
+    },
+    "yeoju": {
+      "name": "Yeoju"
+    },
+    "anseong": {
+      "name": "Anseong"
+    },
+    "osan": {
+      "name": "Osan"
+    },
+    "uiwang": {
+      "name": "Uiwang"
+    },
+    "gwacheon": {
+      "name": "Gwacheon"
+    },
+    "bucheon": {
+      "name": "Bucheon"
+    },
+    "gwangmyeong": {
+      "name": "Gwangmyeong"
+    },
+    "chuncheon": {
+      "name": "Chuncheon",
+      "highlight1": "Nami Island",
+      "highlight2": "Dakgalbi Alley"
+    },
+    "wonju": {
+      "name": "Wonju",
+      "highlight1": "Museum SAN",
+      "highlight2": "Sogeumsan Suspension Bridge"
+    },
+    "pyeongchang": {
+      "name": "Pyeongchang",
+      "highlight1": "Daegwallyeong Sheep Ranch",
+      "highlight2": "Odaesan"
+    },
+    "yeongwol": {
+      "name": "Yeongwol"
+    },
+    "hoengseong": {
+      "name": "Hoengseong"
+    },
+    "jeongseon": {
+      "name": "Jeongseon"
+    },
+    "inje": {
+      "name": "Inje"
+    },
+    "taebaek": {
+      "name": "Taebaek"
+    },
+    "gangneung": {
+      "name": "Gangneung",
+      "highlight1": "Gyeongpo Pavilion",
+      "highlight2": "Anmok Coffee Street"
+    },
+    "sokcho": {
+      "name": "Sokcho",
+      "highlight1": "Seoraksan",
+      "highlight2": "Central Market"
+    },
+    "yangyang": {
+      "name": "Yangyang",
+      "highlight1": "Surfyy Beach",
+      "highlight2": "Naksansa"
+    },
+    "donghae": {
+      "name": "Donghae"
+    },
+    "samcheok": {
+      "name": "Samcheok"
+    },
+    "goseong-gw": {
+      "name": "Goseong"
+    },
+    "cheongju": {
+      "name": "Cheongju"
+    },
+    "chungju": {
+      "name": "Chungju"
+    },
+    "jecheon": {
+      "name": "Jecheon",
+      "highlight1": "Cheongpung Lake",
+      "highlight2": "Uirimji"
+    },
+    "danyang": {
+      "name": "Danyang",
+      "highlight1": "Danyang Palgyeong",
+      "highlight2": "Dodamsambong"
+    },
+    "gongju": {
+      "name": "Gongju",
+      "highlight1": "Gongsanseong Fortress",
+      "highlight2": "Tomb of King Muryeong"
+    },
+    "buyeo": {
+      "name": "Buyeo",
+      "highlight1": "Busosanseong Fortress",
+      "highlight2": "Baekje Cultural Land"
+    },
+    "asan": {
+      "name": "Asan"
+    },
+    "cheonan": {
+      "name": "Cheonan"
+    },
+    "nonsan": {
+      "name": "Nonsan"
+    },
+    "boryeong": {
+      "name": "Boryeong",
+      "highlight1": "Mud Festival",
+      "highlight2": "Daecheon Beach"
+    },
+    "taean": {
+      "name": "Taean",
+      "highlight1": "Anmyeondo",
+      "highlight2": "Kkotji Beach"
+    },
+    "seosan": {
+      "name": "Seosan"
+    },
+    "dangjin": {
+      "name": "Dangjin"
+    },
+    "jeonju": {
+      "name": "Jeonju",
+      "highlight1": "Hanok Village",
+      "highlight2": "Makgeolli Alley"
+    },
+    "gunsan": {
+      "name": "Gunsan",
+      "highlight1": "Modern History Street",
+      "highlight2": "Lee Seongdang"
+    },
+    "iksan": {
+      "name": "Iksan"
+    },
+    "gochang": {
+      "name": "Gochang"
+    },
+    "jeongeup": {
+      "name": "Jeongeup"
+    },
+    "namwon": {
+      "name": "Namwon"
+    },
+    "gimje": {
+      "name": "Gimje"
+    },
+    "yeosu": {
+      "name": "Yeosu",
+      "highlight1": "Maritime Cable Car",
+      "highlight2": "Odongdo"
+    },
+    "suncheon": {
+      "name": "Suncheon",
+      "highlight1": "Suncheon Bay National Garden",
+      "highlight2": "Naganeupseong Folk Village"
+    },
+    "mokpo": {
+      "name": "Mokpo",
+      "highlight1": "Maritime Cable Car",
+      "highlight2": "Yudalsan"
+    },
+    "wando": {
+      "name": "Wando"
+    },
+    "gangjin": {
+      "name": "Gangjin"
+    },
+    "yeonggwang": {
+      "name": "Yeonggwang"
+    },
+    "haenam": {
+      "name": "Haenam"
+    },
+    "goheung": {
+      "name": "Goheung"
+    },
+    "yeongam": {
+      "name": "Yeongam"
+    },
+    "damyang": {
+      "name": "Damyang",
+      "highlight1": "Juknokwon",
+      "highlight2": "Metasequoia Road"
+    },
+    "gwangyang": {
+      "name": "Gwangyang"
+    },
+    "boseong": {
+      "name": "Boseong",
+      "highlight1": "Green Tea Fields",
+      "highlight2": "Yulpo Beach"
+    },
+    "naju": {
+      "name": "Naju"
+    },
+    "haeundae": {
+      "name": "Haeundae",
+      "highlight1": "Haeundae Beach",
+      "highlight2": "Dongbaekseom"
+    },
+    "gwangalli": {
+      "name": "Gwangalli & Suyeong",
+      "highlight1": "Gwangandaegyo Bridge",
+      "highlight2": "Gwangalli Beach"
+    },
+    "gijang": {
+      "name": "Gijang",
+      "highlight1": "Jukseong Dream Cathedral",
+      "highlight2": "Daebyeon Port"
+    },
+    "songjeong": {
+      "name": "Songjeong & Cheongsapo"
+    },
+    "nampo": {
+      "name": "Nampo & Jung-gu",
+      "highlight1": "Jagalchi Market",
+      "highlight2": "BIFF Square"
+    },
+    "seomyeon": {
+      "name": "Seomyeon & Bujeon"
+    },
+    "gamcheon": {
+      "name": "Gamcheon Culture Village",
+      "highlight1": "Gamcheon Village",
+      "highlight2": "Skywalk"
+    },
+    "yeongdo": {
+      "name": "Yeongdo"
+    },
+    "geumjeong": {
+      "name": "Geumjeong & Oncheonjang"
+    },
+    "gangseo-bs": {
+      "name": "Gangseo & Gadeokdo"
+    },
+    "dadaepo": {
+      "name": "Saha & Dadaepo"
+    },
+    "dongseongno": {
+      "name": "Dongseongno & Jung-gu",
+      "highlight1": "Dongseong-ro",
+      "highlight2": "Seomun Market"
+    },
+    "gimgwangseok": {
+      "name": "Kim Gwangseok Street",
+      "highlight1": "Kim Gwangseok Street",
+      "highlight2": "Bangcheon Market"
+    },
+    "suseongmot": {
+      "name": "Suseong Lake & Beomeo",
+      "highlight1": "Suseong Lake",
+      "highlight2": "Suseong Resort"
+    },
+    "palgongsan": {
+      "name": "Palgongsan",
+      "highlight1": "Donghwasa",
+      "highlight2": "Gatbawi"
+    },
+    "dalseong": {
+      "name": "Biseulsan & Dalseong",
+      "highlight1": "Biseulsan Royal Azaleas",
+      "highlight2": "Dalseong Wetlands"
+    },
+    "gunwi": {
+      "name": "Gunwi"
+    },
+    "ganjeolgot": {
+      "name": "Ganjeolgot",
+      "highlight1": "Ganjeolgot Lighthouse",
+      "highlight2": "Sunrise Spot"
+    },
+    "daewangam": {
+      "name": "Daewangam",
+      "highlight1": "Daewangam Park",
+      "highlight2": "Ilsan Beach"
+    },
+    "taehwagang": {
+      "name": "Taehwagang"
+    },
+    "bangudae": {
+      "name": "Bangudae"
+    },
+    "gyeongju": {
+      "name": "Gyeongju",
+      "highlight1": "Hwangnidan-gil",
+      "highlight2": "Bulguksa"
+    },
+    "andong": {
+      "name": "Andong",
+      "highlight1": "Hahoe Village",
+      "highlight2": "Dosanseowon"
+    },
+    "yeongju": {
+      "name": "Yeongju"
+    },
+    "mungyeong": {
+      "name": "Mungyeong"
+    },
+    "pohang": {
+      "name": "Pohang",
+      "highlight1": "Homigot",
+      "highlight2": "Space Walk"
+    },
+    "yeongdeok": {
+      "name": "Yeongdeok"
+    },
+    "uljin": {
+      "name": "Uljin"
+    },
+    "dokdo": {
+      "name": "Dokdo & Ulleungdo",
+      "highlight1": "Dokdo",
+      "highlight2": "Ulleungdo"
+    },
+    "gumi": {
+      "name": "Gumi"
+    },
+    "gimcheon": {
+      "name": "Gimcheon"
+    },
+    "yeongcheon": {
+      "name": "Yeongcheon"
+    },
+    "sangju": {
+      "name": "Sangju"
+    },
+    "gyeongsan": {
+      "name": "Gyeongsan"
+    },
+    "tongyeong": {
+      "name": "Tongyeong",
+      "highlight1": "Luge",
+      "highlight2": "Dongpirang Village"
+    },
+    "geoje": {
+      "name": "Geoje",
+      "highlight1": "Windy Hill",
+      "highlight2": "Oedo"
+    },
+    "namhae": {
+      "name": "Namhae",
+      "highlight1": "German Village",
+      "highlight2": "Darangyi Village"
+    },
+    "goseong-gn": {
+      "name": "Goseong"
+    },
+    "jinju": {
+      "name": "Jinju",
+      "highlight1": "Lantern Festival",
+      "highlight2": "Jinjuseong Fortress"
+    },
+    "changwon": {
+      "name": "Changwon"
+    },
+    "hapcheon": {
+      "name": "Hapcheon"
+    },
+    "miryang": {
+      "name": "Miryang"
+    },
+    "hamyang": {
+      "name": "Hamyang"
+    },
+    "sancheong": {
+      "name": "Sancheong"
+    },
+    "hadong": {
+      "name": "Hadong",
+      "highlight1": "Hwagae Market",
+      "highlight2": "Ssanggyesa"
+    },
+    "geochang": {
+      "name": "Geochang"
+    },
+    "gimhae": {
+      "name": "Gimhae"
+    },
+    "yangsan": {
+      "name": "Yangsan"
+    },
+    "changnyeong": {
+      "name": "Changnyeong"
+    },
+    "uiryeong": {
+      "name": "Uiryeong"
+    },
+    "jeju": {
+      "name": "Jeju City",
+      "highlight1": "Hallasan",
+      "highlight2": "Seongsan Ilchulbong"
+    },
+    "seogwipo": {
+      "name": "Seogwipo",
+      "highlight1": "Cheonjiyeon Falls",
+      "highlight2": "Olle Trail"
+    }
+  },
+  "planner.region": {
+    "seoul-areas": {
+      "label": "Seoul",
+      "subLabel": "Key areas by district"
+    },
+    "gyeonggi-north": {
+      "label": "Northern Gyeonggi",
+      "subLabel": "Goyang, Paju, Uijeongbu, Namyangju, etc."
+    },
+    "gyeonggi-south": {
+      "label": "Southern Gyeonggi",
+      "subLabel": "Suwon, Yongin, Seongnam, Pyeongtaek, etc."
+    },
+    "gangwon": {
+      "label": "Gangwon-do",
+      "subLabel": "Gangwon Special Self-Governing Province"
+    },
+    "chungbuk": {
+      "label": "Chungcheongbuk-do",
+      "subLabel": "Cheongju, Chungju, Jecheon, Danyang"
+    },
+    "chungnam": {
+      "label": "Chungcheongnam-do",
+      "subLabel": "Gongju, Buyeo, Boryeong, Taean, etc."
+    },
+    "jeonbuk": {
+      "label": "Jeonbuk",
+      "subLabel": "Jeonbuk Special Self-Governing Province"
+    },
+    "jeonnam": {
+      "label": "Jeollanam-do",
+      "subLabel": "Yeosu, Suncheon, Mokpo, Damyang, etc."
+    },
+    "busan": {
+      "label": "Busan",
+      "subLabel": "Busan Metropolitan City"
+    },
+    "daegu": {
+      "label": "Daegu",
+      "subLabel": "Daegu Metropolitan City"
+    },
+    "ulsan": {
+      "label": "Ulsan",
+      "subLabel": "Ulsan Metropolitan City"
+    },
+    "gyeongbuk": {
+      "label": "Gyeongsangbuk-do",
+      "subLabel": "Gyeongju, Pohang, Andong, etc."
+    },
+    "gyeongnam": {
+      "label": "Gyeongsangnam-do",
+      "subLabel": "Tongyeong, Geoje, Jinju, Changwon, etc."
+    },
+    "jeju": {
+      "label": "Jeju-do",
+      "subLabel": "Jeju Special Self-Governing Province"
+    }
+  },
+  "sidebar": {
+    "tourstar": "Ngôi sao du lịch",
+    "planner": "Lập kế hoạch",
+    "schedule": "Kế hoạch của tôi",
+    "guide": "Khám phá",
+    "groupchat": "Chat nhóm",
+    "friends": "Danh sách bạn bè",
+    "whisper": "Thì thầm",
+    "profile": "Thông tin của tôi",
+    "customer": "Trung tâm hỗ trợ",
+    "logout": "Đăng xuất",
+    "section_category": "Danh mục",
+    "settings_short": "Cài đặt"
+  },
+  "screens": {
+    "unknown": "Unknown",
+    "user_fallback": "User",
+    "tourstar": {
+      "subtitle": "AI chọn ảnh du lịch đẹp nhất; thêm bình luận ngắn để đăng đẹp.",
+      "search_placeholder": "Nhập để tìm kiếm...",
+      "tab_all": "Tất cả",
+      "tab_mine_n": "Bài của tôi ({count})",
+      "tab_friends_n": "Bài của bạn bè ({count})",
+      "tab_bookmarked_n": "Đã lưu ({count})",
+      "sort_latest": "Mới nhất",
+      "sort_honor": "Nhiều lượt thích",
+      "sort_comments": "Nhiều bình luận",
+      "fab_new_post": "Bài viết mới",
+      "author_caption_self": "Ghi lại và chia sẻ khoảnh khắc du lịch quý giá",
+      "author_caption_other": "Bài viết của người dùng này",
+      "stat_posts": "Bài viết",
+      "stat_scraps": "Lưu",
+      "stat_friends": "Bạn bè",
+      "friend_badge": "Bạn bè",
+      "empty_title": "Chưa có chuyến đi nào được ghi lại",
+      "empty_hint": "Dùng nút “Bài viết mới” để ghi lại chuyến đi đầu tiên",
+      "empty_cta": "Ghi lại chuyến đi",
+      "ai_banner_title": "AI tự động chọn ảnh đẹp nhất",
+      "ai_banner_body": "Tải ảnh lên, AI đề xuất ảnh đẹp; thêm bình luận ngắn để đăng.",
+      "back_short": "Về trang tổng",
+      "friends_only_feed": "Chỉ bạn bè mới xem được bảng tin của tác giả này.",
+      "send_friend_request": "Gửi lời mời kết bạn",
+      "friend_request_sent": "Đã gửi lời mời kết bạn tới {name}.",
+      "error_author_not_found": "Không tìm thấy tài khoản của {name}.",
+      "friend_request_failed": "Gửi lời mời kết bạn thất bại.",
+      "delete_post_title": "Xóa bài?",
+      "delete_post_confirm": "Bạn có chắc muốn xóa bài này?",
+      "delete_post_failed": "Không thể xóa bài.",
+      "create_title": "Tạo bài du lịch mới",
+      "create_subtitle": "AI chọn ảnh đẹp nhất cho bạn ✨",
+      "photos_selected_n": "Ảnh (đã chọn {count})",
+      "pick_processing": "Đang xử lý…",
+      "pick_photos": "Chọn ảnh",
+      "date_range_placeholder": "Chọn khoảng thời gian",
+      "date_range_summary": "{start} ~ {end} ({count} ảnh)",
+      "clear": "Xóa",
+      "upload_ai": "Tải lên + phân tích AI",
+      "ai_ranking_title": "Xếp hạng AI",
+      "ai_ranking_pick_n": "Đã chọn {selected}/{total}",
+      "comment_one_line": "Một dòng bình luận",
+      "comment_ai_hint": "Chỉ cần vài dòng—AI sẽ chỉnh sửa giúp bạn",
+      "auto": "Tự động",
+      "tone_mbti": "Kiểu văn (MBTI)",
+      "tone_auto_default": "Tự động (mặc định)",
+      "visibility_title": "Quyền hiển thị",
+      "visibility_public": "Công khai",
+      "visibility_private": "Riêng tư",
+      "posting": "Đang đăng…",
+      "publish": "Đăng",
+      "max_photos_snackbar": "Tối đa {max} ảnh.",
+      "title_required": "Vui lòng nhập tiêu đề.",
+      "upload_new_failed": "Tải ảnh mới thất bại.",
+      "edit_failed": "Không lưu được thay đổi.",
+      "save_error": "Lỗi khi lưu: {error}",
+      "add_photo": "Thêm ảnh",
+      "photos_label": "Ảnh",
+      "photos_edit_hint": "Chạm × để xóa · thêm ảnh từ thư viện.",
+      "edit_post_title": "Sửa bài",
+      "field_title": "Tiêu đề",
+      "field_place": "Địa điểm",
+      "field_content": "Nội dung",
+      "field_tags": "Thẻ (phân cách bằng dấu phẩy)",
+      "edit_save": "Lưu",
+      "mbti_group_nt": "Phân tích / NT",
+      "mbti_group_nf": "Ngoại giao / NF",
+      "mbti_group_sj": "Thực tế / SJ",
+      "mbti_group_sp": "Khám phá / SP",
+      "time_just_now": "Vừa xong",
+      "time_minutes_ago": "{n} phút trước",
+      "time_hours_ago": "{n} giờ trước",
+      "time_days_ago": "{n} ngày trước",
+      "share_link_copied": "Đã sao chép liên kết chia sẻ.",
+      "net_likes": "Điểm ròng {likes}",
+      "action_edit": "Sửa",
+      "comments_inline": "Bình luận {count}",
+      "photos_inline": "{count} ảnh",
+      "comments_heading_n": "Bình luận ({count})",
+      "first_comment": "Hãy là người bình luận đầu tiên.",
+      "comment_hint": "Viết bình luận",
+      "comment_submit": "Gửi",
+      "share": "Chia sẻ",
+      "status_hint_select_upload": "Chọn ảnh để bắt đầu tải lên.",
+      "status_picked_exif_checking": "Đang đọc ngày chụp… ({count} ảnh)",
+      "status_pick_photos_first": "Vui lòng chọn ảnh trước.",
+      "status_date_filter_applied": "Đã áp dụng bộ lọc ngày.",
+      "status_date_filter_cleared": "Đã xóa bộ lọc ngày.",
+      "status_need_login": "Vui lòng đăng nhập.",
+      "status_cannot_resolve_user": "Không thể xác định tài khoản của bạn.",
+      "status_upload_analyze_start": "Đang tải lên và phân tích…",
+      "status_upload_done_analyzing": "Đã tải lên. Đang phân tích…",
+      "status_analyze_done_ranked": "Xếp hạng xong ({count} mục).",
+      "status_upload_error": "Lỗi tải lên/phân tích: {detail}",
+      "status_pick_ranked_first": "Hãy chọn ảnh từ bảng xếp hạng AI trước.",
+      "status_generating_auto_comment": "Đang tạo bình luận…",
+      "status_auto_comment_done": "Đã tạo bình luận.",
+      "status_auto_comment_empty": "Không có bình luận tự động.",
+      "status_auto_comment_error": "Tạo bình luận tự động thất bại: {error}",
+      "status_editing_post": "Đang chỉnh sửa bài đăng…",
+      "status_post_updated": "Đã cập nhật bài đăng.",
+      "status_post_update_error": "Cập nhật thất bại: {error}",
+      "status_deleting_post": "Đang xóa…",
+      "status_post_deleted": "Đã xóa.",
+      "status_delete_forbidden": "Bạn không thể xóa bài đăng này.",
+      "status_post_delete_error": "Xóa thất bại: {detail}",
+      "status_cannot_vote_own": "Bạn không thể bình chọn bài của chính mình.",
+      "status_honor_vote_error": "Bình chọn thất bại: {error}",
+      "status_saving_post": "Đang lưu…",
+      "status_post_saved": "Đã lưu.",
+      "status_post_save_error": "Lưu thất bại: {error}",
+      "status_comment_required": "Vui lòng nhập bình luận.",
+      "status_mbti_generating": "Đang tạo theo phong cách đã chọn…",
+      "status_post_generate_done": "Xong.",
+      "status_post_generate_error": "Tạo thất bại: {error}",
+      "status_select_ai_rank_first": "Hãy chọn ảnh đã xếp hạng AI trước.",
+      "status_comment_draft_required": "Vui lòng nhập bản nháp bình luận.",
+      "status_publish_generating": "Đang đăng…",
+      "status_publish_error": "Đăng thất bại: {error}",
+      "status_no_exif_fallback": "Không có ngày trong EXIF. Dùng thứ tự tên tệp.",
+      "status_shot_date_done": "Ngày chụp {range} (EXIF {known}/{total} ảnh)"
+    },
+    "planner": {
+      "tab_standard": "Standard",
+      "tab_user_content": "User content",
+      "tab_k_content": "K-Content",
+      "search_hint": "Tìm thành phố/địa danh (vd: Gangneung, làng Hanok)",
+      "section_metro": "Truy cập nhanh đô thị lớn",
+      "section_province": "Theo tỉnh/vùng",
+      "top_spots_row": "Phổ biến TOP",
+      "more_destinations": "More destinations",
+      "start_date": "Bắt đầu {date}",
+      "end_date": "Kết thúc {date}",
+      "transport_car": "🚗 Ô tô",
+      "transport_transit": "🚇 Giao thông công cộng",
+      "transport_walk": "🚶 Đi bộ",
+      "generate_route": "✨ Tạo lộ trình",
+      "generating": "Đang tìm thông tin chính xác…",
+      "hint_set_date": "Chọn ngày rồi\ntạo lộ trình",
+      "standard_start_generate": "✨ Bắt đầu tạo lộ trình",
+      "ai_routes_title": "Lộ trình gợi ý AI",
+      "making_schedule_progress": "AI đang tạo lịch cho {name}…",
+      "boost_web_search": "Tăng cường gợi ý bằng tìm kiếm web",
+      "schedule_title": "Lịch trình",
+      "status_enter_region": "Nhập mã khu vực để nhận gợi ý lộ trình (vd: seoul, busan)",
+      "status_region_required": "Vui lòng nhập mã khu vực.",
+      "status_pick_route": "Hãy chọn khu vực và lộ trình trước.",
+      "msg_generating_routes": "Đang tạo lộ trình gợi ý...",
+      "msg_no_routes": "Không lấy được lộ trình gợi ý.",
+      "msg_routes_received": "Đã nhận {count} lộ trình gợi ý.",
+      "msg_route_failed": "Lấy lộ trình thất bại: {error}",
+      "msg_schedule_generating": "Đang tạo lịch cho lộ trình đã chọn...",
+      "msg_no_schedule": "Không lấy được lịch trình.",
+      "msg_schedule_done": "Lịch trình sẵn sàng ({count} mục)",
+      "msg_schedule_failed": "Lấy lịch thất bại: {error}",
+      "msg_nothing_to_save": "Không có lịch để lưu.",
+      "msg_saving_plan": "Đang lưu lịch trình...",
+      "msg_saved_plan": "Đã lưu (plan id: {id})",
+      "msg_save_failed": "Lưu thất bại: {error}",
+      "dest_plan_cta": "Lên kế hoạch chuyến đi {name} với AI",
+      "save_plan": "💾 Lưu",
+      "saved_goto_schedule": "✅ Đã lưu · Mở quản lý lịch",
+      "schedule_pick_route_hint": "Vui lòng chọn một lộ trình",
+      "standard_map_need_generate": "Chọn ngày, sau đó tạo lộ trình.",
+      "standard_map_range_hint": "{start} ~ {end} — AI sẽ lên lịch cho khoảng thời gian này.",
+      "standard_map_tap_generate": "Chạm ✨ Tạo lộ trình ở đầu bảng bên trái.",
+      "schedule_item_count": "{count} mục",
+      "route_name_fallback": "lộ trình đã chọn",
+      "grid_header_metro": "Đô thị trực thuộc",
+      "grid_header_province": "Khu vực cấp tỉnh",
+      "search_empty": "Không có kết quả",
+      "search_result": "“{query}”: {count} địa điểm"
+    },
+    "schedule": {
+      "new_route": "+ New route",
+      "empty_no_plans": "Chưa có kế hoạch đã lưu.",
+      "empty_go_planner": "Hãy tạo lộ trình AI trong Trình lập kế hoạch chuyến đi.",
+      "show_all": "Xem tất cả",
+      "plan_items": "{count} mục lịch",
+      "weather_forecast": "🌤 Dự báo thời tiết",
+      "weather_within_5days": "· Trong 5 ngày"
+    },
+    "guide": {
+      "landing_title": "Place picks",
+      "landing_subtitle": "Choose food spots or events and explore in one place.",
+      "restaurant_label": "Restaurant picks",
+      "restaurant_desc": "Browse by area",
+      "event_label": "Event picks",
+      "event_desc": "Culture festivals nationwide"
+    },
+    "profile": {
+      "honor": "Honor {score}",
+      "account_info": "Account",
+      "travel_profile": "Travel profile",
+      "label_gender": "Giới tính",
+      "label_age": "Độ tuổi",
+      "label_diet": "Chế độ ăn",
+      "label_religion": "Tôn giáo",
+      "label_nationality": "Quốc tịch",
+      "label_account_mgmt": "Quản lý tài khoản",
+      "msg_initial": "Kéo xuống hoặc nhấn làm mới để tải hồ sơ.",
+      "msg_loading": "Đang tải hồ sơ…",
+      "msg_loaded": "Đã tải hồ sơ.",
+      "msg_load_failed": "Không tải được hồ sơ: {error}",
+      "msg_no_user_save": "Không có thông tin người dùng để lưu.",
+      "msg_saving_account": "Đang lưu tài khoản…",
+      "msg_account_saved": "Đã lưu tài khoản.",
+      "msg_account_save_failed": "Không lưu được tài khoản: {error}",
+      "msg_no_app_user": "Không xác định được ID người dùng ứng dụng.",
+      "msg_saving_travel": "Đang lưu hồ sơ du lịch…",
+      "msg_travel_saved": "Đã lưu hồ sơ du lịch.",
+      "msg_travel_save_failed": "Không lưu được hồ sơ du lịch: {error}",
+      "msg_no_user_id": "Không xác định được ID người dùng.",
+      "msg_deleting_account": "Đang xóa tài khoản…",
+      "msg_account_deleted": "Đã xóa tài khoản.",
+      "msg_delete_failed": "Không xóa được tài khoản: {error}"
+    },
+    "friends": {
+      "pending_title": "Friend requests",
+      "list_title": "Friends",
+      "empty_title": "No friends yet",
+      "empty_hint": "Tap a nickname on Travel Feed posts to add friends.",
+      "banner_hint": "Tap a nickname on Travel Feed posts to send a friend request.",
+      "delete_dialog_title": "Remove friend",
+      "delete_dialog_body": "Remove {{name}} from your friends list?",
+      "load_error": "Could not load friends: {{error}}",
+      "request_sent": "Sent you a friend request",
+      "accept": "Accept",
+      "badge_friend": "Friend",
+      "delete_tooltip": "Remove friend",
+      "friend_honor": "Honor {score}"
+    },
+    "chat": {
+      "room_list_header": "Phòng chat nhóm",
+      "cannot_load_rooms": "Could not load chat rooms.",
+      "honor_rooms_note": "Phòng vào được phụ thuộc cấp danh dự. Hạng cao hơn có thể vào cả phòng hạng thấp hơn.",
+      "group_room_title": "Phòng {tier}",
+      "no_messages": "No messages yet.",
+      "hint_message": "Type a message",
+      "min_honor_required": "Min honor {min}+",
+      "open_to_all": "Open to all",
+      "honor_insufficient": "Not enough honor",
+      "me": "Me",
+      "post_loading": "Loading post...",
+      "post_load_failed": "Could not load the post.",
+      "post_load_failed_nav": "Could not load the post. (Tap to open)",
+      "tourstar_post_badge": "Travel Feed post",
+      "tap_to_view_post": "Tap to view post",
+      "tap_to_view_short": "Tap to view",
+      "whisper_to": "Whisper to {{name}}",
+      "send_whisper": "Send whisper",
+      "sending": "Sending...",
+      "tab_inbox": "Inbox",
+      "tab_sent": "Sent",
+      "refreshing_snackbar": "Refreshing...",
+      "refresh": "Refresh",
+      "inbox_empty": "No messages in inbox.",
+      "sent_empty": "No sent messages.",
+      "compose_title": "New whisper",
+      "recipient_id_label": "Recipient user ID",
+      "recipient_id_hint": "Long-press a message in chat to whisper",
+      "message_body_hint": "Enter your message",
+      "send": "Send",
+      "from_line": "From: {{name}}",
+      "to_line": "To: {{name}}",
+      "tier_silver": "Bac",
+      "tier_gold": "Vang",
+      "tier_platinum": "Bach kim",
+      "tier_diamond": "Kim cuong"
+    },
+    "guide_explore": {
+      "gemini_notice": "AI gợi ý địa điểm mới dựa trên sở thích và ngữ cảnh của bạn.",
+      "cat_all": "Tất cả",
+      "cat_festival": "Sự kiện",
+      "cat_activity": "Hoạt động K",
+      "cat_historic": "Lịch sử & di sản",
+      "cat_culture": "Văn hóa địa phương",
+      "cat_nature": "Thiên nhiên & thư giãn",
+      "cat_restaurant": "Ẩm thực",
+      "cat_cafe": "Cà phê",
+      "prompt_activity": "Gợi ý các hoạt động K và trải nghiệm thực tế tôi có thể thử tại Hàn Quốc.",
+      "prompt_historic": "Gợi ý di tích lịch sử, di sản và địa danh văn hóa đáng ghé thăm tại Hàn Quốc.",
+      "prompt_culture": "Gợi ý nơi trải nghiệm văn hóa địa phương, chợ và không khí khu phố tại Hàn Quốc.",
+      "prompt_nature": "Gợi ý thiên nhiên, công viên và nơi thư giãn cho chuyến đi tại Hàn Quốc.",
+      "prompt_restaurant": "Gợi ý nhà hàng ngon và quán ăn địa phương tại Hàn Quốc.",
+      "prompt_cafe": "Gợi ý quán cà phê đẹp, bánh ngọt và điểm cà phê tại Hàn Quốc.",
+      "places_none": "Không có địa điểm để gợi ý.",
+      "places_extra": ", và {{n}} địa điểm nữa",
+      "places_summary": "{{list}} — {{count}} places in total.\nTap a map marker for details.",
+      "dur_min": "~{{m}} min",
+      "dur_hr": "~{{h}} h {{rm}} min",
+      "rate_limit": "Too many requests. Try again in 1 second.",
+      "no_coords_hint": "\n\n*Could not find coordinates for the map. Try a clearer place name.*",
+      "answer_failed": "Could not load the answer.",
+      "festival_ok": "Showing {{n}} events on the map ({{year}}-{{month}}).",
+      "festival_empty": "No events with coordinates, or empty API response.",
+      "festival_err": "Could not load events: {{error}}",
+      "loading_guide": "Generating guide…",
+      "loading_festival": "Loading events…",
+      "chat_expand": "Open chat & details",
+      "chat_collapse": "Collapse chat & details",
+      "input_hint": "Hỏi về một địa điểm…",
+      "replying": "Writing reply…",
+      "address_copied": "Address copied",
+      "copy_address": "Copy address",
+      "close": "Close",
+      "driving_route": "Driving route",
+      "period": "Dates: {{start}} – {{end}}",
+      "venue": "Venue: {{name}}",
+      "homepage": "Website",
+      "category_label": "Category",
+      "nearby_title": "Nearby restaurants & cafes",
+      "driving_loading": "Loading route…",
+      "driving_unsupported": "Driving directions not available for this segment.",
+      "driving_line": "Drive: {{duration}} · {{distance}}",
+      "toll": "Toll about ₩{{amount}}",
+      "no_detail": "No description available.",
+      "info_none": "Không có thông tin",
+      "food_category_fallback": "Nhà hàng · quán cà phê"
+    },
+    "k_content": {
+      "tab_loading": "Đang tải K-Content…",
+      "row_kpop": "K-POP",
+      "row_kdrama": "K-DRAMA",
+      "row_kfood": "K-FOOD",
+      "row_kbeauty": "K-BEAUTY",
+      "hero_title": "Du lịch K-Content",
+      "hero_subtitle": "Khám phá Hàn Quốc qua K-Pop, phim, ẩm thực và làm đẹp",
+      "hero_cta": "Tạo lộ trình AI",
+      "app_title": "K-Content · {title}",
+      "date_settings": "Dates",
+      "start_date": "Start {date}",
+      "end_date": "End {date}",
+      "generating": "Generating…",
+      "generate_schedule": "Build itinerary",
+      "image_loading": "Loading image…",
+      "recommended_schedule": "Suggested itinerary",
+      "saved_view_plan": "Saved · Open My Plan",
+      "save": "Save",
+      "save_failed": "Save failed: {error}",
+      "fallback": {
+        "kfood": {
+          "KF_MARKET": {
+            "title": "Tour ẩm thực chợ truyền thống cả nước",
+            "description": "Hành trình khám phá hương vị địa phương khắp Hàn Quốc."
+          },
+          "KF_CAFE": {
+            "title": "Tour K-dessert & vibe quán cà phê",
+            "description": "Lộ trình nối quán cà phê và select shop đúng gu bạn."
+          },
+          "KF_CONVENIENCE": {
+            "title": "Thử thách mix cửa hàng tiện lợi K",
+            "description": "Từ món mới cháy hàng đến công thức bí mật — trở thành modisumer!"
+          }
+        }
+      },
+      "detail": {
+        "small_header": "K-Content",
+        "generate_btn": "✨ Build itinerary",
+        "meta_kf_market_title_ko": "Traditional markets & street food across Korea",
+        "meta_kf_market_tags": "Traditional markets, street food, local food",
+        "meta_kf_cafe_title_ko": "K-dessert and vibe-matched cafe tour",
+        "meta_kf_cafe_tags": "Café, dessert, curated shops, mood tour",
+        "meta_kf_convenience_title_ko": "K-convenience store combo challenge",
+        "meta_kf_convenience_tags": "Convenience store, combos, modisumer, challenge",
+        "brand_seven": "7-Eleven",
+        "brand_emart24": "emart24",
+        "schedule_item_default": "Itinerary",
+        "cafe_place_hint": "Café / place hint",
+        "convenience_trending_label": "Trending picks",
+        "trending_card_1_title": "Yonsei milk cream bread",
+        "trending_card_2_title": "Zero cola ice cup highball",
+        "trending_tag_new": "#New",
+        "trending_tag_soldout": "#SoldOut",
+        "trending_tag_review": "#Reviews",
+        "trending_tag_repurchase": "#Repurchase",
+        "trending_default_title": "AI trending pick",
+        "recipe_title_with_vibe": "{vibe} challenge 2026 Ver.",
+        "recipe_title_default": "Mark meal 2026 Ver.",
+        "shop_ramen": "Cup noodles",
+        "shop_kimbap": "Tuna mayo gimbap",
+        "shop_cheese": "String cheese",
+        "shop_sparkling": "Sparkling water",
+        "cook_step_1": "Put ingredients in a microwave-safe container.",
+        "cook_step_2": "Mix sauce/toppings and microwave for 1m 30s.",
+        "cook_step_3": "Add toppings to taste and snap a photo.",
+        "ai_recommended": "AI SUGGESTED ITINERARY",
+        "making_schedule": "AI is building {title}…",
+        "no_schedule": "No itinerary was generated. Please try again.",
+        "region_select": "REGION",
+        "region_tab_all": "All",
+        "region_tab_seoul": "Seoul",
+        "region_tab_gangwon": "Gangwon",
+        "region_tab_jeonla": "Jeolla",
+        "region_tab_gyeongsang": "Gyeongsang",
+        "region_tab_jeju": "Jeju",
+        "traditional_market": "TRADITIONAL MARKET",
+        "market_generate": "Build a market food tour",
+        "cafe_question": "What vibe is your day today?",
+        "cafe_hint": "Pick a vibe or type a café name to generate an AI route.",
+        "vibe_grid": "VIBE GRID",
+        "search_bar": "SEARCH",
+        "cafe_placeholder": "Type a café name (e.g. Seongsu Tong Planet)",
+        "cafe_generate": "Generate AI itinerary",
+        "conv_tab_trending": "Trending",
+        "conv_tab_recipe": "My combo",
+        "convenience_q": "What’s hardest to find at convenience stores right now?",
+        "quick_selection": "QUICK SELECTION",
+        "trending_placeholder": "e.g. Yonsei milk cream bread",
+        "recipe_q": "What flavor combo do you want to try?",
+        "extra_keywords": "EXTRA KEYWORDS",
+        "recipe_placeholder": "e.g. spicy challenge, sweet & salty dessert",
+        "recipe_generate_btn": "Generate AI combo recipe",
+        "recommended_schedule_title": "{title} — suggested itinerary",
+        "saved_goto_schedule": "Saved · Open schedule",
+        "save_plan": "Save",
+        "total_cost": "Estimated total",
+        "cost_per_day": "Day{day} {total}",
+        "find_nearby_store": "Find nearby stores",
+        "recipe_hashtags": "#modisumer #convenience #AIrecipe",
+        "shopping_list_title": "Shopping list",
+        "cooking_steps_title": "Steps",
+        "challenge_location": "Challenge spot",
+        "challenge_location_desc": "AI pick for street eating (within ~100km) — Seongsu Seoul Forest benches",
+        "subtotal": "Subtotal {total}",
+        "description_fallback": "A recommended spot to enjoy near {place}.",
+        "empty_hint": "Set dates and generate an itinerary.",
+        "start_generate": "✨ Start generating"
+      }
+    }
+  },
+  "home": {
+    "profile_banner": "✨ Complete your travel profile for personalized picks",
+    "setup_profile": "Set up",
+    "news_pending": "Phân tích AI vẫn đang được thực hiện.",
+    "rebate_period": "2026.4 ~ 6 · Chương trình thí điểm",
+    "rebate_title": "🎫 Hoàn tối đa 50% cho chuyến đi nông thôn được chỉ định",
+    "rebate_rich_a": "Get back about ",
+    "rebate_rich_half": "half",
+    "rebate_rich_b": " of spending as local gift certificates. Up to ",
+    "rebate_rich_10": "₩100,000",
+    "rebate_rich_c": " per person, up to ",
+    "rebate_rich_20": "₩200,000",
+    "rebate_rich_d": " for groups of 2+.",
+    "visit_korea": "Visit Korea ↗",
+    "rebate_expand": "Cách dùng · Khu vực đủ điều kiện",
+    "rebate_collapse": "Thu gọn hướng dẫn",
+    "rebate_notice": "Lưu ý: Bắt buộc đăng ký và được phê duyệt trước. Có thể kết thúc sớm do hạn ngân sách. Chi tiết khác nhau theo địa phương; hãy kiểm tra trang chính thức đầu tháng 4.",
+    "rebate_regions": "16 khu vực đủ điều kiện · Xem lộ trình trong trình lập kế hoạch hoặc hướng dẫn chính thức",
+    "k_content_title": "🎭 Chuyến đi theo chủ đề K-content",
+    "rebate_s1t": "Apply",
+    "rebate_s1d": "Check eligible areas on visitkorea.or.kr and get approval before travel.",
+    "rebate_s2t": "Travel",
+    "rebate_s2d": "Spend on food, lodging, etc. in approved areas (keep receipts).",
+    "rebate_s3t": "Submit proof",
+    "rebate_s3d": "Submit receipts per local government instructions.",
+    "rebate_s4t": "Rebate",
+    "rebate_s4d": "Receive ~50% as mobile local gift certificates.",
+    "rebate_s5t": "Use",
+    "rebate_s5d": "Use at local shops, cafes, online malls this year."
+  },
+  "settings": {
+    "title": "Cài đặt",
+    "saved": "Đã lưu.",
+    "error": {
+      "load_user": "Không tải được thông tin người dùng.",
+      "save": "Lưu thất bại.",
+      "save_during": "Đã xảy ra lỗi khi lưu."
+    },
+    "account": {
+      "title": "Thông tin tài khoản",
+      "email": "Email",
+      "nickname": "Biệt danh",
+      "default": "(mặc định)",
+      "nickname_placeholder": "Để trống sẽ hiển thị tên",
+      "nickname_hint": "Nếu để trống sẽ hiển thị tên của bạn.",
+      "honor": "Danh dự",
+      "point": "điểm",
+      "provider": "Liên kết"
+    },
+    "withdraw": {
+      "title": "Xóa tài khoản",
+      "desc": "Xóa tài khoản sẽ xóa dữ liệu và không thể khôi phục.",
+      "button": "Xóa tài khoản",
+      "confirm_desc": "Bạn chắc chắn chứ? Nhập Delete account bên dưới để tiếp tục.",
+      "placeholder": "Delete account",
+      "submit": "Xóa",
+      "error": "Xóa tài khoản thất bại.",
+      "error_during": "Lỗi khi xóa tài khoản."
+    },
+    "profile": {
+      "title": "Hồ sơ du lịch",
+      "subtitle": "Dùng để gợi ý AI phù hợp hơn",
+      "save": "Lưu hồ sơ du lịch",
+      "saved": "Đã lưu hồ sơ du lịch."
+    }
+  },
+  "customer": {
+    "subscription": {
+      "title_mobile": "Đăng ký",
+      "title": "Dịch vụ đăng ký",
+      "subtitle": "Sau thời gian dùng thử miễn phí, hãy chọn gói phù hợp.",
+      "safety": "Thanh toán an toàn · Hủy bất cứ lúc nào",
+      "free": {
+        "kicker": "Bắt đầu miễn phí hôm nay",
+        "note": "Sau 7 ngày miễn phí, hệ thống tự chuyển sang gói đã chọn."
+      },
+      "plan_monthly": {
+        "title": "Gói tháng",
+        "badge": "Cơ bản",
+        "price": "₩5.900 / tháng",
+        "note": "Thanh toán theo tháng",
+        "features": {
+          "1": "Tóm tắt gợi ý từ chuyên gia",
+          "2": "Ưu tiên trả lời hỗ trợ/hướng dẫn",
+          "3": "Bao gồm cập nhật tính năng mới nhất"
+        }
+      },
+      "plan_yearly": {
+        "title": "Gói năm",
+        "badge": "Đề xuất",
+        "price": "₩46.800 / năm",
+        "note": "Thanh toán theo năm",
+        "oldPrice": "Tương đương khoảng ₩7.000/tháng",
+        "features": {
+          "1": "Gồm toàn bộ quyền lợi gói tháng",
+          "2": "Giảm giá cho cả năm",
+          "3": "Hỗ trợ ưu tiên và ổn định hơn"
+        }
+      },
+      "cta_monthly": "Bắt đầu gói tháng",
+      "cta_yearly": "Bắt đầu gói năm",
+      "selected": {
+        "title": "Gói đã chọn",
+        "compare": "So sánh: ",
+        "includes": "Quyền lợi gồm"
+      },
+      "agree": {
+        "service_title": "Đồng ý điều khoản sử dụng",
+        "service_desc": "Bắt buộc để thanh toán và dùng đăng ký.",
+        "billing_title": "Đồng ý thông báo thanh toán",
+        "billing_desc": "Thông tin về chuyển đổi tự động và chu kỳ thanh toán."
+      },
+      "demo_alert": "(Giao diện demo) API thanh toán thật sẽ tích hợp sau.",
+      "demo_note": "Đây là màn hình demo. Thanh toán/chuyển đổi thật ở môi trường production."
+    },
+    "emergency": {
+      "title_mobile": "Trợ giúp khẩn cấp",
+      "title": "Trợ giúp khẩn cấp và mẹo du lịch",
+      "subtitle": "Hướng dẫn theo từng loại tình huống khẩn cấp người nước ngoài có thể gặp tại Hàn Quốc.",
+      "share_button": "Chia sẻ tình huống khẩn cấp",
+      "consulate": {
+        "title": "Đại sứ quán / Lãnh sự quán",
+        "nationality": "Quốc tịch",
+        "find_contact": "Tìm liên hệ lãnh sự",
+        "callcenter": "Tổng đài lãnh sự 24h 02-3210-0404",
+        "unknown_nationality": "Chưa rõ"
+      },
+      "categories": {
+        "title": "Danh mục khẩn cấp",
+        "selected": "Đang chọn",
+        "view": "Xem",
+        "items": {
+          "passport": {
+            "title": "Hộ chiếu / visa và lưu trú",
+            "short": "Mất hộ chiếu hoặc cần hỗ trợ visa, lưu trú",
+            "steps": {
+              "1": "Nếu được, giữ bản sao/ảnh và xác nhận mất với chỗ ở/cảnh sát.",
+              "2": "Liên hệ đại sứ quán/lãnh sự để làm lại hoặc giấy tạm.",
+              "3": "Chuẩn bị số hồ sơ cảnh sát nếu cần."
+            }
+          },
+          "lost": {
+            "title": "Báo mất / trộm cắp",
+            "short": "Mất ví, điện thoại hoặc đồ quan trọng",
+            "steps": {
+              "1": "Nếu nghi điện thoại/tài khoản bị chiếm, dừng xác thực và đổi mật khẩu ngay.",
+              "2": "Trình báo tại đồn/cửa hàng đồ thất lạc và lấy số hồ sơ.",
+              "3": "Nếu mất kèm hộ chiếu/thẻ, liên hệ khẩn lãnh sự."
+            }
+          },
+          "safety": {
+            "title": "Tội phạm / bạo lực / đe dọa an toàn",
+            "short": "Lừa đảo, hành hung, đe dọa hoặc nguy hiểm xung quanh",
+            "steps": {
+              "1": "Di chuyển đến nơi an toàn và nhờ người xung quanh giúp.",
+              "2": "Nếu bị thương gọi 119 (cấp cứu) hoặc 112 (cảnh sát).",
+              "3": "Ghi lại thời gian/địa điểm và giữ chứng cứ (ảnh, tin nhắn)."
+            }
+          },
+          "medical": {
+            "title": "Cấp cứu y tế / tai nạn",
+            "short": "Ốm đột ngột hoặc chấn thương do tai nạn",
+            "steps": {
+              "1": "Gọi 119 hoặc 112 tùy tình huống và sơ cứu.",
+              "2": "Bệnh viện cần thông dịch, nhờ hỗ trợ từ đại sứ quán/lãnh sự.",
+              "3": "Thông báo dị ứng, thuốc và bệnh nền cho nhân viên y tế."
+            }
+          },
+          "disaster": {
+            "title": "Hỏa hoạn / thiên tai / sơ tán",
+            "short": "Cháy, mưa lớn, mất điện…",
+            "steps": {
+              "1": "Làm theo báo động/hướng dẫn, đi theo lối thoát an toàn.",
+              "2": "Có người bị thương: an toàn trước, sau đó gọi cứu hộ.",
+              "3": "Chia sẻ vị trí và tình hình với đại sứ quán/chỗ ở."
+            }
+          },
+          "immigration": {
+            "title": "Nhập cư / trục xuất / lưu trú",
+            "short": "Quá hạn lưu trú, rủi ro trục xuất",
+            "steps": {
+              "1": "Không tự xử lý; chụp giấy tờ/thông báo và liên hệ nhanh lãnh sự.",
+              "2": "Cần luật sư/thông dịch thì xin hướng dẫn.",
+              "3": "Tránh hành động trái phép ảnh hưởng thủ tục nhập cảnh."
+            }
+          },
+          "interpreter": {
+            "title": "Liên hệ lãnh sự / thông dịch",
+            "short": "Rào cản ngôn ngữ khiến khó cầu cứu",
+            "steps": {
+              "1": "Tóm tắt ngắn (khi nào/ở đâu/việc gì) và gửi cho lãnh sự.",
+              "2": "Chuẩn bị số điện thoại, địa chỉ và chỗ ở.",
+              "3": "Có thể cần gọi song song đường dây khẩn (cảnh sát/cấp cứu)."
+            }
+          }
+        }
+      },
+      "detail": {
+        "badge": "Hướng dẫn ứng phó",
+        "call_police": "112 Cảnh sát",
+        "call_119": "119 Cấp cứu",
+        "call_1339": "1339 KDCA (tư vấn y tế)",
+        "call_consulate": "Liên hệ lãnh sự"
+      },
+      "share": {
+        "title_mobile": "Chia sẻ khẩn cấp",
+        "title": "Chia sẻ khẩn cấp công khai",
+        "type_title": "Loại khẩn cấp",
+        "type_subtitle": "Chọn loại và đính kèm ảnh/âm thanh để chia sẻ nhanh.",
+        "aria": {
+          "select_reason": "Chọn {{id}}"
+        },
+        "attach_title": "Đính kèm",
+        "attach_subtitle": "Ảnh hoặc âm thanh giúp xử lý nhanh hơn.",
+        "photo_section": "Thêm ảnh",
+        "photo_pick": "Chọn ảnh",
+        "photo_empty": "Vui lòng chọn ảnh.",
+        "audio_section": "Ghi âm",
+        "recording": "Đang ghi: {{s}} giây",
+        "record_ready": "Sẵn sàng",
+        "optional": "Tùy chọn",
+        "audio_start": "Bắt đầu ghi",
+        "audio_stop": "Dừng",
+        "audio_delete": "Xóa âm thanh",
+        "audio_perm": "Có thể cần quyền ghi âm.",
+        "now_title": "Chia sẻ ngay",
+        "now_subtitle": "Demo: hiển thị xác nhận thay vì gửi thật.",
+        "call_emergency": "Gọi khẩn cấp",
+        "start_button": "Bắt đầu chia sẻ khẩn cấp",
+        "reason": {
+          "location": {
+            "label": "Cần hỗ trợ vị trí/an toàn",
+            "desc": "Yêu cầu trợ giúp theo vị trí hiện tại."
+          },
+          "medical": {
+            "label": "Cần hỗ trợ y tế",
+            "desc": "Cần y tế khẩn cấp do bệnh hoặc thương tích."
+          },
+          "danger": {
+            "label": "Nguy hiểm cấp bách",
+            "desc": "Cần an toàn ngay do bạo lực/lừa đảo/đe dọa."
+          }
+        },
+        "alert": {
+          "audio_permission": "Vui lòng kiểm tra quyền ghi âm.",
+          "select_reason": "Chọn ít nhất một loại khẩn cấp.",
+          "attach_required": "Vui lòng đính kèm ảnh hoặc âm thanh.",
+          "start_demo": "Bắt đầu chia sẻ khẩn cấp. (Demo)\nĐã chọn: {{selected}}"
+        }
+      }
+    },
+    "notices": {
+      "title": "Thông báo",
+      "subtitle": "Xem các thông báo mới nhất.",
+      "new_button": "Viết thông báo mới",
+      "new_button_alert": "Tính năng «Viết thông báo mới» sẽ được bổ sung sau.",
+      "search_placeholder": "Tìm kiếm (tiêu đề/nội dung)",
+      "search_button": "Tìm kiếm",
+      "count": "{{count}} mục",
+      "no_results": "Không có kết quả.",
+      "seed": {
+        "3": {
+          "title": "Phát hành v1.0.2 (cải UX hỗ trợ)",
+          "content": "Thêm tab cho màn hình hỗ trợ và lịch sử."
+        },
+        "4": {
+          "title": "Đã xử lý: tải ảnh chậm ở một số môi trường",
+          "content": "Đã sửa lỗi trễ khi tải ảnh.\nVui lòng báo nếu vẫn còn."
+        },
+        "5": {
+          "title": "Cập nhật bộ lọc thông báo",
+          "content": "Có thể lọc theo loại và tìm kiếm để xem nhanh hơn."
+        },
+        "6": {
+          "title": "Thông báo bảo trì máy chủ (dự kiến)",
+          "content": "Một số chức năng có thể tạm ngưng.\nThời gian và phạm vi xem cuối thông báo."
+        },
+        "7": {
+          "title": "Phát hành v1.0.3 (cải thiện hiệu năng và sửa lỗi)",
+          "content": "Bản cập nhật cải thiện tốc độ tải và sửa một số lỗi.\nNếu vẫn gặp sự cố, hãy liên hệ trung tâm hỗ trợ."
+        },
+        "author": {
+          "ops": "Đội vận hành"
+        }
+      },
+      "table": {
+        "no": "Số",
+        "title": "Tiêu đề",
+        "author": "Tác giả",
+        "date": "Ngày",
+        "views": "Lượt xem"
+      },
+      "aria": {
+        "select_all": "Chọn tất cả",
+        "select_row": "Chọn thông báo {{id}}"
+      },
+      "modal": {
+        "meta": "bởi {{author}} · {{date}}",
+        "close": "Đóng"
+      }
+    },
+    "inquiry": {
+      "title": "Liên hệ",
+      "tabs": {
+        "write": "Hỗ trợ 1:1",
+        "list": "Yêu cầu của tôi"
+      },
+      "form": {
+        "subject": "Tiêu đề",
+        "subject_placeholder": "Nhập tiêu đề",
+        "content": "Nội dung",
+        "content_placeholder": "Mô tả chi tiết",
+        "attachments": "Đính kèm",
+        "attachment_help": "Ảnh (GIF, PNG, JPG) tối đa 10MB mỗi file, tối đa 3",
+        "privacy_agree": "Đồng ý thu thập và sử dụng thông tin cá nhân",
+        "sending": "Đang gửi…",
+        "submit": "Gửi"
+      },
+      "list": {
+        "search_label": "Tìm",
+        "search_placeholder": "Tìm theo tiêu đề/nội dung/trạng thái",
+        "no_results": "Không có kết quả."
+      },
+      "status": {
+        "answered": "Đã trả lời",
+        "pending": "Đang xử lý"
+      },
+      "submit_done": "Yêu cầu của bạn đã được gửi.",
+      "seed": {
+        "10001": {
+          "title": "Không tải được ảnh đại diện",
+          "content": "Chọn ảnh xong nhưng tải lên thất bại nhiều lần."
+        },
+        "10002": {
+          "title": "Làm sao sửa lịch trình?",
+          "content": "Tôi muốn đổi chỉ một ngày trong hành trình đã lưu.",
+          "answer": "Mở Lịch trình, chọn ngày, dùng tạo lại hoặc chỉnh bằng AI."
+        }
+      }
+    },
+    "inquiries": {
+      "title": "Yêu cầu của tôi",
+      "mobile_title": "Lịch sử yêu cầu",
+      "subtitle": "Xem yêu cầu đã gửi và câu trả lời.",
+      "my_list": "Danh sách yêu cầu",
+      "write": "Viết yêu cầu",
+      "search_placeholder": "Tìm theo tiêu đề/nội dung/trạng thái",
+      "no_results": "Không có kết quả.",
+      "status": {
+        "answered": "Đã trả lời",
+        "pending": "Đang xử lý"
+      },
+      "seed": {
+        "10001": {
+          "title": "Không tải được ảnh đại diện",
+          "content": "Chọn ảnh xong nhưng tải lên thất bại nhiều lần."
+        },
+        "10002": {
+          "title": "Làm sao sửa lịch trình?",
+          "content": "Tôi muốn đổi chỉ một ngày trong hành trình đã lưu.",
+          "answer": "Mở Lịch trình, chọn ngày, dùng tạo lại hoặc chỉnh bằng AI."
+        }
+      },
+      "detail": {
+        "title": "Chi tiết yêu cầu",
+        "mobile_title": "Chi tiết yêu cầu",
+        "back_to_list": "Về danh sách",
+        "received_at": "Ngày tiếp nhận: {{date}}",
+        "content": "Nội dung",
+        "attachments": "Tệp đính kèm",
+        "no_attachments": "Không có tệp đính kèm.",
+        "answer": "Trả lời",
+        "answer_pending": "Đang chuẩn bị trả lời, vui lòng đợi.",
+        "not_found": "Không tìm thấy yêu cầu."
+      }
+    },
+    "faq": {
+      "count": "{{count}} mục",
+      "title": "Câu hỏi thường gặp",
+      "no_results": "Không có kết quả tìm kiếm.",
+      "items": {
+        "login_help": {
+          "category": "Hỗ trợ",
+          "question": "Không đăng nhập được thì sao?",
+          "answer": "Làm mới ứng dụng và thử lại. Nếu vẫn lỗi, liên hệ hỗ trợ."
+        },
+        "first_steps": {
+          "category": "Hướng dẫn",
+          "question": "Tôi mới dùng, nên bắt đầu từ đâu?",
+          "answer": "Dùng Bộ lập kế hoạch và Khám phá từ trang chủ, sau đó Quản lý lịch."
+        },
+        "update_notes": {
+          "category": "Thông báo",
+          "question": "Xem ghi chú cập nhật ở đâu?",
+          "answer": "Trong mục Thông báo của Trung tâm hỗ trợ."
+        },
+        "refund_flow": {
+          "category": "Thanh toán & dịch vụ",
+          "question": "Hủy thanh toán (hoàn tiền) thế nào?",
+          "answer": "Gửi yêu cầu kèm thông tin thanh toán và mã đơn, chúng tôi sẽ hướng dẫn."
+        },
+        "emergency_help": {
+          "category": "Khẩn cấp & mẹo du lịch",
+          "question": "Khi khẩn cấp trên đường có hỗ trợ gì?",
+          "answer": "Xem số liên hệ khẩn cấp và hướng dẫn cơ bản, cần thì liên hệ hỗ trợ ngay."
+        }
+      }
+    },
+    "center": {
+      "title": "Trung tâm hỗ trợ",
+      "subtitle": "Tìm trợ giúp nhanh chóng."
+    },
+    "search": {
+      "label": "Chúng tôi có thể giúp gì cho bạn?",
+      "placeholder": "Nhập từ khóa"
+    },
+    "categories": {
+      "title": "Danh mục",
+      "items": {
+        "inquiry": {
+          "title": "Hỗ trợ",
+          "desc": "Tài khoản, tính năng, lỗi — câu hỏi chung"
+        },
+        "guide": {
+          "title": "Hướng dẫn sử dụng",
+          "desc": "Cách dùng dịch vụ và bắt đầu"
+        },
+        "notices": {
+          "title": "Thông báo",
+          "desc": "Bảo trì, phát hành và thay đổi"
+        },
+        "payment": {
+          "title": "Thanh toán & sử dụng",
+          "desc": "Thanh toán, hoàn tiền và gói đăng ký"
+        },
+        "emergency": {
+          "title": "Trợ giúp khẩn cấp & mẹo du lịch",
+          "desc": "Ứng phó khẩn cấp và an toàn"
+        }
+      }
+    },
+    "guide": {
+      "title": "Hướng dẫn sử dụng",
+      "subtitle": "Năm tính năng chính bạn có thể bắt đầu từ trang chủ.",
+      "hero": {
+        "kicker": "Chuyến đi đầu tiên có thể làm như sau",
+        "title": "Tạo lộ trình → sắp lịch → chia sẻ và chat khi cần",
+        "steps": {
+          "planner": "Bộ lập kế hoạch",
+          "schedule": "Lịch trình",
+          "guide": "Địa điểm",
+          "social": "Tourstar / Chat nhóm"
+        },
+        "cta_planner": "Bắt đầu lập kế hoạch",
+        "cta_groupchat": "Xem chat nhóm"
+      },
+      "cards": {
+        "tourstar": {
+          "title": "Tourstar",
+          "subtitle": "Ghi chép, đánh giá và chia sẻ chuyến đi một chỗ.",
+          "cta": "Đi tới Tourstar",
+          "items": {
+            "1": {
+              "title": "1) Chuẩn bị ảnh/ghi chép",
+              "body": "Tải ảnh lên, AI gợi ý tiêu đề và tóm tắt."
+            },
+            "2": {
+              "title": "2) Chọn phạm vi hiển thị",
+              "body": "Công khai hoặc riêng tư tùy nhu cầu."
+            },
+            "3": {
+              "title": "3) Tương tác",
+              "body": "Trao đổi mẹo qua thích/bình luận, kết nối bạn bè."
+            }
+          },
+          "tip": {
+            "title": "Mẹo",
+            "body": "Tiêu đề ngắn; nội dung theo thứ tự: khi nào / ở đâu / thích gì."
+          }
+        },
+        "planner": {
+          "title": "Bộ lập kế hoạch",
+          "subtitle": "AI gợi ý lộ trình và lịch theo phong cách bạn.",
+          "cta": "Đi tới bộ lập kế hoạch",
+          "items": {
+            "1": {
+              "label": "Chuẩn / K-content / Nội dung người dùng",
+              "body": "Chọn một mục để bắt đầu."
+            },
+            "2": {
+              "label": "Chọn điểm đến (hoặc chủ đề)",
+              "body": "Càng rõ ngữ cảnh, gợi ý càng chính xác."
+            },
+            "3": {
+              "body": "Lịch gợi ý tự lưu, chỉnh thêm trong Quản lý lịch."
+            }
+          }
+        },
+        "schedule": {
+          "title": "Quản lý lịch",
+          "subtitle": "Xem kế hoạch trên lịch; tạo lại hoặc sửa bằng AI.",
+          "cta": "Mở lịch",
+          "items": {
+            "1": {
+              "title": "1) Chọn ngày trên lịch",
+              "body": "Chạm ngày để xem lịch trong ngày."
+            },
+            "2": {
+              "title": "2) Tạo lại để có phiên bản khác",
+              "body": "Chỉ tạo lại phần bạn không thích."
+            },
+            "3": {
+              "title": "3) Nhờ AI chỉnh",
+              "body": "Mô tả yêu cầu để điều chỉnh lịch."
+            }
+          },
+          "tip": {
+            "title": "Bản đồ / Thời tiết",
+            "body": "Xem bản đồ và tóm tắt thời tiết trong thẻ lịch."
+          }
+        },
+        "discover": {
+          "title": "Địa điểm",
+          "subtitle": "Nhà hàng, sự kiện… trên một màn hình.",
+          "cta": "Đi tới địa điểm",
+          "items": {
+            "1": {
+              "title": "1) Chọn hướng dẫn",
+              "body": "Tab nhà hàng hoặc sự kiện."
+            },
+            "2": {
+              "title": "2) Duyệt thẻ/danh sách",
+              "body": "Chạm địa điểm để xem chi tiết."
+            },
+            "3": {
+              "body": "Muốn thêm vào lịch: chỉnh trong lập kế hoạch/lịch."
+            }
+          }
+        },
+        "groupchat": {
+          "title": "Chat nhóm",
+          "subtitle": "Phòng theo cấp danh dự — chia sẻ câu chuyện du lịch.",
+          "cta": "Đi tới chat nhóm",
+          "items": {
+            "1": {
+              "title": "1) Vào từ danh sách phòng",
+              "body": "Quyền vào có thể phụ thuộc danh dự."
+            },
+            "2": {
+              "title": "2) Gửi tin nhắn",
+              "body": "Nhập và gửi theo thời gian thực."
+            },
+            "3": {
+              "title": "3) Bạn / tin riêng / danh dự",
+              "body": "Menu tin: tin riêng, thêm bạn, danh dự."
+            }
+          }
+        }
+      }
+    }
+  },
+  "planner": {
+    "title": "Lên kế hoạch du lịch",
+    "subtitle": "Chọn phong cách du lịch bạn muốn",
+    "modes": {
+      "standard": {
+        "title": "Chuẩn",
+        "desc": "Lộ trình và hành trình gợi ý bởi AI"
+      },
+      "kcontent": {
+        "title": "K-Content",
+        "desc": "Du lịch theo địa điểm quay phim/drama"
+      },
+      "usercontent": {
+        "title": "Nội dung người dùng",
+        "desc": "Lộ trình do du khách gợi ý"
+      }
+    },
+    "schedule": {
+      "title": "Kế hoạch của tôi",
+      "subtitle_with_count": "{{count}} kế hoạch đã lưu · Nhấn ngày để xem chi tiết",
+      "new_route": "+ Lộ trình mới",
+      "prev_month": "Tháng trước",
+      "next_month": "Tháng sau",
+      "year_month": "{{year}}-{{month}}",
+      "legend": "Chú giải kế hoạch",
+      "reroll_fail": "Tạo lại thất bại.",
+      "modify_fail": "Chỉnh sửa thất bại.",
+      "view_all_route": "Xem tuyến đường cho tất cả điểm dừng",
+      "all_route": "🗺️ Toàn tuyến",
+      "in_trip_period": "Trong thời gian chuyến đi",
+      "rerolled": "🔄 Đã tạo lại",
+      "generating": "Đang tạo…",
+      "reroll_this_item": "Tạo lại mục này",
+      "view_on_map": "Xem trên bản đồ",
+      "ask_ai_modify": "Yêu cầu AI chỉnh sửa lịch trình",
+      "modify_placeholder": "vd. \"Đổi tour Vườn Bí Mật Changdeokgung sang chỗ khác\"",
+      "ai_modifying": "AI đang chỉnh sửa…",
+      "item_regenerating": "Đang tạo lại mục…",
+      "modify_login_needed": "Cần đăng nhập để dùng tính năng chỉnh sửa",
+      "date_ymd": "{{year}}-{{month}}-{{day}}",
+      "item_count": "{{count}} mục",
+      "no_items_on_day": "Không có lịch trình cho ngày này",
+      "delete_confirm": "Xóa kế hoạch này?",
+      "saved_at": "Đã lưu {{date}}",
+      "weather_forecast": "🌤 Dự báo thời tiết",
+      "within_5days": "· trong 5 ngày",
+      "view_schedule": "Xem lịch trình",
+      "view_day_route": "Xem tuyến đường Ngày {{day}}",
+      "route": "🗺️ Tuyến đường",
+      "ai_modified": "✨ AI đã chỉnh sửa",
+      "load_fail": "Không thể tải danh sách kế hoạch.",
+      "delete_fail": "Xóa thất bại.",
+      "login_note": "Kế hoạch được lưu tự động sau khi đăng nhập SNS",
+      "login_needed": "Cần đăng nhập",
+      "empty_title": "Chưa có kế hoạch nào",
+      "empty_desc": "Chọn lộ trình trong Lập kế hoạch,\nAI sẽ tự động lưu kế hoạch",
+      "go_planner": "Mở Lập kế hoạch",
+      "list_hint": "Tất cả kế hoạch · Nhấn ngày để xem chi tiết"
+    },
+    "kcontent": {
+      "title": "Kế hoạch K-Content",
+      "subtitle": "Khám phá Hàn Quốc qua K-Pop, drama, ẩm thực và làm đẹp",
+      "hero_title": "Kế hoạch K-Content",
+      "hero_subtitle": "Khám phá Hàn Quốc qua K-Pop, drama, ẩm thực và làm đẹp",
+      "hero_cta": "Tạo lộ trình AI",
+      "back": "Quay lại trang lập kế hoạch",
+      "row_kpop": "K-POP",
+      "row_kdrama": "K-Drama / Phim",
+      "row_kfood": "K-Food",
+      "row_kbeauty": "K-Beauty",
+      "sample_itinerary": "Lịch trình mẫu",
+      "search_bar": "Tìm kiếm",
+      "quick_selection": "Chọn nhanh",
+      "vibe_grid": "Chọn vibe",
+      "date": "Ngày",
+      "generating": "Đang tạo…",
+      "generate": "✨ Tạo lịch trình",
+      "ai_recommended": "Lịch trình gợi ý bởi AI",
+      "region_select": "Chọn khu vực",
+      "traditional_market": "Chợ truyền thống",
+      "market_generate": "Tạo lịch ẩm thực chợ này",
+      "cafe_question": "Hôm nay bạn muốn vibe như thế nào?",
+      "cafe_hint": "Chọn vibe hoặc nhập tên quán cà phê để AI tạo lộ trình.",
+      "cafe_placeholder": "Nhập tên quán (vd: Seongsu Tongue Planet)",
+      "cafe_generate": "Tạo lịch trình AI",
+      "trending_items": "Món đang hot",
+      "my_recipe": "Công thức mix của tôi",
+      "convenience_q": "Hiện tại khó mua nhất ở cửa hàng tiện lợi là gì?",
+      "trending_placeholder": "vd: bánh kem sữa Yonsei",
+      "recipe_q": "Bạn muốn thử mix hương vị nào?",
+      "extra_keywords": "Từ khóa thêm",
+      "recipe_placeholder": "vd: thử thách cay, món tráng miệng mặn-ngọt",
+      "recipe_generate": "Tạo công thức mix AI",
+      "set_date_and_generate": "Chọn ngày rồi\ntạo lịch trình",
+      "start_generate": "✨ Bắt đầu tạo lịch",
+      "making_schedule": "AI đang tạo lịch <b>{{title}}</b>…",
+      "recommended_schedule_title": "{{title}} — Lịch đề xuất",
+      "save_plan": "💾 Lưu lịch trình",
+      "total_cost": "Chi phí ước tính",
+      "cost_per_day": "Ngày {{day}} {{total}}",
+      "no_schedule": "Chưa tạo được lịch. Vui lòng thử lại.",
+      "saved_goto_schedule": "Đã lưu · Xem lịch",
+      "find_nearby_store": "Tìm nơi bán gần đây",
+      "recipe_hashtags": "#modisumer #thửtháchCVS #AIrecipe",
+      "description_fallback": "Điểm đề xuất để trải nghiệm tại {{place}}.",
+      "challenge_location": "Địa điểm thử thách",
+      "challenge_location_desc": "Điểm thử thách do AI chọn (trong 100km) — khu ghế trước Seoul Forest, Seongsu",
+      "subtotal": "Tạm tính {{total}}",
+      "schedule_item_default": "Lịch trình",
+      "schedule_load_fail": "Không tải được lịch trình.",
+      "save_fail": "Lưu thất bại.",
+      "cafe_place_hint": "Gợi ý quán/địa điểm",
+      "convenience_trending": "Món hot cửa hàng tiện lợi",
+      "recipe_title_with_vibe": "Thử thách {{vibe}} bản 2026",
+      "recipe_title_default": "Mark set bản 2026",
+      "region_tab.all": "Tất cả",
+      "region_tab.seoul": "Seoul",
+      "region_tab.gangwon": "Gangwon",
+      "region_tab.jeonla": "Jeolla",
+      "region_tab.gyeongsang": "Gyeongsang",
+      "region_tab.jeju": "Jeju",
+      "cafe_vibe.industrial_raw.label": "Công nghiệm/Thô",
+      "cafe_vibe.industrial_raw.description": "Không gian bê tông và kim loại đầy cá tính.",
+      "cafe_vibe.traditional_zen.label": "Truyền thống/Zen",
+      "cafe_vibe.traditional_zen.description": "Khoảng lặng với hanok và gỗ.",
+      "cafe_vibe.nature_botanical.label": "Thiên nhiên/Thực vật",
+      "cafe_vibe.nature_botanical.description": "Không gian xanh và ánh sáng.",
+      "cafe_vibe.retro_newtro.label": "Retro/Newtro",
+      "cafe_vibe.retro_newtro.description": "Hoài niệm và hẻm vintage.",
+      "cafe_vibe.modern_minimal.label": "Hiện đại/Tối giản",
+      "cafe_vibe.modern_minimal.description": "Thẩm mỹ đơn sắc tinh tế.",
+      "brand.seveneleven": "7-Eleven",
+      "brand.emart24": "emart24",
+      "market": {
+        "SEOUL": {
+          "0": {
+            "name": "Chợ Gwangjang",
+            "description": "Thiên đường yukhoe và bánh đậu."
+          },
+          "1": {
+            "name": "Chợ Mangwon",
+            "description": "Chợ trendy được Gen Z yêu thích."
+          },
+          "2": {
+            "name": "Chợ Tongin",
+            "description": "Trải nghiệm hộp cơm xu nổi tiếng."
+          }
+        },
+        "GANGWON": {
+          "0": {
+            "name": "Chợ trung tâm Yeongwol",
+            "description": "Bánh kiều mạch và mì olchaengi."
+          },
+          "1": {
+            "name": "Chợ hải sản Sokcho",
+            "description": "Gà sốt và đồ ăn đường phố hải sản."
+          }
+        },
+        "JEONLA": {
+          "0": {
+            "name": "Chợ Nam Jeonju",
+            "description": "Tiết canh và súp giá đỗ."
+          },
+          "1": {
+            "name": "Chợ ga Songjeong Gwangju 1913",
+            "description": "Không khí retro-newtro."
+          }
+        },
+        "GYEONGSANG": {
+          "0": {
+            "name": "Chợ Gukje Busan",
+            "description": "Kỷ niệm phim và mì trộn."
+          },
+          "1": {
+            "name": "Chợ Seomun Daegu",
+            "description": "Quy mô và hương vị top 3 Hàn."
+          }
+        },
+        "JEJU": {
+          "0": {
+            "name": "Chợ Đông Môn Jeju",
+            "description": "Bánh omegi và heo đen chiên giòn."
+          }
+        }
+      },
+      "fallback": {
+        "kfood": {
+          "KF_MARKET": {
+            "title": "Tour ẩm thực chợ truyền thống cả nước",
+            "description": "Hành trình khám phá hương vị địa phương khắp Hàn Quốc."
+          },
+          "KF_CAFE": {
+            "title": "Tour K-dessert & vibe quán cà phê",
+            "description": "Lộ trình nối quán cà phê và select shop đúng gu bạn."
+          },
+          "KF_CONVENIENCE": {
+            "title": "Thử thách mix cửa hàng tiện lợi K",
+            "description": "Từ món mới cháy hàng đến công thức bí mật — trở thành modisumer!"
+          }
+        },
+        "kbeauty": {
+          "KBEAUTY_01": {
+            "title": "Cửa hàng flagship Olive Young",
+            "description": "So sánh và mua xu hướng skincare & makeup."
+          },
+          "KBEAUTY_02": {
+            "title": "Phố beauty Myeongdong",
+            "description": "Khám phá bestseller quanh các cửa hàng chính."
+          },
+          "KBEAUTY_03": {
+            "title": "Cửa hàng trải nghiệm skincare",
+            "description": "Chăm sóc cá nhân và workshop dựa trên phân tích da."
+          }
+        },
+        "kpop": {
+          "KPOP_01": {
+            "title": "BTS: HYYH vĩnh cửu",
+            "description": "BTS, ARMY, Gangnam, HYBE"
+          },
+          "KPOP_02": {
+            "title": "BLACKPINK: Hip & sang trọng",
+            "description": "BLACKPINK, YG, sang trọng, xu hướng"
+          },
+          "KPOP_03": {
+            "title": "SEVENTEEN & Stray Kids: Năng lượng sân khấu",
+            "description": "SEVENTEEN, Stray Kids, JYP, biểu diễn"
+          },
+          "KPOP_04": {
+            "title": "NewJeans & IVE: Seoul tuổi teen",
+            "description": "NewJeans, IVE, Y2K, Seongsu, Hannam"
+          },
+          "KPOP_05": {
+            "title": "SM: Kwangya Express",
+            "description": "SM, aespa, NCT, Kwangya, Seongsu"
+          },
+          "KPOP_06": {
+            "title": "Trải nghiệm idol",
+            "description": "Trải nghiệm, nhảy, thu âm, đời sống idol"
+          },
+          "KPOP_07": {
+            "title": "Hongdae: Trung tâm văn hóa fan",
+            "description": "Hongdae, biểu diễn đường phố, album, fan"
+          },
+          "KPOP_08": {
+            "title": "K-OST & Seoul chữa lành",
+            "description": "IU, OST, chữa lành, retro, Seoul"
+          }
+        },
+        "kdrama": {
+          "KD_01": {
+            "title": "Yêu tinh",
+            "description": "Goblin · #GongYoo #Fantasy #Romance"
+          },
+          "KD_02": {
+            "title": "Trò chơi con mực",
+            "description": "Squid Game · #Netflix #Survival #Thriller"
+          },
+          "KD_03": {
+            "title": "Hạ cánh nơi anh",
+            "description": "Crash Landing on You · #HyunBin #SonYeJin #Romance"
+          },
+          "KD_04": {
+            "title": "Vương triều xác sống",
+            "description": "Kingdom · #Zombies #Historical #Horror"
+          },
+          "KD_05": {
+            "title": "Ký sinh trùng",
+            "description": "Parasite · #Oscar #BongJoonHo #SocialIssues"
+          },
+          "KD_06": {
+            "title": "Lovely Runner",
+            "description": "Lovely Runner · #ByeonWooSeok #TimeSlip #Youth"
+          },
+          "KD_07": {
+            "title": "Khách sạn Del Luna",
+            "description": "Hotel Del Luna · #IU #Fantasy #Mystery"
+          },
+          "KD_08": {
+            "title": "King the Land",
+            "description": "King the Land · #JunHo #Yoona #Luxury"
+          },
+          "KD_09": {
+            "title": "Quý ngài ánh dương",
+            "description": "Mr. Sunshine · #History #LeeByungHun #KimTaeri"
+          },
+          "KD_10": {
+            "title": "Hậu duệ mặt trời",
+            "description": "Descendants of the Sun · #SongJoongKi #SongHyeKyo #Military"
+          },
+          "KD_11": {
+            "title": "Nữ hoàng nước mắt",
+            "description": "Queen of Tears · #KimSooHyun #KimJiWon #Chaebol"
+          },
+          "KD_12": {
+            "title": "Người đàn ông sống cùng vua",
+            "description": "The Man Who Lives with the King · #GangDongWon #YooHaeJin #History"
+          }
+        }
+      },
+      "recipe_vibe.spicy_fire.label": "Cay nồng",
+      "recipe_vibe.spicy_fire.description": "Thử thách cay để xả stress.",
+      "recipe_vibe.sweet_salty.label": "Mặn-ngọt kinh điển",
+      "recipe_vibe.sweet_salty.description": "Cân bằng ngọt và mặn.",
+      "recipe_vibe.diet_healthy.label": "Ăn healthy CVS",
+      "recipe_vibe.diet_healthy.description": "Combo nhẹ mà no.",
+      "recipe_vibe.night_snack.label": "Ăn đêm",
+      "recipe_vibe.night_snack.description": "Công thức ăn đêm vui nhỏ.",
+      "recipe_vibe.hangover.label": "Giải rượu",
+      "recipe_vibe.hangover.description": "Combo cho ngày khó chịu sau tiệc.",
+      "recipe_vibe.luxury_meal.label": "Bữa premium giá hời",
+      "recipe_vibe.luxury_meal.description": "Bữa cao cấp từ cửa hàng tiện lợi.",
+      "shopping.ramen": "Mì cốc",
+      "shopping.tuna_kimbap": "Cơm tam giác cá ngừ sốt mayo",
+      "shopping.string_cheese": "Phô mai sợi",
+      "shopping.sparkling_water": "Nước có ga",
+      "cooking.1": "Chuẩn bị nguyên liệu, cho vào hộp dùng được trong lò vi sóng.",
+      "cooking.2": "Trộn sốt/topping, quay 1 phút 30 giây.",
+      "cooking.3": "Thêm topping theo ý và chụp ảnh check-in.",
+      "trending_card.1.title": "Bánh kem sữa Yonsei",
+      "trending_card.2.title": "Highball cốc đá Coca Zero",
+      "trending_card.default_title": "Món hot do AI chọn",
+      "trending_card.tag.new": "#mới",
+      "trending_card.tag.soldout": "#hếthàng",
+      "trending_card.tag.review": "#reviewnổi",
+      "trending_card.tag.repurchase": "#mualại",
+      "meta.kf_market.title_ko": "Tour ẩm thực chợ truyền thống cả nước",
+      "meta.kf_cafe.title_ko": "Tour K-dessert & vibe quán cà phê",
+      "meta.kf_convenience.title_ko": "Thử thách mix cửa hàng tiện lợi K",
+      "meta.kf_market.tags": "chợ truyền thống, ẩm thực, địa phương",
+      "meta.kf_cafe.tags": "cà phê, tráng miệng, select shop",
+      "meta.kf_convenience.tags": "cửa hàng tiện lợi, mix, modisumer",
+      "empty.pick_market": "Chọn chợ rồi tạo lịch",
+      "empty.pick_vibe_or_cafe": "Chọn vibe hoặc nhập tên quán",
+      "empty.pick_tab_condition": "Chọn điều kiện tab rồi tạo",
+      "empty.pick_date": "Chọn ngày rồi tạo lịch",
+      "empty.market_guide": "Chọn chợ bên trái, bấm [Tạo lịch ẩm thực chợ] hoặc ✨ phía trên",
+      "empty.cafe_guide": "Chọn vibe/tên quán bên trái, bấm [Tạo lịch AI]",
+      "empty.convenience_guide": "Chọn tab trên cùng, nhập từ khóa rồi tạo",
+      "empty.default_guide": "Bấm nút ✨ tạo lịch phía trên",
+      "shopping_list_title": "Danh sách mua",
+      "cooking_steps_title": "Bước chế biến",
+      "brand": {
+        "emart24": "이마트24",
+        "seveneleven": "세븐일레븐"
+      },
+      "cooking": {
+        "1": "재료를 모두 준비하고 전자레인지 가능한 용기에 담기",
+        "2": "소스/토핑을 섞어 1분 30초 조리하기",
+        "3": "취향에 맞게 토핑 추가 후 인증샷 남기기"
+      },
+      "empty": {
+        "cafe_guide": "왼쪽에서 감성/카페명을 정하고 [AI 일정 생성하기]를 눌러주세요",
+        "convenience_guide": "상단 탭에서 모드를 고른 뒤 키워드를 입력해 생성하세요",
+        "default_guide": "상단의 ✨ 일정 생성 버튼을 눌러주세요",
+        "market_guide": "왼쪽에서 시장을 고르고 [이 시장 먹방 일정 생성하기] 또는 상단 ✨ 일정 생성을 눌러주세요",
+        "pick_date": "날짜 선택 후 일정을 생성하세요",
+        "pick_market": "시장을 선택한 뒤 일정을 생성하세요",
+        "pick_tab_condition": "탭별 조건을 선택하고 생성하세요",
+        "pick_vibe_or_cafe": "감성(Vibe) 또는 카페 이름을 선택하세요"
+      },
+      "kroaddy_pick": "Kroaddy PICK",
+      "meta": {
+        "kf_cafe": {
+          "tags": "카페, 디저트, 편집샵, 감성투어",
+          "title_ko": "K-디저트 & 카페 감성 투어"
+        },
+        "kf_convenience": {
+          "tags": "편의점, 꿀조합, 모디슈머, 챌린지",
+          "title_ko": "K-편의점 꿀조합 챌린지"
+        },
+        "kf_market": {
+          "tags": "전통시장, 먹거리, 로컬푸드",
+          "title_ko": "전국 전통시장 먹거리 탐방"
+        }
+      },
+      "region_tab": {
+        "all": "전체",
+        "gangwon": "강원",
+        "gyeongsang": "경상",
+        "jeju": "제주",
+        "jeonla": "전라",
+        "seoul": "서울"
+      },
+      "shopping": {
+        "ramen": "컵라면",
+        "sparkling_water": "탄산수",
+        "string_cheese": "스트링 치즈",
+        "tuna_kimbap": "참치마요 삼각김밥"
+      },
+      "trending_card": {
+        "1": {
+          "title": "연세우유 크림빵"
+        },
+        "2": {
+          "title": "제로콜라 얼음컵 하이볼"
+        },
+        "default_title": "AI 추천 유행템",
+        "tag": {
+          "new": "#신상",
+          "repurchase": "#재구매",
+          "review": "#리뷰폭발",
+          "soldout": "#품절주의"
+        }
+      }
+    },
+    "usercontent": {
+      "title": "Nội dung người dùng",
+      "subtitle": "Lộ trình do du khách chia sẻ",
+      "upload": "Tải lên lộ trình của tôi",
+      "tab_all": "Tất cả lộ trình",
+      "tab_mine": "Lộ trình của tôi",
+      "search_placeholder": "Tìm theo biệt danh…",
+      "search_result": "Tìm thấy {{count}} kết quả",
+      "empty_all_title": "Chưa có lộ trình được chia sẻ",
+      "empty_all_sub": "Hãy là người đầu tiên tải lên!",
+      "empty_mine_title": "Bạn chưa tải lộ trình nào",
+      "empty_mine_sub": "Chia sẻ lộ trình để nhận thích!",
+      "cta_first_upload": "Tải lộ trình đầu tiên",
+      "cta_share_first": "Chia sẻ lộ trình đầu tiên",
+      "already_liked": "Đã thích",
+      "like": "Thích",
+      "delete": "Xóa",
+      "delete_my_route": "Xóa lộ trình của tôi",
+      "shared_route": "Lộ trình chia sẻ",
+      "schedule_save_fail": "Lưu lịch thất bại.",
+      "route": "Lộ trình",
+      "added_to_schedule": "Đã thêm vào lịch của tôi",
+      "go_schedule": "Đến quản lý lịch",
+      "add_to_schedule": "Thêm vào lịch của tôi",
+      "login_required": "Cần đăng nhập.",
+      "no_places_to_save": "Không có địa điểm để lưu.",
+      "when_trip": "Bạn dự định đi khi nào?",
+      "date_applied": "Ngày chọn sẽ áp dụng vào lịch.",
+      "visit_date": "Ngày tham quan",
+      "add_with_this_date": "Thêm với ngày này",
+      "image_validate_fail": "Xác thực ảnh thất bại",
+      "ai_polish_fail": "AI chỉnh sửa thất bại",
+      "save_fail": "Lưu thất bại",
+      "step_photo": "Chọn ảnh",
+      "step_form": "Nhập lộ trình",
+      "step_polish": "AI chỉnh sửa",
+      "upload_my_route": "Tải lên lộ trình của tôi",
+      "upload_photo_hint": "Kéo thả hoặc nhấp để tải ảnh",
+      "upload_photo_types": "Hỗ trợ JPG, PNG, WEBP",
+      "remove_photo": "Gỡ ảnh",
+      "image_validated": "Xác thực ảnh xong",
+      "validating": "Đang xác thực…",
+      "continue_without_photo": "Tiếp tục không ảnh",
+      "import_saved_schedule": "Nhập từ lịch đã lưu",
+      "select_saved_schedule": "Chọn lịch đã lưu",
+      "no_saved_schedule": "Không có lịch đã lưu.",
+      "place_count": " · {{count}} địa điểm",
+      "route_title_required": "Tiêu đề lộ trình *",
+      "route_title_placeholder": "vd: Gangneung một ngày",
+      "destination_required": "Điểm đến *",
+      "destination_placeholder": "vd: Gangneung, bãi Gyeongpo",
+      "one_line_intro_optional": "Giới thiệu một dòng (tuỳ chọn)",
+      "one_line_intro_placeholder": "Mô tả ngắn (AI sẽ chỉnh)",
+      "place_list_required": "Danh sách địa điểm *",
+      "max_per_day": "(tối đa {{max}} mỗi ngày)",
+      "day_n": "Ngày {{day}}",
+      "add_place": "+ Thêm địa điểm",
+      "place_name_placeholder": "Tên địa điểm (vd: phố cà phê Anmok)",
+      "memo_optional_placeholder": "Ghi chú ngắn (tuỳ chọn)",
+      "add_day_n": "+ Thêm ngày {{day}}",
+      "ai_polish": "✨ Chỉnh bằng AI",
+      "ai_polishing": "AI đang chỉnh lộ trình",
+      "ai_polishing_sub": "Đang thêm giới thiệu và mẹo du lịch…",
+      "re_enter": "Sửa lại",
+      "share": "Chia sẻ",
+      "shared_success": "Đã chia sẻ lộ trình!",
+      "shared_success_sub": "Xem trong bảng tin",
+      "delete_confirm": "Xóa lộ trình này?",
+      "delete_fail": "Xóa thất bại."
+    },
+    "standard": {
+      "title": "Chọn điểm đến",
+      "subtitle": "Chọn điểm đến và AI sẽ gợi ý lộ trình phù hợp.",
+      "search_placeholder": "Tìm thành phố/địa danh (vd: Gangneung, làng Hanok)",
+      "search_result": "“{{query}}”: {{count}} địa điểm",
+      "no_results": "Không có kết quả",
+      "reset": "Đặt lại",
+      "metro_quick": "Truy cập nhanh đô thị lớn",
+      "metro_quick_sub": "Chọn nhanh các thành phố lớn, xem chi tiết bên dưới.",
+      "metro_detail": "Khu vực chi tiết đô thị",
+      "metro_detail_sub": "Seoul, Busan, Daegu, Ulsan hiển thị theo tiểu khu.",
+      "province": "Theo tỉnh/vùng",
+      "province_sub": "So sánh Gyeonggi, Chungcheong, Jeolla, Gyeongsang, Gangwon, Jeju.",
+      "image_pending": "Ảnh sắp có",
+      "popular": "Phổ biến",
+      "mode_label": "Chuẩn",
+      "date": "Ngày",
+      "mode_car": "🚗 Ô tô",
+      "mode_transit": "🚇 Giao thông công cộng",
+      "mode_walk": "🚶 Đi bộ",
+      "generate_route": "✨ Tạo lộ trình",
+      "generating_loading": "Đang tìm thông tin chính xác…",
+      "ai_recommended_routes": "Lộ trình gợi ý AI",
+      "set_date_and_generate": "Chọn ngày rồi\ntạo lộ trình",
+      "start_generate": "✨ Bắt đầu tạo lộ trình",
+      "route_load_fail": "Không tải được lộ trình.",
+      "pick_route": "Vui lòng chọn một lộ trình",
+      "range_hint": "AI sẽ lên lịch từ {{start}} đến {{end}}",
+      "select_date_then_generate": "Chọn ngày rồi tạo lộ trình",
+      "generate_hint": "Nhấn nút ✨ tạo lộ trình góc trên trái",
+      "making_schedule": "AI đang tạo lịch cho <b>{{name}}</b>…",
+      "schedule_load_fail": "Không tải được lịch.",
+      "recommended_schedule_title": "{{name}} — Lịch đề xuất",
+      "saved_goto_schedule": "✅ Đã lưu · Mở quản lý lịch",
+      "save_plan": "💾 Lưu",
+      "save_fail": "Lưu thất bại.",
+      "total_cost": "Chi phí ước tính",
+      "cost_per_day": "Ngày {{day}} {{total}}",
+      "subtotal": "Tạm tính {{total}}",
+      "theme": {
+        "event": "Sự kiện",
+        "food": "Ẩm thực",
+        "spot": "Tham quan",
+        "luxury": "Sang trọng",
+        "value": "Tiết kiệm",
+        "family": "Gia đình",
+        "couple": "Cặp đôi"
+      },
+      "highlight": {
+        "gyeongbokgung": "Cung Gyeongbok",
+        "hongdae": "Hongdae",
+        "hangang_park": "Công viên Hangang",
+        "cheongwadae": "Nhà Xanh",
+        "insadong": "Insadong",
+        "myeongdong_cathedral": "Nhà thờ Myeongdong",
+        "euljiro_alley": "Hẻm Euljiro",
+        "national_museum_of_korea": "Bảo tàng quốc gia",
+        "itaewon": "Itaewon",
+        "haeundae": "Haeundae",
+        "haeundae_beach": "Bãi biển Haeundae",
+        "gamcheon_village": "Làng Gamcheon",
+        "jagalchi_market": "Chợ Jagalchi",
+        "biff_square": "Quảng trường BIFF",
+        "dongseongro": "Dongseong-ro",
+        "kim_gwangseok_street": "Phố Kim Gwangseok",
+        "suseong_lake": "Hồ Suseong",
+        "songdo": "Songdo",
+        "chinatown": "Phố Tàu",
+        "gangneung": "Gangneung",
+        "gyeongpo": "Gyeongpo",
+        "anmok_coffee_street": "Phố cà phê Anmok",
+        "ojukheon": "Ojukheon",
+        "sokcho": "Sokcho",
+        "seoraksan": "Seoraksan",
+        "central_market": "Chợ trung tâm",
+        "hallasan": "Hallasan",
+        "seongsan_ilchulbong": "Seongsan Ilchulbong"
+      }
+    },
+    "region": {
+      "seoul-areas": {
+        "label": "X?-un",
+        "subLabel": "Khu v?c n?i b?t theo qu?n"
+      },
+      "gyeonggi-north": {
+        "label": "Bắc Gyeonggi",
+        "subLabel": "Goyang, Paju, Uijeongbu, Namyangju, v.v."
+      },
+      "gyeonggi-south": {
+        "label": "Nam Gyeonggi",
+        "subLabel": "Suwon, Yongin, Seongnam, Pyeongtaek, v.v."
+      },
+      "gangwon": {
+        "label": "Gangwon",
+        "subLabel": "Tỉnh tự trị đặc biệt Gangwon"
+      },
+      "chungbuk": {
+        "label": "Chungcheongbuk-do",
+        "subLabel": "Cheongju, Chungju, Jecheon, Danyang"
+      },
+      "chungnam": {
+        "label": "Chungcheongnam-do",
+        "subLabel": "Gongju, Buyeo, Boryeong, Taean, v.v."
+      },
+      "jeonbuk": {
+        "label": "Jeonbuk",
+        "subLabel": "Tỉnh tự trị đặc biệt Jeonbuk"
+      },
+      "jeonnam": {
+        "label": "Jeollanam-do",
+        "subLabel": "Yeosu, Suncheon, Mokpo, Damyang, v.v."
+      },
+      "busan": {
+        "label": "Busan",
+        "subLabel": "Thành phố trực thuộc trung ương Busan"
+      },
+      "daegu": {
+        "label": "Daegu",
+        "subLabel": "Thành phố trực thuộc trung ương Daegu"
+      },
+      "ulsan": {
+        "label": "Ulsan",
+        "subLabel": "Thành phố trực thuộc trung ương Ulsan"
+      },
+      "gyeongbuk": {
+        "label": "Gyeongsangbuk-do",
+        "subLabel": "Gyeongju, Pohang, Andong, v.v."
+      },
+      "gyeongnam": {
+        "label": "Gyeongsangnam-do",
+        "subLabel": "Tongyeong, Geoje, Jinju, Changwon, v.v."
+      },
+      "jeju": {
+        "label": "Jeju-do",
+        "subLabel": "Tỉnh tự trị đặc biệt Jeju"
+      }
+    },
+    "dest": {
+      "seoul": {
+        "name": "Xơ-un",
+        "highlight1": "Cung Gyeongbokgung",
+        "highlight2": "Hongdae",
+        "highlight3": "Công viên sông Hàn"
+      },
+      "busan": {
+        "name": "Bu-san",
+        "highlight1": "Bãi biển Haeundae",
+        "highlight2": "Làng văn hóa Gamcheon",
+        "highlight3": "Chợ Jagalchi"
+      },
+      "daegu": {
+        "name": "Tê-gu",
+        "highlight1": "Phố Dongseong-ro",
+        "highlight2": "Phố Kim Gwangseok",
+        "highlight3": "Hồ Suseong"
+      },
+      "incheon": {
+        "name": "In-chơn",
+        "highlight1": "Songdo",
+        "highlight2": "Đảo Ganghwa",
+        "highlight3": "Phố Tàu"
+      },
+      "gwangju": {
+        "name": "Gwangju",
+        "highlight1": "ACC (Trung tâm văn hóa châu Á)",
+        "highlight2": "Yangnim-dong"
+      },
+      "daejeon": {
+        "name": "Tê-jơn",
+        "highlight1": "Tiệm bánh Seongsimdang",
+        "highlight2": "Công viên Expo",
+        "highlight3": "Suối nước nóng Yuseong"
+      },
+      "ulsan": {
+        "name": "Ulsan",
+        "highlight1": "Ganjeolgot",
+        "highlight2": "Công viên Daewangam",
+        "highlight3": "Sông Taehwa"
+      },
+      "sejong": {
+        "name": "Se-jong",
+        "highlight1": "Công viên hồ Sejong",
+        "highlight2": "Vườn thực vật quốc gia"
+      },
+      "jongno": {
+        "name": "Jong-no ? Gwanghwa-mun",
+        "highlight1": "Cung Gyeongbokgung",
+        "highlight2": "Nh? Xanh",
+        "highlight3": "Insa-dong"
+      },
+      "myeongdong": {
+        "name": "Myeong-dong ? Eulji-ro",
+        "highlight1": "Nh? th? Myeongdong",
+        "highlight2": "H?m Eulji-ro"
+      },
+      "yongsan": {
+        "name": "Yong-san ? Itaewon",
+        "highlight1": "B?o t?ng Qu?c gia H?n Qu?c",
+        "highlight2": "Itaewon"
+      },
+      "gangnam": {
+        "name": "Gang-nam ? Seocho",
+        "highlight1": "COEX",
+        "highlight2": "Apgujeong Rodeo",
+        "highlight3": "C?ng vi?n Dosan"
+      },
+      "jamsil": {
+        "name": "Jam-sil ? Songpa",
+        "highlight1": "Lotte World",
+        "highlight2": "C?ng vi?n Olympic",
+        "highlight3": "H? Seokchon"
+      },
+      "seongsu": {
+        "name": "Seong-su ? Hannam",
+        "highlight1": "Ph? cafe Seongsu",
+        "highlight2": "Ph?ng tr?ng b?y Hannam-dong"
+      },
+      "hongdae": {
+        "name": "Hong-dae ? Mapo",
+        "highlight1": "C?u l?c b? Hongdae",
+        "highlight2": "Yeonnam-dong",
+        "highlight3": "R?ng tuy?n Gyeongui"
+      },
+      "bukchon": {
+        "name": "Buk-chon ? Samcheong",
+        "highlight1": "L?ng Hanok Bukchon",
+        "highlight2": "Qu?n cafe Samcheong-dong"
+      },
+      "nowon": {
+        "name": "No-won ? Dobong",
+        "highlight1": "Suraksan",
+        "highlight2": "Dobongsan",
+        "highlight3": "Bulamsan"
+      },
+      "haeundae": {
+        "name": "Haeundae",
+        "highlight1": "Bãi Haeundae",
+        "highlight2": "Đảo Dongbaek",
+        "highlight3": "Đường Dalmaji"
+      },
+      "gwangalli": {
+        "name": "Gwangalli · Suyeong",
+        "highlight1": "Cầu Gwangandaegyo",
+        "highlight2": "Bãi Gwangalli"
+      },
+      "gijang": {
+        "name": "Gijang",
+        "highlight1": "Nhà thờ Jukseong Dream",
+        "highlight2": "Cảng Daebyeon",
+        "highlight3": "Thủy cung"
+      },
+      "songjeong": {
+        "name": "Songjeong · Cheongsapo",
+        "highlight1": "Bãi Songjeong",
+        "highlight2": "Đài ngắm Cheongsapo"
+      },
+      "nampo": {
+        "name": "Nampo · Trung khu",
+        "highlight1": "Chợ Jagalchi",
+        "highlight2": "Quảng trường BIFF",
+        "highlight3": "Hẻm sách Bosu-dong"
+      },
+      "seomyeon": {
+        "name": "Seomyeon · Bujeon",
+        "highlight1": "Phố Seomyeon",
+        "highlight2": "Judys Taehwa",
+        "highlight3": "Chợ Bujeon"
+      },
+      "gamcheon": {
+        "name": "Làng văn hóa Gamcheon",
+        "highlight1": "Làng văn hóa Gamcheon",
+        "highlight2": "Sky Road"
+      },
+      "yeongdo": {
+        "name": "Yeongdo",
+        "highlight1": "Taejongdae",
+        "highlight2": "Làng văn hóa Huinnyeoul",
+        "highlight3": "Núi Bongnae"
+      },
+      "geumjeong": {
+        "name": "Geumjeong · Oncheonjang",
+        "highlight1": "Thành Geumjeongsanseong",
+        "highlight2": "Chùa Beomeosa",
+        "highlight3": "Oncheonjang"
+      },
+      "gangseo-bs": {
+        "name": "Gangseo · Gaekdo",
+        "highlight1": "Đảo Eulsuk",
+        "highlight2": "Bãi triều Gaekdo"
+      },
+      "dadaepo": {
+        "name": "Saha · Dadaepo",
+        "highlight1": "Bãi Dadaepo",
+        "highlight2": "Cửa sông Nakdong"
+      },
+      "dongseongno": {
+        "name": "Dongseongno · Trung khu",
+        "highlight1": "Dongseong-ro",
+        "highlight2": "Chợ Seomun",
+        "highlight3": "Chợ thuốc Yakjeon"
+      },
+      "gimgwangseok": {
+        "name": "Phố Kim Gwangseok",
+        "highlight1": "Phố Kim Gwangseok",
+        "highlight2": "Chợ Bangcheon"
+      },
+      "suseongmot": {
+        "name": "Hồ Suseong · Beomeo",
+        "highlight1": "Hồ Suseong",
+        "highlight2": "Công viên Suseong"
+      },
+      "palgongsan": {
+        "name": "Núi Palgong",
+        "highlight1": "Chùa Donghwa",
+        "highlight2": "Đá Gatbawi",
+        "highlight3": "Đường chân trời Palgong"
+      },
+      "dalseong": {
+        "name": "Bisulsan · Dalseong",
+        "highlight1": "Hoa anh đào Bisulsan",
+        "highlight2": "Đầm lầy Dalseong"
+      },
+      "gunwi": {
+        "name": "Gunwi",
+        "highlight1": "Công viên chủ đề Samguk Yusa",
+        "highlight2": "Pháo đài Hwasan"
+      },
+      "ganjeolgot": {
+        "name": "Ganjeolgot",
+        "highlight1": "Hải đăng Ganjeolgot",
+        "highlight2": "Bình minh năm mới"
+      },
+      "daewangam": {
+        "name": "Daewangam",
+        "highlight1": "Công viên Daewangam",
+        "highlight2": "Bãi Ilsan"
+      },
+      "taehwagang": {
+        "name": "Sông Taehwa",
+        "highlight1": "Vườn quốc gia Taehwa",
+        "highlight2": "Rừng tre Sipri Daesup"
+      },
+      "bangudae": {
+        "name": "Bangudae",
+        "highlight1": "Khắc đá Bangudae",
+        "highlight2": "Jipcheongjeong"
+      },
+      "jeju": {
+        "name": "Thành phố Jeju",
+        "highlight1": "Hallasan",
+        "highlight2": "Seongsan Ilchulbong",
+        "highlight3": "Bãi Hyeopjae"
+      },
+      "gyeongju": {
+        "name": "Gyeongju",
+        "highlight1": "Hwangridan-gil",
+        "highlight2": "Cheomseongdae",
+        "highlight3": "Bulguksa"
+      },
+      "gangneung": {
+        "name": "Gangneung",
+        "highlight1": "Bãi Gyeongpo",
+        "highlight2": "Phố cà phê Anmok",
+        "highlight3": "Ojukheon"
+      },
+      "jeonju": {
+        "name": "Jeonju",
+        "highlight1": "Làng hanok",
+        "highlight2": "Hẻm makgeolli"
+      },
+      "asan": {
+        "name": "Asan"
+      },
+      "cheonan": {
+        "name": "Cheonan"
+      },
+      "nonsan": {
+        "name": "Nonsan"
+      },
+      "seosan": {
+        "name": "Seosan"
+      },
+      "dangjin": {
+        "name": "Dangjin"
+      },
+      "iksan": {
+        "name": "Iksan"
+      },
+      "gochang": {
+        "name": "Gochang"
+      },
+      "jeongeup": {
+        "name": "Jeongeup"
+      },
+      "gimje": {
+        "name": "Gimje"
+      },
+      "wando": {
+        "name": "Wando"
+      },
+      "gangjin": {
+        "name": "Gangjin"
+      },
+      "yeonggwang": {
+        "name": "Yeonggwang"
+      },
+      "haenam": {
+        "name": "Haenam"
+      },
+      "goheung": {
+        "name": "Goheung"
+      },
+      "yeongam": {
+        "name": "Yeongam"
+      },
+      "gwangyang": {
+        "name": "Gwangyang"
+      },
+      "boseong": {
+        "name": "Boseong"
+      },
+      "naju": {
+        "name": "Naju"
+      },
+      "goyang": {
+        "name": "Goyang"
+      },
+      "paju": {
+        "name": "Paju"
+      },
+      "gimpo": {
+        "name": "Gimpo"
+      },
+      "uijeongbu": {
+        "name": "Uijeongbu"
+      },
+      "namyangju": {
+        "name": "Namyangju"
+      },
+      "guri": {
+        "name": "Guri"
+      },
+      "gapyeong": {
+        "name": "Gapyeong"
+      },
+      "yangpyeong": {
+        "name": "Yangpyeong"
+      },
+      "pocheon": {
+        "name": "Pocheon"
+      },
+      "yangju": {
+        "name": "Yangju"
+      },
+      "dongducheon": {
+        "name": "Dongducheon"
+      },
+      "suwon": {
+        "name": "Suwon"
+      },
+      "hwaseong": {
+        "name": "Hwaseong"
+      },
+      "ansan": {
+        "name": "Ansan"
+      },
+      "siheung": {
+        "name": "Siheung"
+      },
+      "anyang": {
+        "name": "Anyang"
+      },
+      "gunpo": {
+        "name": "Gunpo"
+      },
+      "pyeongtaek": {
+        "name": "Pyeongtaek"
+      },
+      "yongin": {
+        "name": "Yongin"
+      },
+      "seongnam": {
+        "name": "Seongnam"
+      },
+      "hanam": {
+        "name": "Hanam"
+      },
+      "icheon": {
+        "name": "Icheon"
+      },
+      "yeoju": {
+        "name": "Yeoju"
+      },
+      "anseong": {
+        "name": "Anseong"
+      },
+      "osan": {
+        "name": "Osan"
+      },
+      "uiwang": {
+        "name": "Uiwang"
+      },
+      "gwacheon": {
+        "name": "Gwacheon"
+      },
+      "bucheon": {
+        "name": "Bucheon"
+      },
+      "gwangmyeong": {
+        "name": "Gwangmyeong"
+      },
+      "chuncheon": {
+        "name": "Chuncheon"
+      },
+      "wonju": {
+        "name": "Wonju"
+      },
+      "pyeongchang": {
+        "name": "Pyeongchang"
+      },
+      "yeongwol": {
+        "name": "Yeongwol"
+      },
+      "hoengseong": {
+        "name": "Hoengseong"
+      },
+      "jeongseon": {
+        "name": "Jeongseon"
+      },
+      "inje": {
+        "name": "Inje"
+      },
+      "taebaek": {
+        "name": "Taebaek"
+      },
+      "sokcho": {
+        "name": "Sokcho"
+      },
+      "yangyang": {
+        "name": "Yangyang"
+      },
+      "donghae": {
+        "name": "Donghae"
+      },
+      "samcheok": {
+        "name": "Samcheok"
+      },
+      "goseong-gw": {
+        "name": "Goseong Gw"
+      },
+      "cheongju": {
+        "name": "Cheongju"
+      },
+      "chungju": {
+        "name": "Chungju"
+      },
+      "jecheon": {
+        "name": "Jecheon"
+      },
+      "danyang": {
+        "name": "Danyang"
+      },
+      "gongju": {
+        "name": "Gongju"
+      },
+      "buyeo": {
+        "name": "Buyeo"
+      },
+      "boryeong": {
+        "name": "Boryeong"
+      },
+      "taean": {
+        "name": "Taean"
+      },
+      "gunsan": {
+        "name": "Gunsan"
+      },
+      "namwon": {
+        "name": "Namwon"
+      },
+      "yeosu": {
+        "name": "Yeosu"
+      },
+      "suncheon": {
+        "name": "Suncheon"
+      },
+      "mokpo": {
+        "name": "Mokpo"
+      },
+      "damyang": {
+        "name": "Damyang"
+      },
+      "andong": {
+        "name": "Andong"
+      },
+      "yeongju": {
+        "name": "Yeongju"
+      },
+      "mungyeong": {
+        "name": "Mungyeong"
+      },
+      "pohang": {
+        "name": "Pohang"
+      },
+      "yeongdeok": {
+        "name": "Yeongdeok"
+      },
+      "uljin": {
+        "name": "Uljin"
+      },
+      "dokdo": {
+        "name": "Dokdo"
+      },
+      "gumi": {
+        "name": "Gumi"
+      },
+      "gimcheon": {
+        "name": "Gimcheon"
+      },
+      "yeongcheon": {
+        "name": "Yeongcheon"
+      },
+      "sangju": {
+        "name": "Sangju"
+      },
+      "gyeongsan": {
+        "name": "Gyeongsan"
+      },
+      "tongyeong": {
+        "name": "Tongyeong"
+      },
+      "geoje": {
+        "name": "Geoje"
+      },
+      "namhae": {
+        "name": "Namhae"
+      },
+      "goseong-gn": {
+        "name": "Goseong Gn"
+      },
+      "jinju": {
+        "name": "Jinju"
+      },
+      "changwon": {
+        "name": "Changwon"
+      },
+      "hapcheon": {
+        "name": "Hapcheon"
+      },
+      "miryang": {
+        "name": "Miryang"
+      },
+      "hamyang": {
+        "name": "Hamyang"
+      },
+      "sancheong": {
+        "name": "Sancheong"
+      },
+      "hadong": {
+        "name": "Hadong"
+      },
+      "geochang": {
+        "name": "Geochang"
+      },
+      "gimhae": {
+        "name": "Gimhae"
+      },
+      "yangsan": {
+        "name": "Yangsan"
+      },
+      "changnyeong": {
+        "name": "Changnyeong"
+      },
+      "uiryeong": {
+        "name": "Uiryeong"
+      },
+      "seogwipo": {
+        "name": "Seogwipo"
+      }
+    },
+    "api": {
+      "ai_busy": "AI 서버가 바쁩니다. 잠시 후 다시 시도해 주세요.",
+      "ai_rate_limited": "AI 사용량이 초과됐습니다. 잠시 후 다시 시도해 주세요.",
+      "modify_error": "일정 수정 API 오류",
+      "plan_delete_error": "플랜 삭제 API 오류",
+      "plan_list_error": "플랜 목록 API 오류",
+      "reroll_error": "리롤 API 오류",
+      "route_error": "루트 API 오류",
+      "save_error": "저장 API 오류",
+      "schedule_error": "일정 API 오류"
+    }
+  },
+  "guide": {
+    "title": "Discover",
+    "subtitle": "Pick Restaurants or Events in one place.",
+    "restaurant": {
+      "title": "Restaurants",
+      "soon": "Restaurant recommendations will be available soon."
+    },
+    "event": {
+      "title": "Events",
+      "subtitle": "Based on National Culture Festival data · Click a date to see events for that day",
+      "prev_month": "Previous month",
+      "next_month": "Next month",
+      "legend_hint": "● Has events · Click a date to filter that day",
+      "list_title_day": "{{y}}-{{m}}-{{d}} Events",
+      "list_title_all": "{{y}}-{{m}} All events",
+      "count": "{{count}} items",
+      "show_all": "Show all",
+      "no_data_period": "No events registered for the period.",
+      "no_data_day": "No events running on this day.",
+      "no_data": "No events.",
+      "hosted_by": "Hosted by: {{name}}",
+      "year_month": "{{m}}/{{y}}",
+      "untitled": "(Untitled)",
+      "homepage": "Homepage",
+      "error": {
+        "load": "Failed to load event list.",
+        "connection": "Unable to load event information. Please try again shortly."
+      }
+    },
+    "tabs": {
+      "restaurant": {
+        "label": "Restaurant Picks",
+        "description": "Explore restaurants by region"
+      },
+      "event": {
+        "label": "Event Picks",
+        "description": "Nationwide cultural festival calendar"
+      }
+    },
+    "mobile_title": "Khám phá",
+    "category_tabs_aria": "Danh mục hướng dẫn",
+    "gemini_notice": "AI gợi ý địa điểm mới dựa trên sở thích và ngữ cảnh của bạn.",
+    "places_none": "Không có địa điểm để gợi ý.",
+    "places_extra": ", và {{n}} địa điểm nữa",
+    "places_summary": "{{listed}}{{extra}} — đã gợi ý {{count}} địa điểm.\nChạm vào điểm đánh dấu trên bản đồ để xem chi tiết.",
+    "coords_hint": "Không tìm thấy tọa độ hiển thị trên bản đồ. Hãy thử tên địa điểm rõ ràng hơn.",
+    "answer_empty": "Không lấy được câu trả lời.",
+    "guide_error": "Không lấy được phản hồi hướng dẫn.",
+    "directions_no_location": "Cần vị trí của bạn để chỉ đường lái xe. Hãy cho phép định vị và thử lại.",
+    "festival_on_map": "Hiển thị {{count}} sự kiện trên bản đồ ({{year}}/{{month}}).",
+    "festival_map_empty": "Không có sự kiện có tọa độ hoặc API không trả dữ liệu.",
+    "festival_load_error": "Không tải được sự kiện: {{message}}",
+    "festival_loading_overlay": "Đang tải sự kiện…",
+    "marker_event": "Sự kiện",
+    "marker_place": "Địa điểm",
+    "nearby_category_fallback": "Nhà hàng · quán cà phê",
+    "badge_event": "Sự kiện",
+    "badge_spot": "Địa điểm gợi ý",
+    "keyword_default": "Gợi ý",
+    "info_none": "Không có thông tin",
+    "category": {
+      "all": "Tất cả",
+      "festival": "Sự kiện",
+      "activity": "Hoạt động K",
+      "historic": "Lịch sử & di sản",
+      "culture": "Văn hóa địa phương",
+      "nature": "Thiên nhiên & thư giãn",
+      "restaurant": "Ẩm thực",
+      "cafe": "Cà phê"
+    },
+    "prompt": {
+      "activity": "Gợi ý các hoạt động K và trải nghiệm thực tế tôi có thể thử tại Hàn Quốc.",
+      "historic": "Gợi ý di tích lịch sử, di sản và địa danh văn hóa đáng ghé thăm tại Hàn Quốc.",
+      "culture": "Gợi ý nơi trải nghiệm văn hóa địa phương, chợ và không khí khu phố tại Hàn Quốc.",
+      "nature": "Gợi ý thiên nhiên, công viên và nơi thư giãn cho chuyến đi tại Hàn Quốc.",
+      "restaurant": "Gợi ý nhà hàng ngon và quán ăn địa phương tại Hàn Quốc.",
+      "cafe": "Gợi ý quán cà phê đẹp, bánh ngọt và điểm cà phê tại Hàn Quốc."
+    },
+    "placeholder": {
+      "festival": "Lễ hội",
+      "cafe": "Cà phê",
+      "restaurant": "Nhà hàng",
+      "heritage": "Di sản",
+      "nature": "Thiên nhiên",
+      "shopping": "Mua sắm",
+      "default": "Địa điểm"
+    },
+    "route": {
+      "minutes": "{{m}} phút",
+      "hours": "{{h}} giờ",
+      "hours_minutes": "{{h}} giờ {{m}} phút",
+      "car_km_only": "🚗 ~{{km}} km bằng ô tô",
+      "car_summary": "🚗 ~{{dur}} ({{km}} km)",
+      "won": "₩{{amount}}",
+      "won_zero": "₩0"
+    },
+    "chat": {
+      "placeholder": "Hỏi về một địa điểm…",
+      "role_user": "Bạn",
+      "role_bot": "Kroaddy",
+      "collapse": "Thu gọn chat",
+      "open": "Mở chat",
+      "input_aria": "Câu hỏi cho hướng dẫn AI",
+      "send_wait": "Vui lòng đợi phản hồi.",
+      "send_empty": "Nhập câu hỏi.",
+      "send": "Gửi",
+      "send_aria_busy": "Đang xử lý",
+      "send_aria_empty": "Nhập câu hỏi",
+      "send_aria": "Gửi câu hỏi"
+    },
+    "map": {
+      "my_location": "Vị trí của tôi",
+      "aria_map": "Bản đồ",
+      "loading": "Đang tải bản đồ…",
+      "load_error": "Không tải được bản đồ.",
+      "load_error_hint": "Kiểm tra mạng và NEXT_PUBLIC_NAVER_MAP_CLIENT_ID."
+    },
+    "searching": {
+      "chat": "Kroaddy đang tìm kiếm",
+      "map": "Kroaddy đang tìm địa điểm tốt nhất"
+    },
+    "sheet": {
+      "driving_route": "Chỉ đường lái xe",
+      "driving_route_aria": "Hiển thị chỉ đường lái xe",
+      "route_loading": "Đang tải tuyến đường…",
+      "route_unavailable": "Không có chỉ đường lái xe cho đoạn này. Thử cách khác.",
+      "retry": "Thử lại",
+      "retry_route": "Tải lại tuyến đường",
+      "route_summary_aria": "Tóm tắt lái xe",
+      "drive_duration_label": "Thời gian lái",
+      "distance_label": "Khoảng cách",
+      "km_suffix": "{{km}} km",
+      "fuel_label": "Ước tính nhiên liệu",
+      "toll_label": "Phí cầu đường",
+      "taxi_label": "Taxi (ước tính)",
+      "route_detail_missing": "Không tải được chi tiết thời gian và khoảng cách cho đoạn này.",
+      "nearby_load_fail": "Không tải được địa điểm gần đây.",
+      "share_ok": "Đã chia sẻ hoặc sao chép vào clipboard.",
+      "share_fail": "Chia sẻ thất bại.",
+      "image_prep": "Đang tải ảnh",
+      "festival_label": "Lễ hội",
+      "keywords_aria": "Từ khóa địa điểm",
+      "place_info_aria": "Thông tin địa điểm",
+      "info_loading": "Đang tải thông tin…",
+      "address_copied": "Đã sao chép",
+      "address_tap_copy": "Chạm để sao chép",
+      "visit_homepage": "Truy cập trang web",
+      "naver_partial": "Không khớp tìm kiếm địa phương; chỉ hiển thị một phần. Xem gợi ý AI và bản đồ.",
+      "why_recommend": "Vì sao Kroaddy gợi ý",
+      "points_aria": "Điểm nổi bật",
+      "desc_collapse": "Thu gọn",
+      "desc_expand": "Xem thêm",
+      "ai_why": "Gợi ý AI",
+      "no_ai_desc": "Chưa có mô tả AI. Hỏi lại hoặc chọn điểm đánh dấu khác.",
+      "nearby_section_aria": "Nhà hàng và quán cà phê gần đây",
+      "nearby_title": "Địa điểm gần đây để đi cùng",
+      "nearby_type_aria": "Loại địa điểm gần đây",
+      "nearby_empty": "Không tìm thấy nhà hàng hoặc quán cà phê gần đây. Thử bộ lọc khác.",
+      "distance_about": "~{{dist}}",
+      "est_cost": "Chi phí ước tính",
+      "visit_duration": "Tham quan / thời lượng",
+      "photo_spot": "Điểm chụp ảnh",
+      "copy_address": "Sao chép địa chỉ",
+      "done": "Xong",
+      "coords_aria": "Tọa độ sự kiện",
+      "lat_label": "Vĩ độ",
+      "lng_label": "Kinh độ",
+      "venue_label": "Địa điểm tổ chức",
+      "period_label": "Thời gian",
+      "event_info": "Chi tiết sự kiện",
+      "event_desc_fail": "Không tải được mô tả. Hỏi lại hoặc chọn điểm đánh dấu khác.",
+      "official_site": "Trang web chính thức",
+      "share": "Chia sẻ"
+    }
+  },
+  "chat": {
+    "tier": {
+      "silver": "Bac",
+      "gold": "Vang",
+      "platinum": "Bach kim",
+      "diamond": "Kim cuong"
+    },
+    "group": {
+      "title_list": "Phòng chat nhóm",
+      "title_room": "Chat nhóm - {{room}}",
+      "back_to_list": "Danh sách phòng",
+      "loading_rooms": "Đang tải danh sách phòng…",
+      "rooms_hint": "Phòng vào được phụ thuộc cấp danh dự. Hạng cao hơn có thể vào cả phòng hạng thấp hơn.",
+      "table": {
+        "room": "Phòng",
+        "honor": "Danh dự tối thiểu",
+        "access": "Vào được"
+      },
+      "room_label": "Phòng {{label}}",
+      "or_more": "trở lên",
+      "access_yes": "Có",
+      "access_no": "Danh dự chưa đủ",
+      "enter": "Vào",
+      "loading_messages": "Đang tải tin nhắn…",
+      "user_fallback": "Người dùng {{id}}",
+      "open_tourstar": "Mở bài Tourstar",
+      "menu": {
+        "whisper": "Gửi tin riêng",
+        "honor_up": "Tăng danh dự",
+        "honor_down": "Giảm danh dự",
+        "add_friend": "Thêm bạn"
+      },
+      "input_placeholder": "Nhập tin nhắn…",
+      "send": "Gửi",
+      "dev_add_dummy": "Dev: thêm tin thử (người khác)",
+      "whisper": {
+        "title": "Gửi tin riêng",
+        "to": "Tới: {{username}}"
+      },
+      "sending": "Đang gửi…",
+      "submit": "Gửi",
+      "action_failed": "Xử lý thất bại.",
+      "friend_failed": "Gửi lời mời kết bạn thất bại.",
+      "error_load_messages": "Không tải được tin nhắn.",
+      "error_load_messages_runtime": "Lỗi khi tải tin nhắn.",
+      "error_auth_sse": "Xác thực kết nối chat thất bại. Vui lòng thử lại sau.",
+      "error_send": "Gửi thất bại.",
+      "error_send_runtime": "Lỗi khi gửi.",
+      "error_whisper_send": "Gửi tin riêng thất bại.",
+      "error_whisper_send_runtime": "Lỗi khi gửi tin riêng.",
+      "test_user": "Người dùng thử",
+      "test_message": "Ai đi du lịch cùng thì nhắn riêng nhé! (Tin thử — bấm để xem)"
+    },
+    "whisper": {
+      "user_fallback": "Người dùng {{id}}",
+      "title": "Tin riêng",
+      "new_chat": "Cuộc trò chuyện mới",
+      "no_conversations": "Chưa có cuộc trò chuyện",
+      "start": "Gửi tin riêng",
+      "blocked_user": "Người dùng bị chặn",
+      "delete_conv": "Xóa cuộc trò chuyện",
+      "unblock": "Bỏ chặn",
+      "block": "Chặn người dùng",
+      "empty_thread": "Bắt đầu trò chuyện với {{name}}",
+      "view_tourstar": "Xem bài Tourstar",
+      "read": "Đã đọc",
+      "cannot_send_blocked": "Không thể gửi tin cho người đã chặn.",
+      "input_placeholder": "Nhập tin nhắn… (Enter gửi, Shift+Enter xuống dòng)",
+      "pick_or_start": "Chọn cuộc trò chuyện hoặc gửi tin riêng mới",
+      "new_whisper": "+ Tin riêng mới",
+      "new_whisper_title": "Tin riêng mới",
+      "no_friends": "Chưa có bạn bè.",
+      "add_friend": "Thêm bạn",
+      "delete_confirm": "Xóa toàn bộ cuộc trò chuyện với {{name}}?\nKhông thể hoàn tác."
+    },
+    "friends": {
+      "title": "Danh sách bạn bè",
+      "whisper_box": "Hộp tin riêng",
+      "error_list": "Không tải được danh sách.",
+      "list_title": "Bạn bè ({{count}})",
+      "empty": "Chưa có bạn. Trong chat nhóm, chạm tin nhắn để gửi lời mời kết bạn.",
+      "pending_title": "Lời mời đã nhận ({{count}})",
+      "pending_empty": "Không có yêu cầu đang chờ.",
+      "whisper": "Tin riêng",
+      "remove_title": "Xóa bạn",
+      "block_title": "Chặn người dùng",
+      "whisper_to_suffix": " — gửi tin riêng",
+      "whisper_placeholder": "Nhập nội dung tin riêng…",
+      "counter_send_hint": "{{len}} / 500 · Ctrl+Enter để gửi",
+      "sending": "Đang gửi…",
+      "send": "Gửi",
+      "honor": "Danh dự {value}",
+      "user_fallback": "Người dùng {{id}}",
+      "accept_ok": "Đã chấp nhận lời mời kết bạn.",
+      "accept_fail": "Chấp nhận thất bại.",
+      "accept_err": "Xử lý chấp nhận thất bại.",
+      "remove_confirm": "Xóa {{name}} khỏi danh sách bạn?",
+      "remove_ok": "Đã xóa {{name}} khỏi danh sách bạn.",
+      "remove_fail": "Xóa bạn thất bại.",
+      "remove_err": "Xóa bạn thất bại.",
+      "block_confirm": "Chặn {{name}}?\nNgười này sẽ bị xóa khỏi bạn bè và không gửi tin riêng được.",
+      "block_ok": "Đã chặn {{name}}.",
+      "block_fail": "Chặn thất bại.",
+      "block_err": "Chặn thất bại.",
+      "whisper_ok": "Đã gửi tin riêng cho {{name}}.",
+      "whisper_fail": "Gửi tin riêng thất bại.",
+      "whisper_err": "Gửi tin riêng thất bại."
+    }
+  },
+  "tourstar": {
+    "title": "Ngôi sao du lịch",
+    "subtitle": "AI chọn ảnh du lịch đẹp nhất; thêm bình luận ngắn để đăng đẹp.",
+    "new_post": "Bài viết mới",
+    "back_to_feed_title": "Về trang tổng",
+    "friend_badge": "Bạn bè",
+    "author": {
+      "self_caption": "Ghi lại và chia sẻ khoảnh khắc du lịch quý giá",
+      "other_caption": "Bài viết của người dùng này"
+    },
+    "stats": {
+      "posts": "Bài viết",
+      "scraps": "Lưu",
+      "friends": "Bạn bè"
+    },
+    "search": {
+      "all": "Tất cả",
+      "author": "Tên người dùng",
+      "title": "Tiêu đề",
+      "content": "Nội dung",
+      "tags": "Thẻ",
+      "location": "Địa điểm",
+      "placeholder": "Nhập để tìm kiếm..."
+    },
+    "tabs": {
+      "all": "Tất cả",
+      "mine": "Bài của tôi",
+      "friends": "Bài của bạn bè",
+      "bookmarked": "Đã lưu"
+    },
+    "sort": {
+      "latest": "Mới nhất",
+      "likes": "Nhiều lượt thích",
+      "comments": "Nhiều bình luận"
+    },
+    "empty": {
+      "author": "Không có bài viết của {{name}}",
+      "mine": "Bạn chưa đăng bài",
+      "bookmarked": "Chưa có bài đã lưu",
+      "friends": "Không có bài của bạn bè",
+      "search": "Không có kết quả",
+      "none": "Chưa có chuyến đi nào được ghi lại",
+      "help_bookmarked": "Nhấn nút lưu ở bài viết của người khác",
+      "help_friends": "Thêm bạn để xem ghi chép chuyến đi của họ",
+      "help_new": "Dùng nút “Bài viết mới” để ghi lại chuyến đi đầu tiên",
+      "cta": "Ghi lại chuyến đi"
+    },
+    "ai_banner": {
+      "title": "AI tự động chọn ảnh đẹp nhất",
+      "body": "Tải ảnh lên, AI đề xuất ảnh đẹp; thêm bình luận ngắn để đăng."
+    },
+    "status": {
+      "photo_queued": "Đang xếp hàng phân tích ảnh bằng AI...",
+      "photo_running": "Đang phân tích ảnh bằng AI...",
+      "photo_failed": "Phân tích AI thất bại",
+      "photo_done_pick": "Phân tích xong (xem xếp hạng và chọn ảnh)",
+      "comment_draft_running": "Phân tích xong (đang tạo bản nháp bình luận...)",
+      "comment_draft_done": "Phân tích xong (bản nháp bình luận sẵn sàng)",
+      "photo_done": "Phân tích AI hoàn tất",
+      "upload_failed": "Tải lên thất bại",
+      "checking_metadata": "Đang kiểm tra metadata ngày chụp...",
+      "no_photo_in_range": "Không có ảnh trong khoảng đã chọn",
+      "filtered_uploading": "{{excludedCount}} bị lọc theo ngày, đang tự động tải lên {{filteredCount}} ảnh...",
+      "uploading_count": "Đang tải lên {{count}} ảnh...",
+      "post_generating": "Đang tạo bài viết bằng AI...",
+      "post_generated": "Đã tạo bài viết AI",
+      "post_save_failed": "Lưu bài viết thất bại"
+    },
+    "create": {
+      "title": "Tạo ghi chép chuyến đi mới",
+      "subtitle": "Tải ảnh lên — AI sẽ tự động chọn ảnh đẹp nhất ✨",
+      "file_upload": "Tải tệp",
+      "photo_selected_count": "Ảnh (đã chọn {{selected}}/{{total}})",
+      "date_filter_note": "Nếu nhập ngày, chỉ ảnh trong khoảng đó sẽ được tải lên tự động (không dùng OpenAI).",
+      "start_date": "Ngày bắt đầu",
+      "end_date": "Ngày kết thúc",
+      "include_unknown_shot_date": "Bao gồm ảnh không có ngày chụp",
+      "style_preset": "Mẫu văn phong (MBTI)",
+      "user_template_optional": "Mẫu người dùng (tùy chọn)",
+      "style_auto": "Tự động (mặc định)",
+      "style_group": {
+        "nt": "Phân tích/Chiến lược (NT)",
+        "nf": "Ngoại giao/Cảm xúc (NF)",
+        "sj": "Tổ chức/Thực tế (SJ)",
+        "sp": "Khám phá/Tự phát (SP)"
+      },
+      "checking_shot_date": "Đang kiểm tra ngày chụp...",
+      "uploading": "Đang tải lên...",
+      "upload_files": "+ Tải ảnh lên",
+      "filter_by_date": "Lọc tự động theo ngày chụp (metadata)",
+      "location_optional": "Địa điểm (tùy chọn)",
+      "location_placeholder": "vd. Gangnam Seoul, Haeundae Busan (AI ước tính nếu bỏ trống)",
+      "one_line_comment": "Bình luận ngắn",
+      "comment_placeholder": "Viết bình luận ngắn để đăng đẹp hơn",
+      "style_template_placeholder": "vd. giọng điệu nhẹ nhàng, 3 thẻ",
+      "generated_title": "Ghi chép chuyến đi do AI gợi ý {{date}}",
+      "location_empty": "Chưa nhập điểm đến",
+      "comment_default": "Ghi lại những khoảnh khắc du lịch quý giá.",
+      "generating": "Đang tạo...",
+      "submit": "Đăng"
+    },
+    "error": {
+      "upload_photo": "Tải ảnh lên thất bại. Vui lòng kiểm tra máy chủ tourstar.",
+      "upload_photo_simple": "Tải ảnh lên thất bại.",
+      "like_failed": "Không thể xử lý lượt thích. Hãy thử lại sau.",
+      "cannot_delete_no_login": "Không xác minh được đăng nhập nên không thể xóa bài.",
+      "delete_failed": "Xóa thất bại. Kiểm tra quyền sở hữu hoặc thử lại sau.",
+      "delete_retry": "Xóa thất bại. Vui lòng thử lại sau.",
+      "edit_failed_with_detail": "Sửa bài thất bại.\n{{detail}}",
+      "author_not_found": "Không tìm thấy tài khoản của {{name}}.",
+      "friend_request_failed": "Gửi lời mời kết bạn thất bại.",
+      "friend_request_failed_with_detail": "Gửi lời mời kết bạn thất bại.\n{{detail}}",
+      "friends_only": "Chỉ bạn bè.",
+      "no_photo_for_period": "Không có ảnh trong khoảng thời gian đã chọn.\n(Không metadata: {{unknownCount}}, bị loại: {{excludedCount}})",
+      "partial_upload_failed": "{{count}}장의 사진 업로드에 실패했습니다. 성공한 사진만 저장됩니다.",
+      "upload_failed_count": "사진 업로드에 실패했습니다. ({{count}}장 실패)"
+    },
+    "confirm": {
+      "delete_post": "Xóa bài này? Không thể hoàn tác."
+    },
+    "share": {
+      "copied": "Đã sao chép liên kết chia sẻ. Dán vào chat.",
+      "copy_prompt": "Sao chép liên kết dưới đây và chia sẻ trong chat."
+    },
+    "edit": {
+      "title": "Chỉnh sửa bài viết",
+      "field_title": "Tiêu đề",
+      "title_placeholder": "Nhập tiêu đề",
+      "field_location": "Địa điểm",
+      "location_placeholder": "vd. Gangnam Seoul, Haeundae Busan",
+      "field_body": "Nội dung",
+      "body_placeholder": "Nhập nội dung bài",
+      "photo_edit": "Chỉnh sửa ảnh",
+      "add_photo": "+ Thêm ảnh",
+      "click_to_remove": "Nhấp để xóa khỏi danh sách.",
+      "new": "Mới",
+      "photo_help": "Nhấp ảnh cũ để giữ/xóa. Nhấp ảnh mới để xóa.",
+      "tags_label": "Thẻ (phân tách bằng dấu phẩy hoặc khoảng trắng)",
+      "tags_placeholder": "vd. winterwalk, healing, travelrecord",
+      "deleting": "Đang xóa...",
+      "delete_post": "Xóa bài",
+      "saving": "Đang lưu..."
+    },
+    "placeholder": {
+      "location_unknown": "Không rõ địa điểm",
+      "anonymous": "Ẩn danh"
+    },
+    "time": {
+      "now": "vừa xong",
+      "minutes_ago": "{{count}} phút trước",
+      "hours_ago": "{{count}} giờ trước",
+      "days_ago": "{{count}} ngày trước"
+    },
+    "bookmarked": "Đã lưu",
+    "bookmark": "Lưu",
+    "comments_count": "{{count}} bình luận",
+    "photos_count": "{{count}} ảnh",
+    "first_comment": "Hãy là người bình luận đầu tiên.",
+    "comment_placeholder": "Nhập bình luận",
+    "copy_share_link": "Sao chép liên kết",
+    "friend_request_sent": "Đã gửi lời mời kết bạn tới {{name}}.",
+    "already_friend": "Người này đã là bạn của bạn.",
+    "requesting": "Đang gửi...",
+    "send_friend_request": "Gửi lời mời kết bạn",
+    "view_posts": "Xem bài viết",
+    "cancel_bookmark": "Bỏ lưu",
+    "my_post": "Bài của tôi",
+    "change_profile_photo": "Đổi ảnh hồ sơ",
+    "api": {
+      "auto_comment_error": "투어스타 자동 코멘트 API 오류",
+      "create_comment_error": "투어스타 댓글 저장 API 오류",
+      "create_post_error": "투어스타 게시물 저장 API 오류",
+      "delete_post_error": "투어스타 게시물 삭제 API 오류",
+      "finalize_upload_error": "사진 S3 업로드 사전 처리 실패",
+      "generate_post_error": "투어스타 게시글 생성 API 오류",
+      "job_status_error": "투어스타 작업 조회 API 오류",
+      "like_toggle_error": "투어스타 좋아요 API 오류",
+      "list_posts_error": "투어스타 게시물 조회 API 오류",
+      "profile_upload_error": "프로필 사진 업로드 실패",
+      "share_preview_error": "투어스타 공유 미리보기 API 오류",
+      "update_post_error": "투어스타 게시물 수정 API 오류",
+      "upload_error": "투어스타 업로드 API 오류"
+    }
+  },
+  "calendar": {
+    "weekday": {
+      "0": "CN",
+      "1": "T2",
+      "2": "T3",
+      "3": "T4",
+      "4": "T5",
+      "5": "T6",
+      "6": "T7"
+    }
+  },
+  "map": {
+    "mode": {
+      "car": "Ô tô",
+      "walk": "Đi bộ",
+      "transit": "Phương tiện công cộng"
+    },
+    "duration_min": "khoảng {{min}} phút",
+    "duration_hour_min": "khoảng {{hour}} giờ {{min}} phút",
+    "total_route_stops": "Toàn tuyến · {{count}} điểm dừng",
+    "searching_locations": "Đang tìm vị trí… {{resolved}} / {{total}}",
+    "routing_car": "Đang tính tuyến đường…",
+    "drawing_route": "Đang vẽ tuyến…",
+    "car_estimate": "(ước tính ô tô)",
+    "walk_estimate": "(ước tính đi bộ)",
+    "route_failed": "Không thể hiển thị tuyến đường",
+    "segment_route": "Tuyến {{from}}→{{to}}",
+    "view_map": "Xem bản đồ",
+    "same_place": "📌 Cùng vị trí",
+    "open_in_naver_title": "Xem {{name}} trên Naver Map",
+    "loading": "Đang tải bản đồ…",
+    "static_failed": "Không thể tải bản đồ tĩnh",
+    "open_in_naver": "Xem trên Naver Map",
+    "note_new_schedule": "Lịch trình mới tạo sẽ tự động hiển thị bản đồ",
+    "zoom_in": "Phóng to",
+    "zoom_out": "Thu nhỏ",
+    "zoom_reset": "Đặt lại tỷ lệ",
+    "open_in_naver_with_arrow": "Mở trong Naver Map ↗"
+  },
+  "options": {
+    "gender": {
+      "male": "Nam",
+      "female": "Nữ",
+      "other": "Khác",
+      "no_answer": "Không trả lời"
+    },
+    "age": {
+      "teens": "Tuổi teen",
+      "twenties": "Tuổi 20",
+      "thirties": "Tuổi 30",
+      "forties": "Tuổi 40",
+      "fifties": "Tuổi 50",
+      "sixties_plus": "60+"
+    },
+    "diet": {
+      "normal": "Thông thường",
+      "vegetarian": "Ăn chay",
+      "vegan": "Thuần chay",
+      "halal": "Halal",
+      "allergy": "Dị ứng"
+    },
+    "religion": {
+      "none": "Không có",
+      "christian": "Thiên Chúa giáo",
+      "buddhist": "Phật giáo",
+      "catholic": "Công giáo",
+      "islam": "Hồi giáo",
+      "other": "Khác"
+    },
+    "nationality": {
+      "korea": "Hàn Quốc",
+      "japan": "Nhật Bản",
+      "china": "Trung Quốc",
+      "usa": "Hoa Kỳ",
+      "united_kingdom": "Vương quốc Anh",
+      "france": "Pháp",
+      "germany": "Đức",
+      "canada": "Canada",
+      "australia": "Úc",
+      "vietnam": "Việt Nam",
+      "thailand": "Thái Lan",
+      "philippines": "Philippines",
+      "indonesia": "Indonesia",
+      "singapore": "Singapore",
+      "malaysia": "Malaysia",
+      "india": "Ấn Độ",
+      "other": "Khác"
+    }
+  },
+  "api": {
+    "backend_not_connected": "백엔드가 연결되지 않았습니다. 배포 후에는 Vercel 환경 변수에 NEXT_PUBLIC_API_URL 을 설정하세요.",
+    "server_unreachable": "서버에 연결할 수 없습니다. 네트워크와 백엔드 실행 여부를 확인해 주세요.",
+    "timeout": "요청 시간이 초과되었습니다."
+  },
+  "festival": {
+    "api": {
+      "error": "행사 API 오류"
+    }
+  },
+  "news": {
+    "api": {
+      "error": "뉴스 API 오류"
+    }
+  },
+  "usercontent": {
+    "api": {
+      "ai_polish_error": "AI 폴리시 오류",
+      "delete_error": "삭제 오류",
+      "feed_load_error": "피드 로드 오류",
+      "like_error": "좋아요 오류",
+      "s3_upload_error": "S3 업로드 실패",
+      "save_error": "저장 오류",
+      "validate_image_error": "이미지 검증 오류"
+    }
+  },
+  "userprofile": {
+    "api": {
+      "fetch_error": "프로필 조회 오류",
+      "save_error": "프로필 저장 오류"
+    }
+  },
+  "planner_dest": {
+    "seoul": {
+      "name": "Xơ-un",
+      "highlight1": "Cung Gyeongbokgung",
+      "highlight2": "Hongdae",
+      "highlight3": "Công viên sông Hàn"
+    },
+    "busan": {
+      "name": "Bu-san",
+      "highlight1": "Bãi biển Haeundae",
+      "highlight2": "Làng văn hóa Gamcheon",
+      "highlight3": "Chợ Jagalchi"
+    },
+    "daegu": {
+      "name": "Tê-gu",
+      "highlight1": "Phố Dongseong-ro",
+      "highlight2": "Phố Kim Gwangseok",
+      "highlight3": "Hồ Suseong"
+    },
+    "incheon": {
+      "name": "In-chơn",
+      "highlight1": "Songdo",
+      "highlight2": "Đảo Ganghwa",
+      "highlight3": "Phố Tàu"
+    },
+    "gwangju": {
+      "name": "Gwangju",
+      "highlight1": "ACC (Trung tâm văn hóa châu Á)",
+      "highlight2": "Yangnim-dong"
+    },
+    "daejeon": {
+      "name": "Tê-jơn",
+      "highlight1": "Tiệm bánh Seongsimdang",
+      "highlight2": "Công viên Expo",
+      "highlight3": "Suối nước nóng Yuseong"
+    },
+    "ulsan": {
+      "name": "Ulsan",
+      "highlight1": "Ganjeolgot",
+      "highlight2": "Công viên Daewangam",
+      "highlight3": "Sông Taehwa"
+    },
+    "sejong": {
+      "name": "Se-jong",
+      "highlight1": "Công viên hồ Sejong",
+      "highlight2": "Vườn thực vật quốc gia"
+    },
+    "jongno": {
+      "name": "Jong-no ? Gwanghwa-mun",
+      "highlight1": "Cung Gyeongbokgung",
+      "highlight2": "Nh? Xanh",
+      "highlight3": "Insa-dong"
+    },
+    "myeongdong": {
+      "name": "Myeong-dong ? Eulji-ro",
+      "highlight1": "Nh? th? Myeongdong",
+      "highlight2": "H?m Eulji-ro"
+    },
+    "yongsan": {
+      "name": "Yong-san ? Itaewon",
+      "highlight1": "B?o t?ng Qu?c gia H?n Qu?c",
+      "highlight2": "Itaewon"
+    },
+    "gangnam": {
+      "name": "Gang-nam ? Seocho",
+      "highlight1": "COEX",
+      "highlight2": "Apgujeong Rodeo",
+      "highlight3": "C?ng vi?n Dosan"
+    },
+    "jamsil": {
+      "name": "Jam-sil ? Songpa",
+      "highlight1": "Lotte World",
+      "highlight2": "C?ng vi?n Olympic",
+      "highlight3": "H? Seokchon"
+    },
+    "seongsu": {
+      "name": "Seong-su ? Hannam",
+      "highlight1": "Ph? cafe Seongsu",
+      "highlight2": "Ph?ng tr?ng b?y Hannam-dong"
+    },
+    "hongdae": {
+      "name": "Hong-dae ? Mapo",
+      "highlight1": "C?u l?c b? Hongdae",
+      "highlight2": "Yeonnam-dong",
+      "highlight3": "R?ng tuy?n Gyeongui"
+    },
+    "bukchon": {
+      "name": "Buk-chon ? Samcheong",
+      "highlight1": "L?ng Hanok Bukchon",
+      "highlight2": "Qu?n cafe Samcheong-dong"
+    },
+    "nowon": {
+      "name": "No-won ? Dobong",
+      "highlight1": "Suraksan",
+      "highlight2": "Dobongsan",
+      "highlight3": "Bulamsan"
+    },
+    "haeundae": {
+      "name": "Haeundae",
+      "highlight1": "Bãi Haeundae",
+      "highlight2": "Đảo Dongbaek",
+      "highlight3": "Đường Dalmaji"
+    },
+    "gwangalli": {
+      "name": "Gwangalli · Suyeong",
+      "highlight1": "Cầu Gwangandaegyo",
+      "highlight2": "Bãi Gwangalli"
+    },
+    "gijang": {
+      "name": "Gijang",
+      "highlight1": "Nhà thờ Jukseong Dream",
+      "highlight2": "Cảng Daebyeon",
+      "highlight3": "Thủy cung"
+    },
+    "songjeong": {
+      "name": "Songjeong · Cheongsapo",
+      "highlight1": "Bãi Songjeong",
+      "highlight2": "Đài ngắm Cheongsapo"
+    },
+    "nampo": {
+      "name": "Nampo · Trung khu",
+      "highlight1": "Chợ Jagalchi",
+      "highlight2": "Quảng trường BIFF",
+      "highlight3": "Hẻm sách Bosu-dong"
+    },
+    "seomyeon": {
+      "name": "Seomyeon · Bujeon",
+      "highlight1": "Phố Seomyeon",
+      "highlight2": "Judys Taehwa",
+      "highlight3": "Chợ Bujeon"
+    },
+    "gamcheon": {
+      "name": "Làng văn hóa Gamcheon",
+      "highlight1": "Làng văn hóa Gamcheon",
+      "highlight2": "Sky Road"
+    },
+    "yeongdo": {
+      "name": "Yeongdo",
+      "highlight1": "Taejongdae",
+      "highlight2": "Làng văn hóa Huinnyeoul",
+      "highlight3": "Núi Bongnae"
+    },
+    "geumjeong": {
+      "name": "Geumjeong · Oncheonjang",
+      "highlight1": "Thành Geumjeongsanseong",
+      "highlight2": "Chùa Beomeosa",
+      "highlight3": "Oncheonjang"
+    },
+    "gangseo-bs": {
+      "name": "Gangseo · Gaekdo",
+      "highlight1": "Đảo Eulsuk",
+      "highlight2": "Bãi triều Gaekdo"
+    },
+    "dadaepo": {
+      "name": "Saha · Dadaepo",
+      "highlight1": "Bãi Dadaepo",
+      "highlight2": "Cửa sông Nakdong"
+    },
+    "dongseongno": {
+      "name": "Dongseongno · Trung khu",
+      "highlight1": "Dongseong-ro",
+      "highlight2": "Chợ Seomun",
+      "highlight3": "Chợ thuốc Yakjeon"
+    },
+    "gimgwangseok": {
+      "name": "Phố Kim Gwangseok",
+      "highlight1": "Phố Kim Gwangseok",
+      "highlight2": "Chợ Bangcheon"
+    },
+    "suseongmot": {
+      "name": "Hồ Suseong · Beomeo",
+      "highlight1": "Hồ Suseong",
+      "highlight2": "Công viên Suseong"
+    },
+    "palgongsan": {
+      "name": "Núi Palgong",
+      "highlight1": "Chùa Donghwa",
+      "highlight2": "Đá Gatbawi",
+      "highlight3": "Đường chân trời Palgong"
+    },
+    "dalseong": {
+      "name": "Bisulsan · Dalseong",
+      "highlight1": "Hoa anh đào Bisulsan",
+      "highlight2": "Đầm lầy Dalseong"
+    },
+    "gunwi": {
+      "name": "Gunwi",
+      "highlight1": "Công viên chủ đề Samguk Yusa",
+      "highlight2": "Pháo đài Hwasan"
+    },
+    "ganjeolgot": {
+      "name": "Ganjeolgot",
+      "highlight1": "Hải đăng Ganjeolgot",
+      "highlight2": "Bình minh năm mới"
+    },
+    "daewangam": {
+      "name": "Daewangam",
+      "highlight1": "Công viên Daewangam",
+      "highlight2": "Bãi Ilsan"
+    },
+    "taehwagang": {
+      "name": "Sông Taehwa",
+      "highlight1": "Vườn quốc gia Taehwa",
+      "highlight2": "Rừng tre Sipri Daesup"
+    },
+    "bangudae": {
+      "name": "Bangudae",
+      "highlight1": "Khắc đá Bangudae",
+      "highlight2": "Jipcheongjeong"
+    },
+    "jeju": {
+      "name": "Thành phố Jeju",
+      "highlight1": "Hallasan",
+      "highlight2": "Seongsan Ilchulbong",
+      "highlight3": "Bãi Hyeopjae"
+    },
+    "gyeongju": {
+      "name": "Gyeongju",
+      "highlight1": "Hwangridan-gil",
+      "highlight2": "Cheomseongdae",
+      "highlight3": "Bulguksa"
+    },
+    "gangneung": {
+      "name": "Gangneung",
+      "highlight1": "Bãi Gyeongpo",
+      "highlight2": "Phố cà phê Anmok",
+      "highlight3": "Ojukheon"
+    },
+    "jeonju": {
+      "name": "Jeonju",
+      "highlight1": "Làng hanok",
+      "highlight2": "Hẻm makgeolli"
+    },
+    "asan": {
+      "name": "Asan"
+    },
+    "cheonan": {
+      "name": "Cheonan"
+    },
+    "nonsan": {
+      "name": "Nonsan"
+    },
+    "seosan": {
+      "name": "Seosan"
+    },
+    "dangjin": {
+      "name": "Dangjin"
+    },
+    "iksan": {
+      "name": "Iksan"
+    },
+    "gochang": {
+      "name": "Gochang"
+    },
+    "jeongeup": {
+      "name": "Jeongeup"
+    },
+    "gimje": {
+      "name": "Gimje"
+    },
+    "wando": {
+      "name": "Wando"
+    },
+    "gangjin": {
+      "name": "Gangjin"
+    },
+    "yeonggwang": {
+      "name": "Yeonggwang"
+    },
+    "haenam": {
+      "name": "Haenam"
+    },
+    "goheung": {
+      "name": "Goheung"
+    },
+    "yeongam": {
+      "name": "Yeongam"
+    },
+    "gwangyang": {
+      "name": "Gwangyang"
+    },
+    "boseong": {
+      "name": "Boseong"
+    },
+    "naju": {
+      "name": "Naju"
+    },
+    "goyang": {
+      "name": "Goyang"
+    },
+    "paju": {
+      "name": "Paju"
+    },
+    "gimpo": {
+      "name": "Gimpo"
+    },
+    "uijeongbu": {
+      "name": "Uijeongbu"
+    },
+    "namyangju": {
+      "name": "Namyangju"
+    },
+    "guri": {
+      "name": "Guri"
+    },
+    "gapyeong": {
+      "name": "Gapyeong"
+    },
+    "yangpyeong": {
+      "name": "Yangpyeong"
+    },
+    "pocheon": {
+      "name": "Pocheon"
+    },
+    "yangju": {
+      "name": "Yangju"
+    },
+    "dongducheon": {
+      "name": "Dongducheon"
+    },
+    "suwon": {
+      "name": "Suwon"
+    },
+    "hwaseong": {
+      "name": "Hwaseong"
+    },
+    "ansan": {
+      "name": "Ansan"
+    },
+    "siheung": {
+      "name": "Siheung"
+    },
+    "anyang": {
+      "name": "Anyang"
+    },
+    "gunpo": {
+      "name": "Gunpo"
+    },
+    "pyeongtaek": {
+      "name": "Pyeongtaek"
+    },
+    "yongin": {
+      "name": "Yongin"
+    },
+    "seongnam": {
+      "name": "Seongnam"
+    },
+    "hanam": {
+      "name": "Hanam"
+    },
+    "icheon": {
+      "name": "Icheon"
+    },
+    "yeoju": {
+      "name": "Yeoju"
+    },
+    "anseong": {
+      "name": "Anseong"
+    },
+    "osan": {
+      "name": "Osan"
+    },
+    "uiwang": {
+      "name": "Uiwang"
+    },
+    "gwacheon": {
+      "name": "Gwacheon"
+    },
+    "bucheon": {
+      "name": "Bucheon"
+    },
+    "gwangmyeong": {
+      "name": "Gwangmyeong"
+    },
+    "chuncheon": {
+      "name": "Chuncheon"
+    },
+    "wonju": {
+      "name": "Wonju"
+    },
+    "pyeongchang": {
+      "name": "Pyeongchang"
+    },
+    "yeongwol": {
+      "name": "Yeongwol"
+    },
+    "hoengseong": {
+      "name": "Hoengseong"
+    },
+    "jeongseon": {
+      "name": "Jeongseon"
+    },
+    "inje": {
+      "name": "Inje"
+    },
+    "taebaek": {
+      "name": "Taebaek"
+    },
+    "sokcho": {
+      "name": "Sokcho"
+    },
+    "yangyang": {
+      "name": "Yangyang"
+    },
+    "donghae": {
+      "name": "Donghae"
+    },
+    "samcheok": {
+      "name": "Samcheok"
+    },
+    "goseong-gw": {
+      "name": "Goseong Gw"
+    },
+    "cheongju": {
+      "name": "Cheongju"
+    },
+    "chungju": {
+      "name": "Chungju"
+    },
+    "jecheon": {
+      "name": "Jecheon"
+    },
+    "danyang": {
+      "name": "Danyang"
+    },
+    "gongju": {
+      "name": "Gongju"
+    },
+    "buyeo": {
+      "name": "Buyeo"
+    },
+    "boryeong": {
+      "name": "Boryeong"
+    },
+    "taean": {
+      "name": "Taean"
+    },
+    "gunsan": {
+      "name": "Gunsan"
+    },
+    "namwon": {
+      "name": "Namwon"
+    },
+    "yeosu": {
+      "name": "Yeosu"
+    },
+    "suncheon": {
+      "name": "Suncheon"
+    },
+    "mokpo": {
+      "name": "Mokpo"
+    },
+    "damyang": {
+      "name": "Damyang"
+    },
+    "andong": {
+      "name": "Andong"
+    },
+    "yeongju": {
+      "name": "Yeongju"
+    },
+    "mungyeong": {
+      "name": "Mungyeong"
+    },
+    "pohang": {
+      "name": "Pohang"
+    },
+    "yeongdeok": {
+      "name": "Yeongdeok"
+    },
+    "uljin": {
+      "name": "Uljin"
+    },
+    "dokdo": {
+      "name": "Dokdo"
+    },
+    "gumi": {
+      "name": "Gumi"
+    },
+    "gimcheon": {
+      "name": "Gimcheon"
+    },
+    "yeongcheon": {
+      "name": "Yeongcheon"
+    },
+    "sangju": {
+      "name": "Sangju"
+    },
+    "gyeongsan": {
+      "name": "Gyeongsan"
+    },
+    "tongyeong": {
+      "name": "Tongyeong"
+    },
+    "geoje": {
+      "name": "Geoje"
+    },
+    "namhae": {
+      "name": "Namhae"
+    },
+    "goseong-gn": {
+      "name": "Goseong Gn"
+    },
+    "jinju": {
+      "name": "Jinju"
+    },
+    "changwon": {
+      "name": "Changwon"
+    },
+    "hapcheon": {
+      "name": "Hapcheon"
+    },
+    "miryang": {
+      "name": "Miryang"
+    },
+    "hamyang": {
+      "name": "Hamyang"
+    },
+    "sancheong": {
+      "name": "Sancheong"
+    },
+    "hadong": {
+      "name": "Hadong"
+    },
+    "geochang": {
+      "name": "Geochang"
+    },
+    "gimhae": {
+      "name": "Gimhae"
+    },
+    "yangsan": {
+      "name": "Yangsan"
+    },
+    "changnyeong": {
+      "name": "Changnyeong"
+    },
+    "uiryeong": {
+      "name": "Uiryeong"
+    },
+    "seogwipo": {
+      "name": "Seogwipo"
+    }
+  },
+  "planner_region": {
+    "seoul_areas": {
+      "label": "X?-un",
+      "subLabel": "Khu v?c n?i b?t theo qu?n"
+    },
+    "gyeonggi_north": {
+      "label": "Bắc Gyeonggi",
+      "subLabel": "Goyang, Paju, Uijeongbu, Namyangju, v.v."
+    },
+    "gyeonggi_south": {
+      "label": "Nam Gyeonggi",
+      "subLabel": "Suwon, Yongin, Seongnam, Pyeongtaek, v.v."
+    },
+    "gangwon": {
+      "label": "Gangwon",
+      "subLabel": "Tỉnh tự trị đặc biệt Gangwon"
+    },
+    "chungbuk": {
+      "label": "Chungcheongbuk-do",
+      "subLabel": "Cheongju, Chungju, Jecheon, Danyang"
+    },
+    "chungnam": {
+      "label": "Chungcheongnam-do",
+      "subLabel": "Gongju, Buyeo, Boryeong, Taean, v.v."
+    },
+    "jeonbuk": {
+      "label": "Jeonbuk",
+      "subLabel": "Tỉnh tự trị đặc biệt Jeonbuk"
+    },
+    "jeonnam": {
+      "label": "Jeollanam-do",
+      "subLabel": "Yeosu, Suncheon, Mokpo, Damyang, v.v."
+    },
+    "busan": {
+      "label": "Busan",
+      "subLabel": "Thành phố trực thuộc trung ương Busan"
+    },
+    "daegu": {
+      "label": "Daegu",
+      "subLabel": "Thành phố trực thuộc trung ương Daegu"
+    },
+    "ulsan": {
+      "label": "Ulsan",
+      "subLabel": "Thành phố trực thuộc trung ương Ulsan"
+    },
+    "gyeongbuk": {
+      "label": "Gyeongsangbuk-do",
+      "subLabel": "Gyeongju, Pohang, Andong, v.v."
+    },
+    "gyeongnam": {
+      "label": "Gyeongsangnam-do",
+      "subLabel": "Tongyeong, Geoje, Jinju, Changwon, v.v."
+    },
+    "jeju": {
+      "label": "Jeju-do",
+      "subLabel": "Tỉnh tự trị đặc biệt Jeju"
+    }
+  }
+}

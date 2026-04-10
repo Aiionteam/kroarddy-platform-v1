@@ -1,3 +1,4 @@
+import "package:easy_localization/easy_localization.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
@@ -56,6 +57,21 @@ String _tierLabel(String roomType) {
   }
 }
 
+String _groupRoomTitle(ChatRoomInfo room) {
+  switch (room.roomType.toUpperCase()) {
+    case "SILVER":
+      return "screens.chat.tier_silver".tr();
+    case "GOLD":
+      return "screens.chat.tier_gold".tr();
+    case "PLATINUM":
+      return "screens.chat.tier_platinum".tr();
+    case "DIAMOND":
+      return "screens.chat.tier_diamond".tr();
+    default:
+      return room.label.isNotEmpty ? room.label : room.roomType;
+  }
+}
+
 // ── 등급 배지 PNG (실버 / 골드 / 플래티넘 / 다이아) ─────────────
 String _tierBadgeAsset(String? roomType) {
   switch ((roomType ?? "SILVER").toUpperCase()) {
@@ -85,9 +101,9 @@ class ChatPage extends ConsumerWidget {
           icon: const Icon(Icons.menu, color: _textPrimary),
           onPressed: () => mainScaffoldKey.currentState?.openDrawer(),
         ),
-        title: const Text(
-          "그룹톡",
-          style: TextStyle(color: _textPrimary, fontWeight: FontWeight.bold, fontSize: 18),
+        title: Text(
+          "sidebar.groupchat".tr(),
+          style: const TextStyle(color: _textPrimary, fontWeight: FontWeight.bold, fontSize: 18),
         ),
       ),
       body: const _GroupChatTab(),
@@ -162,9 +178,9 @@ class _GroupChatTabState extends ConsumerState<_GroupChatTab> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(
               children: [
-                const Text(
-                  "그룹톡 방",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _textPrimary),
+                Text(
+                  "screens.chat.room_list_header".tr(),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _textPrimary),
                 ),
                 const Spacer(),
                 IconButton(
@@ -183,9 +199,12 @@ class _GroupChatTabState extends ConsumerState<_GroupChatTab> {
                     const Text("💬", style: TextStyle(fontSize: 40)),
                     const SizedBox(height: 12),
                     Text(
-                      state.message.contains("실패") || state.message.contains("인증")
+                      state.message.contains("실패") ||
+                              state.message.contains("인증") ||
+                              state.message.contains("fail") ||
+                              state.message.contains("auth")
                           ? state.message
-                          : "채팅방을 불러올 수 없습니다.",
+                          : "screens.chat.cannot_load_rooms".tr(),
                       textAlign: TextAlign.center,
                       style: const TextStyle(fontSize: 14, color: _textSecondary),
                     ),
@@ -193,7 +212,7 @@ class _GroupChatTabState extends ConsumerState<_GroupChatTab> {
                     OutlinedButton.icon(
                       onPressed: ctrl.loadRooms,
                       icon: const Icon(Icons.refresh, size: 16),
-                      label: const Text("다시 시도"),
+                      label: Text("common.retry".tr()),
                     ),
                   ],
                 ),
@@ -204,9 +223,9 @@ class _GroupChatTabState extends ConsumerState<_GroupChatTab> {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
-                  const Text(
-                    "명예도에 따라 입장 가능한 방이 달라집니다.",
-                    style: TextStyle(fontSize: 12, color: _textSecondary),
+                  Text(
+                    "screens.chat.honor_rooms_note".tr(),
+                    style: const TextStyle(fontSize: 12, color: _textSecondary),
                   ),
                   const SizedBox(height: 12),
                   ...state.rooms.map(
@@ -244,7 +263,7 @@ class _GroupChatTabState extends ConsumerState<_GroupChatTab> {
             ),
             const SizedBox(width: 8),
             Text(
-              "${_tierLabel(state.selectedRoomType ?? "")} 채팅방",
+              "screens.chat.group_room_title".tr(namedArgs: {"tier": _tierLabel(state.selectedRoomType ?? "")}),
               style: const TextStyle(
                 color: _textPrimary,
                 fontWeight: FontWeight.bold,
@@ -271,8 +290,8 @@ class _GroupChatTabState extends ConsumerState<_GroupChatTab> {
             children: [
               Expanded(
                 child: state.groupMessages.isEmpty
-                    ? const Center(
-                        child: Text("메시지가 없습니다.", style: TextStyle(color: _textSecondary)),
+                    ? Center(
+                        child: Text("screens.chat.no_messages".tr(), style: const TextStyle(color: _textSecondary)),
                       )
                     : ListView.builder(
                         controller: _scrollController,
@@ -310,7 +329,7 @@ class _GroupChatTabState extends ConsumerState<_GroupChatTab> {
                           textInputAction: TextInputAction.send,
                           onSubmitted: (_) => _send(ctrl),
                           decoration: InputDecoration(
-                            hintText: "메시지를 입력하세요",
+                            hintText: "screens.chat.hint_message".tr(),
                             hintStyle: const TextStyle(color: _textSecondary, fontSize: 14),
                             filled: true,
                             fillColor: const Color(0xFFF9FAFB),
@@ -414,12 +433,14 @@ class _RoomCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  room.label,
+                  _groupRoomTitle(room),
                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _textPrimary),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  minHonor > 0 ? "최소 명예도 $minHonor 이상" : "누구나 입장 가능",
+                  minHonor > 0
+                      ? "screens.chat.min_honor_required".tr(namedArgs: {"min": "$minHonor"})
+                      : "screens.chat.open_to_all".tr(),
                   style: TextStyle(fontSize: 12, color: minHonor > 0 ? color : const Color(0xFF059669)),
                 ),
               ],
@@ -450,8 +471,8 @@ class _RoomCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
               child: Text(
-                "명예도 부족",
-                style: TextStyle(fontSize: 12, color: _textSecondary),
+                "screens.chat.honor_insufficient".tr(),
+                style: const TextStyle(fontSize: 12, color: _textSecondary),
               ),
             ),
         ],
@@ -562,9 +583,9 @@ class _ChatBubble extends StatelessWidget {
               CircleAvatar(
                 radius: 16,
                 backgroundColor: _primaryLight,
-                child: const Text(
-                  "나",
-                  style: TextStyle(fontSize: 10, color: _primary, fontWeight: FontWeight.bold),
+                child: Text(
+                  "screens.chat.me".tr(),
+                  style: const TextStyle(fontSize: 10, color: _primary, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -662,23 +683,23 @@ class _TourstarShareCardState extends ConsumerState<_TourstarShareCard> {
                       ],
                     ),
                     child: _loading
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 160,
                             child: Row(children: [
-                              SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: _primary)),
-                              SizedBox(width: 8),
-                              Text("게시글 불러오는 중...", style: TextStyle(fontSize: 12, color: _textSecondary)),
+                              const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: _primary)),
+                              const SizedBox(width: 8),
+                              Text("screens.chat.post_loading".tr(), style: const TextStyle(fontSize: 12, color: _textSecondary)),
                             ]),
                           )
                         : _preview == null
-                            ? const Text("게시글을 불러올 수 없습니다.", style: TextStyle(fontSize: 12, color: _textSecondary))
+                            ? Text("screens.chat.post_load_failed".tr(), style: const TextStyle(fontSize: 12, color: _textSecondary))
                             : Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(children: [
                                     const Icon(Icons.photo_camera_outlined, size: 14, color: _primary),
                                     const SizedBox(width: 4),
-                                    const Text("여행피드 게시글", style: TextStyle(fontSize: 10, color: _primary, fontWeight: FontWeight.w600)),
+                                    Text("screens.chat.tourstar_post_badge".tr(), style: const TextStyle(fontSize: 10, color: _primary, fontWeight: FontWeight.w600)),
                                   ]),
                                   const SizedBox(height: 6),
                                   if (_preview!.thumbnailUrl.isNotEmpty)
@@ -710,7 +731,7 @@ class _TourstarShareCardState extends ConsumerState<_TourstarShareCard> {
                                     ]),
                                   ],
                                   const SizedBox(height: 6),
-                                  const Text("탭하여 게시글 보기", style: TextStyle(fontSize: 10, color: _primary)),
+                                  Text("screens.chat.tap_to_view_post".tr(), style: const TextStyle(fontSize: 10, color: _primary)),
                                 ],
                               ),
                   ),
@@ -724,7 +745,10 @@ class _TourstarShareCardState extends ConsumerState<_TourstarShareCard> {
               CircleAvatar(
                 radius: 16,
                 backgroundColor: _primaryLight,
-                child: const Text("나", style: TextStyle(fontSize: 10, color: _primary, fontWeight: FontWeight.bold)),
+                child: Text(
+                  "screens.chat.me".tr(),
+                  style: const TextStyle(fontSize: 10, color: _primary, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ],
@@ -786,7 +810,7 @@ class _WhisperOverlayState extends State<_WhisperOverlay> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        "${widget.targetName}에게 개인톡",
+                        "screens.chat.whisper_to".tr(namedArgs: {"name": widget.targetName}),
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
@@ -808,7 +832,7 @@ class _WhisperOverlayState extends State<_WhisperOverlay> {
                   controller: _ctrl,
                   maxLines: 3,
                   decoration: InputDecoration(
-                    hintText: "메시지를 입력하세요",
+                    hintText: "screens.chat.hint_message".tr(),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   ),
@@ -827,7 +851,7 @@ class _WhisperOverlayState extends State<_WhisperOverlay> {
                             setState(() => _sending = false);
                           },
                     style: FilledButton.styleFrom(backgroundColor: _primary),
-                    child: Text(_sending ? "전송 중..." : "개인톡 보내기"),
+                    child: Text(_sending ? "screens.chat.sending".tr() : "screens.chat.send_whisper".tr()),
                   ),
                 ),
               ],
@@ -880,7 +904,7 @@ class _WhisperTabState extends ConsumerState<_WhisperTab> {
                   children: [
                     Expanded(
                       child: _WhisperTabItem(
-                        label: "받은 메시지",
+                        label: "screens.chat.tab_inbox".tr(),
                         count: state.inbox.length,
                         selected: state.whisperTab == WhisperTab.inbox,
                         onTap: () => ctrl.setWhisperTab(WhisperTab.inbox),
@@ -889,7 +913,7 @@ class _WhisperTabState extends ConsumerState<_WhisperTab> {
                     const SizedBox(width: 4),
                     Expanded(
                       child: _WhisperTabItem(
-                        label: "보낸 메시지",
+                        label: "screens.chat.tab_sent".tr(),
                         count: state.sent.length,
                         selected: state.whisperTab == WhisperTab.sent,
                         onTap: () => ctrl.setWhisperTab(WhisperTab.sent),
@@ -907,14 +931,14 @@ class _WhisperTabState extends ConsumerState<_WhisperTab> {
                       onTap: () {
                         ctrl.loadWhispers();
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("새로고침 중...")),
+                          SnackBar(content: Text("screens.chat.refreshing_snackbar".tr())),
                         );
                       },
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(Icons.refresh, size: 14, color: _textSecondary),
-                          SizedBox(width: 4),
-                          Text("새로고침", style: TextStyle(fontSize: 12, color: _textSecondary)),
+                          const Icon(Icons.refresh, size: 14, color: _textSecondary),
+                          const SizedBox(width: 4),
+                          Text("screens.chat.refresh".tr(), style: const TextStyle(fontSize: 12, color: _textSecondary)),
                         ],
                       ),
                     ),
@@ -966,7 +990,7 @@ class _WhisperTabState extends ConsumerState<_WhisperTab> {
             const Text("📭", style: TextStyle(fontSize: 48)),
             const SizedBox(height: 12),
             Text(
-              state.whisperTab == WhisperTab.inbox ? "받은 메시지가 없습니다." : "보낸 메시지가 없습니다.",
+              state.whisperTab == WhisperTab.inbox ? "screens.chat.inbox_empty".tr() : "screens.chat.sent_empty".tr(),
               style: const TextStyle(fontSize: 14, color: _textSecondary),
             ),
           ],
@@ -1007,8 +1031,8 @@ class _WhisperTabState extends ConsumerState<_WhisperTab> {
                     ),
                     child: Text(
                       isInbox
-                          ? "From: ${msg.fromUsername ?? "알 수 없음"}"
-                          : "To: ${msg.toUsername ?? "알 수 없음"}",
+                          ? "screens.chat.from_line".tr(namedArgs: {"name": msg.fromUsername ?? "screens.unknown".tr()})
+                          : "screens.chat.to_line".tr(namedArgs: {"name": msg.toUsername ?? "screens.unknown".tr()}),
                       style: const TextStyle(fontSize: 11, color: _primary, fontWeight: FontWeight.w500),
                     ),
                   ),
@@ -1136,10 +1160,10 @@ class _ComposeOverlay extends StatelessWidget {
                   children: [
                     const Icon(Icons.mail, size: 20, color: _primary),
                     const SizedBox(width: 8),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        "새 개인톡 보내기",
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
+                        "screens.chat.compose_title".tr(),
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
                       ),
                     ),
                     IconButton(
@@ -1155,8 +1179,8 @@ class _ComposeOverlay extends StatelessWidget {
                   controller: toIdCtrl,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: "받는 사람 ID",
-                    hintText: "채팅에서 메시지를 길게 눌러 개인톡",
+                    labelText: "screens.chat.recipient_id_label".tr(),
+                    hintText: "screens.chat.recipient_id_hint".tr(),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   ),
@@ -1166,7 +1190,7 @@ class _ComposeOverlay extends StatelessWidget {
                   controller: msgCtrl,
                   maxLines: 3,
                   decoration: InputDecoration(
-                    hintText: "내용을 입력하세요",
+                    hintText: "screens.chat.message_body_hint".tr(),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   ),
@@ -1177,7 +1201,7 @@ class _ComposeOverlay extends StatelessWidget {
                   child: FilledButton(
                     onPressed: sending ? null : onSend,
                     style: FilledButton.styleFrom(backgroundColor: _primary),
-                    child: Text(sending ? "전송 중..." : "보내기"),
+                    child: Text(sending ? "screens.chat.sending".tr() : "screens.chat.send".tr()),
                   ),
                 ),
               ],

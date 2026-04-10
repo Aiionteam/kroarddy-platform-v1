@@ -1,0 +1,1732 @@
+{
+  "app": {
+    "name": "Kroaddy"
+  },
+  "common": {
+    "save": "저장",
+    "cancel": "취소",
+    "next": "다음",
+    "skip": "건너뛰기",
+    "done": "완료",
+    "loading": "로딩 중...",
+    "error": "오류가 발생했어요",
+    "logout": "로그아웃",
+    "back": "뒤로가기",
+    "view_all": "전체 보기",
+    "more": "더 보기",
+    "close": "닫기",
+    "delete": "삭제",
+    "language": "언어",
+    "search": "검색",
+    "retry": "다시 시도",
+    "saving": "저장 중...",
+    "previous": "이전"
+  },
+  "sidebar": {
+    "tourstar": "투어스타",
+    "planner": "여행플래너",
+    "schedule": "일정관리",
+    "guide": "장소 추천",
+    "groupchat": "단체채팅",
+    "friends": "친구목록",
+    "whisper": "귓속말",
+    "profile": "내정보",
+    "customer": "고객센터",
+    "logout": "로그아웃",
+    "section_category": "카테고리",
+    "settings_short": "설정"
+  },
+  "screens": {
+    "unknown": "알 수 없음",
+    "user_fallback": "사용자",
+    "tourstar": {
+      "subtitle": "AI가 베스트 사진을 골라드려요 ✨",
+      "search_placeholder": "게시물 검색...",
+      "tab_all": "전체",
+      "tab_mine_n": "게시물 ({count})",
+      "tab_friends_n": "친구 게시물 ({count})",
+      "tab_bookmarked_n": "스크랩 ({count})",
+      "sort_latest": "최신순",
+      "sort_honor": "명예순",
+      "sort_comments": "댓글순",
+      "fab_new_post": "내 여행기록",
+      "author_caption_self": "소중한 여행의 순간들을 기록하세요 ✈️",
+      "author_caption_other": "이 사용자가 올린 게시물",
+      "stat_posts": "게시물",
+      "stat_scraps": "스크랩",
+      "stat_friends": "친구",
+      "friend_badge": "친구",
+      "empty_title": "아직 기록된 여행이 없습니다",
+      "empty_hint": "“내 여행기록” 버튼으로 첫 번째 여행을 기록해보세요",
+      "empty_cta": "여행 기록하기",
+      "ai_banner_title": "AI가 베스트 사진을 골라드려요",
+      "ai_banner_body": "사진을 올리면 잘 나온 사진만 자동 추천하고\n코멘트만 남기면 예쁘게 게시됩니다",
+      "back_short": "뒤로",
+      "friends_only_feed": "친구인 사용자만 피드를 볼 수 있습니다.",
+      "send_friend_request": "친구 요청 보내기",
+      "friend_request_sent": "{name}님에게 친구 요청을 보냈습니다.",
+      "error_author_not_found": "{name}님의 계정을 찾을 수 없습니다.",
+      "friend_request_failed": "친구 요청 전송에 실패했습니다.",
+      "delete_post_title": "게시물 삭제",
+      "delete_post_confirm": "정말로 삭제하시겠습니까?",
+      "delete_post_failed": "게시글 삭제에 실패했습니다.",
+      "create_title": "새 여행 기록 만들기",
+      "create_subtitle": "AI가 잘 나온 사진을 자동으로 추려드려요 ✨",
+      "photos_selected_n": "사진 ({count}장 선택됨)",
+      "pick_processing": "처리중...",
+      "pick_photos": "사진 선택",
+      "date_range_placeholder": "기간 선택",
+      "date_range_summary": "{start} ~ {end} ({count}장)",
+      "clear": "해제",
+      "upload_ai": "업로드 + AI 분석",
+      "ai_ranking_title": "AI 랭킹 결과",
+      "ai_ranking_pick_n": "{selected}/{total} 선택",
+      "comment_one_line": "한줄 코멘트",
+      "comment_ai_hint": "간단한 코멘트만 남기면 AI가 예쁘게 작성해드려요",
+      "auto": "자동",
+      "tone_mbti": "문체 프리셋 (MBTI)",
+      "tone_auto_default": "자동 (기본)",
+      "visibility_title": "공개 설정",
+      "visibility_public": "공개",
+      "visibility_private": "비공개",
+      "posting": "게시중...",
+      "publish": "게시하기",
+      "max_photos_snackbar": "사진은 최대 {max}장까지 추가할 수 있습니다.",
+      "title_required": "제목을 입력해 주세요.",
+      "upload_new_failed": "새 사진 업로드에 실패했습니다.",
+      "edit_failed": "수정에 실패했습니다.",
+      "save_error": "저장 중 오류: {error}",
+      "add_photo": "사진 추가",
+      "photos_label": "사진",
+      "photos_edit_hint": "× 를 눌러 삭제 · 갤러리에서 새 사진을 추가할 수 있습니다.",
+      "edit_post_title": "게시물 수정",
+      "field_title": "제목",
+      "field_place": "장소",
+      "field_content": "내용",
+      "field_tags": "태그 (쉼표로 구분)",
+      "edit_save": "저장하기",
+      "mbti_group_nt": "분석/전략형 (NT)",
+      "mbti_group_nf": "외교/감성형 (NF)",
+      "mbti_group_sj": "관리/실무형 (SJ)",
+      "mbti_group_sp": "탐험/즉흥형 (SP)",
+      "time_just_now": "방금 전",
+      "time_minutes_ago": "{n}분 전",
+      "time_hours_ago": "{n}시간 전",
+      "time_days_ago": "{n}일 전",
+      "share_link_copied": "공유 링크가 클립보드에 복사되었습니다.",
+      "net_likes": "순{likes}",
+      "action_edit": "수정",
+      "comments_inline": "댓글 {count}",
+      "photos_inline": "사진 {count}장",
+      "comments_heading_n": "댓글 {count}개",
+      "first_comment": "첫 댓글을 남겨보세요.",
+      "comment_hint": "댓글을 입력하세요",
+      "comment_submit": "등록",
+      "share": "공유",
+      "status_hint_select_upload": "사진을 선택하고 업로드를 시작하세요.",
+      "status_picked_exif_checking": "촬영일 확인 중… ({count}장)",
+      "status_pick_photos_first": "먼저 사진을 선택해 주세요.",
+      "status_date_filter_applied": "기간 필터가 적용되었습니다.",
+      "status_date_filter_cleared": "기간 필터를 해제했습니다.",
+      "status_need_login": "로그인이 필요합니다.",
+      "status_cannot_resolve_user": "사용자 정보를 확인할 수 없습니다.",
+      "status_upload_analyze_start": "업로드 및 분석 중…",
+      "status_upload_done_analyzing": "업로드 완료. 분석 중…",
+      "status_analyze_done_ranked": "랭킹 완료 ({count}장).",
+      "status_upload_error": "업로드/분석 오류: {detail}",
+      "status_pick_ranked_first": "AI 랭킹에서 사진을 먼저 선택해 주세요.",
+      "status_generating_auto_comment": "코멘트 생성 중…",
+      "status_auto_comment_done": "코멘트가 생성되었습니다.",
+      "status_auto_comment_empty": "자동 코멘트가 비어 있습니다.",
+      "status_auto_comment_error": "자동 코멘트 실패: {error}",
+      "status_editing_post": "게시물 수정 중…",
+      "status_post_updated": "게시물이 수정되었습니다.",
+      "status_post_update_error": "수정 실패: {error}",
+      "status_deleting_post": "삭제 중…",
+      "status_post_deleted": "삭제되었습니다.",
+      "status_delete_forbidden": "이 게시물을 삭제할 수 없습니다.",
+      "status_post_delete_error": "삭제 실패: {detail}",
+      "status_cannot_vote_own": "본인 게시물에는 투표할 수 없습니다.",
+      "status_honor_vote_error": "투표 실패: {error}",
+      "status_saving_post": "저장 중…",
+      "status_post_saved": "저장되었습니다.",
+      "status_post_save_error": "저장 실패: {error}",
+      "status_comment_required": "코멘트를 입력해 주세요.",
+      "status_mbti_generating": "선택한 문체로 생성 중…",
+      "status_post_generate_done": "완료되었습니다.",
+      "status_post_generate_error": "생성 실패: {error}",
+      "status_select_ai_rank_first": "AI 랭킹 사진을 먼저 선택해 주세요.",
+      "status_comment_draft_required": "초안 코멘트를 입력해 주세요.",
+      "status_publish_generating": "게시 중…",
+      "status_publish_error": "게시 실패: {error}",
+      "status_no_exif_fallback": "EXIF에 날짜가 없습니다. 파일명 순서를 사용합니다.",
+      "status_shot_date_done": "촬영일 {range} (EXIF {known}/{total}장)"
+    },
+    "planner": {
+      "tab_standard": "스탠다드",
+      "tab_user_content": "유저 컨텐츠",
+      "tab_k_content": "K-콘텐츠",
+      "search_hint": "도시·명소 검색 (예: 강릉, 한옥마을)",
+      "section_metro": "광역시·특별시 바로가기",
+      "section_province": "도 단위 지역",
+      "top_spots_row": "인기 TOP 여행지",
+      "more_destinations": "더 많은 여행지",
+      "start_date": "시작일 {date}",
+      "end_date": "종료일 {date}",
+      "transport_car": "🚗 자가용",
+      "transport_transit": "🚇 대중교통",
+      "transport_walk": "🚶 도보",
+      "generate_route": "✨ 루트 생성",
+      "generating": "정확한 정보 검색 중…",
+      "hint_set_date": "날짜를 설정하고\n루트를 생성해주세요",
+      "standard_start_generate": "✨ 루트 생성 시작",
+      "ai_routes_title": "AI 추천 루트",
+      "making_schedule_progress": "AI가{name} 일정을 만드는 중…",
+      "boost_web_search": "웹 검색 기반 추천 강화",
+      "schedule_title": "여행 일정",
+      "status_enter_region": "지역 코드를 입력하고 루트 추천을 받아보세요. (예: seoul, busan)",
+      "status_region_required": "지역 코드를 입력해 주세요.",
+      "status_pick_route": "지역과 루트를 먼저 선택해 주세요.",
+      "msg_generating_routes": "추천 루트를 생성하는 중...",
+      "msg_no_routes": "추천 루트를 받지 못했습니다.",
+      "msg_routes_received": "추천 루트 {count}개를 받았습니다.",
+      "msg_route_failed": "루트 조회 실패: {error}",
+      "msg_schedule_generating": "선택 루트 일정 생성 중...",
+      "msg_no_schedule": "일정을 받지 못했습니다.",
+      "msg_schedule_done": "일정 {count}개 항목 생성 완료",
+      "msg_schedule_failed": "일정 조회 실패: {error}",
+      "msg_nothing_to_save": "저장할 일정이 없습니다.",
+      "msg_saving_plan": "일정 저장 중...",
+      "msg_saved_plan": "저장 완료 (plan_id: {id})",
+      "msg_save_failed": "저장 실패: {error}",
+      "dest_plan_cta": "{name} 여행을 AI로 계획해보세요",
+      "save_plan": "💾 저장하기",
+      "saved_goto_schedule": "✅ 저장됨 · 일정관리 보기",
+      "schedule_pick_route_hint": "루트를 선택해 주세요",
+      "standard_map_need_generate": "날짜 선택 후 루트를 생성하세요",
+      "standard_map_range_hint": "{start} ~ {end} 일정을 AI가 만들어드려요",
+      "standard_map_tap_generate": "왼쪽 상단의 ✨ 루트 생성 버튼을 눌러주세요",
+      "schedule_item_count": "{count}개 일정",
+      "route_name_fallback": "선택한 루트",
+      "grid_header_metro": "광역시·특별시",
+      "grid_header_province": "도 단위 지역",
+      "search_empty": "검색 결과가 없습니다.",
+      "search_result": "“{query}” 검색 결과 {count}곳"
+    },
+    "schedule": {
+      "new_route": "+ 새 루트",
+      "empty_no_plans": "저장된 플랜이 없습니다.",
+      "empty_go_planner": "여행플래너에서 AI 루트를 생성해보세요",
+      "show_all": "전체 보기",
+      "plan_items": "{count}개 일정",
+      "weather_forecast": "🌤 날씨 예보",
+      "weather_within_5days": "· 5일 이내"
+    },
+    "guide": {
+      "landing_title": "장소 추천",
+      "landing_subtitle": "맛집과 행사를 한 화면에서 선택해서 살펴보세요.",
+      "restaurant_label": "맛집 추천",
+      "restaurant_desc": "지역별 맛집 탐색",
+      "event_label": "행사 추천",
+      "event_desc": "전국 문화 축제 캘린더"
+    },
+    "profile": {
+      "honor": "명예도 {score}",
+      "account_info": "계정 정보",
+      "travel_profile": "여행 프로필",
+      "label_gender": "성별",
+      "label_age": "나이대",
+      "label_diet": "식습관",
+      "label_religion": "종교",
+      "label_nationality": "국적",
+      "label_account_mgmt": "계정 관리",
+      "msg_initial": "새로고침으로 프로필을 불러오세요.",
+      "msg_loading": "프로필을 불러오는 중…",
+      "msg_loaded": "프로필을 불러왔습니다.",
+      "msg_load_failed": "프로필을 불러오지 못했습니다: {error}",
+      "msg_no_user_save": "저장할 사용자 정보가 없습니다.",
+      "msg_saving_account": "계정 정보를 저장하는 중…",
+      "msg_account_saved": "계정 정보가 저장되었습니다.",
+      "msg_account_save_failed": "계정 정보를 저장하지 못했습니다: {error}",
+      "msg_no_app_user": "앱 사용자 ID를 확인할 수 없습니다.",
+      "msg_saving_travel": "여행 프로필을 저장하는 중…",
+      "msg_travel_saved": "여행 프로필이 저장되었습니다.",
+      "msg_travel_save_failed": "여행 프로필을 저장하지 못했습니다: {error}",
+      "msg_no_user_id": "사용자 ID를 확인할 수 없습니다.",
+      "msg_deleting_account": "계정을 삭제하는 중…",
+      "msg_account_deleted": "계정이 삭제되었습니다.",
+      "msg_delete_failed": "계정을 삭제하지 못했습니다: {error}"
+    },
+    "friends": {
+      "pending_title": "친구 요청",
+      "list_title": "친구 목록",
+      "empty_title": "아직 친구가 없습니다",
+      "empty_hint": "여행피드 게시물에서 닉네임을 눌러 친구를 추가하세요",
+      "banner_hint": "여행피드 게시물에서 닉네임을 탭하면 친구 요청을 보낼 수 있어요.",
+      "delete_dialog_title": "친구 삭제",
+      "delete_dialog_body": "{{name}} 님을 친구 목록에서 삭제할까요?",
+      "load_error": "친구 목록을 불러올 수 없습니다: {{error}}",
+      "request_sent": "친구 요청을 보냈습니다",
+      "accept": "수락",
+      "badge_friend": "친구",
+      "delete_tooltip": "친구 삭제",
+      "friend_honor": "명예도 {score}"
+    },
+    "chat": {
+      "room_list_header": "그룹톡 방",
+      "cannot_load_rooms": "채팅방을 불러올 수 없습니다.",
+      "honor_rooms_note": "명예도에 따라 입장 가능한 방이 달라집니다.",
+      "group_room_title": "{tier} 채팅방",
+      "no_messages": "메시지가 없습니다.",
+      "hint_message": "메시지를 입력하세요",
+      "min_honor_required": "최소 명예도 {min} 이상",
+      "open_to_all": "누구나 입장 가능",
+      "honor_insufficient": "명예도 부족",
+      "me": "나",
+      "post_loading": "게시글 불러오는 중...",
+      "post_load_failed": "게시글을 불러올 수 없습니다.",
+      "post_load_failed_nav": "게시글을 불러올 수 없습니다. (탭하면 이동)",
+      "tourstar_post_badge": "여행피드 게시글",
+      "tap_to_view_post": "탭하여 게시글 보기",
+      "tap_to_view_short": "탭하여 보기",
+      "whisper_to": "{{name}}에게 개인톡",
+      "send_whisper": "개인톡 보내기",
+      "sending": "전송 중...",
+      "tab_inbox": "받은 메시지",
+      "tab_sent": "보낸 메시지",
+      "refreshing_snackbar": "새로고침 중...",
+      "refresh": "새로고침",
+      "inbox_empty": "받은 메시지가 없습니다.",
+      "sent_empty": "보낸 메시지가 없습니다.",
+      "compose_title": "새 개인톡 보내기",
+      "recipient_id_label": "받는 사람 ID",
+      "recipient_id_hint": "채팅에서 메시지를 길게 눌러 개인톡",
+      "message_body_hint": "내용을 입력하세요",
+      "send": "보내기",
+      "from_line": "From: {{name}}",
+      "to_line": "To: {{name}}",
+      "tier_silver": "실버",
+      "tier_gold": "골드",
+      "tier_platinum": "플래티넘",
+      "tier_diamond": "다이아"
+    },
+    "guide_explore": {
+      "gemini_notice": "선호와 맥락을 반영해 AI가 새로운 장소를 제안합니다.",
+      "cat_all": "전체",
+      "cat_festival": "행사",
+      "cat_activity": "K-액티비티",
+      "cat_historic": "역사/유적",
+      "cat_culture": "로컬문화",
+      "cat_nature": "자연/힐링",
+      "cat_restaurant": "맛집",
+      "cat_cafe": "카페",
+      "prompt_activity": "한국에서 해볼 만한 K-액티비티와 체험 활동을 추천해 주세요.",
+      "prompt_historic": "한국의 역사 유적, 문화재, 꼭 가볼 만한 유산 명소를 추천해 주세요.",
+      "prompt_culture": "로컬 문화를 느낄 수 있는 동네, 시장, 문화 공간을 추천해 주세요.",
+      "prompt_nature": "자연과 힐링을 즐길 수 있는 공원, 산, 바다 근처 명소를 추천해 주세요.",
+      "prompt_restaurant": "한국에서 꼭 가볼 만한 맛집과 로컬 음식 맛집을 추천해 주세요.",
+      "prompt_cafe": "분위기 좋은 카페, 디저트 맛집, 커피 명소를 추천해 주세요.",
+      "places_none": "추천할 장소가 없습니다.",
+      "places_extra": ", 외 {{n}}곳",
+      "places_summary": "{{list}} 등 총 {{count}}곳을 추천했어요.\n지도에서 마커를 눌러 장소별 상세 가이드를 확인해 보세요.",
+      "dur_min": "약 {{m}}분",
+      "dur_hr": "약 {{h}}시간 {{rm}}분",
+      "rate_limit": "요청이 너무 빈번합니다. 1초 후 다시 시도해 주세요.",
+      "no_coords_hint": "\n\n*지도에 표시할 좌표는 찾지 못했어요. 지명·구체적인 장소 이름을 넣어 다시 질문해 보세요.*",
+      "answer_failed": "답변을 가져오지 못했습니다.",
+      "festival_ok": "이번 달 행사 {{n}}곳을 지도에 표시했어요. ({{year}}년 {{month}}월)",
+      "festival_empty": "표시할 좌표가 있는 행사가 없거나 API 응답이 비었습니다.",
+      "festival_err": "행사 정보를 불러오지 못했습니다: {{error}}",
+      "loading_guide": "가이드 응답 생성 중…",
+      "loading_festival": "행사 정보 불러오는 중…",
+      "chat_expand": "채팅·장소 설명 열기",
+      "chat_collapse": "채팅·장소 설명 접기",
+      "input_hint": "장소에 대해 물어보세요…",
+      "replying": "응답 작성 중…",
+      "address_copied": "주소를 복사했습니다",
+      "copy_address": "주소 복사",
+      "close": "닫기",
+      "driving_route": "자동차 경로",
+      "period": "기간: {{start}} ~ {{end}}",
+      "venue": "장소: {{name}}",
+      "homepage": "홈페이지",
+      "category_label": "카테고리",
+      "nearby_title": "주변 맛집·카페",
+      "driving_loading": "경로를 불러오는 중…",
+      "driving_unsupported": "자동차 경로를 지원하지 않는 구간입니다. 다른 이동 수단을 이용해 보세요.",
+      "driving_line": "자동차 이동: {{duration}} · {{distance}}",
+      "toll": "통행료 약 {{amount}}원",
+      "no_detail": "상세 설명이 없습니다.",
+      "info_none": "정보 없음",
+      "food_category_fallback": "맛집 · 카페"
+    },
+    "k_content": {
+      "tab_loading": "K-콘텐츠 불러오는 중…",
+      "row_kpop": "K-POP",
+      "row_kdrama": "K-DRAMA",
+      "row_kfood": "K-FOOD",
+      "row_kbeauty": "K-BEAUTY",
+      "hero_title": "K-콘텐츠 여행",
+      "hero_subtitle": "K-Pop, 드라마, 음식, 뷰티로 한국을 탐험해 보세요",
+      "hero_cta": "AI 루트 생성",
+      "app_title": "K-콘텐츠 · {title}",
+      "date_settings": "날짜 설정",
+      "start_date": "시작일 {date}",
+      "end_date": "종료일 {date}",
+      "generating": "생성 중...",
+      "generate_schedule": "일정 생성",
+      "image_loading": "이미지 불러오는 중...",
+      "recommended_schedule": "추천 일정",
+      "saved_view_plan": "저장됨 · 마이플랜 보기",
+      "save": "저장하기",
+      "save_failed": "저장 실패: {error}",
+      "fallback": {
+        "kfood": {
+          "KF_MARKET": {
+            "title": "전국 전통시장 먹거리 탐방",
+            "description": "한국 곳곳의 따뜻한 로컬 맛과 활기로 가득한 시장 정복 투어."
+          },
+          "KF_CAFE": {
+            "title": "K-디저트 & 카페 감성 투어",
+            "description": "취향에 맞는 카페와 편집샵을 잇는 감성 루트."
+          },
+          "KF_CONVENIENCE": {
+            "title": "K-편의점 꿀조합 챌린지",
+            "description": "품절 신상부터 비밀 레시피까지, 진짜 편의점 모디슈머가 되어보세요!"
+          }
+        }
+      },
+      "detail": {
+        "small_header": "K-콘텐츠",
+        "generate_btn": "✨ 일정 생성",
+        "meta_kf_market_title_ko": "전국 전통시장 먹거리 탐방",
+        "meta_kf_market_tags": "전통시장, 먹거리, 로컬푸드",
+        "meta_kf_cafe_title_ko": "K-디저트 & 카페 감성 투어",
+        "meta_kf_cafe_tags": "카페, 디저트, 편집샵, 감성투어",
+        "meta_kf_convenience_title_ko": "K-편의점 꿀조합 챌린지",
+        "meta_kf_convenience_tags": "편의점, 꿀조합, 모디슈머, 챌린지",
+        "brand_seven": "세븐일레븐",
+        "brand_emart24": "이마트24",
+        "schedule_item_default": "일정",
+        "cafe_place_hint": "카페·장소 힌트",
+        "convenience_trending_label": "편의점 유행템",
+        "trending_card_1_title": "연세우유 크림빵",
+        "trending_card_2_title": "제로콜라 얼음컵 하이볼",
+        "trending_tag_new": "#신상",
+        "trending_tag_soldout": "#품절주의",
+        "trending_tag_review": "#리뷰폭발",
+        "trending_tag_repurchase": "#재구매",
+        "trending_default_title": "AI 추천 유행템",
+        "recipe_title_with_vibe": "{vibe} 챌린지 2026 Ver.",
+        "recipe_title_default": "마크정식 2026 Ver.",
+        "shop_ramen": "컵라면",
+        "shop_kimbap": "참치마요 삼각김밥",
+        "shop_cheese": "스트링 치즈",
+        "shop_sparkling": "탄산수",
+        "cook_step_1": "재료를 모두 준비하고 전자레인지 가능한 용기에 담기",
+        "cook_step_2": "소스/토핑을 섞어 1분 30초 조리하기",
+        "cook_step_3": "취향에 맞게 토핑 추가 후 인증샷 남기기",
+        "ai_recommended": "AI 추천 일정",
+        "making_schedule": "AI가 {title} 일정을 만드는 중…",
+        "no_schedule": "생성된 일정이 없습니다. 다시 시도해 주세요.",
+        "region_select": "지역 선택",
+        "region_tab_all": "전체",
+        "region_tab_seoul": "서울",
+        "region_tab_gangwon": "강원",
+        "region_tab_jeonla": "전라",
+        "region_tab_gyeongsang": "경상",
+        "region_tab_jeju": "제주",
+        "traditional_market": "전통시장",
+        "market_generate": "이 시장 먹방 일정 생성하기",
+        "cafe_question": "당신의 오늘 하루는 어떤 감성인가요?",
+        "cafe_hint": "취향에 맞는 Vibe를 고르거나 카페 이름을 직접 입력해 AI 코스를 생성하세요.",
+        "vibe_grid": "Vibe Grid",
+        "search_bar": "Search Bar",
+        "cafe_placeholder": "직접 카페 이름을 입력해 보세요 (예: 성수 텅플래닛)",
+        "cafe_generate": "AI 일정 생성하기",
+        "conv_tab_trending": "요즘 유행템",
+        "conv_tab_recipe": "나만의 꿀조합",
+        "convenience_q": "지금 편의점에서 가장 구하기 힘든 건?",
+        "quick_selection": "Quick Selection",
+        "trending_placeholder": "예: 연세우유 크림빵",
+        "recipe_q": "어떤 맛의 조합에 도전해볼까요?",
+        "extra_keywords": "추가 키워드",
+        "recipe_placeholder": "예: 맵부심 챌린지, 단짠 디저트",
+        "recipe_generate_btn": "AI 꿀조합 레시피 생성하기",
+        "recommended_schedule_title": "{title} — 추천 일정",
+        "saved_goto_schedule": "✅ 저장됨 · 일정관리 보기",
+        "save_plan": "💾 저장하기",
+        "total_cost": "예상 총 경비",
+        "cost_per_day": "Day{day} {total}",
+        "find_nearby_store": "이거 파는 가까운 곳 찾기",
+        "recipe_hashtags": "#모디슈머 #편의점챌린지 #AI레시피",
+        "shopping_list_title": "쇼핑 리스트",
+        "cooking_steps_title": "조리 단계",
+        "challenge_location": "챌린지 장소",
+        "challenge_location_desc": "AI 추천 길먹 명당 (100km 이내) — 성수 서울숲 앞 벤치존",
+        "subtotal": "소계 {total}",
+        "description_fallback": "{place}에서 즐길 수 있는 추천 스팟입니다.",
+        "empty_hint": "날짜를 설정하고 일정을 생성해주세요",
+        "start_generate": "✨ 일정 생성 시작"
+      }
+    }
+  },
+  "onboarding": {
+    "title": "여행 취향 설정",
+    "prev": "이전",
+    "skip_later": "나중에 할게요",
+    "saving": "저장 중...",
+    "save_failed": "저장 실패: {{error}}",
+    "steps": {
+      "nationality": "어느 나라에서 오셨나요?",
+      "gender": "성별을 알려주세요",
+      "age_band": "나이대를 선택해주세요",
+      "dietary_pref": "식습관을 알려주세요",
+      "religion": "종교가 있으신가요?"
+    }
+  },
+  "home": {
+    "profile_banner": "✨ 여행 프로필을 완성하면 맞춤 추천을 받을 수 있어요",
+    "setup_profile": "설정하기",
+    "news_pending": "아직 AI 분석이 진행 중입니다.",
+    "rebate_period": "2026.4 ~ 6 · 시범사업",
+    "rebate_title": "🎫 지정 시골 지역 여행 시 최대 50% 환급",
+    "rebate_rich_a": "여행 지출의 ",
+    "rebate_rich_half": "절반",
+    "rebate_rich_b": "을 모바일 지역사랑 상품권으로 돌려받을 수 있어요. 개인 최대 ",
+    "rebate_rich_10": "10만 원",
+    "rebate_rich_c": ", 2인 이상 단체 최대 ",
+    "rebate_rich_20": "20만 원",
+    "rebate_rich_d": ".",
+    "visit_korea": "대한민국 구석구석 ↗",
+    "rebate_expand": "이용 방법 · 대상 지역 보기",
+    "rebate_collapse": "이용 방법 접기",
+    "rebate_notice": "주의: 사전 신청·승인 필수 · 예산 한도로 조기 마감될 수 있음 · 세부는 지자체마다 다를 수 있으니 4월 초 공식 사이트를 꼭 확인하세요.",
+    "rebate_regions": "대상 지역 16곳 · 플래너로 루트 보기 또는 공식 안내",
+    "k_content_title": "🎭 K-콘텐츠 테마 여행",
+    "rebate_s1t": "사전 신청",
+    "rebate_s1d": "visitkorea.or.kr에서 대상 지역 확인 후 여행 전 승인을 받으세요.",
+    "rebate_s2t": "여행",
+    "rebate_s2d": "승인 지역에서 식비·숙박 등 지출 (영수증 보관).",
+    "rebate_s3t": "증빙 제출",
+    "rebate_s3d": "여행 후 지자체 안내에 따라 영수증 등 제출.",
+    "rebate_s4t": "환급",
+    "rebate_s4d": "확인 후 지출의 50%를 모바일 지역사랑 상품권으로 지급.",
+    "rebate_s5t": "사용",
+    "rebate_s5d": "해당 지역 식당·카페·온라인몰 등에서 올해 안에 사용."
+  },
+  "customer": {
+    "center": {
+      "title": "고객센터",
+      "subtitle": "원하는 도움을 빠르게 찾아보세요."
+    },
+    "search": {
+      "label": "무엇을 도와드릴까요?",
+      "placeholder": "검색어를 입력해 주세요"
+    },
+    "categories": {
+      "title": "카테고리",
+      "items": {
+        "inquiry": {
+          "title": "문의사항",
+          "desc": "계정, 기능, 오류 등 일반 문의"
+        },
+        "guide": {
+          "title": "이용가이드",
+          "desc": "서비스 사용 방법과 시작 가이드"
+        },
+        "notices": {
+          "title": "공지사항",
+          "desc": "점검, 배포, 변경사항 안내"
+        },
+        "payment": {
+          "title": "결제 및 서비스 이용",
+          "desc": "결제, 환불, 구독 관련 안내"
+        },
+        "emergency": {
+          "title": "긴급 도움 및 여행 팁",
+          "desc": "긴급 상황 대응과 여행 팁"
+        }
+      }
+    },
+    "faq": {
+      "title": "자주 묻는 질문",
+      "no_results": "검색 결과가 없습니다.",
+      "items": {
+        "login_help": {
+          "category": "로그인/계정",
+          "question": "로그인이 안 되거나 계정 오류가 나요.",
+          "answer": "앱을 최신 버전으로 업데이트하고, 캐시 삭제 후 다시 시도해 주세요. 지속되면 문의하기로 남겨주세요."
+        },
+        "first_steps": {
+          "category": "시작하기",
+          "question": "처음 왔는데 어디부터 보면 되나요?",
+          "answer": "홈 바로가기에서 여행플래너·일정관리·장소 추천 순으로 둘러보세요. 이용가이드에도 단계별 안내가 있습니다."
+        },
+        "update_notes": {
+          "category": "업데이트",
+          "question": "새 기능·공지는 어디서 보나요?",
+          "answer": "고객센터 공지사항에서 배포·점검 안내를 확인할 수 있어요."
+        },
+        "refund_flow": {
+          "category": "결제/환불",
+          "question": "환불은 어떻게 진행되나요?",
+          "answer": "결제 및 서비스 이용 화면의 안내를 확인해 주세요. 개별 건은 영수증을 준비해 문의해 주세요."
+        },
+        "emergency_help": {
+          "category": "긴급",
+          "question": "여행 중 긴급 상황이에요.",
+          "answer": "긴급 도움 및 여행 팁에서 카테고리별 안내를 확인하세요. 필요 시 112·119를 이용하세요."
+        }
+      },
+      "count": "총 {count}건"
+    },
+    "guide": {
+      "title": "이용가이드",
+      "subtitle": "홈에서 바로 시작할 수 있는 5가지 기능을 한눈에 정리했어요.",
+      "hero": {
+        "kicker": "첫 여행은 이렇게 시작하세요",
+        "title": "여행 루트 생성 → 일정 정리 → 필요하면 후기/소통",
+        "steps": {
+          "planner": "여행플래너",
+          "schedule": "일정관리",
+          "guide": "장소추천",
+          "social": "투어스타/단체채팅"
+        },
+        "cta_planner": "여행플래너 시작하기",
+        "cta_groupchat": "단체채팅 둘러보기"
+      },
+      "cards": {
+        "tourstar": {
+          "title": "투어스타",
+          "subtitle": "여행의 기록(게시글)과 후기/공유를 한 곳에서 만들어보세요.",
+          "cta": "투어스타 가기",
+          "items": {
+            "1": {
+              "title": "1) 사진/여행기록을 준비",
+              "body": "사진을 올리면 AI가 제목/요약을 돕고 글 작성 흐름을 빠르게 만들어줘요."
+            },
+            "2": {
+              "title": "2) 공유 범위 선택",
+              "body": "공개/비공개(필요에 따라)로 나눠서 올릴 수 있어요."
+            },
+            "3": {
+              "title": "3) 반응 만들기",
+              "body": "좋아요/댓글로 여행 팁을 주고받고, 친구와도 연결해보세요."
+            }
+          },
+          "tip": {
+            "title": "팁",
+            "body": "제목은 짧고, 본문에는 “언제/어디서/무엇이 좋았는지” 순서로 적으면 읽기 편해요."
+          }
+        },
+        "planner": {
+          "title": "여행플래너",
+          "subtitle": "원하는 스타일에 맞춰 AI가 여행 루트와 일정을 추천해요.",
+          "cta": "여행플래너 가기",
+          "items": {
+            "1": {
+              "label": "스탠다드/K컨텐츠/유저컨텐츠",
+              "body": " 중 하나를 고르세요."
+            },
+            "2": {
+              "label": "여행지(또는 테마) 선택",
+              "body": " : 루트가 이어질 곳을 정하면 AI 추천이 더 정확해져요."
+            },
+            "3": {
+              "body": "추천된 일정은 자동으로 저장되고, 다음 단계(일정관리)에서 더 다듬을 수 있어요."
+            }
+          }
+        },
+        "schedule": {
+          "title": "일정관리",
+          "subtitle": "저장된 플랜을 달력에서 확인하고, AI로 수정/리롤할 수 있어요.",
+          "cta": "일정관리 보기",
+          "items": {
+            "1": {
+              "title": "1) 달력에서 날짜 선택",
+              "body": "날짜를 클릭하면 해당 날짜 일정이 보입니다."
+            },
+            "2": {
+              "title": "2) “리롤”로 다른 버전 생성",
+              "body": "마음에 안 드는 일정만 새로 만들 수 있어요."
+            },
+            "3": {
+              "title": "3) AI 수정 요청",
+              "body": "프롬프트로 “바꿔줘” 같은 요청을 하면 일정이 조정됩니다."
+            }
+          },
+          "tip": {
+            "title": "지도/날씨 확인",
+            "body": "일정 카드 안에서 지도 보기와 날씨 요약도 함께 확인할 수 있어요."
+          }
+        },
+        "discover": {
+          "title": "장소추천",
+          "subtitle": "맛집/행사 등 지역 기반 추천을 한 화면에서 찾아보세요.",
+          "cta": "장소추천 가기",
+          "items": {
+            "1": {
+              "title": "1) 가이드 선택",
+              "body": "“맛집 추천” 또는 “행사 추천” 탭을 선택합니다."
+            },
+            "2": {
+              "title": "2) 카드/리스트 탐색",
+              "body": "관심 있는 장소를 눌러 정보를 확인해요."
+            },
+            "3": {
+              "body": "일정에 넣고 싶다면, 여행플래너/일정관리에서 현재 루트에 맞게 조정하세요."
+            }
+          }
+        },
+        "groupchat": {
+          "title": "단체채팅",
+          "subtitle": "명예도/방 형태에 따라 모임에 참여하고 여행 이야기를 나눠요.",
+          "cta": "단체채팅 가기",
+          "items": {
+            "1": {
+              "title": "1) 방 목록에서 입장",
+              "body": "입장 가능 여부는 명예도에 따라 달라질 수 있어요."
+            },
+            "2": {
+              "title": "2) 메시지 전송",
+              "body": "채팅창에 내용을 입력하고 전송하면 실시간으로 공유됩니다."
+            },
+            "3": {
+              "title": "3) 친구/귓속말/명예도 기능",
+              "body": "상대 메시지 메뉴에서 귓속말, 친구 추가, 명예도 조작을 할 수 있어요."
+            }
+          }
+        }
+      }
+    },
+    "inquiry": {
+      "title": "문의하기",
+      "tabs": {
+        "write": "1:1 문의하기",
+        "list": "나의 문의 내역"
+      },
+      "form": {
+        "subject": "제목",
+        "subject_placeholder": "제목을 입력하세요",
+        "content": "문의내용",
+        "content_placeholder": "상세 내용을 입력해 주세요",
+        "attachments": "첨부파일",
+        "attachment_help": "이미지 파일(GIF, PNG, JPG) 기준 최대 10MB 이하, 최대 3개 가능",
+        "privacy_agree": "개인정보 수집 및 이용 동의",
+        "sending": "전송 중...",
+        "submit": "작성 완료",
+        "validation": "제목·내용을 입력하고 개인정보 동의에 체크해 주세요.",
+        "add_files": "이미지 추가"
+      },
+      "list": {
+        "search_label": "검색",
+        "search_placeholder": "제목/내용/상태를 검색하세요",
+        "no_results": "검색 결과가 없습니다."
+      },
+      "status": {
+        "answered": "답변완료",
+        "pending": "처리중"
+      },
+      "seed": {
+        "10001": {
+          "title": "로그인이 되지 않을 때",
+          "content": "로그인 버튼을 눌러도 페이지가 로딩만 되고 로그인이 안 됩니다.\n브라우저 캐시를 지워도 동일해요."
+        },
+        "10002": {
+          "title": "공지사항 확인 경로 문의",
+          "content": "공지 및 업데이트 내용을 어디에서 확인할 수 있나요?",
+          "answer": "고객센터의 ‘공지사항’ 카테고리에서 최신 변경사항을 확인할 수 있어요."
+        }
+      }
+    },
+    "notices": {
+      "title": "공지사항",
+      "subtitle": "공지사항을 확인하세요.",
+      "new_button": "새 공지사항 작성",
+      "search_placeholder": "공지사항 검색 (제목/내용)",
+      "search_button": "검색",
+      "count": "총 {count}건",
+      "no_results": "검색 결과가 없습니다.",
+      "table": {
+        "no": "번호",
+        "title": "제목",
+        "author": "작성자",
+        "date": "작성일",
+        "views": "조회"
+      },
+      "aria": {
+        "select_all": "전체선택",
+        "select_row": "공지 {{id}} 선택"
+      },
+      "modal": {
+        "meta": "작성자 {{author}} · {{date}}",
+        "close": "닫기"
+      },
+      "new_button_alert": "새 공지 작성 기능은 준비 중입니다.",
+      "seed": {
+        "author": {
+          "ops": "운영팀"
+        },
+        "3": {
+          "title": "v1.0.2 배포 안내 (문의하기 UX 개선)",
+          "content": "문의하기/문의 내역 UI 탭 전환이 추가되었습니다.\n보다 편리하게 내 문의를 확인할 수 있습니다."
+        },
+        "4": {
+          "title": "점검사항: 일부 이미지 업로드 지연 해결",
+          "content": "특정 환경에서 이미지 업로드가 지연되던 이슈를 수정했습니다.\n재시도 후에도 문제가 있으면 문의해 주세요."
+        },
+        "5": {
+          "title": "공지사항 필터 기능 업데이트 안내",
+          "content": "공지사항 화면에서 유형/검색 필터가 적용됩니다.\n보다 빠르게 필요한 공지를 찾을 수 있어요."
+        },
+        "6": {
+          "title": "서버 정기 점검 안내 (예정)",
+          "content": "정기 점검으로 인해 일부 기능이 일시 중단될 수 있습니다.\n점검 시간 및 영향 범위는 공지 하단을 확인해 주세요."
+        },
+        "7": {
+          "title": "v1.0.3 배포 안내 (성능 개선 및 버그 수정)",
+          "content": "이번 배포에서는 화면 로딩 속도 개선과 일부 오류 수정이 포함되어 있습니다.\n업데이트 후에도 문제가 지속되면 고객센터로 문의해 주세요."
+        }
+      }
+    },
+    "subscription": {
+      "title_mobile": "구독",
+      "title": "결제 및 서비스 이용",
+      "subtitle": "무료 체험 후 원하는 플랜을 선택하세요.",
+      "safety": "안전 결제 · 언제든 해지 가능",
+      "free": {
+        "kicker": "지금 무료로 시작",
+        "note": "7일 무료 후 선택한 플랜으로 자동 전환됩니다."
+      },
+      "plan_monthly": {
+        "title": "월간 플랜",
+        "badge": "베이직",
+        "price": "월 5,900원",
+        "note": "매월 결제",
+        "features": {
+          "1": "전문가형 추천 요약",
+          "2": "문의/가이드 우선 답변",
+          "3": "최신 기능 업데이트 포함"
+        }
+      },
+      "plan_yearly": {
+        "title": "연간 플랜",
+        "badge": "추천",
+        "price": "연 46,800원",
+        "note": "연 단위 결제",
+        "oldPrice": "월 약 7,000원 수준",
+        "features": {
+          "1": "월간 혜택 전부 포함",
+          "2": "연간 할인 적용",
+          "3": "우선 지원 및 안정성"
+        }
+      },
+      "cta_monthly": "월간 구독 시작",
+      "cta_yearly": "연간 구독 시작",
+      "selected": {
+        "title": "선택한 플랜",
+        "compare": "비교 ",
+        "includes": "포함 혜택"
+      },
+      "agree": {
+        "service_title": "서비스 이용 동의",
+        "service_desc": "구독 결제 및 이용에 필요합니다.",
+        "billing_title": "결제 안내 동의",
+        "billing_desc": "자동 전환 및 과금 주기 안내에 동의합니다."
+      },
+      "demo_alert": "(데모) 실제 결제 API는 추후 연동 예정입니다.",
+      "demo_note": "데모 화면입니다. 운영 환경에서 실제 결제/자동 전환이 적용됩니다."
+    },
+    "emergency": {
+      "title_mobile": "긴급 도움",
+      "title": "긴급 도움 및 여행 팁",
+      "subtitle": "한국 여행 중 외국인이 겪을 수 있는 긴급 상황별 안내입니다.",
+      "share_button": "긴급 상황 공유",
+      "consulate": {
+        "title": "대사관/영사관",
+        "nationality": "국적",
+        "find_contact": "영사관 연락처 찾기",
+        "callcenter": "영사콜센터 24시간 02-3210-0404",
+        "unknown_nationality": "미선택"
+      },
+      "categories": {
+        "title": "긴급 유형",
+        "selected": "선택됨",
+        "view": "보기",
+        "items": {
+          "passport": {
+            "title": "여권·비자·체류 지원",
+            "short": "여권 분실·비자/체류 관련 도움이 필요할 때",
+            "steps": {
+              "1": "If possible, secure a copy/photo of your passport first, then confirm the loss with nearby support (lodging/police).",
+              "2": "Contact your embassy/consulate for reissue or temporary document procedures.",
+              "3": "Prepare local police/case number if required."
+            }
+          },
+          "lost": {
+            "title": "분실·도난 신고",
+            "short": "지갑·휴대폰 등을 잃었을 때",
+            "steps": {
+              "1": "If your phone/account may be compromised, stop authentication immediately and change passwords.",
+              "2": "Report to a nearby police station/lost-and-found center and secure a case number.",
+              "3": "If passport/cards are also lost, contact your embassy/consulate for urgent action."
+            }
+          },
+          "safety": {
+            "title": "범죄·폭력·안전 위협",
+            "short": "사기·폭행·위협 등 위험 상황",
+            "steps": {
+              "1": "Move to a safe place immediately and ask nearby people/staff for help.",
+              "2": "If injured, call 119 (medical) or 112 (police).",
+              "3": "Record incident details (time/place) and keep evidence (photos/messages)."
+            }
+          },
+          "medical": {
+            "title": "응급 의료·사고 부상",
+            "short": "갑작스런 질병이나 부상",
+            "steps": {
+              "1": "Call 119 or 112 as needed and receive first aid.",
+              "2": "If interpretation is needed at the hospital, ask embassy/consulate support.",
+              "3": "Share allergy/medication/chronic condition information with medical staff."
+            }
+          },
+          "disaster": {
+            "title": "화재·재난·대피",
+            "short": "화재·폭우·정전 등",
+            "steps": {
+              "1": "Follow alarms/guidance and move to a safe evacuation route.",
+              "2": "If there are injured people, secure safety first, then request rescue.",
+              "3": "Share your location and situation with embassy/lodging for help."
+            }
+          },
+          "immigration": {
+            "title": "출입국·강제출국 이슈",
+            "short": "체류 초과 등 행정 문제",
+            "steps": {
+              "1": "Do not respond alone; keep photos of documents/notices and contact your embassy quickly.",
+              "2": "Request guidance for legal/interpreter support if needed.",
+              "3": "Avoid unauthorized actions that may affect immigration procedures."
+            }
+          },
+          "interpreter": {
+            "title": "영사관·통역 요청",
+            "short": "언어 장벽으로 도움 요청이 어려울 때",
+            "steps": {
+              "1": "Summarize the situation briefly (when/where/what) and share it with your consulate.",
+              "2": "Prepare a reachable phone number, address, and lodging info.",
+              "3": "You may need to call emergency lines (police/medical) in parallel."
+            }
+          }
+        }
+      },
+      "detail": {
+        "badge": "대응 가이드",
+        "call_police": "112 경찰",
+        "call_119": "119 구급",
+        "call_1339": "1339 질병관리청",
+        "call_consulate": "영사관 연락"
+      },
+      "share": {
+        "title_mobile": "Share Emergency",
+        "title": "Public Emergency Share",
+        "type_title": "Emergency types",
+        "type_subtitle": "Select types and attach photo/audio to share immediately.",
+        "aria": {
+          "select_reason": "Select {{id}}"
+        },
+        "attach_title": "Attachments",
+        "attach_subtitle": "Adding photo or audio speeds up sharing.",
+        "photo_section": "Add photos",
+        "photo_pick": "Choose photos",
+        "photo_empty": "Please choose photos.",
+        "audio_section": "Audio recording",
+        "recording": "Recording: {{s}}s",
+        "record_ready": "Ready",
+        "optional": "Optional",
+        "audio_start": "Start recording",
+        "audio_stop": "Stop",
+        "audio_delete": "Delete audio",
+        "audio_perm": "Recording permission may be required.",
+        "now_title": "Share now",
+        "now_subtitle": "Demo UI: This shows a confirmation instead of actual sending.",
+        "call_emergency": "Emergency call",
+        "start_button": "Start sharing emergency",
+        "reason": {
+          "location": {
+            "label": "Need location/safety help",
+            "desc": "Request help based on your current location."
+          },
+          "medical": {
+            "label": "Need medical help",
+            "desc": "Emergency medical support is needed due to illness or injury."
+          },
+          "danger": {
+            "label": "Urgent danger situation",
+            "desc": "Immediate safety help is needed due to violence/scam/threat."
+          }
+        },
+        "alert": {
+          "audio_permission": "Please check audio recording permission.",
+          "select_reason": "Please select at least one emergency type.",
+          "attach_required": "Please attach a photo or audio.",
+          "start_demo": "Starting emergency share. (Demo)\nSelected: {{selected}}"
+        }
+      }
+    }
+  },
+  "options": {
+    "gender": {
+      "male": "남성",
+      "female": "여성",
+      "other": "기타",
+      "no_answer": "무응답"
+    },
+    "age": {
+      "teens": "10대",
+      "twenties": "20대",
+      "thirties": "30대",
+      "forties": "40대",
+      "fifties": "50대",
+      "sixties_plus": "60대이상"
+    },
+    "diet": {
+      "normal": "일반",
+      "vegetarian": "채식",
+      "vegan": "비건",
+      "halal": "할랄",
+      "allergy": "알레르기있음"
+    },
+    "religion": {
+      "none": "없음",
+      "christian": "기독교",
+      "buddhist": "불교",
+      "catholic": "천주교",
+      "islam": "이슬람",
+      "other": "기타"
+    },
+    "nationality": {
+      "korea": "한국",
+      "japan": "일본",
+      "china": "중국",
+      "usa": "미국",
+      "united_kingdom": "영국",
+      "france": "프랑스",
+      "germany": "독일",
+      "canada": "캐나다",
+      "australia": "호주",
+      "vietnam": "베트남",
+      "thailand": "태국",
+      "philippines": "필리핀",
+      "indonesia": "인도네시아",
+      "singapore": "싱가포르",
+      "malaysia": "말레이시아",
+      "india": "인도",
+      "other": "기타"
+    }
+  },
+  "settings": {
+    "title": "설정",
+    "account": {
+      "title": "계정",
+      "email": "이메일",
+      "nickname": "닉네임",
+      "default": "(기본)",
+      "nickname_placeholder": "비어 있으면 이름이 표시됩니다",
+      "nickname_hint": "비어 있으면 이름이 표시됩니다.",
+      "honor": "명예도",
+      "point": "점",
+      "provider": "로그인 방식"
+    },
+    "withdraw": {
+      "title": "계정 탈퇴",
+      "desc": "탈퇴 시 데이터가 삭제되며 되돌릴 수 없습니다.",
+      "button": "계정 탈퇴",
+      "confirm_desc": "정말 탈퇴하시겠습니까? 아래에 계정 탈퇴라고 입력하세요.",
+      "placeholder": "계정 탈퇴",
+      "submit": "탈퇴",
+      "error": "계정 탈퇴에 실패했습니다.",
+      "error_during": "계정 탈퇴 중 오류가 발생했습니다."
+    },
+    "profile": {
+      "title": "여행 프로필",
+      "subtitle": "AI 맞춤 추천에 사용됩니다",
+      "save": "여행 프로필 저장",
+      "saved": "여행 프로필이 저장되었습니다."
+    },
+    "error": {
+      "load_user": "사용자 정보를 불러올 수 없습니다.",
+      "save": "저장에 실패했습니다.",
+      "save_during": "저장 중 오류가 발생했습니다."
+    },
+    "saved": "저장되었습니다."
+  },
+  "planner_dest": {
+    "seoul": {
+      "name": "서울",
+      "highlight1": "경복궁",
+      "highlight2": "홍대",
+      "highlight3": "한강공원"
+    },
+    "busan": {
+      "name": "부산",
+      "highlight1": "해운대",
+      "highlight2": "감천문화마을",
+      "highlight3": "자갈치시장"
+    },
+    "daegu": {
+      "name": "대구",
+      "highlight1": "동성로",
+      "highlight2": "김광석 거리",
+      "highlight3": "수성못"
+    },
+    "incheon": {
+      "name": "인천",
+      "highlight1": "송도",
+      "highlight2": "강화도",
+      "highlight3": "차이나타운"
+    },
+    "gwangju": {
+      "name": "광주",
+      "highlight1": "아시아문화센터",
+      "highlight2": "양림동"
+    },
+    "daejeon": {
+      "name": "대전",
+      "highlight1": "성심당",
+      "highlight2": "엑스포",
+      "highlight3": "유성온천"
+    },
+    "ulsan": {
+      "name": "울산",
+      "highlight1": "간절곶",
+      "highlight2": "대왕암",
+      "highlight3": "태화강"
+    },
+    "sejong": {
+      "name": "세종",
+      "highlight1": "세종호수공원",
+      "highlight2": "국립수목원"
+    },
+    "jongno": {
+      "name": "종로·광화문",
+      "highlight1": "경복궁",
+      "highlight2": "청와대",
+      "highlight3": "인사동"
+    },
+    "myeongdong": {
+      "name": "명동·을지로",
+      "highlight1": "명동성당",
+      "highlight2": "을지로 골목"
+    },
+    "yongsan": {
+      "name": "용산·이태원",
+      "highlight1": "국립중앙박물관",
+      "highlight2": "이태원"
+    },
+    "gangnam": {
+      "name": "강남·서초",
+      "highlight1": "코엑스",
+      "highlight2": "압구정 로데오",
+      "highlight3": "도산공원"
+    },
+    "jamsil": {
+      "name": "잠실·송파",
+      "highlight1": "롯데월드",
+      "highlight2": "올림픽공원",
+      "highlight3": "석촌호수"
+    },
+    "seongsu": {
+      "name": "성수·한남",
+      "highlight1": "성수 카페거리",
+      "highlight2": "한남동 갤러리"
+    },
+    "hongdae": {
+      "name": "홍대·마포",
+      "highlight1": "홍대 클럽",
+      "highlight2": "연남동",
+      "highlight3": "경의선숲길"
+    },
+    "bukchon": {
+      "name": "북촌·삼청",
+      "highlight1": "북촌한옥마을",
+      "highlight2": "삼청동 카페"
+    },
+    "nowon": {
+      "name": "노원·도봉",
+      "highlight1": "수락산",
+      "highlight2": "도봉산",
+      "highlight3": "불암산"
+    },
+    "haeundae": {
+      "name": "해운대",
+      "highlight1": "해운대 해수욕장",
+      "highlight2": "동백섬",
+      "highlight3": "달맞이길"
+    },
+    "gwangalli": {
+      "name": "광안·수영",
+      "highlight1": "광안대교",
+      "highlight2": "광안리 해수욕장"
+    },
+    "gijang": {
+      "name": "기장",
+      "highlight1": "죽성드림성당",
+      "highlight2": "대변항"
+    },
+    "songjeong": {
+      "name": "송정·청사포",
+      "highlight1": "송정 해수욕장",
+      "highlight2": "청사포 전망대"
+    },
+    "nampo": {
+      "name": "남포·중구",
+      "highlight1": "자갈치시장",
+      "highlight2": "BIFF 광장",
+      "highlight3": "보수동 책방골목"
+    },
+    "seomyeon": {
+      "name": "서면·부전",
+      "highlight1": "서면 거리",
+      "highlight2": "전포카페거리",
+      "highlight3": "부전시장"
+    },
+    "gamcheon": {
+      "name": "감천문화마을",
+      "highlight1": "감천문화마을",
+      "highlight2": "스카이로드"
+    },
+    "yeongdo": {
+      "name": "영도",
+      "highlight1": "태종대",
+      "highlight2": "흰여울문화마을",
+      "highlight3": "봉래산"
+    },
+    "geumjeong": {
+      "name": "금정·온천장",
+      "highlight1": "금정산성",
+      "highlight2": "범어사",
+      "highlight3": "온천장"
+    },
+    "gangseo-bs": {
+      "name": "강서·갑이도",
+      "highlight1": "을숙도",
+      "highlight2": "갑이도 갯벌"
+    },
+    "dadaepo": {
+      "name": "사하·다대포",
+      "highlight1": "다대포 해수욕장",
+      "highlight2": "낙동강 하구"
+    },
+    "dongseongno": {
+      "name": "동성로·중구",
+      "highlight1": "동성로",
+      "highlight2": "서문시장",
+      "highlight3": "약전시장"
+    },
+    "gimgwangseok": {
+      "name": "김광석 거리",
+      "highlight1": "김광석 거리",
+      "highlight2": "방천시장"
+    },
+    "suseongmot": {
+      "name": "수성못·범어",
+      "highlight1": "수성못",
+      "highlight2": "수성리조트"
+    },
+    "palgongsan": {
+      "name": "팔공산",
+      "highlight1": "동화사",
+      "highlight2": "갓바위",
+      "highlight3": "팔공 스카이라인"
+    },
+    "dalseong": {
+      "name": "비슬산·달성",
+      "highlight1": "비슬산 벚꽃",
+      "highlight2": "달성 습지"
+    },
+    "gunwi": {
+      "name": "군위",
+      "highlight1": "삼국유사 테마파크",
+      "highlight2": "화산성"
+    },
+    "ganjeolgot": {
+      "name": "간절곶",
+      "highlight1": "간절곶 등대",
+      "highlight2": "해돋이"
+    },
+    "daewangam": {
+      "name": "대왕암",
+      "highlight1": "대왕암공원",
+      "highlight2": "일산 해수욕장"
+    },
+    "taehwagang": {
+      "name": "태화강",
+      "highlight1": "태화강 국가정원",
+      "highlight2": "십리대숲"
+    },
+    "bangudae": {
+      "name": "반구대",
+      "highlight1": "반구대 암각화",
+      "highlight2": "집청정"
+    },
+    "jeju": {
+      "name": "제주시",
+      "highlight1": "한라산",
+      "highlight2": "성산일출봉",
+      "highlight3": "협재 해수욕장"
+    },
+    "gyeongju": {
+      "name": "경주",
+      "highlight1": "황리단길",
+      "highlight2": "첨성대",
+      "highlight3": "불국사"
+    },
+    "gangneung": {
+      "name": "강릉",
+      "highlight1": "경포 해수욕장",
+      "highlight2": "안목 커피거리",
+      "highlight3": "오죽헌"
+    },
+    "jeonju": {
+      "name": "전주",
+      "highlight1": "한옥마을",
+      "highlight2": "막걸리 골목"
+    },
+    "goyang": {
+      "name": "고양"
+    },
+    "paju": {
+      "name": "파주",
+      "highlight1": "헤이리 예술마을",
+      "highlight2": "임진각"
+    },
+    "gimpo": {
+      "name": "김포"
+    },
+    "uijeongbu": {
+      "name": "의정부"
+    },
+    "namyangju": {
+      "name": "남양주",
+      "highlight1": "두물경",
+      "highlight2": "다산길"
+    },
+    "guri": {
+      "name": "구리"
+    },
+    "gapyeong": {
+      "name": "가평",
+      "highlight1": "남이섬",
+      "highlight2": "자라섬"
+    },
+    "yangpyeong": {
+      "name": "양평",
+      "highlight1": "두물경",
+      "highlight2": "용문산"
+    },
+    "pocheon": {
+      "name": "포천",
+      "highlight1": "산정호수",
+      "highlight2": "허브아일랜드"
+    },
+    "yangju": {
+      "name": "양주"
+    },
+    "dongducheon": {
+      "name": "동두천"
+    },
+    "suwon": {
+      "name": "수원",
+      "highlight1": "화성행궁",
+      "highlight2": "행궁단길"
+    },
+    "hwaseong": {
+      "name": "화성"
+    },
+    "ansan": {
+      "name": "안산"
+    },
+    "siheung": {
+      "name": "시흥"
+    },
+    "anyang": {
+      "name": "안양"
+    },
+    "gunpo": {
+      "name": "군포"
+    },
+    "pyeongtaek": {
+      "name": "평택"
+    },
+    "yongin": {
+      "name": "용인",
+      "highlight1": "에버랜드",
+      "highlight2": "한국민속촌"
+    },
+    "seongnam": {
+      "name": "성남"
+    },
+    "hanam": {
+      "name": "하남"
+    },
+    "icheon": {
+      "name": "이천",
+      "highlight1": "도자기마을",
+      "highlight2": "이천쌀"
+    },
+    "yeoju": {
+      "name": "여주"
+    },
+    "anseong": {
+      "name": "안성"
+    },
+    "osan": {
+      "name": "오산"
+    },
+    "uiwang": {
+      "name": "의왕"
+    },
+    "gwacheon": {
+      "name": "과천"
+    },
+    "bucheon": {
+      "name": "부천"
+    },
+    "gwangmyeong": {
+      "name": "광명"
+    },
+    "chuncheon": {
+      "name": "춘천",
+      "highlight1": "남이섬",
+      "highlight2": "닭갈비 골목"
+    },
+    "wonju": {
+      "name": "원주",
+      "highlight1": "뮤지엄산",
+      "highlight2": "소금산 출렁다리"
+    },
+    "pyeongchang": {
+      "name": "평창",
+      "highlight1": "대관령 양떼목장",
+      "highlight2": "오대산"
+    },
+    "yeongwol": {
+      "name": "영월"
+    },
+    "hoengseong": {
+      "name": "횡성"
+    },
+    "jeongseon": {
+      "name": "정선"
+    },
+    "inje": {
+      "name": "인제"
+    },
+    "taebaek": {
+      "name": "태백"
+    },
+    "sokcho": {
+      "name": "속초",
+      "highlight1": "설악산",
+      "highlight2": "중앙시장"
+    },
+    "yangyang": {
+      "name": "양양",
+      "highlight1": "서피비치",
+      "highlight2": "낙산사"
+    },
+    "donghae": {
+      "name": "동해"
+    },
+    "samcheok": {
+      "name": "삼척"
+    },
+    "goseong-gw": {
+      "name": "고성(강원)"
+    },
+    "cheongju": {
+      "name": "청주"
+    },
+    "chungju": {
+      "name": "충주"
+    },
+    "jecheon": {
+      "name": "제천",
+      "highlight1": "청풍호",
+      "highlight2": "의림지"
+    },
+    "danyang": {
+      "name": "단양",
+      "highlight1": "단양 팔경",
+      "highlight2": "도담삼봉"
+    },
+    "gongju": {
+      "name": "공주",
+      "highlight1": "공산성",
+      "highlight2": "무령왕릉"
+    },
+    "buyeo": {
+      "name": "부여",
+      "highlight1": "부소산성",
+      "highlight2": "백제문화단지"
+    },
+    "asan": {
+      "name": "아산"
+    },
+    "cheonan": {
+      "name": "천안"
+    },
+    "nonsan": {
+      "name": "논산"
+    },
+    "boryeong": {
+      "name": "보령",
+      "highlight1": "머드축제",
+      "highlight2": "대천 해수욕장"
+    },
+    "taean": {
+      "name": "태안",
+      "highlight1": "안면도",
+      "highlight2": "꽃지 해수욕장"
+    },
+    "seosan": {
+      "name": "서산"
+    },
+    "dangjin": {
+      "name": "당진"
+    },
+    "gunsan": {
+      "name": "군산",
+      "highlight1": "근대역사거리",
+      "highlight2": "이성당"
+    },
+    "iksan": {
+      "name": "익산"
+    },
+    "gochang": {
+      "name": "고창"
+    },
+    "jeongeup": {
+      "name": "정읍"
+    },
+    "namwon": {
+      "name": "남원"
+    },
+    "gimje": {
+      "name": "김제"
+    },
+    "yeosu": {
+      "name": "여수",
+      "highlight1": "해상케이블카",
+      "highlight2": "오동도"
+    },
+    "suncheon": {
+      "name": "순천",
+      "highlight1": "순천만 국가정원",
+      "highlight2": "낙안읍성"
+    },
+    "mokpo": {
+      "name": "목포",
+      "highlight1": "해상케이블카",
+      "highlight2": "유달산"
+    },
+    "wando": {
+      "name": "완도"
+    },
+    "gangjin": {
+      "name": "강진"
+    },
+    "yeonggwang": {
+      "name": "영광"
+    },
+    "haenam": {
+      "name": "해남"
+    },
+    "goheung": {
+      "name": "고흥"
+    },
+    "yeongam": {
+      "name": "영암"
+    },
+    "damyang": {
+      "name": "담양",
+      "highlight1": "죽녹원",
+      "highlight2": "메타세쿼이아길"
+    },
+    "gwangyang": {
+      "name": "광양"
+    },
+    "boseong": {
+      "name": "보성",
+      "highlight1": "녹차밭",
+      "highlight2": "율포 해수욕장"
+    },
+    "naju": {
+      "name": "나주"
+    },
+    "andong": {
+      "name": "안동",
+      "highlight1": "하회마을",
+      "highlight2": "도산서원"
+    },
+    "yeongju": {
+      "name": "영주"
+    },
+    "mungyeong": {
+      "name": "문경"
+    },
+    "pohang": {
+      "name": "포항",
+      "highlight1": "호미곶",
+      "highlight2": "스페이스워크"
+    },
+    "yeongdeok": {
+      "name": "영덕"
+    },
+    "uljin": {
+      "name": "울진"
+    },
+    "dokdo": {
+      "name": "독도·울릉도",
+      "highlight1": "독도",
+      "highlight2": "울릉도"
+    },
+    "gumi": {
+      "name": "구미"
+    },
+    "gimcheon": {
+      "name": "김천"
+    },
+    "yeongcheon": {
+      "name": "영천"
+    },
+    "sangju": {
+      "name": "상주"
+    },
+    "gyeongsan": {
+      "name": "경산"
+    },
+    "tongyeong": {
+      "name": "통영",
+      "highlight1": "루지",
+      "highlight2": "동피랑 마을"
+    },
+    "geoje": {
+      "name": "거제",
+      "highlight1": "바람의 언덕",
+      "highlight2": "외도"
+    },
+    "namhae": {
+      "name": "남해",
+      "highlight1": "독일마을",
+      "highlight2": "다랭이 마을"
+    },
+    "goseong-gn": {
+      "name": "고성(경남)"
+    },
+    "jinju": {
+      "name": "진주",
+      "highlight1": "진주 유등축제",
+      "highlight2": "진주성"
+    },
+    "changwon": {
+      "name": "창원"
+    },
+    "hapcheon": {
+      "name": "합천"
+    },
+    "miryang": {
+      "name": "밀양"
+    },
+    "hamyang": {
+      "name": "함양"
+    },
+    "sancheong": {
+      "name": "산청"
+    },
+    "hadong": {
+      "name": "하동",
+      "highlight1": "화개장터",
+      "highlight2": "쌍계사"
+    },
+    "geochang": {
+      "name": "거창"
+    },
+    "gimhae": {
+      "name": "김해"
+    },
+    "yangsan": {
+      "name": "양산"
+    },
+    "changnyeong": {
+      "name": "창녕"
+    },
+    "uiryeong": {
+      "name": "의령"
+    },
+    "seogwipo": {
+      "name": "서귀포",
+      "highlight1": "천지연 폭포",
+      "highlight2": "올레길"
+    }
+  },
+  "planner_region": {
+    "seoul_areas": {
+      "label": "서울",
+      "subLabel": "구별 핵심 여행지"
+    },
+    "gyeonggi_north": {
+      "label": "경기 북부",
+      "subLabel": "고양·파주·의정부·남양주 등"
+    },
+    "gyeonggi_south": {
+      "label": "경기 남부",
+      "subLabel": "수원·용인·성남·평택 등"
+    },
+    "gangwon": {
+      "label": "강원특별자치도",
+      "subLabel": "강원 지역"
+    },
+    "chungbuk": {
+      "label": "충청북도",
+      "subLabel": "청주·충주·제천·단양"
+    },
+    "chungnam": {
+      "label": "충청남도",
+      "subLabel": "공주·부여·보령·태안 등"
+    },
+    "jeonbuk": {
+      "label": "전북특별자치도",
+      "subLabel": "전북 지역"
+    },
+    "jeonnam": {
+      "label": "전라남도",
+      "subLabel": "여수·순천·목포·담양 등"
+    },
+    "busan": {
+      "label": "부산",
+      "subLabel": "부산광역시"
+    },
+    "daegu": {
+      "label": "대구",
+      "subLabel": "대구광역시"
+    },
+    "ulsan": {
+      "label": "울산",
+      "subLabel": "울산광역시"
+    },
+    "gyeongbuk": {
+      "label": "경상북도",
+      "subLabel": "경주·포항·안동 등"
+    },
+    "gyeongnam": {
+      "label": "경상남도",
+      "subLabel": "통영·거제·진주·창원 등"
+    },
+    "jeju": {
+      "label": "제주특별자치도",
+      "subLabel": "제주 지역"
+    }
+  }
+}

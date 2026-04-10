@@ -48,13 +48,16 @@ class TourstarController extends Notifier<TourstarState> {
       // 게이트웨이 JWT는 app_user_id에 앱 사용자 PK를 두는 경우가 많음 — 삭제/작성자 검증과 맞춤
       final userId = getAppUserIdFromToken(token) ?? getUserIdFromToken(token);
 
-      // JWT claim 닉네임 우선, 없으면 API 조회
-      String? nickname = getNicknameFromToken(token);
-      if ((nickname == null || nickname.isEmpty) && userId != null) {
+      // 프로필 API 닉네임을 JWT claim보다 우선 (토큰 갱신 전에도 설정에서 변경한 이름 반영)
+      String? nickname;
+      if (userId != null) {
         try {
           final userModel = await ref.read(profileRepositoryProvider).findUserById(userId);
-          nickname = userModel?.nickname;
+          nickname = userModel?.nickname?.trim();
         } catch (_) {}
+      }
+      if (nickname == null || nickname.isEmpty) {
+        nickname = getNicknameFromToken(token)?.trim();
       }
 
       state = state.copyWith(myUserId: userId, myNickname: nickname);
@@ -66,6 +69,62 @@ class TourstarController extends Notifier<TourstarState> {
         }
       }
     } catch (_) {}
+  }
+
+  /// 설정에서 닉네임 저장 후 호출 — 저장값·프로필 API 기준으로 반영(JWT만 믿으면 토큰 미갱신 시 구 닉네임이 남음).
+  Future<void> syncNicknameFromProfile({String? savedNickname}) async {
+    final token = await _tokenStore.readAccessToken();
+    if (token == null || token.isEmpty) return;
+    final userId = getAppUserIdFromToken(token) ?? getUserIdFromToken(token);
+    final previousNick = state.myNickname?.trim();
+
+    String? newNick = savedNickname?.trim();
+    if (newNick == null || newNick.isEmpty) {
+      if (userId != null) {
+        try {
+          final userModel = await ref.read(profileRepositoryProvider).findUserById(userId);
+          newNick = userModel?.nickname?.trim();
+        } catch (_) {}
+      }
+      newNick ??= getNicknameFromToken(token)?.trim();
+    }
+
+    if (newNick == null || newNick.isEmpty) return;
+
+    state = state.copyWith(myUserId: userId ?? state.myUserId, myNickname: newNick);
+
+    if (userId != null) {
+      try {
+        final imageUrl = await _repo.fetchProfileImage(userId);
+        if (imageUrl != null && imageUrl.isNotEmpty) {
+          state = state.copyWith(profileImageUrl: imageUrl);
+        }
+      } catch (_) {}
+    }
+
+    final uid = state.myUserId;
+    if (state.serverPosts.isEmpty) return;
+
+    final next = <TourstarPostRecord>[];
+    var changed = false;
+    for (final p in state.serverPosts) {
+      final auth = (p.authorNickname ?? "").trim();
+      final byId = uid != null && p.userId != null && p.userId == uid;
+      final byPrevNick =
+          previousNick != null && previousNick.isNotEmpty && auth == previousNick;
+      if (byId && auth != newNick) {
+        changed = true;
+        next.add(p.copyWith(authorNickname: newNick));
+      } else if (!byId && byPrevNick && auth != newNick) {
+        changed = true;
+        next.add(p.copyWith(authorNickname: newNick));
+      } else {
+        next.add(p);
+      }
+    }
+    if (changed) {
+      state = state.copyWith(serverPosts: next);
+    }
   }
 
   Future<void> loadFriends() async {
@@ -93,7 +152,8 @@ class TourstarController extends Notifier<TourstarState> {
       pickedFiles: files,
       filteredPickedFiles: files,
       clearDateFilter: true,
-      statusMessage: "${files.length}장을 선택했습니다. 촬영일 확인중...",
+      statusMessage: "screens.tourstar.status_picked_exif_checking",
+      statusMessageParams: {"count": "${files.length}"},
       clearGeneratedPost: true,
     );
 
@@ -103,7 +163,10 @@ class TourstarController extends Notifier<TourstarState> {
 
   Future<void> setDateRange(DateTime start, DateTime end) async {
     if (state.pickedFiles.isEmpty) {
-      state = state.copyWith(statusMessage: "먼저 사진을 선택해 주세요.");
+      state = state.copyWith(
+        statusMessage: "screens.tourstar.status_pick_photos_first",
+        clearStatusParams: true,
+      );
       return;
     }
 
@@ -121,7 +184,11 @@ class TourstarController extends Notifier<TourstarState> {
       filterStartDate: rangeStart,
       filterEndDate: rangeEnd,
       filteredPickedFiles: filtered,
-      statusMessage: "기간 필터 적용: ${filtered.length}/${state.pickedFiles.length}장",
+      statusMessage: "screens.tourstar.status_date_filter_applied",
+      statusMessageParams: {
+        "filtered": "${filtered.length}",
+        "total": "${state.pickedFiles.length}",
+      },
       clearGeneratedPost: true,
     );
   }
@@ -130,7 +197,8 @@ class TourstarController extends Notifier<TourstarState> {
     state = state.copyWith(
       clearDateFilter: true,
       filteredPickedFiles: state.pickedFiles,
-      statusMessage: "기간 필터를 해제했습니다.",
+      statusMessage: "screens.tourstar.status_date_filter_cleared",
+      clearStatusParams: true,
       clearGeneratedPost: true,
     );
   }
@@ -148,7 +216,8 @@ class TourstarController extends Notifier<TourstarState> {
   void reset() {
     state = state.copyWith(
       loading: false,
-      statusMessage: "사진을 선택하고 업로드를 시작하세요.",
+      statusMessage: "screens.tourstar.status_hint_select_upload",
+      clearStatusParams: true,
       styleFilter: "AUTO",
       comment: "",
       pickedFiles: <XFile>[],
@@ -165,20 +234,27 @@ class TourstarController extends Notifier<TourstarState> {
   Future<bool> ensureIdentityForAuthoring() async {
     final token = await _tokenStore.readAccessToken();
     if (token == null || token.isEmpty) {
-      state = state.copyWith(statusMessage: "로그인이 필요합니다.");
+      state = state.copyWith(
+        statusMessage: "screens.tourstar.status_need_login",
+        clearStatusParams: true,
+      );
       return false;
     }
     final userId = getAppUserIdFromToken(token) ?? getUserIdFromToken(token);
-    String? nickname = getNicknameFromToken(token);
     if (userId == null) {
-      state = state.copyWith(statusMessage: "회원 정보를 확인할 수 없습니다. 다시 로그인해 주세요.");
+      state = state.copyWith(
+        statusMessage: "screens.tourstar.status_cannot_resolve_user",
+        clearStatusParams: true,
+      );
       return false;
     }
+    String? nickname;
+    try {
+      final userModel = await ref.read(profileRepositoryProvider).findUserById(userId);
+      nickname = userModel?.nickname?.trim();
+    } catch (_) {}
     if (nickname == null || nickname.isEmpty) {
-      try {
-        final userModel = await ref.read(profileRepositoryProvider).findUserById(userId);
-        nickname = userModel?.nickname;
-      } catch (_) {}
+      nickname = getNicknameFromToken(token)?.trim();
     }
     state = state.copyWith(myUserId: userId, myNickname: nickname);
     return true;
@@ -197,13 +273,17 @@ class TourstarController extends Notifier<TourstarState> {
   Future<void> uploadAndAnalyze({bool autoGenerateComment = false}) async {
     final filesToUpload = _effectiveFiles();
     if (filesToUpload.isEmpty) {
-      state = state.copyWith(statusMessage: "먼저 사진을 선택해 주세요.");
+      state = state.copyWith(
+        statusMessage: "screens.tourstar.status_pick_photos_first",
+        clearStatusParams: true,
+      );
       return;
     }
 
     state = state.copyWith(
       loading: true,
-      statusMessage: "업로드 및 분석 작업을 시작합니다...",
+      statusMessage: "screens.tourstar.status_upload_analyze_start",
+      clearStatusParams: true,
       clearGeneratedPost: true,
     );
 
@@ -214,7 +294,10 @@ class TourstarController extends Notifier<TourstarState> {
         throw Exception("pipeline_job.job_id가 비어 있습니다.");
       }
 
-      state = state.copyWith(statusMessage: "업로드 완료. 분석 진행 중...");
+      state = state.copyWith(
+        statusMessage: "screens.tourstar.status_upload_done_analyzing",
+        clearStatusParams: true,
+      );
       final completed = await _pollJobUntilDone(jobId);
       final ranked = completed.result?.ranked ?? <RankedImage>[];
       final defaults = ranked
@@ -226,7 +309,8 @@ class TourstarController extends Notifier<TourstarState> {
       state = state.copyWith(
         rankedImages: ranked,
         selectedImagePaths: defaults,
-        statusMessage: "분석 완료: ${ranked.length}장 랭킹을 받았습니다.",
+        statusMessage: "screens.tourstar.status_analyze_done_ranked",
+        statusMessageParams: {"count": "${ranked.length}"},
       );
 
       if (autoGenerateComment && defaults.isNotEmpty) {
@@ -234,12 +318,18 @@ class TourstarController extends Notifier<TourstarState> {
       }
     } on DioException catch (e) {
       final code = e.response?.statusCode;
-      final msg = code != null
-          ? "업로드/분석 오류: HTTP $code"
-          : "업로드/분석 오류: ${e.type.name} ${e.message ?? ""}";
-      state = state.copyWith(statusMessage: msg);
+      final detail = code != null
+          ? "HTTP $code"
+          : "${e.type.name} ${e.message ?? ""}";
+      state = state.copyWith(
+        statusMessage: "screens.tourstar.status_upload_error",
+        statusMessageParams: {"detail": detail},
+      );
     } catch (e) {
-      state = state.copyWith(statusMessage: "업로드/분석 오류: $e");
+      state = state.copyWith(
+        statusMessage: "screens.tourstar.status_upload_error",
+        statusMessageParams: {"detail": "$e"},
+      );
     } finally {
       state = state.copyWith(loading: false);
     }
@@ -248,11 +338,18 @@ class TourstarController extends Notifier<TourstarState> {
   Future<void> generateAutoComment() async {
     final paths = state.selectedImagePaths.toList();
     if (paths.isEmpty) {
-      state = state.copyWith(statusMessage: "분석 이미지에서 최소 1장을 선택해 주세요.");
+      state = state.copyWith(
+        statusMessage: "screens.tourstar.status_pick_ranked_first",
+        clearStatusParams: true,
+      );
       return;
     }
 
-    state = state.copyWith(loading: true, statusMessage: "자동 코멘트를 생성하는 중...");
+    state = state.copyWith(
+      loading: true,
+      statusMessage: "screens.tourstar.status_generating_auto_comment",
+      clearStatusParams: true,
+    );
     await _generateAutoCommentInternal(paths);
     state = state.copyWith(loading: false);
   }
@@ -262,12 +359,22 @@ class TourstarController extends Notifier<TourstarState> {
       final auto = await _repo.autoComment(imagePaths: paths, maxImages: 3);
       final nextComment = auto.comment.trim();
       if (nextComment.isNotEmpty) {
-        state = state.copyWith(comment: nextComment, statusMessage: "자동 코멘트 초안 생성 완료");
+        state = state.copyWith(
+          comment: nextComment,
+          statusMessage: "screens.tourstar.status_auto_comment_done",
+          clearStatusParams: true,
+        );
       } else {
-        state = state.copyWith(statusMessage: "자동 코멘트 결과가 비어 있습니다.");
+        state = state.copyWith(
+          statusMessage: "screens.tourstar.status_auto_comment_empty",
+          clearStatusParams: true,
+        );
       }
     } catch (e) {
-      state = state.copyWith(statusMessage: "자동 코멘트 오류: $e");
+      state = state.copyWith(
+        statusMessage: "screens.tourstar.status_auto_comment_error",
+        statusMessageParams: {"error": "$e"},
+      );
     }
   }
 
@@ -297,7 +404,11 @@ class TourstarController extends Notifier<TourstarState> {
     List<String>? keepPhotoUrls,
     List<String>? newImagePaths,
   }) async {
-    state = state.copyWith(loading: true, statusMessage: "게시글을 수정하는 중...");
+    state = state.copyWith(
+      loading: true,
+      statusMessage: "screens.tourstar.status_editing_post",
+      clearStatusParams: true,
+    );
     try {
       final updated = await _repo.updatePost(
         postId: postId,
@@ -310,10 +421,17 @@ class TourstarController extends Notifier<TourstarState> {
         newImagePaths: newImagePaths,
       );
       final posts = state.serverPosts.map((p) => p.id == postId ? updated : p).toList();
-      state = state.copyWith(serverPosts: posts, statusMessage: "게시글이 수정되었습니다.");
+      state = state.copyWith(
+        serverPosts: posts,
+        statusMessage: "screens.tourstar.status_post_updated",
+        clearStatusParams: true,
+      );
       return true;
     } catch (e) {
-      state = state.copyWith(statusMessage: "게시글 수정 오류: $e");
+      state = state.copyWith(
+        statusMessage: "screens.tourstar.status_post_update_error",
+        statusMessageParams: {"error": "$e"},
+      );
       return false;
     } finally {
       state = state.copyWith(loading: false);
@@ -322,7 +440,11 @@ class TourstarController extends Notifier<TourstarState> {
 
   // ── 게시글 삭제 ─────────────────────────────────────────────
   Future<bool> deletePost(String postId) async {
-    state = state.copyWith(loading: true, statusMessage: "게시글을 삭제하는 중...");
+    state = state.copyWith(
+      loading: true,
+      statusMessage: "screens.tourstar.status_deleting_post",
+      clearStatusParams: true,
+    );
     if (!await ensureIdentityForAuthoring()) {
       state = state.copyWith(loading: false);
       return false;
@@ -331,18 +453,34 @@ class TourstarController extends Notifier<TourstarState> {
     try {
       await _repo.deletePost(postId: postId, userId: userId);
       final posts = state.serverPosts.where((p) => p.id != postId).toList();
-      state = state.copyWith(serverPosts: posts, statusMessage: "게시글이 삭제되었습니다.");
+      state = state.copyWith(
+        serverPosts: posts,
+        statusMessage: "screens.tourstar.status_post_deleted",
+        clearStatusParams: true,
+      );
       return true;
     } on DioException catch (e) {
       final code = e.response?.statusCode;
       final detail = e.response?.data?.toString() ?? "";
-      final msg = code == 403
-          ? "본인 게시글만 삭제할 수 있습니다. (로그인 계정을 확인해 주세요)"
-          : "게시글 삭제 오류${code != null ? " (HTTP $code)" : ""}: ${detail.isNotEmpty ? detail : (e.message ?? e)}";
-      state = state.copyWith(statusMessage: msg);
+      if (code == 403) {
+        state = state.copyWith(
+          statusMessage: "screens.tourstar.status_delete_forbidden",
+          clearStatusParams: true,
+        );
+      } else {
+        final d =
+            "${code != null ? "(HTTP $code) " : ""}${detail.isNotEmpty ? detail : (e.message ?? e)}";
+        state = state.copyWith(
+          statusMessage: "screens.tourstar.status_post_delete_error",
+          statusMessageParams: {"detail": d},
+        );
+      }
       return false;
     } catch (e) {
-      state = state.copyWith(statusMessage: "게시글 삭제 오류: $e");
+      state = state.copyWith(
+        statusMessage: "screens.tourstar.status_post_delete_error",
+        statusMessageParams: {"detail": "$e"},
+      );
       return false;
     } finally {
       state = state.copyWith(loading: false);
@@ -373,7 +511,10 @@ class TourstarController extends Notifier<TourstarState> {
       final userId = state.myUserId!;
       final target = state.serverPosts.where((p) => p.id == postId).firstOrNull;
       if (target != null && _isOwnerPost(target)) {
-        state = state.copyWith(statusMessage: "본인 게시물에는 명예 투표를 할 수 없습니다.");
+        state = state.copyWith(
+          statusMessage: "screens.tourstar.status_cannot_vote_own",
+          clearStatusParams: true,
+        );
         return;
       }
       try {
@@ -399,12 +540,21 @@ class TourstarController extends Notifier<TourstarState> {
         final code = e.response?.statusCode;
         final body = e.response?.data?.toString() ?? "";
         if (code == 400 || body.contains("본인")) {
-          state = state.copyWith(statusMessage: "본인 게시물에는 명예 투표를 할 수 없습니다.");
+          state = state.copyWith(
+            statusMessage: "screens.tourstar.status_cannot_vote_own",
+            clearStatusParams: true,
+          );
           return;
         }
-        state = state.copyWith(statusMessage: "명예 투표 오류: $e");
+        state = state.copyWith(
+          statusMessage: "screens.tourstar.status_honor_vote_error",
+          statusMessageParams: {"error": "$e"},
+        );
       } catch (e) {
-        state = state.copyWith(statusMessage: "명예 투표 오류: $e");
+        state = state.copyWith(
+          statusMessage: "screens.tourstar.status_honor_vote_error",
+          statusMessageParams: {"error": "$e"},
+        );
       }
     });
   }
@@ -437,7 +587,11 @@ class TourstarController extends Notifier<TourstarState> {
     required List<String> imagePaths,
     Map<String, dynamic>? selectedScores,
   }) async {
-    state = state.copyWith(loading: true, statusMessage: "게시글을 저장하는 중...");
+    state = state.copyWith(
+      loading: true,
+      statusMessage: "screens.tourstar.status_saving_post",
+      clearStatusParams: true,
+    );
     if (!await ensureIdentityForAuthoring()) {
       state = state.copyWith(loading: false);
       return;
@@ -457,10 +611,14 @@ class TourstarController extends Notifier<TourstarState> {
       );
       state = state.copyWith(
         serverPosts: [created, ...state.serverPosts],
-        statusMessage: "게시글이 저장되었습니다.",
+        statusMessage: "screens.tourstar.status_post_saved",
+        clearStatusParams: true,
       );
     } catch (e) {
-      state = state.copyWith(statusMessage: "게시글 저장 오류: $e");
+      state = state.copyWith(
+        statusMessage: "screens.tourstar.status_post_save_error",
+        statusMessageParams: {"error": "$e"},
+      );
     } finally {
       state = state.copyWith(loading: false);
     }
@@ -501,11 +659,18 @@ class TourstarController extends Notifier<TourstarState> {
     final comment = state.comment.trim();
     final paths = state.selectedImagePaths.toList();
     if (comment.isEmpty) {
-      state = state.copyWith(statusMessage: "코멘트를 입력해 주세요.");
+      state = state.copyWith(
+        statusMessage: "screens.tourstar.status_comment_required",
+        clearStatusParams: true,
+      );
       return;
     }
 
-    state = state.copyWith(loading: true, statusMessage: "MBTI 게시글 생성 중...");
+    state = state.copyWith(
+      loading: true,
+      statusMessage: "screens.tourstar.status_mbti_generating",
+      clearStatusParams: true,
+    );
     try {
       final post = await _repo.generatePost(
         comment: comment,
@@ -514,10 +679,14 @@ class TourstarController extends Notifier<TourstarState> {
       );
       state = state.copyWith(
         generatedPost: post,
-        statusMessage: "게시글 생성 완료",
+        statusMessage: "screens.tourstar.status_post_generate_done",
+        clearStatusParams: true,
       );
     } catch (e) {
-      state = state.copyWith(statusMessage: "게시글 생성 오류: $e");
+      state = state.copyWith(
+        statusMessage: "screens.tourstar.status_post_generate_error",
+        statusMessageParams: {"error": "$e"},
+      );
     } finally {
       state = state.copyWith(loading: false);
     }
@@ -529,15 +698,25 @@ class TourstarController extends Notifier<TourstarState> {
     final comment = state.comment.trim();
     final paths = state.selectedImagePaths.toList();
     if (paths.isEmpty) {
-      state = state.copyWith(statusMessage: "AI 랭킹에서 최소 1장을 선택해 주세요.");
+      state = state.copyWith(
+        statusMessage: "screens.tourstar.status_select_ai_rank_first",
+        clearStatusParams: true,
+      );
       return false;
     }
     if (comment.isEmpty) {
-      state = state.copyWith(statusMessage: "코멘트 초안을 입력해 주세요.");
+      state = state.copyWith(
+        statusMessage: "screens.tourstar.status_comment_draft_required",
+        clearStatusParams: true,
+      );
       return false;
     }
 
-    state = state.copyWith(loading: true, statusMessage: "게시글 생성 및 저장중...");
+    state = state.copyWith(
+      loading: true,
+      statusMessage: "screens.tourstar.status_publish_generating",
+      clearStatusParams: true,
+    );
     if (!await ensureIdentityForAuthoring()) {
       state = state.copyWith(loading: false);
       return false;
@@ -563,11 +742,15 @@ class TourstarController extends Notifier<TourstarState> {
       state = state.copyWith(
         generatedPost: generated,
         serverPosts: [created, ...state.serverPosts],
-        statusMessage: "게시글 생성 완료",
+        statusMessage: "screens.tourstar.status_post_generate_done",
+        clearStatusParams: true,
       );
       return true;
     } catch (e) {
-      state = state.copyWith(statusMessage: "게시글 생성/저장 오류: $e");
+      state = state.copyWith(
+        statusMessage: "screens.tourstar.status_publish_error",
+        statusMessageParams: {"error": "$e"},
+      );
       return false;
     } finally {
       state = state.copyWith(loading: false);
@@ -648,11 +831,21 @@ class TourstarController extends Notifier<TourstarState> {
       maxDate = (maxDate == null || d.isAfter(maxDate)) ? d : maxDate;
     }
     if (known == 0) {
-      state = state.copyWith(statusMessage: "촬영일 메타데이터 없음. 업로드/분석을 시작합니다...");
+      state = state.copyWith(
+        statusMessage: "screens.tourstar.status_no_exif_fallback",
+        clearStatusParams: true,
+      );
       return;
     }
     final range = "${minDate!.year}-${minDate.month.toString().padLeft(2, "0")}-${minDate.day.toString().padLeft(2, "0")} ~ "
         "${maxDate!.year}-${maxDate.month.toString().padLeft(2, "0")}-${maxDate.day.toString().padLeft(2, "0")}";
-    state = state.copyWith(statusMessage: "촬영일 확인 완료 ($known/${files.length}장): $range");
+    state = state.copyWith(
+      statusMessage: "screens.tourstar.status_shot_date_done",
+      statusMessageParams: {
+        "known": "$known",
+        "total": "${files.length}",
+        "range": range,
+      },
+    );
   }
 }

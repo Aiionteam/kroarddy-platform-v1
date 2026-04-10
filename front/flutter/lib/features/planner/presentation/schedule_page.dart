@@ -1,5 +1,6 @@
 import "dart:math" as math;
 
+import "package:easy_localization/easy_localization.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_naver_map/flutter_naver_map.dart";
@@ -12,6 +13,9 @@ import "../../auth/presentation/state/auth_controller.dart";
 import "../data/planner_models.dart";
 import "../data/planner_repository.dart";
 
+part "schedule_plan_tile.dart";
+
+
 const _purple = KroaddyColors.primary;
 const _textPrimary = Color(0xFF1F2937);
 const _textSecondary = Color(0xFF6B7280);
@@ -22,6 +26,69 @@ const _kKoreaLatMax = 38.7;
 const _kKoreaLngMin = 124.5;
 const _kKoreaLngMax = 132.0;
 const _routeDedupeThresholdM = 50.0;
+
+/// `intl` DateFormat용 BCP 47 스타일 코드 (예: `ja`, `zh_CN`).
+String _intlLocaleTag(BuildContext context) {
+  final l = context.locale;
+  if (l.countryCode != null && l.countryCode!.isNotEmpty) {
+    return "${l.languageCode}_${l.countryCode}";
+  }
+  return l.languageCode;
+}
+
+/// 웹 `weatherEmoji` / OpenWeather 조건 문자열 → 이모지
+String _weatherEmojiFromCondition(String condition) {
+  final c = condition;
+  final cl = c.toLowerCase();
+  if (c.contains("천둥")) return "⛈️";
+  if (c.contains("눈")) return "❄️";
+  if (c.contains("비")) return "🌧️";
+  if (c.contains("이슬")) return "🌦️";
+  if (c.contains("구름")) return "⛅";
+  if (c.contains("안개") || c.contains("연무") || c.contains("황사")) return "🌫️";
+  if (c.contains("맑")) return "☀️";
+  if (cl.contains("thunder")) return "⛈️";
+  if (cl.contains("snow")) return "❄️";
+  if (cl.contains("rain")) return "🌧️";
+  if (cl.contains("drizzle")) return "🌦️";
+  if (cl.contains("cloud")) return "⛅";
+  if (cl.contains("fog") ||
+      cl.contains("mist") ||
+      cl.contains("haze") ||
+      cl.contains("sand") ||
+      cl.contains("dust")) {
+    return "🌫️";
+  }
+  if (cl.contains("clear")) return "☀️";
+  return "🌤️";
+}
+
+bool _dateStrWithinForecastRange5(String dateStr) {
+  final ymd = dateStr.length >= 10 ? dateStr.substring(0, 10) : dateStr;
+  final target = DateTime.tryParse(ymd);
+  if (target == null) return false;
+  final today = DateTime.now();
+  final t0 = DateTime(today.year, today.month, today.day);
+  final d0 = DateTime(target.year, target.month, target.day);
+  final diff = d0.difference(t0).inDays;
+  return diff >= 0 && diff <= 5;
+}
+
+bool _shouldLoadTripWeather(TravelPlanRecord plan) {
+  final s = plan.startDate;
+  if (s == null || s.trim().isEmpty) return false;
+  final e = plan.endDate ?? s;
+  if (_dateStrWithinForecastRange5(s)) return true;
+  if (e.trim().isNotEmpty && _dateStrWithinForecastRange5(e)) return true;
+  return false;
+}
+
+String _weatherMdLabel(String dateKey) {
+  if (dateKey.length >= 10) {
+    return "${dateKey.substring(5, 7)}/${dateKey.substring(8, 10)}";
+  }
+  return dateKey;
+}
 
 bool _isValidKoreaMapCoord(double lat, double lng) {
   if (lat == 0 && lng == 0) return false;
@@ -376,6 +443,13 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = _intlLocaleTag(context);
+    final monthTitle = DateFormat.yMMMM(loc).format(_focusedMonth);
+    final weekdayLabels = List.generate(7, (i) {
+      final d = DateTime(2023, 1, 1).add(Duration(days: i));
+      return DateFormat.E(loc).format(d);
+    });
+
     return Scaffold(
       backgroundColor: _bgPage,
       appBar: AppBar(
@@ -386,9 +460,9 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
           icon: const Icon(Icons.menu, color: _textPrimary),
           onPressed: () => mainScaffoldKey.currentState?.openDrawer(),
         ),
-        title: const Text(
-          "마이플랜",
-          style: TextStyle(color: _textPrimary, fontWeight: FontWeight.bold, fontSize: 18),
+        title: Text(
+          "sidebar.schedule".tr(),
+          style: const TextStyle(color: _textPrimary, fontWeight: FontWeight.bold, fontSize: 18),
         ),
         actions: [
           TextButton(
@@ -397,7 +471,7 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
               foregroundColor: _purple,
               textStyle: const TextStyle(fontWeight: FontWeight.w700),
             ),
-            child: const Text("+ 새 루트"),
+            child: Text("screens.schedule.new_route".tr()),
           ),
         ],
       ),
@@ -429,7 +503,7 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
                       }),
                     ),
                     Text(
-                      "${_focusedMonth.year}년 ${_focusedMonth.month}월",
+                      monthTitle,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -446,9 +520,11 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
                 ),
                 const SizedBox(height: 8),
                 Row(
-                  children: ["일", "월", "화", "수", "목", "금", "토"].map((d) {
-                    final isSun = d == "일";
-                    final isSat = d == "토";
+                  children: weekdayLabels.asMap().entries.map((e) {
+                    final i = e.key;
+                    final d = e.value;
+                    final isSun = i == 0;
+                    final isSat = i == 6;
                     return Expanded(
                       child: Center(
                         child: Text(
@@ -493,6 +569,7 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
     required List<TravelPlanRecord> plans,
     required DateTime? selectedDate,
   }) {
+    final loc = _intlLocaleTag(context);
     final totalItems = selectedDate == null
         ? null
         : plans.fold<int>(0, (acc, p) => acc + _itemsOnDate(p, selectedDate).length);
@@ -519,14 +596,15 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
               children: [
                 Expanded(
                   child: Text(
-                    "${selectedDate.year}년 ${selectedDate.month}월 ${selectedDate.day}일 · ${totalItems ?? 0}개 일정",
+                    "${DateFormat.yMMMd(loc).format(selectedDate)} · "
+                    "${"screens.schedule.plan_items".tr(namedArgs: {"count": "${totalItems ?? 0}"})}",
                     style: const TextStyle(fontWeight: FontWeight.w800, color: _textPrimary),
                   ),
                 ),
                 TextButton(
                   onPressed: () => setState(() => _selectedDate = null),
                   style: TextButton.styleFrom(foregroundColor: _purple),
-                  child: const Text("전체 보기"),
+                  child: Text("screens.schedule.show_all".tr()),
                 ),
               ],
             ),
@@ -538,320 +616,18 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
             final originalIdx = _plans.indexWhere((e) => e.id == p.id);
             final dotColor = _dotForPlan(originalIdx >= 0 ? originalIdx : fallbackIdx);
             final palette = _paletteForPlan(originalIdx >= 0 ? originalIdx : fallbackIdx);
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: palette.border),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: ExpansionTile(
-                key: PageStorageKey<String>("plan-tile-${p.id}"),
-                initiallyExpanded: false,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                leading: CircleAvatar(
-                  radius: 8,
-                  backgroundColor: dotColor,
-                ),
-                title: Text(
-                  "${p.location} · ${p.routeName}",
-                  style: TextStyle(fontWeight: FontWeight.w700, color: palette.text),
-                ),
-                subtitle: Text(
-                  "${p.startDate ?? "-"} ~ ${p.endDate ?? "-"}",
-                  style: TextStyle(fontSize: 12, color: palette.text.withValues(alpha: 0.75)),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // 전체 경로 보기
-                    IconButton(
-                      tooltip: "전체 경로 보기",
-                      onPressed: () {
-                        final places = p.schedule
-                            .where((s) => s.place.trim().isNotEmpty)
-                            .map((s) => (
-                                  name: s.place,
-                                  lat: s.lat,
-                                  lng: s.lng,
-                                ))
-                            .fold<List<({String name, double? lat, double? lng})>>(
-                              [],
-                              (acc, item) {
-                                if (acc.every((e) => e.name != item.name)) acc.add(item);
-                                return acc;
-                              },
-                            )
-                            .take(5)
-                            .toList();
-                        if (places.isEmpty) return;
-                        showDialog<void>(
-                          context: context,
-                          builder: (_) => _NaverRouteMapDialog(
-                            places: places,
-                            planName: "${p.location} · ${p.routeName}",
-                            repo: ref.read(plannerRepositoryProvider),
-                          ),
-                        );
-                      },
-                      icon: Icon(Icons.map_outlined, color: palette.text, size: 20),
-                    ),
-                    IconButton(
-                      tooltip: "AI 수정",
-                      onPressed: _modifyingPlanId == p.id ? null : () => _modifyPlan(p),
-                      icon: _modifyingPlanId == p.id
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Icon(Icons.auto_fix_high, color: palette.text),
-                    ),
-                    IconButton(
-                      tooltip: "삭제",
-                      onPressed: _deletingPlanId == p.id ? null : () => _deletePlan(p.id),
-                      icon: _deletingPlanId == p.id
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Icon(Icons.delete_outline, color: palette.text),
-                    ),
-                  ],
-                ),
-                childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 10),
-                children: [
-                  ...(() {
-                    final grouped = <int, List<MapEntry<int, ScheduleItem>>>{};
-                    for (final entry in p.schedule.asMap().entries) {
-                      grouped.putIfAbsent(entry.value.day, () => <MapEntry<int, ScheduleItem>>[]).add(entry);
-                    }
-                    final dayEntries = grouped.entries.toList()
-                      ..sort((a, b) => a.key.compareTo(b.key));
-
-                    return dayEntries.expand((dayEntry) {
-                      final day = dayEntry.key;
-                      final items = dayEntry.value;
-                      final dayDate = items.first.value.date;
-                      return <Widget>[
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(6, 10, 6, 6),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 18,
-                                height: 18,
-                                decoration: BoxDecoration(
-                                  color: palette.badgeBg,
-                                  shape: BoxShape.circle,
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  "$day",
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    color: palette.text,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                dayDate.isEmpty ? "Day $day" : dayDate,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: palette.text,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        ...items.asMap().entries.map((indexed) {
-                          final order = indexed.key + 1;
-                          final e = indexed.value;
-                          final item = e.value;
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
-                            decoration: BoxDecoration(
-                              color: palette.light,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: palette.border.withValues(alpha: 0.75)),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  width: 20,
-                                  height: 20,
-                                  margin: const EdgeInsets.only(top: 2),
-                                  decoration: BoxDecoration(
-                                    color: palette.badgeBg,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    "$order",
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                      color: palette.text,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              item.title,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.w800,
-                                                color: _textPrimary,
-                                                fontSize: 15,
-                                              ),
-                                            ),
-                                          ),
-                                          if ((item.estimatedCost ?? "").isNotEmpty)
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFFECFDF5),
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: Text(
-                                                item.estimatedCost!,
-                                                style: const TextStyle(
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: Color(0xFF059669),
-                                                ),
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 4),
-                                      // 장소명 (탭하면 지도 열기)
-                                      GestureDetector(
-                                        onTap: () {
-                                          showDialog<void>(
-                                            context: context,
-                                            builder: (_) => _NaverPlaceMapDialog(
-                                              placeName: item.place,
-                                              lat: item.lat,
-                                              lng: item.lng,
-                                              repo: ref.read(plannerRepositoryProvider),
-                                            ),
-                                          );
-                                        },
-                                        child: Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                "📍 ${item.place}",
-                                                style: TextStyle(
-                                                  color: palette.text.withValues(alpha: 0.9),
-                                                  fontSize: 12,
-                                                  decoration: TextDecoration.underline,
-                                                  decorationColor: palette.text.withValues(alpha: 0.4),
-                                                ),
-                                              ),
-                                            ),
-                                            Text(
-                                              "지도 보기 →",
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                color: palette.text.withValues(alpha: 0.6),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      // 영업시간
-                                      if ((item.businessHours ?? "").isNotEmpty) ...[
-                                        const SizedBox(height: 4),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFF8FAFC),
-                                            borderRadius: BorderRadius.circular(6),
-                                            border: Border.all(color: const Color(0xFFE2E8F0)),
-                                          ),
-                                          child: Text(
-                                            "🕐 ${item.businessHours!}",
-                                            style: const TextStyle(fontSize: 11, color: Color(0xFF475569)),
-                                          ),
-                                        ),
-                                      ],
-                                      if (item.description.isNotEmpty) ...[
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          item.description,
-                                          style: TextStyle(
-                                            color: palette.text.withValues(alpha: 0.8),
-                                            fontSize: 12,
-                                            height: 1.4,
-                                          ),
-                                        ),
-                                      ],
-                                      if ((item.tips ?? "").isNotEmpty) ...[
-                                        const SizedBox(height: 6),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFFFFBEB),
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(color: const Color(0xFFFDE68A)),
-                                          ),
-                                          child: Text(
-                                            "💡 ${item.tips!}",
-                                            style: const TextStyle(fontSize: 11, color: Color(0xFF92400E)),
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                IconButton(
-                                  tooltip: "이 항목 리롤",
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                  onPressed: _rerollingKey == "${p.id}:${e.key}"
-                                      ? null
-                                      : () => _rerollItem(p, e.key),
-                                  icon: _rerollingKey == "${p.id}:${e.key}"
-                                      ? const SizedBox(
-                                          width: 16,
-                                          height: 16,
-                                          child: CircularProgressIndicator(strokeWidth: 2),
-                                        )
-                                      : Icon(Icons.refresh, size: 20, color: palette.text.withValues(alpha: 0.6)),
-                                ),
-                              ],
-                            ),
-                          );
-                        }),
-                      ];
-                    }).toList();
-                  })(),
-                ],
-              ),
+            return _SchedulePlanTile(
+              plan: p,
+              palette: palette,
+              dotColor: dotColor,
+              modifyingPlanId: _modifyingPlanId,
+              deletingPlanId: _deletingPlanId,
+              rerollingKey: _rerollingKey,
+              onModify: () => _modifyPlan(p),
+              onDelete: () => _deletePlan(p.id),
+              onReroll: (idx) => _rerollItem(p, idx),
             );
+
           },
         ),
       ],
@@ -859,20 +635,25 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
   }
 
   Widget _buildEmptyState() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text("📋", style: TextStyle(fontSize: 48)),
-          SizedBox(height: 12),
+          const Text("📋", style: TextStyle(fontSize: 48)),
+          const SizedBox(height: 12),
           Text(
-            "저장된 플랜이 없습니다.",
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
+            "screens.schedule.empty_no_plans".tr(),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
+            textAlign: TextAlign.center,
           ),
-          SizedBox(height: 6),
-          Text(
-            "여행플래너에서 AI 루트를 생성해보세요",
-            style: TextStyle(fontSize: 13, color: _textSecondary),
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              "screens.schedule.empty_go_planner".tr(),
+              style: const TextStyle(fontSize: 13, color: _textSecondary),
+              textAlign: TextAlign.center,
+            ),
           ),
         ],
       ),
