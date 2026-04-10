@@ -21,7 +21,7 @@ from app.services.search_client import (
 
 logger = logging.getLogger(__name__)
 
-# Docker 경로(/app/app/...)에서는 parents 깊이가 부족해 IndexError 남 — 컨테이너에 항상 있는 /tmp 사용
+# Docker 경로(/app/app/...)에서는 parents 깊이가 부족해 IndexError 날 수 있음 — /tmp는 컨테이너에서 항상 쓰기 가능·repo 경로 비의존
 _DEBUG_SESSION_LOG = Path("/tmp") / "debug-b81536.log"
 
 # Nationality -> response language mapping
@@ -343,7 +343,10 @@ async def _invoke_inner(
                                 "hypothesisId": "A",
                                 "location": "nodes_common:_invoke_inner",
                                 "message": "invoke_inner_wait_timeout",
-                                "data": {"invoke_timeout_sec": _INVOKE_TIMEOUT_SEC, "max_503_retries": max_503_retries},
+                                "data": {
+                                    "invoke_timeout_sec": _INVOKE_TIMEOUT_SEC,
+                                    "max_503_retries": max_503_retries,
+                                },
                                 "timestamp": int(time.time() * 1000),
                             },
                             ensure_ascii=False,
