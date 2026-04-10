@@ -2,6 +2,7 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 
 import "../../../../core/locale/locale_from_nationality.dart";
 import "../../../../core/preferences/onboarding_prefs.dart";
+import "../../../tourstar/presentation/state/tourstar_controller.dart";
 import "../../data/profile_models.dart";
 import "../../data/profile_repository.dart";
 import "../profile_message_keys.dart";
@@ -107,6 +108,9 @@ class ProfileController extends Notifier<ProfileState> {
           tier: user.tier,
         ),
       );
+      await ref.read(tourstarControllerProvider.notifier).syncNicknameFromProfile(
+            savedNickname: state.nickname.trim(),
+          );
       _emitSnackbar(ProfileMessageKeys.msgAccountSaved);
     } catch (e) {
       state = state.copyWith(saving: false);

@@ -1,4 +1,5 @@
 import "dart:io";
+import "dart:math" show Random;
 
 import "package:easy_localization/easy_localization.dart";
 import "package:flutter/material.dart";
@@ -1257,11 +1258,10 @@ class _PlannerWorkspace extends ConsumerWidget {
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
+              final loc = state.location.trim();
               final displayPlannerStatus = state.statusMessage.isNotEmpty
                   ? state.statusMessage
-                  : (!state.routesTriggered
-                      ? "screens.planner.status_enter_region".tr()
-                      : "");
+                  : (loc.isEmpty ? "screens.planner.status_region_required".tr() : "");
               if (constraints.maxWidth >= 980) {
                 return Row(
                   children: [
@@ -1362,28 +1362,43 @@ class _PlannerWorkspace extends ConsumerWidget {
                                   ),
                                   style: FilledButton.styleFrom(backgroundColor: _primary),
                                 ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.travel_explore, size: 16, color: _primary),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        "screens.planner.boost_web_search".tr(),
-                                        style: const TextStyle(fontSize: 12, color: _textPrimary),
-                                      ),
-                                    ),
-                                    Switch(
-                                      value: state.useSearch,
-                                      onChanged:
-                                          state.routesLoading || state.scheduleLoading ? null : ctrl.setUseSearch,
-                                      activeThumbColor: _primary,
-                                    ),
-                                  ],
-                                ),
                               ],
                             ),
                           ),
+                          if (!state.routesTriggered && !state.routesLoading)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text("📅", style: TextStyle(fontSize: 40)),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      "screens.planner.hint_set_date".tr(),
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: _textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "${state.startDate} ~ ${state.endDate}",
+                                      style: const TextStyle(fontSize: 11, color: _textSecondary),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    FilledButton.icon(
+                                      onPressed: state.routesLoading ? null : ctrl.fetchRoutes,
+                                      icon: const Icon(Icons.auto_awesome, size: 18),
+                                      label: Text("screens.planner.standard_start_generate".tr()),
+                                      style: FilledButton.styleFrom(backgroundColor: _primary),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           if (state.routesError != null)
                             Container(
                               padding: const EdgeInsets.all(10),
@@ -1501,7 +1516,7 @@ class _PlannerWorkspace extends ConsumerWidget {
                                   child: Text("screens.planner.saved_goto_schedule".tr()),
                                 ),
                               ),
-                          ] else
+                          ] else if (!state.scheduleLoading)
                             Container(
                               padding: const EdgeInsets.all(24),
                               decoration: BoxDecoration(
@@ -1509,10 +1524,33 @@ class _PlannerWorkspace extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: Colors.grey.shade200),
                               ),
-                              child: Text(
-                                "screens.planner.schedule_pick_route_hint".tr(),
-                                style: const TextStyle(color: _textSecondary),
-                                textAlign: TextAlign.center,
+                              child: Column(
+                                children: [
+                                  Text(
+                                    state.routesTriggered && state.routes.isNotEmpty
+                                        ? "screens.planner.schedule_pick_route_hint".tr()
+                                        : "screens.planner.standard_map_need_generate".tr(),
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: _textPrimary,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    state.routesTriggered && state.routes.isNotEmpty
+                                        ? "screens.planner.standard_map_range_hint".tr(
+                                            namedArgs: {
+                                              "start": state.startDate,
+                                              "end": state.endDate,
+                                            },
+                                          )
+                                        : "screens.planner.standard_map_tap_generate".tr(),
+                                    style: const TextStyle(fontSize: 13, color: _textSecondary),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
                               ),
                             ),
                         ],
@@ -1641,34 +1679,6 @@ class _PlannerWorkspace extends ConsumerWidget {
                   ),
                 ),
 
-              // 웹과 동일: 검색 기반 보강 옵션
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.travel_explore, size: 16, color: _primary),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        "screens.planner.boost_web_search".tr(),
-                        style: const TextStyle(fontSize: 12, color: _textPrimary),
-                      ),
-                    ),
-                    Switch(
-                      value: state.useSearch,
-                      onChanged: state.routesLoading || state.scheduleLoading ? null : ctrl.setUseSearch,
-                      activeThumbColor: _primary,
-                    ),
-                  ],
-                ),
-              ),
-
               if (state.routesError != null)
                 Container(
                   padding: const EdgeInsets.all(10),
@@ -1766,9 +1776,9 @@ class _PlannerWorkspace extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: Colors.grey.shade200),
                   ),
-                  child: const Text(
-                    "루트를 선택하면 일정이 생성됩니다.",
-                    style: TextStyle(fontSize: 12, color: _textSecondary),
+                  child: Text(
+                    "screens.planner.schedule_pick_route_hint".tr(),
+                    style: const TextStyle(fontSize: 12, color: _textSecondary),
                   ),
                 ),
 
@@ -1790,7 +1800,11 @@ class _PlannerWorkspace extends ConsumerWidget {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        "AI가 ${state.selectedRouteName ?? "선택한 루트"} 일정을 만드는 중...",
+                        "screens.planner.making_schedule_progress".tr(
+                          namedArgs: {
+                            "name": state.selectedRouteName ?? "screens.planner.route_name_fallback".tr(),
+                          },
+                        ),
                         style: const TextStyle(fontSize: 12, color: _textSecondary),
                         textAlign: TextAlign.center,
                       ),
@@ -1807,13 +1821,15 @@ class _PlannerWorkspace extends ConsumerWidget {
               if (state.schedule.isNotEmpty) ...[
                 Row(
                   children: [
-                    const Text(
-                      "여행 일정",
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
+                    Text(
+                      "screens.planner.schedule_title".tr(),
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
                     ),
                     const Spacer(),
                     Text(
-                      "${state.schedule.length}개 항목",
+                      "screens.planner.schedule_item_count".tr(
+                        namedArgs: {"count": "${state.schedule.length}"},
+                      ),
                       style: const TextStyle(fontSize: 12, color: _textSecondary),
                     ),
                   ],
@@ -1861,7 +1877,11 @@ class _PlannerWorkspace extends ConsumerWidget {
                 FilledButton.icon(
                   onPressed: state.saving ? null : ctrl.savePlan,
                   icon: const Icon(Icons.save),
-                  label: Text(state.saving ? "저장 중..." : "💾 저장하기"),
+                  label: Text(
+                    state.saving
+                        ? "screens.planner.msg_saving_plan".tr()
+                        : "screens.planner.save_plan".tr(),
+                  ),
                   style: FilledButton.styleFrom(backgroundColor: _primary),
                 ),
                 if (state.savedPlanId != null)
@@ -1869,7 +1889,7 @@ class _PlannerWorkspace extends ConsumerWidget {
                     padding: const EdgeInsets.only(top: 8),
                     child: OutlinedButton(
                       onPressed: () => context.push("/planner/schedule"),
-                      child: const Text("✅ 저장됨 · 마이플랜 보기"),
+                      child: Text("screens.planner.saved_goto_schedule".tr()),
                     ),
                   ),
               ],
@@ -3144,6 +3164,13 @@ class _KItem {
   final List<Color> gradient;
 }
 
+/// K-FOOD 플래너 행: id·그라데이션만 상수로 두고, 제목·설명은 `screens.k_content.fallback.kfood.*` (웹 `planner.kcontent.fallback.kfood`)
+class _KFoodRowSpec {
+  const _KFoodRowSpec(this.id, this.gradient);
+  final String id;
+  final List<Color> gradient;
+}
+
 const _kpopItems = [
   _KItem("KPOP_01", "HYBE Building", "HYBE Insight museum and label headquarters.", [Color(0xFFFF4D6D), Color(0xFFD63384)]),
   _KItem("KPOP_02", "SM Entertainment", "SM Town and SM Entertainment building.", [KroaddyColors.primary, Color(0xFF9333EA)]),
@@ -3158,12 +3185,25 @@ const _kdramaItems = [
   _KItem("KDRAMA_04", "Bukchon Hanok Village", "Traditional hanok alleys.", [Color(0xFFD97706), Color(0xFFE11D48)]),
 ];
 
-const _kfoodItems = [
-  _KItem("KFOOD_01", "Gwangjang Market", "Bindaetteok, mayak gimbap, street food.", [Color(0xFFF97316), Color(0xFFD97706)]),
-  _KItem("KFOOD_02", "Myeongdong Street Food", "Tteokbokki, odeng, and sweet treats.", [Color(0xFFEF4444), Color(0xFFF97316)]),
-  _KItem("KFOOD_03", "Korean BBQ", "Samgyeopsal and galbi grill experience.", [Color(0xFFDC2626), Color(0xFFBE185D)]),
-  _KItem("KFOOD_04", "Convenience Store Combo", "Triangle kimbap, ramyeon, soju.", [Color(0xFF84CC16), Color(0xFF22C55E)]),
+/// 웹 `K_CONTENT_KFOOD_FALLBACK_ITEMS` (`constants.ts`) — 동일 id·그라데이션 톤; 카피는 i18n
+const _kfoodRowSpecs = [
+  _KFoodRowSpec("KF_MARKET", [Color(0xFFF59E0B), Color(0xFFEA580C)]),
+  _KFoodRowSpec("KF_CAFE", [Color(0xFFF43F5E), Color(0xFFD946EF)]),
+  _KFoodRowSpec("KF_CONVENIENCE", [Color(0xFFA3E635), Color(0xFF10B981), Color(0xFF7C3AED)]),
 ];
+
+List<_KItem> _localizedKfoodRowItems() {
+  return _kfoodRowSpecs
+      .map(
+        (s) => _KItem(
+          s.id,
+          "screens.k_content.fallback.kfood.${s.id}.title".tr(),
+          "screens.k_content.fallback.kfood.${s.id}.description".tr(),
+          s.gradient,
+        ),
+      )
+      .toList();
+}
 
 const _kbeautyItems = [
   _KItem("KBEAUTY_01", "Olive Young", "K-Beauty flagship. Skincare and makeup.", [Color(0xFFEC4899), Color(0xFFE11D48)]),
@@ -3171,6 +3211,65 @@ const _kbeautyItems = [
   _KItem("KBEAUTY_03", "K-Beauty Store", "Sheet masks, serums, cushion compacts.", [KroaddyColors.primary, Color(0xFF9333EA)]),
   _KItem("KBEAUTY_04", "Skincare Experience Shop", "Facials and personalized skincare.", [Color(0xFFFB7185), Color(0xFFEC4899)]),
 ];
+
+/// 웹 `k-content/page.tsx` 의 그라데이션 풀과 동일한 역할
+const _kpopGradientPool = <List<Color>>[
+  [Color(0xFFFF4D6D), Color(0xFFD63384)],
+  [KroaddyColors.primary, Color(0xFF9333EA)],
+  [Color(0xFFD63384), Color(0xFFE11D74)],
+  [Color(0xFF4F46E5), KroaddyColors.primary],
+  [Color(0xFFF43F5E), Color(0xFFEC4899)],
+  [Color(0xFF10B981), Color(0xFF0D9488)],
+  [Color(0xFF0EA5E9), Color(0xFF3B82F6)],
+  [Color(0xFFF59E0B), Color(0xFFEA580C)],
+];
+
+const _kdramaGradientPool = <List<Color>>[
+  [Color(0xFFF59E0B), Color(0xFFEA580C)],
+  [Color(0xFF10B981), Color(0xFF0D9488)],
+  [Color(0xFF0EA5E9), Color(0xFF3B82F6)],
+  [Color(0xFFD97706), Color(0xFFE11D48)],
+  [Color(0xFFA855F7), Color(0xFF6366F1)],
+  [Color(0xFFF472B6), Color(0xFFDB2777)],
+  [Color(0xFF34D399), Color(0xFF059669)],
+  [Color(0xFF60A5FA), Color(0xFF2563EB)],
+];
+
+void _shuffleKItems(List<_KItem> list) {
+  final r = Random();
+  for (var i = list.length - 1; i > 0; i--) {
+    final j = r.nextInt(i + 1);
+    final t = list[i];
+    list[i] = list[j];
+    list[j] = t;
+  }
+}
+
+/// 백엔드 `GET /api/v1/k-content/packages` 한 카테고리 분량 → 카드 모델 (웹 `mapKpopPackages` / `mapDramaMoviePackages` 대응)
+List<_KItem> _mapKContentApiToItems(
+  List<Map<String, dynamic>> raw,
+  List<List<Color>> gradientPool,
+  bool preferKorean,
+) {
+  final out = <_KItem>[];
+  for (var i = 0; i < raw.length; i++) {
+    final p = raw[i];
+    final id = p["package_id"]?.toString() ?? "";
+    if (id.isEmpty) continue;
+    final titleKo = p["title_ko"]?.toString();
+    final titleEn = p["title_en"]?.toString();
+    final title = preferKorean
+        ? ((titleKo != null && titleKo.isNotEmpty) ? titleKo : (titleEn ?? ""))
+        : ((titleEn != null && titleEn.isNotEmpty) ? titleEn : (titleKo ?? ""));
+    final tags = p["tags"]?.toString();
+    final descEn = p["description_en"]?.toString();
+    final description = preferKorean
+        ? ((tags != null && tags.isNotEmpty) ? tags : (descEn ?? ""))
+        : ((descEn != null && descEn.isNotEmpty) ? descEn : (tags ?? ""));
+    out.add(_KItem(id, title, description, gradientPool[i % gradientPool.length]));
+  }
+  return out;
+}
 
 class _KContentTab extends ConsumerStatefulWidget {
   const _KContentTab();
@@ -3183,24 +3282,75 @@ class _KContentTabState extends ConsumerState<_KContentTab> {
   String? _heroImageUrl;
   final Map<String, String> _cardImageMap = <String, String>{};
   bool _loadingImages = false;
+  bool _loadingPackages = true;
+  List<_KItem> _kpopRow = [];
+  List<_KItem> _kdramaRow = [];
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadImages());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
   }
 
-  Future<void> _loadImages() async {
+  Future<void> _bootstrap() async {
+    await _loadPackageRows();
+    if (!mounted) return;
+    await _loadBannerAndCardImages();
+  }
+
+  /// 웹 `fetchKContentPackages('KPOP'|'KDRAMA'|'KMOVIE')` + 드라마·영화 행 병합
+  Future<void> _loadPackageRows() async {
+    final repo = ref.read(kContentRepositoryProvider);
+    final isKo = context.locale.languageCode == "ko";
+    setState(() => _loadingPackages = true);
+    try {
+      final bundles = await Future.wait([
+        repo.fetchPackages(category: "KPOP"),
+        repo.fetchPackages(category: "KDRAMA"),
+        repo.fetchPackages(category: "KMOVIE"),
+      ]);
+      var kpop = _mapKContentApiToItems(bundles[0], _kpopGradientPool, isKo);
+      var kdrama = <_KItem>[
+        ..._mapKContentApiToItems(bundles[1], _kdramaGradientPool, isKo),
+        ..._mapKContentApiToItems(bundles[2], _kdramaGradientPool, isKo),
+      ];
+      if (kpop.isEmpty) kpop = List<_KItem>.from(_kpopItems);
+      if (kdrama.isEmpty) kdrama = List<_KItem>.from(_kdramaItems);
+      _shuffleKItems(kpop);
+      _shuffleKItems(kdrama);
+      if (!mounted) return;
+      setState(() {
+        _kpopRow = kpop;
+        _kdramaRow = kdrama;
+        _loadingPackages = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _kpopRow = List<_KItem>.from(_kpopItems);
+        _kdramaRow = List<_KItem>.from(_kdramaItems);
+        _loadingPackages = false;
+      });
+    }
+  }
+
+  Future<void> _loadBannerAndCardImages() async {
     if (_loadingImages) return;
     setState(() => _loadingImages = true);
     final repo = ref.read(kContentRepositoryProvider);
     try {
       final banner = await repo.fetchBannerImages();
       final nextCardMap = <String, String>{};
-      for (final item in _kpopItems) {
-        final imgs = await repo.fetchPackageImages(item.id);
+      final ids = <String>{
+        ..._kpopRow.map((e) => e.id),
+        ..._kdramaRow.map((e) => e.id),
+        ..._kfoodRowSpecs.map((e) => e.id),
+        ..._kbeautyItems.map((e) => e.id),
+      };
+      for (final id in ids) {
+        final imgs = await repo.fetchPackageImages(id);
         final picked = repo.pickRandomImage(imgs);
-        if (picked.isNotEmpty) nextCardMap[item.id] = picked;
+        if (picked.isNotEmpty) nextCardMap[id] = picked;
       }
       if (!mounted) return;
       setState(() {
@@ -3214,8 +3364,27 @@ class _KContentTabState extends ConsumerState<_KContentTab> {
     }
   }
 
+  String get _heroCtaTargetId =>
+      _kpopRow.isNotEmpty ? _kpopRow.first.id : _kpopItems.first.id;
+
   @override
   Widget build(BuildContext context) {
+    if (_loadingPackages && _kpopRow.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 12),
+            Text(
+              "screens.k_content.tab_loading".tr(),
+              style: const TextStyle(fontSize: 13, color: _textSecondary),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView(
       children: [
         // ── 히어로 배너 ────────────────────────────────────────
@@ -3246,9 +3415,9 @@ class _KContentTabState extends ConsumerState<_KContentTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "K-Content Travel",
-                  style: TextStyle(
+                Text(
+                  "screens.k_content.hero_title".tr(),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -3256,7 +3425,7 @@ class _KContentTabState extends ConsumerState<_KContentTab> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  "Explore Korea through K-Pop, Drama, Food and Beauty",
+                  "screens.k_content.hero_subtitle".tr(),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 13,
@@ -3265,7 +3434,7 @@ class _KContentTabState extends ConsumerState<_KContentTab> {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () => context.push("/planner/k-content/KPOP_01"),
+                  onPressed: () => context.push("/planner/k-content/$_heroCtaTargetId"),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: KroaddyColors.primary,
@@ -3274,7 +3443,7 @@ class _KContentTabState extends ConsumerState<_KContentTab> {
                     elevation: 0,
                   ),
                   child: Text(
-                    _loadingImages ? "Loading..." : "Generate AI Route",
+                    _loadingImages ? "common.loading".tr() : "screens.k_content.hero_cta".tr(),
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -3282,11 +3451,27 @@ class _KContentTabState extends ConsumerState<_KContentTab> {
             ),
           ),
         ),
-        // ── 콘텐츠 행 ──────────────────────────────────────────
-        _KContentRow(title: "KPOP TOUR", items: _kpopItems, cardImageMap: _cardImageMap),
-        _KContentRow(title: "KDRAMA TOUR", items: _kdramaItems, cardImageMap: _cardImageMap),
-        _KContentRow(title: "KFOOD TOUR", items: _kfoodItems, cardImageMap: _cardImageMap),
-        _KContentRow(title: "KBEAUTY TOUR", items: _kbeautyItems, cardImageMap: _cardImageMap),
+        // ── 콘텐츠 행 (웹과 동일: K-POP / K-DRAMA·K-MOVIE 병합 / K-FOOD·K-BEAUTY 폴백) ──
+        _KContentRow(
+          title: "screens.k_content.row_kpop".tr(),
+          items: _kpopRow,
+          cardImageMap: _cardImageMap,
+        ),
+        _KContentRow(
+          title: "screens.k_content.row_kdrama".tr(),
+          items: _kdramaRow,
+          cardImageMap: _cardImageMap,
+        ),
+        _KContentRow(
+          title: "screens.k_content.row_kfood".tr(),
+          items: _localizedKfoodRowItems(),
+          cardImageMap: _cardImageMap,
+        ),
+        _KContentRow(
+          title: "screens.k_content.row_kbeauty".tr(),
+          items: _kbeautyItems,
+          cardImageMap: _cardImageMap,
+        ),
         const SizedBox(height: 24),
       ],
     );
@@ -3330,15 +3515,7 @@ class _KContentRow extends StatelessWidget {
             itemBuilder: (context, i) {
               final item = items[i];
               return GestureDetector(
-                onTap: () {
-                  if (item.id.startsWith("KPOP_")) {
-                    context.push("/planner/k-content/${item.id}");
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("해당 카테고리는 준비 중입니다.")),
-                    );
-                  }
-                },
+                onTap: () => context.push("/planner/k-content/${item.id}"),
                 child: Container(
                   width: 160,
                   decoration: BoxDecoration(

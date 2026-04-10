@@ -1,6 +1,8 @@
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:image_picker/image_picker.dart";
 
+import "../../../../core/auth/jwt_claims.dart";
+import "../../../auth/presentation/state/auth_controller.dart";
 import "../../data/user_content_models.dart";
 import "../../data/user_content_repository.dart";
 import "user_content_state.dart";
@@ -14,6 +16,18 @@ class UserContentController extends Notifier<UserContentState> {
   UserContentRepository get _repo => ref.read(userContentRepositoryProvider);
   final ImagePicker _picker = ImagePicker();
   static const int _pageSize = 20;
+
+  int? _currentAppUserId() {
+    final token = ref.read(authControllerProvider).accessToken;
+    if (token == null || token.isEmpty) return null;
+    return getAppUserIdFromToken(token) ?? getUserIdFromToken(token);
+  }
+
+  String? _currentNickname() {
+    final token = ref.read(authControllerProvider).accessToken;
+    if (token == null || token.isEmpty) return null;
+    return getNicknameFromToken(token);
+  }
 
   @override
   UserContentState build() => UserContentState.initial();
@@ -37,7 +51,11 @@ class UserContentController extends Notifier<UserContentState> {
   Future<void> loadFeed() async {
     state = state.copyWith(loading: true, message: "유저 루트 피드 불러오는 중...");
     try {
-      final routes = await _repo.fetchRoutes(limit: _pageSize, offset: 0);
+      final routes = await _repo.fetchRoutes(
+        limit: _pageSize,
+        offset: 0,
+        userId: _currentAppUserId(),
+      );
       state = state.copyWith(
         loading: false,
         feed: routes,
@@ -57,7 +75,11 @@ class UserContentController extends Notifier<UserContentState> {
     if (state.loading || state.loadingMore || !state.hasMoreFeed) return;
     state = state.copyWith(loadingMore: true, message: "피드 추가 로드 중...");
     try {
-      final more = await _repo.fetchRoutes(limit: _pageSize, offset: state.nextOffset);
+      final more = await _repo.fetchRoutes(
+        limit: _pageSize,
+        offset: state.nextOffset,
+        userId: _currentAppUserId(),
+      );
       final merged = <UserRoute>[...state.feed, ...more];
       final dedup = <int, UserRoute>{};
       for (final route in merged) {
@@ -80,13 +102,20 @@ class UserContentController extends Notifier<UserContentState> {
   }
 
   Future<void> likeRoute(int routeId) async {
+    final uid = _currentAppUserId();
+    if (uid == null) {
+      state = state.copyWith(message: "로그인 후 좋아요할 수 있습니다.");
+      return;
+    }
     try {
-      final likes = await _repo.likeRoute(routeId);
+      final likes = await _repo.likeRoute(routeId, userId: uid);
       final updated = state.feed.map((route) {
         if (route.id == routeId) {
           return UserRoute(
             id: route.id,
             userId: route.userId,
+            nickname: route.nickname,
+            likedByMe: true,
             title: route.title,
             location: route.location,
             description: route.description,
@@ -190,7 +219,8 @@ class UserContentController extends Notifier<UserContentState> {
     state = state.copyWith(loading: true, message: "유저 루트 저장 중...");
     try {
       final saved = await _repo.saveRoute(
-        userId: null,
+        userId: _currentAppUserId(),
+        nickname: _currentNickname(),
         title: polished.title,
         location: polished.location,
         description: polished.description,

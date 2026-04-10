@@ -48,13 +48,16 @@ class TourstarController extends Notifier<TourstarState> {
       // 게이트웨이 JWT는 app_user_id에 앱 사용자 PK를 두는 경우가 많음 — 삭제/작성자 검증과 맞춤
       final userId = getAppUserIdFromToken(token) ?? getUserIdFromToken(token);
 
-      // JWT claim 닉네임 우선, 없으면 API 조회
-      String? nickname = getNicknameFromToken(token);
-      if ((nickname == null || nickname.isEmpty) && userId != null) {
+      // 프로필 API 닉네임을 JWT claim보다 우선 (토큰 갱신 전에도 설정에서 변경한 이름 반영)
+      String? nickname;
+      if (userId != null) {
         try {
           final userModel = await ref.read(profileRepositoryProvider).findUserById(userId);
-          nickname = userModel?.nickname;
+          nickname = userModel?.nickname?.trim();
         } catch (_) {}
+      }
+      if (nickname == null || nickname.isEmpty) {
+        nickname = getNicknameFromToken(token)?.trim();
       }
 
       state = state.copyWith(myUserId: userId, myNickname: nickname);
@@ -66,6 +69,62 @@ class TourstarController extends Notifier<TourstarState> {
         }
       }
     } catch (_) {}
+  }
+
+  /// 설정에서 닉네임 저장 후 호출 — 저장값·프로필 API 기준으로 반영(JWT만 믿으면 토큰 미갱신 시 구 닉네임이 남음).
+  Future<void> syncNicknameFromProfile({String? savedNickname}) async {
+    final token = await _tokenStore.readAccessToken();
+    if (token == null || token.isEmpty) return;
+    final userId = getAppUserIdFromToken(token) ?? getUserIdFromToken(token);
+    final previousNick = state.myNickname?.trim();
+
+    String? newNick = savedNickname?.trim();
+    if (newNick == null || newNick.isEmpty) {
+      if (userId != null) {
+        try {
+          final userModel = await ref.read(profileRepositoryProvider).findUserById(userId);
+          newNick = userModel?.nickname?.trim();
+        } catch (_) {}
+      }
+      newNick ??= getNicknameFromToken(token)?.trim();
+    }
+
+    if (newNick == null || newNick.isEmpty) return;
+
+    state = state.copyWith(myUserId: userId ?? state.myUserId, myNickname: newNick);
+
+    if (userId != null) {
+      try {
+        final imageUrl = await _repo.fetchProfileImage(userId);
+        if (imageUrl != null && imageUrl.isNotEmpty) {
+          state = state.copyWith(profileImageUrl: imageUrl);
+        }
+      } catch (_) {}
+    }
+
+    final uid = state.myUserId;
+    if (state.serverPosts.isEmpty) return;
+
+    final next = <TourstarPostRecord>[];
+    var changed = false;
+    for (final p in state.serverPosts) {
+      final auth = (p.authorNickname ?? "").trim();
+      final byId = uid != null && p.userId != null && p.userId == uid;
+      final byPrevNick =
+          previousNick != null && previousNick.isNotEmpty && auth == previousNick;
+      if (byId && auth != newNick) {
+        changed = true;
+        next.add(p.copyWith(authorNickname: newNick));
+      } else if (!byId && byPrevNick && auth != newNick) {
+        changed = true;
+        next.add(p.copyWith(authorNickname: newNick));
+      } else {
+        next.add(p);
+      }
+    }
+    if (changed) {
+      state = state.copyWith(serverPosts: next);
+    }
   }
 
   Future<void> loadFriends() async {
@@ -182,7 +241,6 @@ class TourstarController extends Notifier<TourstarState> {
       return false;
     }
     final userId = getAppUserIdFromToken(token) ?? getUserIdFromToken(token);
-    String? nickname = getNicknameFromToken(token);
     if (userId == null) {
       state = state.copyWith(
         statusMessage: "screens.tourstar.status_cannot_resolve_user",
@@ -190,11 +248,13 @@ class TourstarController extends Notifier<TourstarState> {
       );
       return false;
     }
+    String? nickname;
+    try {
+      final userModel = await ref.read(profileRepositoryProvider).findUserById(userId);
+      nickname = userModel?.nickname?.trim();
+    } catch (_) {}
     if (nickname == null || nickname.isEmpty) {
-      try {
-        final userModel = await ref.read(profileRepositoryProvider).findUserById(userId);
-        nickname = userModel?.nickname;
-      } catch (_) {}
+      nickname = getNicknameFromToken(token)?.trim();
     }
     state = state.copyWith(myUserId: userId, myNickname: nickname);
     return true;
