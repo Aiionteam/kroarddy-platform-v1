@@ -4,7 +4,9 @@ import json
 import logging
 import random
 import re
+import time
 from math import atan2, cos, radians, sin, sqrt
+from pathlib import Path
 from typing import Any
 
 from langchain_core.messages import HumanMessage
@@ -18,6 +20,9 @@ from app.services.search_client import (
 )
 
 logger = logging.getLogger(__name__)
+
+# debug-b81536: repo 루트(tourstar) 기준 NDJSON (Debug mode)
+_DEBUG_SESSION_LOG = Path(__file__).resolve().parents[5] / "debug-b81536.log"
 
 # Nationality -> response language mapping
 _NATIONALITY_TO_LANG: dict[str, str] = {
@@ -63,8 +68,8 @@ _GEMINI_FALLBACK_MODELS: tuple[str, ...] = (
 )
 _llm_by_model: dict[str, ChatGoogleGenerativeAI] = {}
 
-# 단일 LLM 호출 타임아웃 – SDK 내부 재시도가 수분씩 대기하는 것을 방지
-_INVOKE_TIMEOUT_SEC = 25.0
+# 단일 LLM 호출 타임아웃 – 긴 답변(검색/JSON) 대기 (요청: 120초)
+_INVOKE_TIMEOUT_SEC = 120.0
 _UNAVAILABLE_MARKERS = ("503", "UNAVAILABLE", "high demand", "Service Unavailable")
 
 _TIME_SLOTS_KO = ["오전", "점심", "오후", "저녁"]
@@ -217,6 +222,26 @@ async def _ainvoke_fallback_chain(messages: list) -> Any:
                     timeout=_INVOKE_TIMEOUT_SEC,
                 )
             except asyncio.TimeoutError as e:
+                # #region agent log
+                try:
+                    with open(_DEBUG_SESSION_LOG, "a", encoding="utf-8") as _df:
+                        _df.write(
+                            json.dumps(
+                                {
+                                    "sessionId": "b81536",
+                                    "hypothesisId": "A",
+                                    "location": "nodes_common:_ainvoke_fallback_chain",
+                                    "message": "fallback_chain_wait_timeout",
+                                    "data": {"model": model_name, "invoke_timeout_sec": _INVOKE_TIMEOUT_SEC},
+                                    "timestamp": int(time.time() * 1000),
+                                },
+                                ensure_ascii=False,
+                            )
+                            + "\n"
+                        )
+                except Exception:
+                    pass
+                # #endregion
                 last_err = e
                 if unavail_count < _503_MAX_RETRIES:
                     unavail_count += 1
@@ -302,6 +327,26 @@ async def _invoke_inner(
                 timeout=_INVOKE_TIMEOUT_SEC,
             )
         except asyncio.TimeoutError:
+            # #region agent log
+            try:
+                with open(_DEBUG_SESSION_LOG, "a", encoding="utf-8") as _df:
+                    _df.write(
+                        json.dumps(
+                            {
+                                "sessionId": "b81536",
+                                "hypothesisId": "A",
+                                "location": "nodes_common:_invoke_inner",
+                                "message": "invoke_inner_wait_timeout",
+                                "data": {"invoke_timeout_sec": _INVOKE_TIMEOUT_SEC, "max_503_retries": max_503_retries},
+                                "timestamp": int(time.time() * 1000),
+                            },
+                            ensure_ascii=False,
+                        )
+                        + "\n"
+                    )
+            except Exception:
+                pass
+            # #endregion
             if unavailable_count < max_503_retries:
                 unavailable_count += 1
                 logger.warning(
