@@ -118,6 +118,64 @@ class CostSummary {
   }
 }
 
+/// `/api/v1/weather` — 웹 `WeatherDay` / OpenWeather 5일 예보
+class WeatherDay {
+  WeatherDay({
+    required this.tempMin,
+    required this.tempMax,
+    required this.condition,
+    required this.pop,
+    required this.advice,
+  });
+
+  final double tempMin;
+  final double tempMax;
+  final String condition;
+  final double pop;
+  final String advice;
+
+  factory WeatherDay.fromJson(Map<String, dynamic> json) {
+    return WeatherDay(
+      tempMin: (json["temp_min"] as num?)?.toDouble() ?? 0,
+      tempMax: (json["temp_max"] as num?)?.toDouble() ?? 0,
+      condition: json["condition"]?.toString() ?? "",
+      pop: (json["pop"] as num?)?.toDouble() ?? 0,
+      advice: json["advice"]?.toString() ?? "",
+    );
+  }
+}
+
+class WeatherResult {
+  WeatherResult({
+    required this.available,
+    this.reason,
+    required this.dates,
+  });
+
+  final bool available;
+  final String? reason;
+  final Map<String, WeatherDay> dates;
+
+  factory WeatherResult.fromJson(Map<String, dynamic> json) {
+    final raw = json["dates"];
+    final map = <String, WeatherDay>{};
+    if (raw is Map) {
+      for (final e in raw.entries) {
+        final v = e.value;
+        if (v is Map) {
+          map[e.key.toString()] =
+              WeatherDay.fromJson(Map<String, dynamic>.from(v));
+        }
+      }
+    }
+    return WeatherResult(
+      available: json["available"] == true,
+      reason: json["reason"]?.toString(),
+      dates: map,
+    );
+  }
+}
+
 class RoutesResponse {
   RoutesResponse({
     required this.location,

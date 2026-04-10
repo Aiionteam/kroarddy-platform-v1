@@ -10,6 +10,7 @@ import "package:image_picker/image_picker.dart";
 
 import "../../../core/router/main_shell.dart";
 import "../../../core/theme/kroaddy_colors.dart";
+import "../../chat/data/friend_repository.dart";
 import "../data/tourstar_models.dart";
 import "../data/tourstar_repository.dart";
 import "state/tourstar_controller.dart";
@@ -64,6 +65,7 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
   String _viewAuthorName = "";
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _searchCtrl = TextEditingController();
+  bool _friendRequestSending = false;
 
   bool get _authorFeedOpen => _viewAuthorName.isNotEmpty;
 
@@ -84,6 +86,61 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
     return mn.isNotEmpty && mn == _viewAuthorName;
   }
 
+  /// 작성자 피드 주인이 내 친구인지 (웹 `isViewingFriend`와 동일)
+  bool _isViewingFriend(TourstarState s) {
+    if (!_authorFeedOpen || _isSelfAuthorFeed(s)) return false;
+    final n = _viewAuthorName.trim();
+    if (n.isEmpty) return false;
+    return s.friendNicknames.contains(n);
+  }
+
+  Future<void> _sendFriendRequestForViewingAuthor() async {
+    if (_friendRequestSending) return;
+    final tourState = ref.read(tourstarControllerProvider);
+    final name = _viewAuthorName.trim();
+    if (name.isEmpty || _isSelfAuthorFeed(tourState) || _isViewingFriend(tourState)) return;
+    final myId = tourState.myUserId;
+    if (myId == null) return;
+    setState(() => _friendRequestSending = true);
+    final repo = ref.read(friendRepositoryProvider);
+    try {
+      var targetId = _viewAuthorUserId;
+      targetId ??= await repo.findUserIdByNickname(name);
+      if (!mounted) return;
+      if (targetId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("screens.tourstar.error_author_not_found".tr(namedArgs: {"name": name}))),
+        );
+        return;
+      }
+      if (targetId == myId) return;
+      final ok = await repo.sendFriendRequest(targetId);
+      if (!mounted) return;
+      if (ok) {
+        await ref.read(tourstarControllerProvider.notifier).loadFriends();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("screens.tourstar.friend_request_sent".tr(namedArgs: {"name": name}))),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("screens.tourstar.friend_request_failed".tr())),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _friendRequestSending = false);
+    }
+  }
+
+  /// 작성자 피드 헤더에 표시할 이름 — 본인 피드는 최신 `myNickname` 우선(설정에서 닉네임 변경 반영).
+  String _authorFeedHeaderDisplayName(TourstarState s) {
+    if (_isSelfAuthorFeed(s)) {
+      final m = (s.myNickname ?? "").trim();
+      if (m.isNotEmpty) return m;
+    }
+    return _viewAuthorName;
+  }
+
   void _leaveAuthorFeed() {
     setState(() {
       _viewAuthorUserId = null;
@@ -98,14 +155,6 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
   void _openAuthorFeed(TourstarPostRecord p, TourstarState tourState) {
     final name = (p.authorNickname ?? "").trim();
     if (name.isEmpty) return;
-    final isOwner = _isOwner(p, tourState);
-    final isFriend = tourState.friendNicknames.contains(name);
-    if (!isOwner && !isFriend) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("screens.tourstar.friends_only_feed".tr())),
-      );
-      return;
-    }
     setState(() {
       _viewAuthorUserId = p.userId;
       _viewAuthorName = name;
@@ -126,6 +175,15 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
     if (s.myUserId != null && p.userId != null) return p.userId == s.myUserId;
     if ((s.myNickname ?? "").isNotEmpty) return p.authorNickname == s.myNickname;
     return false;
+  }
+
+  /// 카드·그리드에 표시할 작성자명 — 내 글이면 최신 `myNickname` 우선.
+  String _displayAuthorNickname(TourstarPostRecord p, TourstarState s) {
+    if (_isMyPost(p, s)) {
+      final m = (s.myNickname ?? "").trim();
+      if (m.isNotEmpty) return m;
+    }
+    return (p.authorNickname ?? "").trim();
   }
 
   List<TourstarPostRecord> _getFiltered(TourstarState tourState) {
@@ -219,8 +277,6 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
     final tourState = ref.read(tourstarControllerProvider);
     final isOwner = _isOwner(post, tourState);
     final nick = (post.authorNickname ?? "").trim();
-    final isFriend = nick.isNotEmpty && tourState.friendNicknames.contains(nick);
-    final canAuthorFeed = isOwner || isFriend;
     final effectiveImg = tourState.profileImageUrl ??
         tourState.serverPosts
             .where((p) => _isMyPost(p, tourState) && (p.authorProfileImageUrl ?? "").isNotEmpty)
@@ -244,7 +300,7 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
           return ok;
         },
         onEditPost: (p) => _openEdit(p),
-        onAuthorFeedTap: canAuthorFeed
+        onAuthorFeedTap: nick.isNotEmpty
             ? () {
                 Navigator.pop(context);
                 WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -325,6 +381,8 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
     final tourState = ref.watch(tourstarControllerProvider);
     final allPosts = tourState.serverPosts;
     final filtered = _getFiltered(tourState);
+    final authorFeedHeaderName =
+        _authorFeedOpen ? _authorFeedHeaderDisplayName(tourState) : "";
 
     // 프로필 이미지: state.profileImageUrl 없으면 내 게시물의 authorProfileImageUrl 사용
     final effectiveProfileImage = tourState.profileImageUrl ??
@@ -467,14 +525,18 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                                         fit: BoxFit.cover,
                                         errorBuilder: (_, _, _) => Center(
                                           child: Text(
-                                            _viewAuthorName.isNotEmpty ? _viewAuthorName.substring(0, 1).toUpperCase() : "T",
+                                            authorFeedHeaderName.isNotEmpty
+                                                ? authorFeedHeaderName.substring(0, 1).toUpperCase()
+                                                : "T",
                                             style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                                           ),
                                         ),
                                       )
                                     : Center(
                                         child: Text(
-                                          _viewAuthorName.isNotEmpty ? _viewAuthorName.substring(0, 1).toUpperCase() : "T",
+                                          authorFeedHeaderName.isNotEmpty
+                                              ? authorFeedHeaderName.substring(0, 1).toUpperCase()
+                                              : "T",
                                           style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                                         ),
                                       ),
@@ -510,7 +572,7 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                               ? Image.network(authorFeedAvatar, fit: BoxFit.cover)
                               : Center(
                                   child: Text(
-                                    _viewAuthorName.isNotEmpty ? _viewAuthorName.substring(0, 1).toUpperCase() : "?",
+                                    authorFeedHeaderName.isNotEmpty ? authorFeedHeaderName.substring(0, 1).toUpperCase() : "?",
                                     style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                                   ),
                                 ),
@@ -522,28 +584,51 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Flexible(
+                              Expanded(
                                 child: Text(
-                                  _viewAuthorName,
+                                  authorFeedHeaderName.isNotEmpty ? authorFeedHeaderName : _viewAuthorName,
                                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _kGray800),
                                   overflow: TextOverflow.ellipsis,
+                                  maxLines: 2,
                                 ),
                               ),
                               if (!_isSelfAuthorFeed(tourState)) ...[
                                 const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFEFF6FF),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: const Color(0xFFBFDBFE)),
+                                if (_isViewingFriend(tourState))
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFEFF6FF),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: const Color(0xFFBFDBFE)),
+                                    ),
+                                    child: Text(
+                                      "screens.tourstar.friend_badge".tr(),
+                                      style: const TextStyle(fontSize: 10, color: Color(0xFF1D4ED8), fontWeight: FontWeight.w600),
+                                    ),
+                                  )
+                                else
+                                  TextButton(
+                                    onPressed: _friendRequestSending ? null : _sendFriendRequestForViewingAuthor,
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      minimumSize: Size.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      foregroundColor: const Color(0xFF2563EB),
+                                    ),
+                                    child: _friendRequestSending
+                                        ? const SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                          )
+                                        : Text(
+                                            "screens.tourstar.send_friend_request".tr(),
+                                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+                                          ),
                                   ),
-                                  child: Text(
-                                    "screens.tourstar.friend_badge".tr(),
-                                    style: const TextStyle(fontSize: 10, color: Color(0xFF1D4ED8), fontWeight: FontWeight.w600),
-                                  ),
-                                ),
                               ],
                             ],
                           ),
@@ -782,8 +867,9 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
                         isFriend: isFriend,
                         isOwner: isOwner,
                         myProfileImageUrl: effectiveProfileImage,
+                        authorDisplayName: _displayAuthorNickname(p, tourState),
                         onTap: () => _openDetail(p),
-                        onAuthorTap: (isOwner || isFriend) ? () => _openAuthorFeed(p, tourState) : null,
+                        onAuthorTap: nick.isNotEmpty ? () => _openAuthorFeed(p, tourState) : null,
                         onHonorVote: isOwner
                             ? null
                             : (v) => ref.read(tourstarControllerProvider.notifier).voteHonor(p.id, v),
@@ -1046,6 +1132,7 @@ class _FeedCard extends StatelessWidget {
     this.isFriend = false,
     this.isOwner = false,
     this.myProfileImageUrl,
+    this.authorDisplayName,
     this.onBookmark,
     this.onDelete,
     this.onHonorVote,
@@ -1056,16 +1143,21 @@ class _FeedCard extends StatelessWidget {
   final bool isFriend;
   final bool isOwner;
   final String? myProfileImageUrl;
+  /// 설정에서 닉네임 변경 직후에도 맞춤 표시 (내 글 → `myNickname` 반영).
+  final String? authorDisplayName;
   final VoidCallback? onBookmark;
   final VoidCallback? onDelete;
   /// 1 = 썸업, -1 = 썸다운 (본인 글이면 null)
   final void Function(int value)? onHonorVote;
-  /// 본인·친구 글: 닉네임 탭 시 작성자 피드
+  /// 닉네임 탭 시 작성자 피드 (닉네임이 있을 때)
   final VoidCallback? onAuthorTap;
 
   Widget _buildAvatar() {
     final imageUrl = isOwner ? myProfileImageUrl : post.authorProfileImageUrl;
-    final initial = (post.authorNickname ?? "?").substring(0, 1).toUpperCase();
+    final label = (authorDisplayName != null && authorDisplayName!.trim().isNotEmpty)
+        ? authorDisplayName!.trim()
+        : (post.authorNickname ?? "?");
+    final initial = label.isNotEmpty ? label.substring(0, 1).toUpperCase() : "?";
     return Container(
       width: 32,
       height: 32,
@@ -1084,6 +1176,9 @@ class _FeedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedAuthor = (authorDisplayName != null && authorDisplayName!.trim().isNotEmpty)
+        ? authorDisplayName!.trim()
+        : (post.authorNickname ?? "").trim();
     final thumbUrl = post.photoUrls.isNotEmpty ? post.photoUrls.first : null;
     final dateStr = post.createdAt != null
         ? "${post.createdAt!.year}-${post.createdAt!.month.toString().padLeft(2, '0')}-${post.createdAt!.day.toString().padLeft(2, '0')}"
@@ -1210,13 +1305,17 @@ class _FeedCard extends StatelessWidget {
                           behavior: HitTestBehavior.opaque,
                           child: Row(
                             children: [
-                              Text(
-                                post.authorNickname ?? "screens.unknown".tr(),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: (isOwner || isFriend) ? _kPurple : _kGray700,
-                                  decoration: (isOwner || isFriend) ? TextDecoration.underline : TextDecoration.none,
+                              Flexible(
+                                child: Text(
+                                  resolvedAuthor.isEmpty ? "screens.unknown".tr() : resolvedAuthor,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: _kGray800,
+                                    decoration: TextDecoration.underline,
+                                  ),
                                 ),
                               ),
                               if (isFriend) ...[
@@ -1659,7 +1758,7 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                                           style: const TextStyle(
                                             fontSize: 13,
                                             fontWeight: FontWeight.w600,
-                                            color: _kPurple,
+                                            color: _kGray800,
                                             decoration: TextDecoration.underline,
                                           ),
                                         ),

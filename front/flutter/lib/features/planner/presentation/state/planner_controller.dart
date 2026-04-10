@@ -42,20 +42,6 @@ class PlannerController extends Notifier<PlannerState> {
     );
   }
 
-  void setUseSearch(bool value) {
-    state = state.copyWith(
-      useSearch: value,
-      routes: const [],
-      schedule: const [],
-      routesTriggered: false,
-      clearSelectedRoute: true,
-      clearSavedPlanId: true,
-      clearCostSummary: true,
-      clearRoutesError: true,
-      clearScheduleError: true,
-    );
-  }
-
   void setTransportMode(String mode) {
     state = state.copyWith(
       transportMode: mode,
@@ -100,14 +86,14 @@ class PlannerController extends Notifier<PlannerState> {
   Future<void> fetchRoutes() async {
     final location = state.location.trim();
     if (location.isEmpty) {
-      state = state.copyWith(statusMessage: "지역 코드를 입력해 주세요.");
+      state = state.copyWith(statusMessage: "screens.planner.status_region_required".tr());
       return;
     }
 
     state = state.copyWith(
       routesLoading: true,
       routesTriggered: true,
-      statusMessage: "추천 루트를 생성하는 중...",
+      statusMessage: "screens.planner.msg_generating_routes".tr(),
       clearRoutesError: true,
       routes: const [],
       schedule: const [],
@@ -195,14 +181,14 @@ class PlannerController extends Notifier<PlannerState> {
         costSummary: result.costSummary,
         scheduleError: result.schedule.isEmpty ? result.error : null,
         statusMessage: result.schedule.isEmpty
-            ? (result.error ?? "일정을 받지 못했습니다.")
-            : "일정 ${result.schedule.length}개 항목 생성 완료",
+            ? (result.error ?? "screens.planner.msg_no_schedule".tr())
+            : "screens.planner.msg_schedule_done".tr(namedArgs: {"count": "${result.schedule.length}"}),
       );
     } catch (e) {
       state = state.copyWith(
         scheduleLoading: false,
-        scheduleError: "일정 조회 실패: $e",
-        statusMessage: "일정 조회 실패: $e",
+        scheduleError: "screens.planner.msg_schedule_failed".tr(namedArgs: {"error": "$e"}),
+        statusMessage: "screens.planner.msg_schedule_failed".tr(namedArgs: {"error": "$e"}),
       );
     }
   }

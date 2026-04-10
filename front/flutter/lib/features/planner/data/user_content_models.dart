@@ -78,6 +78,8 @@ class UserRoute {
   UserRoute({
     required this.id,
     required this.userId,
+    this.nickname,
+    this.likedByMe = false,
     required this.title,
     required this.location,
     required this.description,
@@ -90,6 +92,10 @@ class UserRoute {
 
   final int id;
   final int? userId;
+  /// 백엔드 `nickname` — 웹 `UserRoute.nickname` 과 동일
+  final String? nickname;
+  /// `GET /routes?user_id=` 로 조회 시에만 채워짐
+  final bool likedByMe;
   final String title;
   final String location;
   final String description;
@@ -105,6 +111,8 @@ class UserRoute {
     return UserRoute(
       id: (json["id"] as num?)?.toInt() ?? 0,
       userId: (json["user_id"] as num?)?.toInt(),
+      nickname: json["nickname"]?.toString(),
+      likedByMe: json["liked_by_me"] == true,
       title: json["title"]?.toString() ?? "",
       location: json["location"]?.toString() ?? "",
       description: json["description"]?.toString() ?? "",

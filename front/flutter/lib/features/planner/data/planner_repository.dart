@@ -84,6 +84,39 @@ class PlannerRepository {
     }
   }
 
+  /// 웹 `fetchWeather` — GET `/api/v1/weather` (게이트웨이)
+  Future<WeatherResult> fetchWeather({
+    required String startDate,
+    required String endDate,
+    required double lat,
+    required double lon,
+  }) async {
+    try {
+      final res = await _dio.get<Map<String, dynamic>>(
+        "/v1/weather",
+        queryParameters: <String, dynamic>{
+          "start_date": startDate,
+          "end_date": endDate,
+          "lat": lat,
+          "lon": lon,
+          "location": "coords",
+        },
+      );
+      return WeatherResult.fromJson(res.data ?? const {});
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      final raw = e.response?.data;
+      final detail = raw is Map ? (raw["detail"]?.toString() ?? "") : "";
+      return WeatherResult(
+        available: false,
+        reason: status != null
+            ? "http_$status${detail.isNotEmpty ? ": $detail" : ""}"
+            : (e.message ?? "network"),
+        dates: const {},
+      );
+    }
+  }
+
   Future<ScheduleResponse> fetchSchedule({
     required String location,
     required String routeName,
