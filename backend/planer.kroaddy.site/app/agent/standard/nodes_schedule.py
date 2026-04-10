@@ -439,11 +439,13 @@ async def _generate_single_day(
     day_zone_hint = f"- Day {day_num}/{num_days}: use a DIFFERENT district from other days.\n" if num_days > 1 else ""
 
     if exclude_places:
-        excl_str = ", ".join(f'"{p}"' for p in exclude_places[:80])
+        excl_str = ", ".join(f'"{p}"' for p in exclude_places[:120])
         if lang == "Korean":
             excl_block = (
-                f"⛔ 다른 날 이미 포함된 장소 (절대 반복 금지): {excl_str}\n"
-                "- 상호 표기가 달라도 **동일 시설**(같은 케이블카·같은 문화재단지·같은 전망대 등)이면 사용하지 마세요.\n"
+                f"⛔ 다른 날 이미 방문·포함한 장소 (절대 반복 금지): {excl_str}\n"
+                "- 목록에는 상호명과 **시설 식별 키**(지명을 뺀 핵심 이름 등)가 섞여 있을 수 있습니다. "
+                "키에 해당하는 **실제 동일 시설**은 표기를 바꿔도 다시 넣지 마세요.\n"
+                "- 상호 표기가 달라도 **동일 시설**(같은 케이블카·같은 문화재단지·같은 교회·같은 전망대 등)이면 사용하지 마세요.\n"
             )
         else:
             excl_block = (
@@ -629,12 +631,16 @@ async def _fix_duplicate_days(
     logger.warning("중복 장소 감지 → Day %s 재생성", sorted(dup_days))
 
     for dup_day in sorted(dup_days):
-        # 이 날을 제외한 모든 날의 장소를 exclude 목록으로
+        # 이 날을 제외한 모든 날의 장소 + 정규화 키를 exclude 목록으로
         exclude: list[str] = []
         seen_ex: set[str] = set()
         for item in schedule:
             if item.get("day") == dup_day:
                 continue
+            dk = _venue_dedupe_key(item, region=loc, lang=clang)
+            if dk and dk not in seen_ex:
+                seen_ex.add(dk)
+                exclude.append(dk)
             for fld in ("place", "place_ko"):
                 s = (item.get(fld) or "").strip()
                 if s and s not in seen_ex:
@@ -729,9 +735,15 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         errors: list[str] = []
         cumulative_exclude: list[str] = []
         seen_raw_place: set[str] = set()
+        seen_venue_keys: set[str] = set()
 
         def _append_exclude_from_day(items: list[dict[str, Any]]) -> None:
+            """이전 일차 장소명 + 정규화 키(_venue_dedupe_key)를 누적해 표기만 바꾼 중복을 막는다."""
             for it in items:
+                dk = _venue_dedupe_key(it, region=location_name, lang=lang)
+                if dk and dk not in seen_venue_keys:
+                    seen_venue_keys.add(dk)
+                    cumulative_exclude.append(dk)
                 for fld in ("place", "place_ko"):
                     s = (it.get(fld) or "").strip()
                     if s and s not in seen_raw_place:
