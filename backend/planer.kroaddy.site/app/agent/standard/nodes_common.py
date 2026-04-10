@@ -21,8 +21,8 @@ from app.services.search_client import (
 
 logger = logging.getLogger(__name__)
 
-# debug-b81536: repo 루트(tourstar) 기준 NDJSON (Debug mode)
-_DEBUG_SESSION_LOG = Path(__file__).resolve().parents[5] / "debug-b81536.log"
+# 컨테이너에서도 항상 쓰기 가능 (repo parents 깊이에 의존하지 않음)
+_DEBUG_SESSION_LOG = Path("/tmp") / "debug-b81536.log"
 
 # Nationality -> response language mapping
 _NATIONALITY_TO_LANG: dict[str, str] = {
@@ -337,7 +337,10 @@ async def _invoke_inner(
                                 "hypothesisId": "A",
                                 "location": "nodes_common:_invoke_inner",
                                 "message": "invoke_inner_wait_timeout",
-                                "data": {"invoke_timeout_sec": _INVOKE_TIMEOUT_SEC, "max_503_retries": max_503_retries},
+                                "data": {
+                                    "invoke_timeout_sec": _INVOKE_TIMEOUT_SEC,
+                                    "max_503_retries": max_503_retries,
+                                },
                                 "timestamp": int(time.time() * 1000),
                             },
                             ensure_ascii=False,
