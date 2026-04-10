@@ -26,8 +26,8 @@ from app.agent.standard.state import PlannerState
 from app.core.config import settings
 from app.core.database.session import _get_async_session_factory
 from app.services.festival_client import fetch_festivals_for_period_with_db_cache
-from app.services.kakao_map_client import kakao_keyword_search
-from app.services.naver_map_client import geocode, keyword_search, reverse_geocode
+from app.services.kakao_map_client import kakao_keyword_search_with_fallback
+from app.services.naver_map_client import geocode
 from app.services.naver_place_hours import enrich_schedule_items_with_hours
 from app.services.news_client import build_news_block_for_prompt, fetch_news_top10
 from app.services.user_info_client import fetch_user_profile
@@ -54,8 +54,8 @@ def _parse_item_wgs84(item: dict[str, Any]) -> tuple[float, float] | None:
 _TRAVEL_DAYS_DEFAULT = 2
 # 웹 검색 선행 단계 응답 길이 상한 – 4000자로 여유 확대 (메인 LLM 참고 품질 향상)
 _WEB_CONTEXT_MAX_CHARS = 4000
-# 선행 검색만 1분 미만으로 제한 (초과 시 빈 맥락으로 일정 생성 계속)
-_WEB_GATHER_TIMEOUT_SEC = 55.0
+# 웹 검색은 보조 데이터 — 35초 내 완료 못하면 빈 맥락으로 진행
+_WEB_GATHER_TIMEOUT_SEC = 35.0
 
 
 async def gather_context_node(state: PlannerState) -> PlannerState:
@@ -214,7 +214,7 @@ async def _gather_web_search_context(
     t0 = perf_counter()
     try:
         response = await asyncio.wait_for(
-            _invoke(llm, [HumanMessage(content=task)], plain_fallback=True),
+            _invoke(llm, [HumanMessage(content=task)], plain_fallback=True, max_503_retries=1),
             timeout=_WEB_GATHER_TIMEOUT_SEC,
         )
     except asyncio.TimeoutError:
@@ -330,43 +330,68 @@ async def _generate_single_day(
     if lang == "Korean":
         schema = (
             f'{{"day":{day_num},"date":"{date_str}","items":[{{"time":"{first_time}",'
-            '"place":"장소명","address":"도로명주소","lat":37.5665,"lng":126.9780,'
+            '"place":"장소명","place_ko":"한국어 장소명",'
             '"title":"활동명","description":"설명","tips":"팁","estimated_cost":"₩0"}'
             f'],"day_total":"₩0","day_total_krw":0}}'
         )
     else:
         schema = (
             f'{{"day":{day_num},"date":"{date_str}","items":[{{"time":"{first_time}",'
-            f'"place":"name in {lang}","place_ko":"한국어 장소명(지오코딩 전용)","address":"도로명주소(한국어)","lat":37.5665,"lng":126.9780,'
+            f'"place":"name in {lang}","place_ko":"한국어 장소명(지오코딩 전용)",'
             '"title":"activity","description":"desc","tips":"tip","estimated_cost":"₩0"}'
             f'],"day_total":"₩0","day_total_krw":0}}'
         )
     if lang == "Korean":
-        coord_block = (
-            "【좌표 필수】items 각 항목에 lat·lng 필수(WGS84, 소수점 5자리 이상). "
-            f"반드시 '{location_name}' 안 실제 장소 좌표. "
-            "예시로 자주 쓰이는 서울 시청 좌표(37.5665,126.978)를 복사하면 안 됩니다.\n"
+        place_rule_block = (
+            "【장소명 필수 규칙】\n"
+            "- place 필드에는 반드시 네이버/카카오맵에서 검색 가능한 실제 상호명·시설명만 입력하세요.\n"
+            "- place_ko 필드에도 동일한 한국어 장소명을 반드시 입력하세요.\n"
+            "- ❌ 금지: '~내 식당', '~근처 카페', '~에서 점심' 같은 모호한 묘사\n"
+            "- ✅ 허용: '실학박물관', '기와집순두부 조안본점', '경복궁' 등 검색 가능한 실존 상호명\n"
+            "- ⚠️ lat, lng, address 필드는 생성하지 마세요. 좌표·주소는 별도 시스템이 자동 입력합니다.\n"
         )
     else:
-        coord_block = (
-            "【Coordinates REQUIRED】Every item MUST include lat and lng (WGS84, ≥5 decimal places). "
-            f"Use real coordinates for places inside {location_name}. "
-            "Do NOT copy example Seoul City Hall coordinates (37.5665,126.978).\n"
-            "【place_ko REQUIRED】Every item MUST include place_ko: the Korean name of the place "
-            "(used for Naver geocoding). e.g. '울산암각화박물관', '경복궁'. "
-            "address field MUST also be in Korean (도로명주소).\n"
+        place_rule_block = (
+            "【Place name rules】\n"
+            "- place field MUST be a real business/facility name searchable on Naver/Kakao Map.\n"
+            "- place_ko field MUST contain the Korean name of the place (for geocoding).\n"
+            "  e.g. '울산암각화박물관', '경복궁', '카페보라'\n"
+            "- ❌ FORBIDDEN: vague descriptions like 'restaurant near X', 'café inside Y'.\n"
+            "- ✅ REQUIRED: exact store/facility names like 'Gyeongbokgung Palace', 'Cafe Bora'.\n"
+            "- ⚠️ Do NOT generate lat, lng, or address fields. Coordinates are filled by a separate system.\n"
+        )
+
+    if lang == "Korean":
+        constraint_block = (
+            "【배치 규칙 – 반드시 준수】\n"
+            "① 식사(점심·저녁) 항목은 하루에 최대 2개, 연속 배치 금지 (식사→식사 불가).\n"
+            "② 4개 장소는 반경 3km 이내 동일 생활권에 클러스터링 – 강남↔강북 왕복 동선 금지.\n"
+            "③ description 설명에 해당 time 슬롯과 다른 시간대 단어 사용 금지 "
+            "(예: '점심' 슬롯에 '저녁 식사' 표현 금지).\n"
+            "④ 특정 날짜 행사(~에서 개막, ~일 한정 등)는 확인된 정보만 기재, "
+            "불확실한 이벤트는 생략.\n"
+        )
+    else:
+        constraint_block = (
+            "【Placement Rules – STRICTLY FOLLOW】\n"
+            "① Max 2 meal items per day; NO consecutive meals (meal→meal forbidden).\n"
+            "② All 4 places MUST cluster within ~3km radius – no zig-zag routes across the city.\n"
+            "③ description text must NOT reference a different time slot "
+            "(e.g. do NOT write 'special dinner' in a 'lunch' slot).\n"
+            "④ Only include dated events you are certain about; omit uncertain or unverified events.\n"
         )
 
     prompt = (
         f"Destination:{location_name} | Route:{route_name} | Day:{day_num} ({date_str})\n"
         f"⚠️ ALL places must be within '{location_name}'.\n"
         f"{excl_block}\n"
-        f"{coord_block}"
+        f"{place_rule_block}"
+        f"{constraint_block}"
         f"{web_search_block}"
         f"{user_block}{festival_block}{weather_block}{transport_block}{news_block}"
         f"Create 4 schedule items. time∈[{time_labels}]. "
         f"CLUSTER in same district. Order: {flow_hint}. "
-        "estimated_cost in KRW. address: exact street addr (Korea).\n"
+        "estimated_cost in KRW.\n"
         f"{day_zone_hint}{lang_dir}"
         "\nRespond ONLY with valid JSON:\n"
         f"{schema}"
@@ -550,14 +575,14 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
     if lang == "Korean":
         fb_schema = (
             f'{{"schedule":[{{"day":1,"date":"{date_example}","time":"{first_time}",'
-            '"place":"장소명","address":"도로명 주소","lat":37.5665,"lng":126.9780,'
+            '"place":"장소명","place_ko":"한국어 장소명",'
             '"title":"활동명(≤20자)","description":"설명(≤60자)","tips":"팁(≤30자)","estimated_cost":"₩0"}}],'
             '"cost_summary":{"per_day":[{"day":1,"total":"₩0"}],"trip_total":"₩0"}}'
         )
     else:
         fb_schema = (
             f'{{"schedule":[{{"day":1,"date":"{date_example}","time":"{first_time}",'
-            '"place":"place name","address":"street address","lat":37.5665,"lng":126.9780,'
+            '"place":"place name","place_ko":"한국어 장소명",'
             '"title":"activity title(≤20chars)","description":"description(≤60chars)","tips":"tip(≤30chars)","estimated_cost":"₩0"}}],'
             '"cost_summary":{"per_day":[{"day":1,"total":"₩0"}],"trip_total":"₩0"}}'
         )
@@ -571,13 +596,13 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         f"Create a detailed travel itinerary ({num_days} days, 4 items per day).\n\n"
         "Rules:\n"
         f"- Use only real existing places/restaurants/attractions within {location_name}\n"
+        f"- place MUST be a real name searchable on Naver/Kakao Map (exact business name)\n"
+        f"- place_ko MUST be the Korean name of the place (for geocoding)\n"
+        f"- ⚠️ Do NOT generate lat, lng, or address fields — they are filled automatically\n"
         f"- time must be EXACTLY one of: {time_labels} (do NOT use any other value)\n"
         "- estimated_cost: cost in KRW (e.g. '무료', '₩3,000', '₩15,000~₩20,000')\n"
         "- cost_summary.per_day: sum of estimated_cost for each day\n"
         "- cost_summary.trip_total: grand total\n"
-        "- address: exact street address (Korea)\n"
-        "- lat/lng: REQUIRED WGS84 per item (≥5 decimals). Real coords for that POI in "
-        f"{location_name} — do NOT copy Seoul City Hall example (37.5665,126.978).\n"
         "\n[GEOGRAPHIC EFFICIENCY – CRITICAL]\n"
         "- CLUSTER: Each day's 4 places must be in the SAME neighborhood/district.\n"
         f"- FLOW: Order {flow_hint} geographically close.\n"
@@ -606,28 +631,25 @@ def _is_valid_korea_coord(lat: float, lng: float) -> bool:
 async def _geocode_item(
     item: dict[str, Any],
     location_name: str = "",
-    dest_lat: float | None = None,
-    dest_lng: float | None = None,
 ) -> dict[str, Any]:
-    """장소 좌표·주소를 신뢰할 수 있는 소스 순서로 보강한다.
+    """장소 좌표·주소를 카카오/네이버 API로 보강한다.
 
     우선순위:
     1. 카카오 키워드 검색 (POI DB) – 장소명 → 좌표, 가장 정확
-    2. 네이버 주소 지오코딩 (주소 DB) – 도로명 주소 → 좌표
-    3. LLM 좌표 – 한국 영역 + 목적지 80km 이내인 경우만 채택
-    4. 전부 실패 → lat/lng=None, naver_verified=False
+    2. 네이버 주소 지오코딩 (주소 DB) – 주소/장소명 → 좌표
+    3. 전부 실패 → lat/lng=None, geocode_failed=True
     """
     place = (item.get("place") or "").strip()
     place_ko = (item.get("place_ko") or "").strip()
     address = (item.get("address") or "").strip()
     region = (location_name or "").strip()
-    llm_coords = _parse_item_wgs84(item)
     search_name = place_ko or place
 
     # 1단계: 카카오 키워드 검색 (POI DB) ─────────────────────────────────────────
     if search_name:
-        for q in ([f"{region} {search_name}".strip(), search_name] if region else [search_name]):
-            kr = await kakao_keyword_search(q)
+        need_region_prefix = region and region not in search_name
+        for q in ([f"{region} {search_name}".strip(), search_name] if need_region_prefix else [search_name]):
+            kr = await kakao_keyword_search_with_fallback(q)
             if not kr:
                 continue
             lat, lng = float(kr["y"]), float(kr["x"])
@@ -636,9 +658,10 @@ async def _geocode_item(
                 **item,
                 "lat": lat,
                 "lng": lng,
-                "address": kr.get("road_address") or kr.get("address") or item.get("address", ""),
+                "address": kr.get("road_address") or kr.get("address") or "",
                 "naver_verified": True,
                 "naver_source": "kakao_keyword",
+                "geocode_failed": False,
                 "kakao_place_name": kr.get("name", ""),
                 "kakao_place_url": kr.get("place_url", ""),
             }
@@ -653,40 +676,172 @@ async def _geocode_item(
                 **item,
                 "lat": lat,
                 "lng": lng,
-                "address": result.get("road_address") or result.get("address") or item.get("address", ""),
+                "address": result.get("road_address") or result.get("address") or "",
                 "naver_verified": True,
                 "naver_source": "naver_geocode",
+                "geocode_failed": False,
             }
 
-    # 3단계: LLM 좌표 유효성 검증 후 채택 ────────────────────────────────────────
-    if llm_coords:
-        lat, lng = llm_coords
-        valid = _is_valid_korea_coord(lat, lng)
-        if valid and dest_lat is not None and dest_lng is not None:
+    # 3단계: 좌표 확보 실패 ─────────────────────────────────────────────────────
+    logger.warning("좌표 확보 실패: place='%s' / place_ko='%s'", place, place_ko)
+    return {**item, "lat": None, "lng": None, "naver_verified": False, "naver_source": "none", "geocode_failed": True}
+
+
+_MEAL_KEYWORDS_KO = {"식당", "맛집", "음식점", "레스토랑", "한식", "중식", "일식", "양식", "분식", "카페", "베이커리", "브런치", "코스요리", "비빔밥", "삼겹살", "냉면", "순두부"}
+_MEAL_KEYWORDS_EN = {"restaurant", "cafe", "bistro", "eatery", "dining", "cuisine", "bakery", "brunch", "pizzeria", "grill"}
+_TIME_SLOT_KO = {"오전": 0, "점심": 1, "오후": 2, "저녁": 3}
+_TIME_SLOT_EN = {"morning": 0, "lunch": 1, "afternoon": 2, "evening": 3}
+# 시간대 단어 – 다른 슬롯의 단어가 description에 있으면 경고
+_TIME_WORDS_KO = [["오전", "아침"], ["점심", "런치"], ["오후"], ["저녁", "디너", "야식"]]
+_TIME_WORDS_EN = [["morning", "breakfast"], ["lunch", "midday"], ["afternoon"], ["evening", "dinner", "supper"]]
+_MAX_CLUSTER_KM = 8.0   # 하루 일정 내 최대 허용 이동 반경
+
+
+def _validate_day_items(items: list[dict[str, Any]], lang: str = "Korean") -> list[str]:
+    """일정 항목 품질 검증 – 문제 항목 설명 목록 반환 (로그용).
+
+    검사 항목:
+    1. 연속 식사 슬롯 감지
+    2. 시간대 단어 불일치 (description ↔ time 슬롯)
+    3. 과도한 이동 거리 (연속 장소 간 >8km)
+    """
+    warnings: list[str] = []
+    time_slot_map = _TIME_SLOT_KO if lang == "Korean" else _TIME_SLOT_EN
+    time_words = _TIME_WORDS_KO if lang == "Korean" else _TIME_WORDS_EN
+    meal_kw = _MEAL_KEYWORDS_KO if lang == "Korean" else _MEAL_KEYWORDS_EN
+
+    def _is_meal(item: dict) -> bool:
+        text = f"{item.get('place','')} {item.get('title','')} {item.get('description','')}".lower()
+        return any(k in text for k in meal_kw)
+
+    # 1. 연속 식사 감지
+    for i in range(len(items) - 1):
+        if _is_meal(items[i]) and _is_meal(items[i + 1]):
+            warnings.append(
+                f"[연속식사] {items[i].get('time')}→{items[i+1].get('time')}: "
+                f"'{items[i].get('place')}' 다음 '{items[i+1].get('place')}'"
+            )
+
+    # 2. 시간대+행위 조합 불일치 (단순 시간 언급은 무시, "저녁 식사"/"점심 메뉴" 등만 감지)
+    _action_ko = ("식사", "메뉴", "요리", "코스", "맛집", "먹")
+    _action_en = ("meal", "menu", "food", "dish", "eat", "dine", "cuisine")
+    action_words = _action_ko if lang == "Korean" else _action_en
+    for item in items:
+        slot_name = (item.get("time") or "").strip().lower()
+        slot_idx = time_slot_map.get(slot_name, -1)
+        if slot_idx < 0:
+            continue
+        desc = (item.get("description") or "").lower()
+        for other_idx, words in enumerate(time_words):
+            if other_idx == slot_idx:
+                continue
+            for w in words:
+                if w not in desc:
+                    continue
+                # "저녁 식사", "점심 메뉴" 처럼 시간대+행위 조합인 경우만 경고
+                w_pos = desc.find(w)
+                context = desc[w_pos:w_pos + len(w) + 6]
+                if any(a in context for a in action_words):
+                    warnings.append(
+                        f"[시간불일치] '{item.get('place')}' ({slot_name} 슬롯) description에 '{w}+행위' 포함"
+                    )
+                    break
+
+    # 3. 연속 장소 간 과도한 이동 거리
+    for i in range(len(items) - 1):
+        a, b = items[i], items[i + 1]
+        if not (a.get("lat") and a.get("lng") and b.get("lat") and b.get("lng")):
+            continue
+        try:
             from app.agent.standard.nodes_common import _haversine_km
-            dist_km = _haversine_km(lat, lng, dest_lat, dest_lng)
-            if dist_km > 80.0:
-                logger.warning("LLM 좌표(%.5f,%.5f) 목적지에서 %.1fkm 초과 – 폐기", lat, lng, dist_km)
-                valid = False
-        elif not valid:
-            logger.warning("LLM 좌표(%.5f,%.5f) 한국 영역 밖 – 폐기", lat, lng)
+            dist = _haversine_km(float(a["lat"]), float(a["lng"]), float(b["lat"]), float(b["lng"]))
+            if dist > _MAX_CLUSTER_KM:
+                warnings.append(
+                    f"[동선이탈] '{a.get('place')}' → '{b.get('place')}': {dist:.1f}km "
+                    f"(허용 {_MAX_CLUSTER_KM}km 초과)"
+                )
+        except Exception:
+            pass
 
-        if valid:
-            rev = await reverse_geocode(lng, lat)
-            merged_addr = (rev.get("road_address") or rev.get("address") or "").strip() if rev else ""
-            logger.warning("'%s' 검색 실패 – LLM 좌표 사용(검증 통과, 정확도 낮을 수 있음)", search_name or place)
-            return {
-                **item,
-                "lat": lat,
-                "lng": lng,
-                "address": merged_addr or item.get("address", ""),
-                "naver_verified": False,
-                "naver_source": "llm_coord_validated",
-            }
+    return warnings
 
-    # 4단계: 좌표 확보 완전 실패 ─────────────────────────────────────────────────
-    logger.error("좌표 확보 실패: place='%s' / place_ko='%s' / address='%s'", place, place_ko, address)
-    return {**item, "lat": None, "lng": None, "naver_verified": False, "naver_source": "none"}
+
+async def _fix_failed_places(
+    failed_items: list[dict[str, Any]],
+    location_name: str,
+    lang: str,
+) -> list[dict[str, Any]]:
+    """지오코딩 실패 장소를 LLM에게 대체 추천받아 재검색한다. 최대 1회."""
+    if not failed_items:
+        return []
+
+    names = [item.get("place_ko") or item.get("place") or "?" for item in failed_items]
+    logger.info("지오코딩 실패 %d건 대체 장소 요청: %s", len(failed_items), names)
+
+    if lang == "Korean":
+        prompt = (
+            f"아래 장소들은 '{location_name}'에서 카카오맵/네이버맵으로 검색할 수 없습니다.\n"
+            "각 장소를 같은 테마·같은 지역의 실제 존재하는 대체 장소로 바꿔주세요.\n"
+            "반드시 카카오맵에서 검색 가능한 실존 상호명·시설명만 사용하세요.\n\n"
+            f"검색 불가 장소: {names}\n\n"
+            "JSON 배열로만 응답하세요:\n"
+            '[{"original":"검색불가장소명","replacement":"대체장소명","place_ko":"한국어명"}]'
+        )
+    else:
+        prompt = (
+            f"The following places could not be found on Kakao/Naver Map in '{location_name}'.\n"
+            "Replace each with a real, searchable alternative in the same area and theme.\n\n"
+            f"Not found: {names}\n\n"
+            "Respond ONLY with a JSON array:\n"
+            '[{"original":"unfound name","replacement":"alternative name","place_ko":"Korean name"}]'
+        )
+
+    try:
+        llm = _get_llm()
+        response = await _invoke(llm, [HumanMessage(content=prompt)], max_503_retries=1)
+        data = _parse_json(response)
+        replacements: list[dict] = data if isinstance(data, list) else data.get("replacements", data.get("items", []))
+    except Exception as e:
+        logger.warning("대체 장소 LLM 호출 실패: %s", e)
+        return failed_items
+
+    replacement_map: dict[str, dict] = {}
+    for r in replacements:
+        orig = (r.get("original") or "").strip()
+        if orig:
+            replacement_map[orig] = r
+
+    fixed: list[dict[str, Any]] = []
+    re_geocode_tasks = []
+    for item in failed_items:
+        orig_name = (item.get("place_ko") or item.get("place") or "").strip()
+        rep = replacement_map.get(orig_name)
+        if rep:
+            new_place = (rep.get("replacement") or "").strip()
+            new_place_ko = (rep.get("place_ko") or new_place).strip()
+            if new_place:
+                patched = {**item, "place": new_place, "place_ko": new_place_ko, "_replaced_from": orig_name}
+                re_geocode_tasks.append(patched)
+                continue
+        fixed.append(item)
+
+    if re_geocode_tasks:
+        loc = (location_name or "").strip()
+        re_results = await asyncio.gather(*[_geocode_item(p, loc) for p in re_geocode_tasks])
+        for result in re_results:
+            if result.get("geocode_failed"):
+                logger.warning("대체 장소도 검색 실패: '%s'", result.get("place"))
+            else:
+                logger.info(
+                    "대체 장소 성공: '%s' → '%s' (%.5f, %.5f)",
+                    result.get("_replaced_from", ""),
+                    result.get("place"),
+                    result.get("lat", 0),
+                    result.get("lng", 0),
+                )
+            fixed.append(result)
+
+    return fixed
 
 
 async def geocode_schedule(state: PlannerState) -> PlannerState:
@@ -694,14 +849,23 @@ async def geocode_schedule(state: PlannerState) -> PlannerState:
     if not schedule:
         return state
     loc = str(state.get("location_name") or state.get("location") or "").strip()
-    # 목적지 좌표 사전 조회 (LLM 좌표 근접성 검증용)
-    dest_coord = await geocode(loc) if loc else None
-    dest_lat = float(dest_coord["y"]) if dest_coord else None
-    dest_lng = float(dest_coord["x"]) if dest_coord else None
+    lang = _get_lang(state.get("user_profile"))
+
+    # ── 1차: 전체 병렬 지오코딩 ──────────────────────────────────────────────
     geocoded = list(await asyncio.gather(*[
-        _geocode_item(item, loc, dest_lat=dest_lat, dest_lng=dest_lng)
+        _geocode_item(item, loc)
         for item in schedule
     ]))
+
+    # ── 2차: 실패 항목 대체 장소 재생성 (1회) ────────────────────────────────
+    failed = [item for item in geocoded if item.get("geocode_failed")]
+    if failed:
+        logger.info("지오코딩 실패 %d/%d건 → 대체 장소 요청", len(failed), len(geocoded))
+        fixed = await _fix_failed_places(failed, loc, lang)
+        fixed_map = {id(orig): repl for orig, repl in zip(failed, fixed)}
+        geocoded = [fixed_map.get(id(item), item) if item.get("geocode_failed") else item for item in geocoded]
+
+    # ── 경로 최적화 + 품질 검증 ──────────────────────────────────────────────
     days_map: dict[int, list[dict[str, Any]]] = {}
     for item in geocoded:
         d = item.get("day", 1)
@@ -719,6 +883,15 @@ async def geocode_schedule(state: PlannerState) -> PlannerState:
         total_after += after_km
         optimized.extend(reordered)
         logger.info("Day%d 경로 최적화: %.1fkm → %.1fkm", day_num, before_km, after_km)
+
+        issues = _validate_day_items(reordered, lang=lang)
+        if issues:
+            logger.warning(
+                "Day%d 일정 품질 이슈 %d건:\n  %s",
+                day_num, len(issues), "\n  ".join(issues),
+            )
+        else:
+            logger.info("Day%d 일정 품질 검증 통과", day_num)
 
     if total_before > 0:
         logger.info("전체 경로 최적화 완료: %.1fkm → %.1fkm", total_before, total_after)

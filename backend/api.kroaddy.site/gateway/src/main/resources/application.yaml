@@ -17,7 +17,9 @@ spring:
   http:
     client:
       connect-timeout: 10s       # 연결 타임아웃 10초
-      read-timeout: 300s         # 응답 타임아웃 300초 (기본)
+      # 플래너·가이드 LLM + 다일차 지오코딩·영업시간 보강은 5분을 넘길 수 있음.
+      # 라우트 metadata.response-timeout(밀리초)와 맞추지 않으면 504 Gateway Timeout 발생.
+      read-timeout: 900s         # upstream 응답 대기 최대 15분
   servlet:
     multipart:
       max-file-size: -1      # 파일 크기 제한 없음 (tourstar 대용량 사진 업로드)
@@ -65,7 +67,7 @@ spring:
             predicates:
               - Path=/api/v1/festivals,/api/v1/festivals/**,/api/v1/guide,/api/v1/guide/**,/api/v1/place,/api/v1/place/**
             metadata:
-              response-timeout: 600000   # 600초 – guide/ask LLM 처리 대기
+              response-timeout: 900000   # 900초 – 다일차 일정·LLM·지오코딩 대기
               connect-timeout: 10000
             filters:
               - RemoveResponseHeader=Access-Control-Allow-Origin
@@ -76,14 +78,14 @@ spring:
               - RemoveResponseHeader=Access-Control-Max-Age
 
           # ── Planer 서비스 (8003) – Standard / User-Content / K-Content / Weather / Maps
-          # LLM 일정·루트 생성은 수십 초~수분 걸릴 수 있음. Guide와 동일하게 600초.
+          # LLM 일정·루트 + 다일차 지오코딩·영업시간 보강은 10분 이상 걸릴 수 있음.
           # (메타데이터 없으면 기본 프록시 타임아웃이 짧아 504 Gateway Timeout 발생 가능)
           - id: planer
             uri: ${AI_SERVICE_TOURPLANER_URL:http://planer:8003}
             predicates:
               - Path=/api/v1/planner/**,/api/v1/user-content/**,/api/v1/k-content/**,/api/v1/weather,/api/v1/weather/**,/api/v1/maps/**
             metadata:
-              response-timeout: 600000
+              response-timeout: 900000
               connect-timeout: 10000
             filters:
               - RemoveResponseHeader=Access-Control-Allow-Origin

@@ -139,7 +139,7 @@ def _get_llm() -> ChatGoogleGenerativeAI:
     if _llm_instance is None:
         _llm_instance = ChatGoogleGenerativeAI(
             model=settings.gemini_model,
-            temperature=0.4,
+            temperature=0.2,  # 낮을수록 실존 장소명 hallucination 감소
             google_api_key=settings.gemini_api_key,
             max_retries=0,  # SDK 내부 재시도 비활성화 → 503 즉시 예외 → 우리 재시도 로직 사용
         )
@@ -151,7 +151,7 @@ def _get_llm_with_search():
     if _llm_search_instance is None:
         base = ChatGoogleGenerativeAI(
             model=settings.gemini_model,
-            temperature=0.4,
+            temperature=0.2,
             google_api_key=settings.gemini_api_key,
             max_retries=0,
         )
@@ -162,16 +162,14 @@ def _get_llm_with_search():
 def _get_llm_search_context():
     """선행 웹 검색 전용 LLM 싱글턴.
 
-    메인 LLM과 동일한 모델이지만 max_output_tokens=1500으로 응답 길이를 제한한다.
-    (_WEB_CONTEXT_MAX_CHARS=4000자 수준에 맞춰 넉넉히 확보)
-    JSON이 아닌 불릿 텍스트를 받으므로 max_output_tokens 사용이 안전하다.
+    토큰 제한 없이 모델이 수집한 정보를 최대한 활용한다.
+    폴백(2.5-flash) 시 정보량이 품질 차이를 보완하므로 제한을 두지 않는다.
     """
     global _llm_search_ctx_instance
     if _llm_search_ctx_instance is None:
         base = ChatGoogleGenerativeAI(
             model=settings.gemini_model,
             temperature=0.2,
-            max_output_tokens=1500,
             google_api_key=settings.gemini_api_key,
             max_retries=0,
         )
@@ -180,7 +178,7 @@ def _get_llm_search_context():
 
 
 
-def _llm_for_model(model_name: str, *, temperature: float = 0.4) -> ChatGoogleGenerativeAI:
+def _llm_for_model(model_name: str, *, temperature: float = 0.2) -> ChatGoogleGenerativeAI:
     """모델명별 싱글턴 (폴백 체인용)."""
     key = f"{model_name}:{temperature}"
     if key not in _llm_by_model:
@@ -255,7 +253,14 @@ def _is_daily_quota(err: Exception) -> bool:
     return any(marker in msg for marker in _DAILY_QUOTA_MARKERS)
 
 
-async def _invoke(llm: Any, messages: list, *, max_retries: int = 1, plain_fallback: bool = False) -> Any:
+async def _invoke(
+    llm: Any,
+    messages: list,
+    *,
+    max_retries: int = 1,
+    plain_fallback: bool = False,
+    max_503_retries: int | None = None,
+) -> Any:
     try:
         await asyncio.wait_for(_GEMINI_SEMAPHORE.acquire(), timeout=_SEMAPHORE_WAIT_TIMEOUT)
     except asyncio.TimeoutError:
@@ -264,7 +269,12 @@ async def _invoke(llm: Any, messages: list, *, max_retries: int = 1, plain_fallb
             "잠시 후 다시 시도해 주세요."
         )
     try:
-        return await _invoke_inner(llm, messages, max_retries=max_retries, plain_fallback=plain_fallback)
+        return await _invoke_inner(
+            llm, messages,
+            max_retries=max_retries,
+            plain_fallback=plain_fallback,
+            max_503_retries=max_503_retries if max_503_retries is not None else _503_MAX_RETRIES,
+        )
     finally:
         _GEMINI_SEMAPHORE.release()
 
@@ -273,8 +283,15 @@ _503_RETRY_WAIT_SEC: float = 3.0   # 503 재시도 간격(초)
 _503_MAX_RETRIES: int = 3          # 503 최대 재시도 횟수
 
 
-async def _invoke_inner(llm: Any, messages: list, *, max_retries: int, plain_fallback: bool) -> Any:
-    """503/타임아웃 재시도는 _503_MAX_RETRIES로, 429 재시도는 max_retries로 독립 관리."""
+async def _invoke_inner(
+    llm: Any,
+    messages: list,
+    *,
+    max_retries: int,
+    plain_fallback: bool,
+    max_503_retries: int = _503_MAX_RETRIES,
+) -> Any:
+    """503/타임아웃 재시도는 max_503_retries로, 429 재시도는 max_retries로 독립 관리."""
     unavailable_count = 0  # 503 / timeout 전용 카운터
     rate_limit_attempt = 0  # 429 전용 카운터
 
@@ -285,16 +302,16 @@ async def _invoke_inner(llm: Any, messages: list, *, max_retries: int, plain_fal
                 timeout=_INVOKE_TIMEOUT_SEC,
             )
         except asyncio.TimeoutError:
-            if unavailable_count < _503_MAX_RETRIES:
+            if unavailable_count < max_503_retries:
                 unavailable_count += 1
                 logger.warning(
                     "Gemini 응답 타임아웃(%.0fs) – %d초 후 재시도 (%d/%d)",
                     _INVOKE_TIMEOUT_SEC, _503_RETRY_WAIT_SEC,
-                    unavailable_count, _503_MAX_RETRIES,
+                    unavailable_count, max_503_retries,
                 )
                 await asyncio.sleep(_503_RETRY_WAIT_SEC)
                 continue
-            logger.warning("Gemini 타임아웃 재시도(%d) 소진 → 폴백 체인", _503_MAX_RETRIES)
+            logger.warning("Gemini 타임아웃 재시도(%d) 소진 → 폴백 체인", max_503_retries)
             return await _ainvoke_fallback_chain(messages)
         except Exception as e:
             msg = str(e)
@@ -317,15 +334,15 @@ async def _invoke_inner(llm: Any, messages: list, *, max_retries: int, plain_fal
 
             # 503 UNAVAILABLE: 독립 카운터로 재시도 후 소진 시 fallback
             if any(m in msg for m in _UNAVAILABLE_MARKERS):
-                if unavailable_count < _503_MAX_RETRIES:
+                if unavailable_count < max_503_retries:
                     unavailable_count += 1
                     logger.warning(
                         "Gemini 503/NOT_FOUND – %d초 후 재시도 (%d/%d)",
-                        _503_RETRY_WAIT_SEC, unavailable_count, _503_MAX_RETRIES,
+                        _503_RETRY_WAIT_SEC, unavailable_count, max_503_retries,
                     )
                     await asyncio.sleep(_503_RETRY_WAIT_SEC)
                     continue
-                logger.warning("Gemini 503 재시도(%d) 소진 → 폴백 체인", _503_MAX_RETRIES)
+                logger.warning("Gemini 503 재시도(%d) 소진 → 폴백 체인", max_503_retries)
                 try:
                     return await _ainvoke_fallback_chain(messages)
                 except Exception as fb_err:
