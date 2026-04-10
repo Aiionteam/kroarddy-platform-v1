@@ -4,9 +4,7 @@ import json
 import logging
 import random
 import re
-import time
 from math import atan2, cos, radians, sin, sqrt
-from pathlib import Path
 from typing import Any
 
 from langchain_core.messages import HumanMessage
@@ -20,9 +18,6 @@ from app.services.search_client import (
 )
 
 logger = logging.getLogger(__name__)
-
-# Docker 경로(/app/app/...)에서는 parents 깊이가 부족해 IndexError 날 수 있음 — /tmp는 컨테이너에서 항상 쓰기 가능·repo 경로 비의존
-_DEBUG_SESSION_LOG = Path("/tmp") / "debug-b81536.log"
 
 # Nationality -> response language mapping
 _NATIONALITY_TO_LANG: dict[str, str] = {
@@ -74,12 +69,16 @@ def _standard_planner_gemini_model() -> str:
     m = (settings.gemini_model or "").strip()
     return m or _STANDARD_PLANNER_PRIMARY_MODEL
 
-# 단일 LLM 호출 타임아웃 – 긴 답변(검색/JSON) 대기 (요청: 120초)
-_INVOKE_TIMEOUT_SEC = 120.0
+# 단일 LLM 호출 타임아웃 – 다일차 JSON·검색 도구 응답은 수 분 걸릴 수 있음 (게이트웨이 900s 이내)
+_INVOKE_TIMEOUT_SEC = 360.0
+_503_RETRY_WAIT_SEC = 3.0
+_503_MAX_RETRIES = 3
 _UNAVAILABLE_MARKERS = ("503", "UNAVAILABLE", "high demand", "Service Unavailable")
 
 _TIME_SLOTS_KO = ["오전", "점심", "오후", "저녁"]
 _TIME_SLOTS_EN = ["morning", "lunch", "afternoon", "evening"]
+_TIME_SLOT_RANK_KO = {s: i for i, s in enumerate(_TIME_SLOTS_KO)}
+_TIME_SLOT_RANK_EN = {s: i for i, s in enumerate(_TIME_SLOTS_EN)}
 
 
 def _get_lang(profile: dict | None) -> str:
@@ -110,30 +109,23 @@ def _haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
 
 
 def _optimize_day_order(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    has_coords = [it for it in items if it.get("lat") and it.get("lng")]
-    no_coords = [it for it in items if not (it.get("lat") and it.get("lng"))]
-    if len(has_coords) <= 1:
+    """일차 내 항목 순서: **LLM이 부여한 time 슬롯을 유지**하고 오전→점심→오후→저녁 순으로만 정렬한다.
+
+    과거 구현은 최근접 이웃(NN) 순으로 재배열한 뒤 time을 덮어써, 점심 문구가 저녁 슬롯에 붙는 등
+    심각한 모순이 났다.
+    """
+    if len(items) <= 1:
         return items
 
-    sample_time = items[0].get("time", "오전") if items else "오전"
-    time_slots = _TIME_SLOTS_KO if sample_time in _TIME_SLOTS_KO else _TIME_SLOTS_EN
+    def _rank(it: dict[str, Any]) -> int:
+        t = str(it.get("time") or "").strip().lower()
+        if t in _TIME_SLOT_RANK_KO:
+            return _TIME_SLOT_RANK_KO[t]
+        if t in _TIME_SLOT_RANK_EN:
+            return _TIME_SLOT_RANK_EN[t]
+        return 99
 
-    remaining = list(has_coords)
-    ordered = [remaining.pop(0)]
-    while remaining:
-        last = ordered[-1]
-        nearest_idx = min(
-            range(len(remaining)),
-            key=lambda i: _haversine_km(
-                last.get("lat", 0), last.get("lng", 0),
-                remaining[i].get("lat", 0), remaining[i].get("lng", 0),
-            ),
-        )
-        ordered.append(remaining.pop(nearest_idx))
-
-    for i, item in enumerate(ordered):
-        ordered[i] = {**item, "time": time_slots[i] if i < len(time_slots) else item.get("time", "")}
-    return ordered + no_coords
+    return sorted(items, key=_rank)
 
 
 def _total_route_km(items: list[dict[str, Any]]) -> float:
@@ -188,7 +180,6 @@ def _get_llm_search_context():
     return _llm_search_ctx_instance
 
 
-
 def _llm_for_model(model_name: str, *, temperature: float = 0.2) -> ChatGoogleGenerativeAI:
     """모델명별 싱글턴 (폴백 체인용)."""
     key = f"{model_name}:{temperature}"
@@ -228,26 +219,6 @@ async def _ainvoke_fallback_chain(messages: list) -> Any:
                     timeout=_INVOKE_TIMEOUT_SEC,
                 )
             except asyncio.TimeoutError as e:
-                # #region agent log
-                try:
-                    with open(_DEBUG_SESSION_LOG, "a", encoding="utf-8") as _df:
-                        _df.write(
-                            json.dumps(
-                                {
-                                    "sessionId": "b81536",
-                                    "hypothesisId": "A",
-                                    "location": "nodes_common:_ainvoke_fallback_chain",
-                                    "message": "fallback_chain_wait_timeout",
-                                    "data": {"model": model_name, "invoke_timeout_sec": _INVOKE_TIMEOUT_SEC},
-                                    "timestamp": int(time.time() * 1000),
-                                },
-                                ensure_ascii=False,
-                            )
-                            + "\n"
-                        )
-                except Exception:
-                    pass
-                # #endregion
                 last_err = e
                 if unavail_count < _503_MAX_RETRIES:
                     unavail_count += 1
@@ -310,10 +281,6 @@ async def _invoke(
         _GEMINI_SEMAPHORE.release()
 
 
-_503_RETRY_WAIT_SEC: float = 3.0   # 503 재시도 간격(초)
-_503_MAX_RETRIES: int = 3          # 503 최대 재시도 횟수
-
-
 async def _invoke_inner(
     llm: Any,
     messages: list,
@@ -333,29 +300,6 @@ async def _invoke_inner(
                 timeout=_INVOKE_TIMEOUT_SEC,
             )
         except asyncio.TimeoutError:
-            # #region agent log
-            try:
-                with open(_DEBUG_SESSION_LOG, "a", encoding="utf-8") as _df:
-                    _df.write(
-                        json.dumps(
-                            {
-                                "sessionId": "b81536",
-                                "hypothesisId": "A",
-                                "location": "nodes_common:_invoke_inner",
-                                "message": "invoke_inner_wait_timeout",
-                                "data": {
-                                    "invoke_timeout_sec": _INVOKE_TIMEOUT_SEC,
-                                    "max_503_retries": max_503_retries,
-                                },
-                                "timestamp": int(time.time() * 1000),
-                            },
-                            ensure_ascii=False,
-                        )
-                        + "\n"
-                    )
-            except Exception:
-                pass
-            # #endregion
             if unavailable_count < max_503_retries:
                 unavailable_count += 1
                 logger.warning(

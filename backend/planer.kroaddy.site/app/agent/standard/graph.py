@@ -28,7 +28,7 @@ def _build_schedule_graph():
     """일정 생성 그래프 (LangGraph 멀티 노드).
 
     gather_context  : 프로필·행사·뉴스·날씨·웹서칭을 병렬 수집 (5개 에이전트)
-    generate_schedule: 수집된 컨텍스트 기반 Day별 병렬 LLM 일정 생성
+    generate_schedule: 수집된 컨텍스트 기반 Day별 순차 LLM 일정 생성(교차 일차 exclude)
     geocode_schedule : 네이버 API로 장소 좌표 검증·보강 (병렬)
     enrich_business_hours: (옵션) 네이버 플레이스 영업시간 크롤
     """
