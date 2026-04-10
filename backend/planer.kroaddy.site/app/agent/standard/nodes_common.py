@@ -21,8 +21,8 @@ from app.services.search_client import (
 
 logger = logging.getLogger(__name__)
 
-# debug-b81536: repo 루트(tourstar) 기준 NDJSON (Debug mode)
-_DEBUG_SESSION_LOG = Path(__file__).resolve().parents[5] / "debug-b81536.log"
+# Docker 경로(/app/app/...)에서는 parents 깊이가 부족해 IndexError 남 — 컨테이너에 항상 있는 /tmp 사용
+_DEBUG_SESSION_LOG = Path("/tmp") / "debug-b81536.log"
 
 # Nationality -> response language mapping
 _NATIONALITY_TO_LANG: dict[str, str] = {
@@ -61,12 +61,18 @@ _SEMAPHORE_WAIT_TIMEOUT = 10
 _llm_instance: "ChatGoogleGenerativeAI | None" = None
 _llm_search_instance: "ChatGoogleGenerativeAI | None" = None
 _llm_search_ctx_instance: "ChatGoogleGenerativeAI | None" = None
-# 메인(settings.gemini_model) 404/503 소진 시 순서대로 시도
-_GEMINI_FALLBACK_MODELS: tuple[str, ...] = (
-    "gemini-2.5-flash",
-    "gemini-2.5-flash-lite",
-)
+
+# 표준 플래너: 메인 싱글턴 모델 (환경변수 GEMINI_MODEL 미설정 시)
+_STANDARD_PLANNER_PRIMARY_MODEL = "gemini-3-flash-preview"
+# 메인 404/503·타임아웃 소진 후 시도 (싱글턴은 _llm_for_model 캐시)
+_GEMINI_FALLBACK_MODELS: tuple[str, ...] = ("gemini-2.5-flash-lite",)
 _llm_by_model: dict[str, ChatGoogleGenerativeAI] = {}
+
+
+def _standard_planner_gemini_model() -> str:
+    """메인 LLM 모델명. `settings.gemini_model`이 비어 있으면 3-flash-preview."""
+    m = (settings.gemini_model or "").strip()
+    return m or _STANDARD_PLANNER_PRIMARY_MODEL
 
 # 단일 LLM 호출 타임아웃 – 긴 답변(검색/JSON) 대기 (요청: 120초)
 _INVOKE_TIMEOUT_SEC = 120.0
@@ -143,7 +149,7 @@ def _get_llm() -> ChatGoogleGenerativeAI:
     global _llm_instance
     if _llm_instance is None:
         _llm_instance = ChatGoogleGenerativeAI(
-            model=settings.gemini_model,
+            model=_standard_planner_gemini_model(),
             temperature=0.2,  # 낮을수록 실존 장소명 hallucination 감소
             google_api_key=settings.gemini_api_key,
             max_retries=0,  # SDK 내부 재시도 비활성화 → 503 즉시 예외 → 우리 재시도 로직 사용
@@ -155,7 +161,7 @@ def _get_llm_with_search():
     global _llm_search_instance
     if _llm_search_instance is None:
         base = ChatGoogleGenerativeAI(
-            model=settings.gemini_model,
+            model=_standard_planner_gemini_model(),
             temperature=0.2,
             google_api_key=settings.gemini_api_key,
             max_retries=0,
@@ -173,7 +179,7 @@ def _get_llm_search_context():
     global _llm_search_ctx_instance
     if _llm_search_ctx_instance is None:
         base = ChatGoogleGenerativeAI(
-            model=settings.gemini_model,
+            model=_standard_planner_gemini_model(),
             temperature=0.2,
             google_api_key=settings.gemini_api_key,
             max_retries=0,
@@ -198,7 +204,7 @@ def _llm_for_model(model_name: str, *, temperature: float = 0.2) -> ChatGoogleGe
 
 def _fallback_model_order() -> list[str]:
     """메인과 동일한 이름은 제외해 중복 호출을 피한다."""
-    primary = (settings.gemini_model or "").strip()
+    primary = _standard_planner_gemini_model()
     return [m for m in _GEMINI_FALLBACK_MODELS if m != primary]
 
 
@@ -370,7 +376,7 @@ async def _invoke_inner(
 
             # 404 NOT_FOUND: 재시도 무의미 → 즉시 fallback
             if "NOT_FOUND" in msg:
-                logger.warning("Gemini 404 NOT_FOUND → 폴백 체인 (2.5-flash 계열)")
+                logger.warning("Gemini 404 NOT_FOUND → 폴백 체인 (%s)", ", ".join(_GEMINI_FALLBACK_MODELS))
                 try:
                     return await _ainvoke_fallback_chain(messages)
                 except Exception as fb_err:

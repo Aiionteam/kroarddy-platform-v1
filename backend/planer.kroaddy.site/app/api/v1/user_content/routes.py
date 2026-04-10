@@ -14,7 +14,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database.session import get_db
 from app.core.nsfw_filter import check_nsfw_async
-from app.core.storage import generate_presigned_upload_url, generate_presigned_get_url
+from app.core.storage import (
+    canonical_s3_image_url_for_storage,
+    generate_presigned_get_url,
+    generate_presigned_upload_url,
+)
 from app.models.user_content_like import UserContentLike
 from app.models.user_content_route import UserContentRoute
 from .schemas import (
@@ -201,6 +205,8 @@ async def polish_route(req: PolishRequest):
 
 @router.post("/routes", summary="유저 루트 저장")
 async def save_route(req: SaveRouteRequest, db: AsyncSession = Depends(get_db)):
+    # 클라이언트가 실수로 presigned PUT URL을 넘겨도 DB에는 쿼리 없는 객체 URL만 저장
+    stored_image_url = canonical_s3_image_url_for_storage(req.image_url)
     row = UserContentRoute(
         user_id=req.user_id,
         nickname=req.nickname,
@@ -209,7 +215,7 @@ async def save_route(req: SaveRouteRequest, db: AsyncSession = Depends(get_db)):
         description=req.description,
         route_items=req.route_items,
         tags=req.tags,
-        image_url=req.image_url,
+        image_url=stored_image_url,
     )
     db.add(row)
     await db.flush()

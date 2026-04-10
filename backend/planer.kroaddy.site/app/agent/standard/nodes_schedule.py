@@ -1,6 +1,7 @@
 """Schedule-generation and post-processing nodes."""
 import asyncio
 import logging
+import re
 from datetime import datetime, timedelta
 from time import perf_counter
 from typing import Any, TypedDict
@@ -15,7 +16,6 @@ from app.agent.standard.nodes_common import (
     _get_lang,
     _get_llm,
     _get_llm_search_context,
-    _get_llm_with_search,
     _invoke,
     _lang_directive,
     _optimize_day_order,
@@ -274,6 +274,124 @@ def _build_festival_block(festivals: list, lang: str = "Korean") -> str:
     return header + "\n" + "\n".join(fest_lines) + "\n" + footer + "\n"
 
 
+def _normalize_place_key(name: str) -> str:
+    """중복 검사용: 공백·하이픈·중점 제거 + 소문자."""
+    s = (name or "").strip().lower()
+    return re.sub(r"[\s\-_·\.]+", "", s)
+
+
+# venue 중복 판별: LLM이 날마다 "청풍명월" / "제천 청풍명월" / "청풍명월 한정식"처럼 바꿔 쓰면 문자열 키만으로는 중복을 못 잡음
+_VENUE_SUFFIX_STRIP_KO: tuple[str, ...] = (
+    "한정식",
+    "정식",
+    "식당",
+    "음식점",
+    "레스토랑",
+    "카페",
+    "펜션",
+    "맛집",
+    "브런치",
+    "커피",
+    "베이커리",
+)
+_VENUE_SUFFIX_STRIP_EN: tuple[str, ...] = (
+    "restaurant",
+    "cafe",
+    "bistro",
+    "eatery",
+    "pension",
+    "guesthouse",
+    "hotel",
+)
+
+
+def _strip_region_from_key(k: str, region: str) -> str:
+    r = _normalize_place_key(region)
+    if not r or not k:
+        return k
+    for prefix in (r, f"{r}시", f"{r}군", f"{r}구"):
+        if k.startswith(prefix) and len(k) >= len(prefix) + 2:
+            return k[len(prefix) :]
+    return k
+
+
+def _strip_venue_suffixes(k: str, lang: str) -> str:
+    suffixes = _VENUE_SUFFIX_STRIP_KO if lang == "Korean" else _VENUE_SUFFIX_STRIP_EN
+    changed = True
+    while changed and len(k) >= 4:
+        changed = False
+        for suf in suffixes:
+            sk = _normalize_place_key(suf)
+            if len(sk) >= 2 and k.endswith(sk) and len(k) > len(sk) + 2:
+                k = k[: -len(sk)]
+                changed = True
+                break
+    return k
+
+
+def _venue_dedupe_key(item: dict[str, Any], *, region: str, lang: str) -> str:
+    """교차 일차 중복 검사용 키 (표기 변형 흡수)."""
+    best = ""
+    for fld in ("place", "place_ko"):
+        raw = (item.get(fld) or "").strip()
+        if not raw:
+            continue
+        k = _normalize_place_key(raw)
+        k = _strip_region_from_key(k, region)
+        k = _strip_venue_suffixes(k, lang)
+        if len(k) > len(best):
+            best = k
+    return best
+
+
+# (태그, 키워드…) — 이전 일차에 쓰인 '체험 유형'은 이후 일차 전 슬롯에서 금지
+_EXPERIENCE_CATEGORIES_KO: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("rope_transport", ("케이블카", "케이블웨이", "로프웨이", "곤돌라")),
+)
+_EXPERIENCE_CATEGORIES_EN: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("rope_transport", ("cable car", "cableway", "ropeway", "gondola", "aerial tram")),
+)
+
+
+def _item_text_blob(item: dict[str, Any]) -> str:
+    return " ".join(str(item.get(k) or "") for k in ("place", "place_ko", "title", "description", "tips"))
+
+
+def _experience_tags_from_blob(blob: str, lang: str) -> set[str]:
+    b = blob.lower()
+    tags: set[str] = set()
+    cats = _EXPERIENCE_CATEGORIES_KO if lang == "Korean" else _EXPERIENCE_CATEGORIES_EN
+    for tag, kws in cats:
+        for kw in kws:
+            if kw.lower() in b:
+                tags.add(tag)
+                break
+    return tags
+
+
+def _experience_tags_for_items(items: list[dict[str, Any]], lang: str) -> set[str]:
+    out: set[str] = set()
+    for it in items:
+        out |= _experience_tags_from_blob(_item_text_blob(it), lang)
+    return out
+
+
+def _banned_experience_block(used_tags: set[str], lang: str) -> str:
+    if "rope_transport" not in used_tags:
+        return ""
+    if lang == "Korean":
+        return (
+            "【이번 일차 – 전일과 겹치면 안 되는 체험】\n"
+            "공중 로프 이동 시설(케이블카·케이블웨이·로프웨이·곤돌라)은 **이미 다른 날 일정에 사용됨**. "
+            "이번 날 4개 슬롯 **어느 것에도** 넣지 마세요. 산책·전망대(지상)·박물관·시장·온천·카페 등으로 대체.\n"
+        )
+    return (
+        "【This day – no repeated experience type】\n"
+        "Rope-based aerial transport (cable car, ropeway, gondola, etc.) already appears on another day. "
+        "Do NOT include it in any of the 4 slots; use walks, ground viewpoints, museums, markets, spas, cafés.\n"
+    )
+
+
 class _SingleDayCommonKwargs(TypedDict):
     num_days: int
     location_name: str
@@ -305,6 +423,8 @@ async def _generate_single_day(
     news_block: str,
     web_search_block: str = "",
     exclude_places: list[str] | None = None,
+    experience_ban_prompt: str = "",
+    retry_hint: str = "",
 ) -> tuple[list[dict[str, Any]], dict]:
     t0 = perf_counter()
     if lang == "Korean":
@@ -319,11 +439,18 @@ async def _generate_single_day(
     day_zone_hint = f"- Day {day_num}/{num_days}: use a DIFFERENT district from other days.\n" if num_days > 1 else ""
 
     if exclude_places:
-        excl_str = ", ".join(f'"{p}"' for p in exclude_places[:30])
+        excl_str = ", ".join(f'"{p}"' for p in exclude_places[:80])
         if lang == "Korean":
-            excl_block = f"⛔ 다른 날 이미 포함된 장소 (절대 반복 금지): {excl_str}\n"
+            excl_block = (
+                f"⛔ 다른 날 이미 포함된 장소 (절대 반복 금지): {excl_str}\n"
+                "- 상호 표기가 달라도 **동일 시설**(같은 케이블카 노선·같은 박물관 건물 등)이면 사용하지 마세요.\n"
+            )
         else:
-            excl_block = f"⛔ Already used in other days (NEVER repeat): {excl_str}\n"
+            excl_block = (
+                f"⛔ Already used in other days (NEVER repeat): {excl_str}\n"
+                "- Even if spelled differently, do NOT reuse the **same venue** "
+                "(same cable car line, same museum building, etc.).\n"
+            )
     else:
         excl_block = ""
 
@@ -362,23 +489,41 @@ async def _generate_single_day(
         )
 
     if lang == "Korean":
+        multi_trip = (
+            (
+                f"⑤ 이번 여행은 총 {num_days}일입니다. **전체 기간**에서 같은 실제 장소·같은 케이블카 노선 등은 **하루에 한 번만**. "
+                "다른 날에는 다른 권역·다른 카테고리의 명소로 구성하세요.\n"
+                "⑥ 하루 4개 항목의 place는 **서로 모두 달라야** 합니다.\n"
+            )
+            if num_days > 1
+            else "⑤ 하루 4개 항목의 place는 **서로 모두 달라야** 합니다.\n"
+        )
         constraint_block = (
             "【배치 규칙 – 반드시 준수】\n"
             "① 식사(점심·저녁) 항목은 하루에 최대 2개, 연속 배치 금지 (식사→식사 불가).\n"
             "② 4개 장소는 반경 3km 이내 동일 생활권에 클러스터링 – 강남↔강북 왕복 동선 금지.\n"
-            "③ description 설명에 해당 time 슬롯과 다른 시간대 단어 사용 금지 "
-            "(예: '점심' 슬롯에 '저녁 식사' 표현 금지).\n"
-            "④ 특정 날짜 행사(~에서 개막, ~일 한정 등)는 확인된 정보만 기재, "
-            "불확실한 이벤트는 생략.\n"
+            "③ time 슬롯과 **title·description·tips**가 일치: 다른 슬롯 식사·시간 표현 금지 "
+            "(점심 슬롯에 '저녁''디너''하루 마무리', 저녁 슬롯에 '점심''런치' 금지).\n"
+            "④ 특정 날짜 행사는 확인된 정보만 기재, 불확실하면 생략.\n"
+            f"{multi_trip}"
         )
     else:
+        multi_trip = (
+            (
+                f"⑤ Trip length: {num_days} days. Each **real venue** (same cable car line, same building) appears **once in the whole trip**; "
+                "other days must use different areas/categories.\n"
+                "⑥ All 4 `place` values this day must be **distinct**.\n"
+            )
+            if num_days > 1
+            else "⑤ All 4 `place` values this day must be **distinct**.\n"
+        )
         constraint_block = (
             "【Placement Rules – STRICTLY FOLLOW】\n"
             "① Max 2 meal items per day; NO consecutive meals (meal→meal forbidden).\n"
             "② All 4 places MUST cluster within ~3km radius – no zig-zag routes across the city.\n"
-            "③ description text must NOT reference a different time slot "
-            "(e.g. do NOT write 'special dinner' in a 'lunch' slot).\n"
-            "④ Only include dated events you are certain about; omit uncertain or unverified events.\n"
+            "③ `time` must match **title, description, tips** (no wrong meal/time words across slots).\n"
+            "④ Only include dated events you are certain about; omit uncertain ones.\n"
+            f"{multi_trip}"
         )
 
     prompt = (
@@ -387,6 +532,8 @@ async def _generate_single_day(
         f"{excl_block}\n"
         f"{place_rule_block}"
         f"{constraint_block}"
+        f"{experience_ban_prompt}"
+        f"{retry_hint}"
         f"{web_search_block}"
         f"{user_block}{festival_block}{weather_block}{transport_block}{news_block}"
         f"Create 4 schedule items. time∈[{time_labels}]. "
@@ -409,6 +556,243 @@ async def _generate_single_day(
     return items, per_day_cost
 
 
+def _validate_full_trip_schedule(
+    items_flat: list[dict[str, Any]],
+    *,
+    num_days: int,
+    location_name: str,
+    lang: str,
+) -> tuple[bool, str]:
+    """단일 응답 JSON이 규칙을 지켰는지 검사 (일차별 4슬롯·전체 장소 중복·로프 체험 1회)."""
+    by_day: dict[int, list[dict[str, Any]]] = {}
+    for it in items_flat:
+        d = int(it.get("day") or 0)
+        if d < 1:
+            continue
+        by_day.setdefault(d, []).append(it)
+
+    for d in range(1, num_days + 1):
+        arr = by_day.get(d, [])
+        if len(arr) != 4:
+            return False, f"day_{d}_count_{len(arr)}"
+
+    seen_keys: set[str] = set()
+    for it in items_flat:
+        k = _venue_dedupe_key(it, region=location_name, lang=lang)
+        if not k:
+            continue
+        if k in seen_keys:
+            return False, f"dup_venue:{k}"
+        seen_keys.add(k)
+
+    for d, arr in by_day.items():
+        ks = [_venue_dedupe_key(x, region=location_name, lang=lang) for x in arr]
+        ks_n = [x for x in ks if x]
+        if len(ks_n) != len(set(ks_n)):
+            return False, f"same_day_dup:{d}"
+
+    rope_n = 0
+    for it in items_flat:
+        if _experience_tags_from_blob(_item_text_blob(it), lang) & {"rope_transport"}:
+            rope_n += 1
+    if rope_n > 1:
+        return False, "rope_transport_multi"
+
+    return True, ""
+
+
+async def _generate_trip_in_one_call(
+    *,
+    date_list: list[str],
+    common_kwargs: _SingleDayCommonKwargs,
+    location_name: str,
+    lang: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[str]]:
+    """여행 기간 전체를 **한 번의 LLM 호출**로 생성 (맥락 유지)."""
+    t0 = perf_counter()
+    num_days = len(date_list)
+    errors: list[str] = []
+
+    route_name = common_kwargs["route_name"]
+    lang_dir = common_kwargs["lang_dir"]
+    user_block = common_kwargs["user_block"]
+    festival_block = common_kwargs["festival_block"]
+    weather_block = common_kwargs["weather_block"]
+    transport_block = common_kwargs["transport_block"]
+    news_block = common_kwargs["news_block"]
+    web_search_block = common_kwargs["web_search_block"]
+
+    if lang == "Korean":
+        time_labels = "오전|점심|오후|저녁"
+        first_time = "오전"
+        flow_hint = "오전→점심→오후→저녁"
+    else:
+        time_labels = "morning|lunch|afternoon|evening"
+        first_time = "morning"
+        flow_hint = "morning→lunch→afternoon→evening"
+
+    dates_block = "\n".join(f"  - Day {i + 1}: {date_list[i]}" for i in range(num_days))
+    day_example = date_list[0] if date_list else "YYYY-MM-DD"
+
+    if lang == "Korean":
+        place_rule_block = (
+            "【장소명 필수 규칙】\n"
+            "- place / place_ko: 네이버·카카오맵 검색 가능한 실제 상호명만.\n"
+            "- ❌ lat, lng, address 필드 금지 (시스템이 채움).\n"
+        )
+        trip_rules = (
+            f"【{num_days}일 통합 계획 – 한 번에 작성】\n"
+            "- 각 일차는 **서로 다른 권역·테마**를 가지되, **하나의 여행 이야기**로 자연스럽게 이어지게 하세요.\n"
+            "- **전체 여행**에서 같은 실제 장소·같은 시설(같은 케이블카 노선 등)은 **단 한 번만** 등장.\n"
+            "- 각 일차 **4개 슬롯**의 place는 그날 안에서 **서로 모두 달라야** 함.\n"
+            "- 공중 로프 이동(케이블카·로프웨이·곤돌라)은 **전체 일정에서 최대 1슬롯**만.\n"
+            "- 식사 슬롯은 일 2회 이하, 연속 식사 금지. time과 title·description·tips의 시간대 표현 일치.\n"
+            "- 각 일 4곳은 약 3km 생활권에 클러스터.\n"
+        )
+        schema_example = (
+            '{"days":['
+            f'{{"day":1,"date":"{day_example}","items":['
+            '{"time":"오전","place":"장소A","place_ko":"장소A","title":"활동","description":"설명","tips":"팁","estimated_cost":"₩0"},'
+            '{"time":"점심","place":"장소B","place_ko":"장소B","title":"활동","description":"설명","tips":"팁","estimated_cost":"₩0"},'
+            '{"time":"오후","place":"장소C","place_ko":"장소C","title":"활동","description":"설명","tips":"팁","estimated_cost":"₩0"},'
+            '{"time":"저녁","place":"장소D","place_ko":"장소D","title":"활동","description":"설명","tips":"팁","estimated_cost":"₩0"}'
+            '],"day_total":"₩100000","day_total_krw":100000}'
+            f', … 총 {num_days}개 일차 객체, day는 1..{num_days}, date는 위 목록과 동일 …]}}'
+        )
+    else:
+        place_rule_block = (
+            "【Place rules】\n"
+            "- place / place_ko: real searchable names on Naver/Kakao Map.\n"
+            "- ⚠️ No lat, lng, address fields.\n"
+        )
+        trip_rules = (
+            f"【Single coherent {num_days}-day trip】\n"
+            "- Each day: different area/theme; overall story should flow naturally.\n"
+            "- **Across the whole trip**: each real venue / cable-car line appears **at most once**.\n"
+            "- Each day: **4 distinct** `place` values; cluster ~3km; max one rope-transport slot in the **entire** itinerary.\n"
+            "- Max 2 meals/day, no consecutive meals; `time` must match title/description/tips.\n"
+        )
+        schema_example = (
+            '{"days":['
+            f'{{"day":1,"date":"{day_example}","items":['
+            f'{{"time":"{first_time}","place":"A","place_ko":"한글A","title":"…","description":"…","tips":"…","estimated_cost":"₩0"}},'
+            '{"time":"lunch","place":"B","place_ko":"한글B","title":"…","description":"…","tips":"…","estimated_cost":"₩0"},'
+            '{"time":"afternoon","place":"C","place_ko":"한글C","title":"…","description":"…","tips":"…","estimated_cost":"₩0"},'
+            '{"time":"evening","place":"D","place_ko":"한글D","title":"…","description":"…","tips":"…","estimated_cost":"₩0"}'
+            '],"day_total":"₩100000","day_total_krw":100000}, …]}'
+        )
+
+    retry_hint = ""
+    ok, reason = False, ""
+    merged_schedule: list[dict[str, Any]] = []
+    per_day_costs: list[dict[str, Any]] = []
+
+    for attempt in range(3):
+        merged_schedule = []
+        per_day_costs = []
+        prompt = (
+            f"Destination:{location_name} | Route:{route_name}\n"
+            f"⚠️ ALL places must be within '{location_name}'.\n\n"
+            f"【Official dates — use exactly】\n{dates_block}\n\n"
+            f"{trip_rules}\n"
+            f"{place_rule_block}\n"
+            f"{retry_hint}"
+            f"{web_search_block}"
+            f"{user_block}{festival_block}{weather_block}{transport_block}{news_block}"
+            f"Output ONE JSON object with key \"days\": an array of **exactly {num_days}** objects, "
+            f"one per day in order (Day 1 first). Each day: day (1..{num_days}), date (match list above), "
+            f"items (exactly 4, time must be one of [{time_labels}], order {flow_hint}), "
+            f"day_total (KRW string), day_total_krw (integer).\n"
+            f"{lang_dir}\n"
+            "Shape example (ellipsis means continue similarly for every day; output **valid complete JSON**):\n"
+            f"{schema_example}\n"
+        )
+        llm = _get_llm()
+        try:
+            response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=False)
+            data = _parse_json(response)
+        except Exception as exc:
+            errors.append(str(exc))
+            if attempt == 2:
+                return [], [], errors
+            retry_hint = (
+                "【재시도】직전 응답이 유효한 JSON이 아니었습니다. 지시대로 JSON만 출력하세요.\n"
+                if lang == "Korean"
+                else "【Retry】Invalid JSON. Output JSON only per instructions.\n"
+            )
+            continue
+
+        days_arr = data.get("days")
+        if not isinstance(days_arr, list):
+            days_arr = []
+
+        merged_schedule = []
+        per_day_costs = []
+        for i in range(num_days):
+            if i >= len(days_arr):
+                break
+            block = days_arr[i]
+            if not isinstance(block, dict):
+                continue
+            day_num = i + 1
+            date_str = date_list[i]
+            raw_items = block.get("items") or []
+            if not isinstance(raw_items, list):
+                raw_items = []
+            day_total_str = block.get("day_total", "₩0")
+            try:
+                day_total_krw = int(block.get("day_total_krw") or 0)
+            except (TypeError, ValueError):
+                day_total_krw = 0
+            for item in raw_items:
+                if not isinstance(item, dict):
+                    continue
+                merged_schedule.append(
+                    {
+                        "day": day_num,
+                        "date": date_str,
+                        **{k: v for k, v in item.items() if k not in ("day", "date")},
+                    }
+                )
+            per_day_costs.append({"day": day_num, "total": day_total_str, "total_krw": day_total_krw})
+
+        ok, reason = _validate_full_trip_schedule(
+            merged_schedule, num_days=num_days, location_name=location_name, lang=lang
+        )
+        if ok and len(per_day_costs) == num_days:
+            logger.info(
+                "일정 %d일 단일 호출 생성 완료 (%.2fs)",
+                num_days,
+                perf_counter() - t0,
+            )
+            return merged_schedule, per_day_costs, []
+
+        logger.warning(
+            "통합 일정 검증 실패 (시도 %d/3): %s",
+            attempt + 1,
+            reason or "structure",
+        )
+        if lang == "Korean":
+            retry_hint = (
+                "【재시도】직전 출력은 규칙 위반이었습니다. "
+                f"요구: 일차 정확히 {num_days}개, 각 일차 items 4개, "
+                "전체 여행에서 장소·케이블카 등 중복 없음. JSON만 다시 출력.\n"
+            )
+        else:
+            retry_hint = (
+                "【Retry】Prior output broke rules: "
+                f"exactly {num_days} days, 4 items each, no duplicate venues or repeated rope transport. JSON only.\n"
+            )
+
+    if merged_schedule:
+        logger.error(
+            "통합 일정 3회 검증 실패 — 마지막 응답 사용(수동 점검 권장): %s",
+            reason if not ok else "per_day_mismatch",
+        )
+        return merged_schedule, per_day_costs, errors
+    return [], [], errors or ["empty_schedule"]
+
+
 async def _fix_duplicate_days(
     schedule: list[dict[str, Any]],
     per_day_costs: list[dict[str, Any]],
@@ -417,14 +801,16 @@ async def _fix_duplicate_days(
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """생성된 일정에서 여러 날에 중복 등장하는 장소를 감지하고,
     나중 날짜(더 높은 day 번호)만 exclude_places를 주어 재생성한다."""
+    loc = common_kwargs["location_name"]
+    clang = common_kwargs["lang"]
     place_to_days: dict[str, list[int]] = {}
     for item in schedule:
-        place = (item.get("place") or "").strip()
+        key = _venue_dedupe_key(item, region=loc, lang=clang)
         day = int(item.get("day") or 0)
-        if place and day:
-            place_to_days.setdefault(place, [])
-            if day not in place_to_days[place]:
-                place_to_days[place].append(day)
+        if key and day:
+            place_to_days.setdefault(key, [])
+            if day not in place_to_days[key]:
+                place_to_days[key].append(day)
 
     dup_days: set[int] = set()
     for days in place_to_days.values():
@@ -438,18 +824,29 @@ async def _fix_duplicate_days(
     logger.warning("중복 장소 감지 → Day %s 재생성", sorted(dup_days))
 
     for dup_day in sorted(dup_days):
-        # 이 날을 제외한 모든 날의 장소를 exclude 목록으로
-        exclude = list({
-            (item.get("place") or "").strip()
-            for item in schedule
-            if item.get("day") != dup_day and item.get("place")
-        })
+        exclude: list[str] = []
+        seen_ex: set[str] = set()
+        for item in schedule:
+            if item.get("day") == dup_day:
+                continue
+            for fld in ("place", "place_ko"):
+                s = (item.get(fld) or "").strip()
+                if s and s not in seen_ex:
+                    seen_ex.add(s)
+                    exclude.append(s)
         date_str = date_list[dup_day - 1]
+        # 재생성 시에도 이전 일차 케이블카 등 체험 유형 금지 블록 적용
+        prior_items = [it for it in schedule if int(it.get("day") or 0) < dup_day]
+        exp_tags: set[str] = set()
+        for it in prior_items:
+            exp_tags |= _experience_tags_from_blob(_item_text_blob(it), common_kwargs["lang"])
+        exp_ban = _banned_experience_block(exp_tags, common_kwargs["lang"])
         try:
             new_items, new_cost = await _generate_single_day(
                 day_num=dup_day,
                 date_str=date_str,
                 exclude_places=exclude,
+                experience_ban_prompt=exp_ban,
                 **common_kwargs,
             )
         except Exception as exc:
@@ -464,7 +861,10 @@ async def _fix_duplicate_days(
 
 
 async def generate_schedule(state: PlannerState) -> PlannerState:
-    """gather_context_node가 수집한 데이터를 받아 Day별 병렬 일정을 생성한다.
+    """gather_context_node가 수집한 데이터를 받아 일정을 생성한다.
+
+    날짜가 있으면 **전체 일차를 한 번의 LLM 호출**로 생성해 맥락을 유지한다.
+    검증 실패 시 최대 3회 재시도한 뒤, `_fix_duplicate_days`로 잔여 중복을 정리한다.
 
     - gather_context_node가 먼저 실행되었다면 state에 이미 모든 컨텍스트가 있다.
     - 직접 호출(스트리밍 엔드포인트 등) 시에도 state에서 데이터를 읽어 동작한다.
@@ -516,28 +916,13 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
             "web_search_block": web_search_block,
         }
 
-        # 일(Day)별로 독립적으로 LLM 호출해 전부 병렬 실행한다.
-        # - 1일 여행: LLM 1회 호출
-        # - 3일 여행: LLM 3회 동시 호출 → 총 대기 시간 = max(day1, day2, day3)
-        # 2일씩 묶는 방식은 출력 토큰이 2배로 늘어 응답이 오히려 느려지므로 제거했다.
-        tasks = [
-            _generate_single_day(day_num=i + 1, date_str=date_str, **common_kwargs)
-            for i, date_str in enumerate(date_list)
-        ]
-        results = await asyncio.gather(*tasks, return_exceptions=True)  # type: ignore[assignment]
+        merged_schedule, per_day_costs, errors = await _generate_trip_in_one_call(
+            date_list=date_list,
+            common_kwargs=common_kwargs,
+            location_name=location_name,
+            lang=lang,
+        )
 
-        merged_schedule: list[dict[str, Any]] = []
-        per_day_costs: list[dict[str, Any]] = []
-        errors: list[str] = []
-        total_krw = 0
-        for raw in results:
-            if isinstance(raw, tuple) and len(raw) == 2:
-                items, per_day_cost = raw[0], raw[1]
-                merged_schedule.extend(items)
-                per_day_costs.append(per_day_cost)
-                total_krw += int(per_day_cost.get("total_krw") or 0)
-            else:
-                errors.append(str(raw) if isinstance(raw, BaseException) else repr(raw))
         if errors and not merged_schedule:
             return {**state, "schedule": [], "cost_summary": None, "error": "; ".join(errors)}
 
@@ -731,19 +1116,22 @@ def _validate_day_items(items: list[dict[str, Any]], lang: str = "Korean") -> li
         slot_idx = time_slot_map.get(slot_name, -1)
         if slot_idx < 0:
             continue
-        desc = (item.get("description") or "").lower()
+        blob = (
+            f"{item.get('title', '')} {(item.get('description') or '')} {item.get('tips', '')}"
+        ).lower()
         for other_idx, words in enumerate(time_words):
             if other_idx == slot_idx:
                 continue
             for w in words:
-                if w not in desc:
+                if w not in blob:
                     continue
                 # "저녁 식사", "점심 메뉴" 처럼 시간대+행위 조합인 경우만 경고
-                w_pos = desc.find(w)
-                context = desc[w_pos:w_pos + len(w) + 6]
+                w_pos = blob.find(w)
+                context = blob[w_pos : w_pos + len(w) + 6]
                 if any(a in context for a in action_words):
                     warnings.append(
-                        f"[시간불일치] '{item.get('place')}' ({slot_name} 슬롯) description에 '{w}+행위' 포함"
+                        f"[시간불일치] '{item.get('place')}' ({slot_name} 슬롯) "
+                        f"title/description/tips에 '{w}+행위' 포함"
                     )
                     break
 

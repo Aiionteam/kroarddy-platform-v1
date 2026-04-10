@@ -37,7 +37,7 @@ def _adapt_url(url: str, driver: str) -> str:
 
 class Settings(BaseSettings):
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.5-flash"
+    gemini_model: str = "gemini-3-flash-preview"
     openai_api_key: str = ""
     database_url: str = ""
     # 로컬: localhost / 프로덕션: https://api.kroaddy.site
