@@ -16,6 +16,7 @@ from app.agent.standard.nodes_common import (
     _get_lang,
     _get_llm,
     _get_llm_search_context,
+    _haversine_km,
     _invoke,
     _lang_directive,
     _optimize_day_order,
@@ -54,8 +55,8 @@ def _parse_item_wgs84(item: dict[str, Any]) -> tuple[float, float] | None:
 _TRAVEL_DAYS_DEFAULT = 2
 # 웹 검색 선행 단계 응답 길이 상한 – 4000자로 여유 확대 (메인 LLM 참고 품질 향상)
 _WEB_CONTEXT_MAX_CHARS = 4000
-# 웹 검색은 보조 데이터 — 35초 내 완료 못하면 빈 맥락으로 진행
-_WEB_GATHER_TIMEOUT_SEC = 35.0
+# 웹 검색은 보조 데이터 — 이 시간 내 미완료 시 빈 맥락으로 진행 (Gemini 검색·AFC 지연 대비)
+_WEB_GATHER_TIMEOUT_SEC = 90.0
 
 
 async def gather_context_node(state: PlannerState) -> PlannerState:
@@ -500,12 +501,16 @@ async def _generate_single_day(
         )
         constraint_block = (
             "【배치 규칙 – 반드시 준수】\n"
-            "① 식사(점심·저녁) 항목은 하루에 최대 2개, 연속 배치 금지 (식사→식사 불가).\n"
+            "① 식사(점심·저녁) 항목은 하루에 최대 2개, 연속 슬롯에 **또 다른 식사·주요 식음료(한정식·코스·맛집 중심)** 배치 금지 "
+            "(점심 식당 직후 오후에 또 비빔밥·한정식·대형 식사 코스 금지 — 산책·전시·시장·카페(가벼운 음료) 위주로).\n"
             "② 4개 장소는 반경 3km 이내 동일 생활권에 클러스터링 – 강남↔강북 왕복 동선 금지.\n"
             "③ time 슬롯(오전/점심/오후/저녁)과 **title·description·tips** 모두 일치: "
-            "다른 슬롯의 식사·시간 표현 금지 (예: 점심 슬롯에 '저녁 식사'·'디너'·'하루 마무리', 저녁 슬롯에 '점심'·'런치' 금지).\n"
+            "다른 슬롯의 식사·시간 표현 금지 (예: 점심 슬롯에 '저녁 식사'·'디너'·'하루 마무리'·'저녁 시간', 저녁 슬롯에 '점심'·'런치' 금지).\n"
             "④ 특정 날짜 행사(~에서 개막, ~일 한정 등)는 확인된 정보만 기재, "
             "불확실한 이벤트는 생략.\n"
+            "⑦ 하루 네 곳이 **같은 단일 관광핵**(한 호수·한 공원 단지·한 산책로 일대)에만 몰이지 말고, "
+            "**시내·다른 테마 권역**에 최소 1곳은 포함하세요.\n"
+            "⑧ 리뷰·블로그 문장을 복붙하지 말 것. **점심** 슬롯 텍스트에 **저녁·밤·디너·야식** 등 저녁 묘사가 섞이면 안 됩니다.\n"
             f"{multi_trip}"
         )
     else:
@@ -517,11 +522,15 @@ async def _generate_single_day(
         )
         constraint_block = (
             "【Placement Rules – STRICTLY FOLLOW】\n"
-            "① Max 2 meal items per day; NO consecutive meals (meal→meal forbidden).\n"
+            "① Max 2 heavy meals per day; do NOT place another **full meal / tasting course / restaurant-centric** slot "
+            "immediately after lunch in the afternoon — use walks, sights, markets, or light café visits instead.\n"
             "② All 4 places MUST cluster within ~3km radius – no zig-zag routes across the city.\n"
             "③ `time` slot must match **title, description, and tips** — no wrong meal/time words "
-            "(e.g. no 'dinner' or 'evening meal' in a lunch slot; no 'lunch' in an evening slot).\n"
+            "(e.g. no 'dinner', 'evening meal', or 'evening time' in a lunch slot; no 'lunch' in an evening slot). "
+            "Do NOT paste review text that refers to the wrong time of day.\n"
             "④ Only include dated events you are certain about; omit uncertain or unverified events.\n"
+            "⑦ Do not put all four stops around the **same single landmark pocket** (one lake ring, one park only); "
+            "include at least one stop in a **different district/theme** (e.g. downtown vs. outskirts).\n"
             f"{multi_trip}"
         )
 
@@ -924,7 +933,11 @@ async def _geocode_item(
     return {**item, "lat": None, "lng": None, "naver_verified": False, "naver_source": "none", "geocode_failed": True}
 
 
-_MEAL_KEYWORDS_KO = {"식당", "맛집", "음식점", "레스토랑", "한식", "중식", "일식", "양식", "분식", "카페", "베이커리", "브런치", "코스요리", "비빔밥", "삼겹살", "냉면", "순두부"}
+_MEAL_KEYWORDS_KO = {
+    "식당", "맛집", "음식점", "레스토랑", "한식", "중식", "일식", "양식", "분식",
+    "카페", "베이커리", "브런치", "코스요리", "비빔밥", "삼겹살", "냉면", "순두부",
+    "한정식", "정식", "풀코스", "밥상",
+}
 _MEAL_KEYWORDS_EN = {"restaurant", "cafe", "bistro", "eatery", "dining", "cuisine", "bakery", "brunch", "pizzeria", "grill"}
 _TIME_SLOT_KO = {"오전": 0, "점심": 1, "오후": 2, "저녁": 3}
 _TIME_SLOT_EN = {"morning": 0, "lunch": 1, "afternoon": 2, "evening": 3}
@@ -934,13 +947,52 @@ _TIME_WORDS_EN = [["morning", "breakfast"], ["lunch", "midday"], ["afternoon"], 
 _MAX_CLUSTER_KM = 8.0   # 하루 일정 내 최대 허용 이동 반경
 
 
+def _schedule_slot_text_lower(item: dict[str, Any]) -> str:
+    """time 슬롯 품질 검증용 — title·description·tips만 (place 제외)."""
+    return (
+        f"{item.get('title', '')} {(item.get('description') or '')} {item.get('tips', '')}"
+    ).lower()
+
+
+def _slot_lexicon_time_mismatch_warnings(item: dict[str, Any], lang: str) -> list[str]:
+    """슬롯과 충돌하는 식사·시간대 어휘 (리뷰 문장 유입 등)."""
+    sn = (item.get("time") or "").strip()
+    sn_l = sn.lower()
+    blob_l = _schedule_slot_text_lower(item)
+    place = item.get("place")
+    out: list[str] = []
+    if lang == "Korean":
+        if sn == "점심" and "저녁" in blob_l and "저녁까지" not in blob_l and "부터 저녁" not in blob_l:
+            out.append(f"[시간모순] '{place}' (점심) 설명에 '저녁' 등 야간 묘사 포함")
+        elif sn == "오후" and "저녁" in blob_l and any(
+            x in blob_l for x in ("풀코스", "코스요리", "한정식", "식사", "맛집", "비빔밥", "정식")
+        ):
+            out.append(f"[시간모순] '{place}' (오후)에 저녁·본식 식사형 문구 포함")
+        elif sn == "저녁" and ("점심" in blob_l or "런치" in blob_l) and any(
+            x in blob_l for x in ("식사", "메뉴", "코스", "밥", "맛집")
+        ):
+            out.append(f"[시간모순] '{place}' (저녁)에 점심·런치 식사형 문구 포함")
+    else:
+        if sn_l == "lunch" and any(w in blob_l for w in ("dinner", "evening meal", "supper")):
+            out.append(f"[time_mismatch] '{place}' (lunch) mentions dinner/evening meal wording")
+        elif sn_l == "afternoon" and "dinner" in blob_l and any(
+            x in blob_l for x in ("full course", "course menu", "restaurant", "bibimbap")
+        ):
+            out.append(f"[time_mismatch] '{place}' (afternoon) has dinner-style meal wording")
+        elif sn_l == "evening" and "lunch" in blob_l and any(
+            x in blob_l for x in ("meal", "menu", "course", "restaurant")
+        ):
+            out.append(f"[time_mismatch] '{place}' (evening) has lunch-style meal wording")
+    return out
+
+
 def _validate_day_items(items: list[dict[str, Any]], lang: str = "Korean") -> list[str]:
     """일정 항목 품질 검증 – 문제 항목 설명 목록 반환 (로그용).
 
     검사 항목:
-    1. 연속 식사 슬롯 감지
-    2. 시간대 단어 불일치 (description ↔ time 슬롯)
-    3. 과도한 이동 거리 (연속 장소 간 >8km)
+    1. 연속 식사 슬롯
+    2. 시간대+행위 불일치, 슬롯·어휘 직접 충돌
+    3. 연속 장소 간 과도한 이동 (>8km)
     """
     warnings: list[str] = []
     time_slot_map = _TIME_SLOT_KO if lang == "Korean" else _TIME_SLOT_EN
@@ -968,9 +1020,7 @@ def _validate_day_items(items: list[dict[str, Any]], lang: str = "Korean") -> li
         slot_idx = time_slot_map.get(slot_name, -1)
         if slot_idx < 0:
             continue
-        blob = (
-            f"{item.get('title', '')} {(item.get('description') or '')} {item.get('tips', '')}"
-        ).lower()
+        blob = _schedule_slot_text_lower(item)
         for other_idx, words in enumerate(time_words):
             if other_idx == slot_idx:
                 continue
@@ -987,13 +1037,15 @@ def _validate_day_items(items: list[dict[str, Any]], lang: str = "Korean") -> li
                     )
                     break
 
+    for item in items:
+        warnings.extend(_slot_lexicon_time_mismatch_warnings(item, lang))
+
     # 3. 연속 장소 간 과도한 이동 거리
     for i in range(len(items) - 1):
         a, b = items[i], items[i + 1]
         if not (a.get("lat") and a.get("lng") and b.get("lat") and b.get("lng")):
             continue
         try:
-            from app.agent.standard.nodes_common import _haversine_km
             dist = _haversine_km(float(a["lat"]), float(a["lng"]), float(b["lat"]), float(b["lng"]))
             if dist > _MAX_CLUSTER_KM:
                 warnings.append(

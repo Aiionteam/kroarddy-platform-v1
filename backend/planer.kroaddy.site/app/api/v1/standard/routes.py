@@ -32,6 +32,7 @@ from app.agent.standard.nodes_schedule import (
     _gather_web_search_context,
     _generate_single_day,
     _geocode_item,
+    _venue_dedupe_key,
     gather_context_node,
 )
 from app.services.news_client import build_news_block_for_prompt
@@ -68,6 +69,41 @@ def _check_quota_error(e: Exception) -> None:
         status_code=429,
         detail="AI 요청이 잠시 몰렸습니다. 몇 초 후 다시 시도해 주세요.",
     )
+
+
+def _stream_schedule_error_message(e: Exception) -> str:
+    """SSE error 이벤트용 짧은 메시지 (HTTP 500 대신 클라이언트에 전달)."""
+    msg = str(e)
+    if "AI 서버가 바쁩니다" in msg:
+        return "AI 서버가 잠시 과부하 상태입니다. 잠시 후 다시 시도해 주세요."
+    if "429" in msg or "RESOURCE_EXHAUSTED" in msg:
+        if _is_daily_quota(e):
+            return "오늘의 AI 사용량이 초과됐습니다. 내일 다시 시도해 주세요."
+        return "AI 요청이 잠시 몰렸습니다. 잠시 후 다시 시도해 주세요."
+    if "Timeout" in type(e).__name__ or "timeout" in msg.lower():
+        return "일정 생성이 시간 초과로 중단되었습니다. 다시 시도하거나 검색 옵션을 끄고 시도해 보세요."
+    return (msg[:800] + "…") if len(msg) > 800 else msg
+
+
+# 긴 LLM·웹수집 구간에서 SSE 청크가 없으면 nginx 등 proxy_read_timeout(기본 60s)으로 연결이 끊길 수 있음
+_SSE_STREAM_KEEPALIVE_SEC = 15.0
+
+
+async def _sse_keepalive_while(
+    task: asyncio.Task,
+    *,
+    interval: float = _SSE_STREAM_KEEPALIVE_SEC,
+):
+    """task가 끝날 때까지 interval마다 SSE comment 줄을 낸다 (클라이언트는 무시, 프록시만 유지)."""
+    while True:
+        if task.done():
+            return
+        try:
+            await asyncio.wait_for(asyncio.shield(task), timeout=interval)
+            return
+        except asyncio.TimeoutError:
+            yield ": \n\n"
+
 
 def _existing_hash(existing_routes: list[str]) -> str:
     key = ",".join(sorted(existing_routes))
@@ -551,7 +587,18 @@ async def stream_schedule(
     )
 
     def _sse(obj: dict) -> str:
-        return f"data: {json.dumps(obj, ensure_ascii=False)}\n\n"
+        try:
+            return f"data: {json.dumps(obj, ensure_ascii=False, default=str)}\n\n"
+        except Exception as ex:
+            logger.warning("SSE JSON 직렬화 실패: %s", ex)
+            return (
+                "data: "
+                + json.dumps(
+                    {"type": "error", "message": "일정 응답을 만드는 중 직렬화 오류가 났습니다."},
+                    ensure_ascii=False,
+                )
+                + "\n\n"
+            )
 
     async def generate():
         # ── L1 캐시 히트 ────────────────────────────────────────────
@@ -562,161 +609,200 @@ async def stream_schedule(
             yield _sse({"type": "done"})
             return
 
-        # ── L2 DB 캐시 히트 ─────────────────────────────────────────
-        db_schedule = await _get_schedule_from_db(sched_key, db)
-        if db_schedule:
-            _schedule_cache[sched_key] = (db_schedule, time.time())
-            yield _sse({"type": "cached", "schedule": db_schedule, "cost_summary": None})
-            yield _sse({"type": "done"})
-            return
-
-        # ── gather_context_node 재사용: 행사·뉴스·날씨·웹서칭 병렬 수집 ─────
-        yield _sse({"type": "status", "message": "행사·날씨·최신 정보 수집 중…"})
-        ctx_state: dict = {
-            **_base_state(location, req.start_date, req.end_date),
-            "user_id": req.user_id,
-            "user_profile": user_profile,
-            "news_top10": req.news_top10 or [],
-            "route_name": req.route_name,
-            "use_search": req.use_search,
-        }
         try:
-            ctx_state = await gather_context_node(ctx_state)  # type: ignore[assignment]
-        except Exception as e:
-            yield _sse({"type": "error", "message": f"컨텍스트 수집 실패: {e}"})
-            yield _sse({"type": "done"})
-            return
+            # ── L2 DB 캐시 히트 ─────────────────────────────────────────
+            db_schedule = None
+            try:
+                db_schedule = await _get_schedule_from_db(sched_key, db)
+            except Exception as db_ex:
+                logger.warning("일정 L2(DB) 캐시 조회 실패(생성으로 진행): %s", db_ex)
+            if db_schedule:
+                _schedule_cache[sched_key] = (db_schedule, time.time())
+                yield _sse({"type": "cached", "schedule": db_schedule, "cost_summary": None})
+                yield _sse({"type": "done"})
+                return
 
-        festivals = ctx_state.get("festivals") or []
-        news_top10 = ctx_state.get("news_top10") or []
-        weather_forecast = ctx_state.get("weather_forecast")
-        raw_web_ctx = ctx_state.get("web_search_context") or ""
+            # ── gather_context_node 재사용: 행사·뉴스·날씨·웹서칭 병렬 수집 ─────
+            yield _sse({"type": "status", "message": "행사·날씨·최신 정보 수집 중…"})
+            ctx_state: dict = {
+                **_base_state(location, req.start_date, req.end_date),
+                "user_id": req.user_id,
+                "user_profile": user_profile,
+                "news_top10": req.news_top10 or [],
+                "route_name": req.route_name,
+                "use_search": req.use_search,
+            }
+            ctx_task = asyncio.create_task(gather_context_node(ctx_state))  # type: ignore[arg-type]
+            try:
+                async for _ka in _sse_keepalive_while(ctx_task):
+                    yield _ka
+                ctx_state = ctx_task.result()
+            except asyncio.CancelledError:
+                if not ctx_task.done():
+                    ctx_task.cancel()
+                raise
+            except Exception as e:
+                if not ctx_task.done():
+                    ctx_task.cancel()
+                    try:
+                        await ctx_task
+                    except asyncio.CancelledError:
+                        pass
+                yield _sse({"type": "error", "message": f"컨텍스트 수집 실패: {e}"})
+                yield _sse({"type": "done"})
+                return
 
-        # ── 날짜 목록 ────────────────────────────────────────────────
-        date_list = _build_date_list(req.start_date, req.end_date)
-        if not date_list:
-            yield _sse({"type": "error", "message": "날짜 정보가 필요합니다."})
-            yield _sse({"type": "done"})
-            return
+            festivals = ctx_state.get("festivals") or []
+            news_top10 = ctx_state.get("news_top10") or []
+            weather_forecast = ctx_state.get("weather_forecast")
+            raw_web_ctx = ctx_state.get("web_search_context") or ""
 
-        # ── LLM 프롬프트 블록 ────────────────────────────────────────
-        lang = _get_lang(user_profile)
-        lang_dir = _lang_directive(lang)
-        user_block = _build_user_profile_block(user_profile, lang)
-        news_block = build_news_block_for_prompt(news_top10, location_name, for_k_content=False, lang=lang)
-        weather_block = build_weather_block_for_prompt(weather_forecast or {}, req.start_date, req.end_date)
-        transport_block = _build_transport_block(req.transport_mode or "")
-        festival_block = _build_festival_block(festivals, lang=lang)
-        web_search_block = _format_web_search_block(raw_web_ctx, lang)
+            # ── 날짜 목록 ────────────────────────────────────────────────
+            date_list = _build_date_list(req.start_date, req.end_date)
+            if not date_list:
+                yield _sse({"type": "error", "message": "날짜 정보가 필요합니다."})
+                yield _sse({"type": "done"})
+                return
 
-        num_days = len(date_list)
-        common_kwargs = dict(
-            num_days=num_days,
-            location_name=location_name,
-            route_name=req.route_name,
-            lang=lang,
-            lang_dir=lang_dir,
-            user_block=user_block,
-            festival_block=festival_block,
-            weather_block=weather_block,
-            transport_block=transport_block,
-            news_block=news_block,
-            web_search_block=web_search_block,
-        )
+            # ── LLM 프롬프트 블록 ────────────────────────────────────────
+            lang = _get_lang(user_profile)
+            lang_dir = _lang_directive(lang)
+            user_block = _build_user_profile_block(user_profile, lang)
+            news_block = build_news_block_for_prompt(news_top10, location_name, for_k_content=False, lang=lang)
+            weather_block = build_weather_block_for_prompt(weather_forecast or {}, req.start_date, req.end_date)
+            transport_block = _build_transport_block(req.transport_mode or "")
+            festival_block = _build_festival_block(festivals, lang=lang)
+            web_search_block = _format_web_search_block(raw_web_ctx, lang)
 
-        # ── Day별 병렬 생성 → 완료된 Day 즉시 스트리밍 + 즉시 Geocoding 시작 ──
-        # Day N이 완료되는 즉시 해당 Day의 geocoding을 비동기로 시작한다.
-        # Day N+1, N+2 LLM 응답 대기 시간과 geocoding이 겹쳐(overlap)
-        # 전체 지연 시간이 max(LLM_day) + geocode_per_day 수준으로 단축된다.
-        yield _sse({"type": "status", "message": f"AI가 {num_days}일 일정 생성 중…"})
-
-        llm_futures = {
-            asyncio.ensure_future(
-                _generate_single_day(day_num=i + 1, date_str=date_str, **common_kwargs)
-            ): i + 1
-            for i, date_str in enumerate(date_list)
-        }
-
-        all_items: list[dict] = []
-        per_day_costs: list[dict] = []
-        # (순서 인덱스, geocode Future) 쌍 – 나중에 순서대로 수집
-        geocode_futures: list[tuple[int, "asyncio.Future[list[dict]]"]] = []
-        pending = set(llm_futures.keys())
-        item_offset = 0  # geocode 결과와 all_items 항목을 연결하는 오프셋
-
-        while pending:
-            done_set, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
-            for fut in done_set:
-                try:
-                    items, per_day_cost = fut.result()
-                    all_items.extend(items)
-                    per_day_costs.append(per_day_cost)
-                    yield _sse({
-                        "type": "day",
-                        "items": items,
-                        "cost": per_day_cost,
-                    })
-                    # Day LLM 완료 즉시 해당 Day의 geocoding 시작
-                    geo_fut = asyncio.ensure_future(
-                        asyncio.gather(
-                            *[_geocode_item(it, location_name) for it in items],
-                            return_exceptions=True,
-                        )
-                    )
-                    geocode_futures.append((item_offset, geo_fut))
-                    item_offset += len(items)
-                except Exception as e:
-                    logger.error("스트리밍 Day 생성 실패: %s", e)
-                    yield _sse({"type": "error", "message": str(e)})
-
-        if not all_items:
-            yield _sse({"type": "done"})
-            return
-
-        # ── 좌표 검증 결과 수집 + 경로 최적화 ───────────────────────
-        # 이미 대부분의 geocoding이 백그라운드에서 완료됐을 가능성이 높음
-        yield _sse({"type": "status", "message": "좌표 검증 중…"})
-        geocoded = list(all_items)  # 원본 복사 (실패 시 fallback)
-        try:
-            for offset, geo_fut in geocode_futures:
-                results = await geo_fut
-                for i, res in enumerate(results):
-                    if isinstance(res, dict):
-                        geocoded[offset + i] = res
-                    # 예외이면 원본 유지 (이미 복사됨)
-        except Exception as e:
-            logger.warning("지오코딩 결과 수집 실패(스트리밍), 원본 유지: %s", e)
-
-        # 일별 Nearest-Neighbor 경로 최적화
-        days_map: dict[int, list] = {}
-        for item in geocoded:
-            days_map.setdefault(item.get("day", 1), []).append(item)
-        optimized: list[dict] = []
-        for day_num in sorted(days_map.keys()):
-            optimized.extend(_optimize_day_order(days_map[day_num]))
-
-        yield _sse({"type": "geocoded", "items": optimized})
-
-        # ── 비용 요약 ────────────────────────────────────────────────
-        per_day_costs.sort(key=lambda x: x.get("day", 0))
-        total_krw = sum(c.get("total_krw", 0) for c in per_day_costs)
-        cost_summary = {
-            "per_day": [{"day": c["day"], "total": c["total"]} for c in per_day_costs],
-            "trip_total": f"₩{total_krw:,}" if total_krw else "N/A",
-        }
-        yield _sse({"type": "cost_summary", "data": cost_summary})
-
-        # ── 캐시 저장 ────────────────────────────────────────────────
-        _schedule_cache[sched_key] = (optimized, time.time())
-        try:
-            await _save_schedule_to_db(
-                sched_key, location_name, req.route_name, optimized, db,
-                lang_code=lang_code, nationality=nationality,
+            num_days = len(date_list)
+            common_kwargs = dict(
+                num_days=num_days,
+                location_name=location_name,
+                route_name=req.route_name,
+                lang=lang,
+                lang_dir=lang_dir,
+                user_block=user_block,
+                festival_block=festival_block,
+                weather_block=weather_block,
+                transport_block=transport_block,
+                news_block=news_block,
+                web_search_block=web_search_block,
             )
-        except Exception as e:
-            logger.warning("스트리밍 일정 DB캐시 저장 실패(무시): %s", e)
 
-        yield _sse({"type": "done"})
+            # ── Day별 순차 생성 (비스트리밍 일정과 동일: 이전 일차 장소·키 exclude) ──
+            # 병렬 생성 시 Gemini 동시 호출로 타임아웃·부하가 겹치고 교차 일차 중복이 늘었음.
+            yield _sse({"type": "status", "message": f"AI가 {num_days}일 일정 생성 중…"})
+
+            all_items: list[dict] = []
+            per_day_costs: list[dict] = []
+            geocode_futures: list[tuple[int, "asyncio.Future[list[dict]]"]] = []
+            item_offset = 0
+            cumulative_exclude: list[str] = []
+            seen_raw_place: set[str] = set()
+            seen_venue_keys: set[str] = set()
+
+            def _append_exclude_from_day(items: list[dict]) -> None:
+                for it in items:
+                    dk = _venue_dedupe_key(it, region=location_name, lang=lang)
+                    if dk and dk not in seen_venue_keys:
+                        seen_venue_keys.add(dk)
+                        cumulative_exclude.append(dk)
+                    for fld in ("place", "place_ko"):
+                        s = (it.get(fld) or "").strip()
+                        if s and s not in seen_raw_place:
+                            seen_raw_place.add(s)
+                            cumulative_exclude.append(s)
+
+            for i, date_str in enumerate(date_list):
+                day_task = asyncio.create_task(
+                    _generate_single_day(
+                        day_num=i + 1,
+                        date_str=date_str,
+                        exclude_places=list(cumulative_exclude) if cumulative_exclude else None,
+                        **common_kwargs,
+                    )
+                )
+                try:
+                    async for _ka in _sse_keepalive_while(day_task):
+                        yield _ka
+                    items, per_day_cost = day_task.result()
+                except asyncio.CancelledError:
+                    if not day_task.done():
+                        day_task.cancel()
+                    raise
+                except Exception as e:
+                    logger.error("스트리밍 Day %d 생성 실패: %s", i + 1, e)
+                    yield _sse({"type": "error", "message": str(e)})
+                    continue
+                all_items.extend(items)
+                per_day_costs.append(per_day_cost)
+                yield _sse({
+                    "type": "day",
+                    "items": items,
+                    "cost": per_day_cost,
+                })
+                geo_fut = asyncio.ensure_future(
+                    asyncio.gather(
+                        *[_geocode_item(it, location_name) for it in items],
+                        return_exceptions=True,
+                    )
+                )
+                geocode_futures.append((item_offset, geo_fut))
+                item_offset += len(items)
+                _append_exclude_from_day(items)
+
+            if not all_items:
+                yield _sse({"type": "done"})
+                return
+
+            # ── 좌표 검증 결과 수집 + 경로 최적화 ───────────────────────
+            yield _sse({"type": "status", "message": "좌표 검증 중…"})
+            geocoded = list(all_items)
+            try:
+                for offset, geo_fut in geocode_futures:
+                    results = await geo_fut
+                    for j, res in enumerate(results):
+                        if isinstance(res, dict):
+                            geocoded[offset + j] = res
+            except Exception as e:
+                logger.warning("지오코딩 결과 수집 실패(스트리밍), 원본 유지: %s", e)
+
+            days_map: dict[int, list] = {}
+            for item in geocoded:
+                days_map.setdefault(item.get("day", 1), []).append(item)
+            optimized: list[dict] = []
+            for day_num in sorted(days_map.keys()):
+                optimized.extend(_optimize_day_order(days_map[day_num]))
+
+            yield _sse({"type": "geocoded", "items": optimized})
+
+            per_day_costs.sort(key=lambda x: x.get("day", 0))
+            total_krw = sum(int(c.get("total_krw") or 0) for c in per_day_costs)
+            cost_summary = {
+                "per_day": [
+                    {"day": c.get("day", 0), "total": c.get("total", "N/A")}
+                    for c in per_day_costs
+                ],
+                "trip_total": f"₩{total_krw:,}" if total_krw else "N/A",
+            }
+            yield _sse({"type": "cost_summary", "data": cost_summary})
+
+            _schedule_cache[sched_key] = (optimized, time.time())
+            try:
+                await _save_schedule_to_db(
+                    sched_key, location_name, req.route_name, optimized, db,
+                    lang_code=lang_code, nationality=nationality,
+                )
+            except Exception as e:
+                logger.warning("스트리밍 일정 DB캐시 저장 실패(무시): %s", e)
+
+            yield _sse({"type": "done"})
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            logger.exception("스트리밍 일정 처리 중 예외")
+            yield _sse({"type": "error", "message": _stream_schedule_error_message(e)})
+            yield _sse({"type": "done"})
 
     return StreamingResponse(
         generate(),
