@@ -1,10 +1,14 @@
+import logging
 from typing import AsyncGenerator
 
 from sqlalchemy import create_engine, text
+from sqlalchemy.exc import PendingRollbackError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 # ── 지연 초기화 (DATABASE_URL이 비어있어도 import 시점에 터지지 않음) ──
 
@@ -73,6 +77,13 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         try:
             yield session
             await session.commit()
+        except PendingRollbackError:
+            # 라우트에서 DB 오류를 삼킨 뒤 rollback 없이 이어진 경우 등
+            try:
+                await session.rollback()
+            except Exception:
+                pass
+            logger.warning("get_db: PendingRollbackError — 세션 rollback 후 종료")
         except Exception:
             await session.rollback()
             raise

@@ -112,7 +112,7 @@ async def kakao_keyword_search_many(
 ) -> list[dict]:
     """카카오 키워드 검색 → 상위 N건까지 동일 스키마 dict 리스트.
 
-    일정 gather 단계에서 지역×축(명소·맛집·카페 등)별 POI 풀을 한 번에 가져올 때 사용.
+    일정 gather 단계에서 ``{앵커} 관광지`` 등 **전체 query 문자열**을 넘겨 POI 풀을 가져올 때 사용.
     Kakao `size` 상한 15.
     """
     if not settings.kakao_rest_api_key:
