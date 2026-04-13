@@ -75,6 +75,8 @@ class Settings(BaseSettings):
     # 네이버 Search API – 지역 검색 (developers.naver.com)
     naver_search_client_id: str = ""
     naver_search_client_secret: str = ""
+    # use_search=False일 때 블로그 검색으로 꿀팁 블록 수집 (Google Search 대체)
+    naver_tips_context_enabled: bool = True
 
     # 네이버 플레이스 영업시간 (Playwright + pcmap.place.naver.com, Chromium 필요)
     naver_place_hours_enabled: bool = False

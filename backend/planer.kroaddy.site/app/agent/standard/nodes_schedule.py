@@ -30,6 +30,7 @@ from app.core.database.session import _get_async_session_factory
 from app.services.festival_client import fetch_festivals_for_period_with_db_cache
 from app.services.kakao_map_client import kakao_keyword_search_many, kakao_keyword_search_with_fallback
 from app.services.naver_map_client import geocode
+from app.services.naver_search_client import build_naver_tips_raw_text, naver_search_configured
 from app.services.naver_place_hours import enrich_schedule_items_with_hours
 from app.services.news_client import build_news_block_for_prompt, fetch_news_top10
 from app.services.user_info_client import fetch_user_profile
@@ -61,6 +62,9 @@ _WEB_CONTEXT_MAX_CHARS = 4000
 _WEB_GATHER_TIMEOUT_SEC = 90.0
 # 카카오 POI 풀(명소·맛집·카페) 프롬프트 상한 — 웹 맥락과 합쳐도 토큰 폭주 방지
 _KAKAO_POI_CONTEXT_MAX_CHARS = 2800
+# 네이버 블로그 스니펫 상한 – POI·웹과 합쳐도 토큰 과다 방지
+_NAVER_TIPS_MAX_CHARS = 2200
+_NAVER_TIPS_GATHER_TIMEOUT_SEC = 45.0
 
 
 async def _noop_str() -> str:
@@ -229,10 +233,11 @@ async def _gather_kakao_poi_pool_block(
 
 
 async def gather_context_node(state: PlannerState) -> PlannerState:
-    """프로필·행사·뉴스·날씨를 1차 병렬 수집한 뒤, **웹 검색과 카카오 POI 풀을 2차 병렬**로 채운다.
+    """프로필·행사·뉴스·날씨를 1차 병렬 수집한 뒤, **웹·카카오 POI·(옵션)네이버 팁을 2차 병렬**로 채운다.
 
     1차 `asyncio.gather`로 I/O 4종을 동시에 돌리고, 언어 확정 후
-    웹(Gemini+검색)과 카카오(`{앵커} 관광지`·맛집·카페)를 동시에 돌려 **벽시계 대기**를 줄인다.
+    `use_search`이면 Gemini 웹 검색, 아니면 네이버 블로그 규칙 검색(키 있을 때)과
+    카카오(`{앵커} 관광지`·맛집·카페)를 동시에 돌려 **벽시계 대기**를 줄인다.
     L1 메모리·L2 Neon 일정 캐시 정책은 변경하지 않는다.
 
     수집 결과는 PlannerState에 저장되어 generate_schedule으로 전달된다.
@@ -309,6 +314,9 @@ async def gather_context_node(state: PlannerState) -> PlannerState:
     lang = _get_lang(profile)
     route_name = state.get("route_name") or ""
     web_search_gather_attempted = bool(use_search)
+    naver_tips_gather_attempted = bool(
+        (not use_search) and settings.naver_tips_context_enabled and naver_search_configured()
+    )
 
     web_coro = (
         _gather_web_search_context(
@@ -327,10 +335,20 @@ async def gather_context_node(state: PlannerState) -> PlannerState:
         route_name=route_name,
         lang=lang,
     )
+    naver_coro = (
+        _gather_naver_tips_context(
+            location_name=location_name,
+            route_name=route_name,
+            lang=lang,
+        )
+        if naver_tips_gather_attempted
+        else _noop_str()
+    )
 
     web_ctx = ""
     poi_block = ""
-    wr, pr = await asyncio.gather(web_coro, poi_coro, return_exceptions=True)
+    naver_ctx = ""
+    wr, pr, nr = await asyncio.gather(web_coro, poi_coro, naver_coro, return_exceptions=True)
     if isinstance(wr, Exception):
         logger.warning("웹 검색 수집 실패: %s", wr)
     elif use_search:
@@ -339,11 +357,15 @@ async def gather_context_node(state: PlannerState) -> PlannerState:
         logger.warning("카카오 POI 풀 수집 실패: %s", pr)
     else:
         poi_block = pr or ""
+    if isinstance(nr, Exception):
+        logger.warning("네이버 팁 수집 실패: %s", nr)
+    elif naver_tips_gather_attempted:
+        naver_ctx = nr or ""
 
     logger.info(
-        "컨텍스트 수집 완료: 행사=%d, 뉴스=%d, 날씨=%s, 웹검색=%d자, 카카오POI=%d자 (%.2fs)",
+        "컨텍스트 수집 완료: 행사=%d, 뉴스=%d, 날씨=%s, 웹검색=%d자, 카카오POI=%d자, 네이버팁=%d자 (%.2fs)",
         len(festivals), len(news), "O" if weather else "X", len(web_ctx or ""),
-        len(poi_block or ""), perf_counter() - t0,
+        len(poi_block or ""), len(naver_ctx or ""), perf_counter() - t0,
     )
     _pb = poi_block or ""
     logger.debug(
@@ -360,6 +382,8 @@ async def gather_context_node(state: PlannerState) -> PlannerState:
         "weather_forecast": weather,
         "web_search_context": web_ctx or None,
         "web_search_gather_attempted": web_search_gather_attempted,
+        "naver_tips_context": naver_ctx or None,
+        "naver_tips_gather_attempted": naver_tips_gather_attempted,
         "kakao_poi_context_block": poi_block or None,
     }
 
@@ -441,6 +465,75 @@ async def _gather_web_search_context(
         return ""
     if len(text) > _WEB_CONTEXT_MAX_CHARS:
         text = text[:_WEB_CONTEXT_MAX_CHARS] + "\n…(생략)"
+    return text
+
+
+def _format_naver_tips_block(raw: str, lang: str) -> str:
+    """네이버 블로그 스니펫을 Day 생성 프롬프트 블록으로 감싼다."""
+    t = (raw or "").strip()
+    if not t:
+        return ""
+    if lang == "Korean":
+        return (
+            "【네이버 블로그 기반 방문 팁·후기 요약 (참고용, 상호는 카카오 POI 목록 우선)】\n"
+            + t
+            + "\n\n"
+        )
+    return (
+        "【Naver blog snippets – tips & reviews (reference; prefer Kakao POI names for places)】\n"
+        + t
+        + "\n\n"
+    )
+
+
+async def _gather_naver_tips_context(
+    *,
+    location_name: str,
+    route_name: str,
+    lang: str,
+) -> str:
+    """규칙 기반 블로그 검색으로 꿀팁 텍스트를 한 번에 수집한다 (Google Search 미사용 경로)."""
+    if not settings.naver_tips_context_enabled or not naver_search_configured():
+        return ""
+
+    cache_key: str | None = None
+    if upstash_cache_configured():
+        rn = (route_name or "").strip()
+        h = hashlib.sha256(f"{location_name}|{rn}|{lang}|ntv1".encode("utf-8")).hexdigest()
+        cache_key = f"planer:std:naver_tips:{h}"
+        cached = await upstash_get_str(cache_key)
+        if cached:
+            return cached
+
+    t0 = perf_counter()
+    try:
+        text = await asyncio.wait_for(
+            build_naver_tips_raw_text(
+                location_name=location_name,
+                route_name=route_name,
+                lang=lang,
+                max_chars=_NAVER_TIPS_MAX_CHARS,
+            ),
+            timeout=_NAVER_TIPS_GATHER_TIMEOUT_SEC,
+        )
+    except asyncio.TimeoutError:
+        logger.warning(
+            "네이버 팁 수집 타임아웃(%.0fs) – 맥락 없이 진행",
+            _NAVER_TIPS_GATHER_TIMEOUT_SEC,
+        )
+        return ""
+    except Exception as e:
+        logger.warning("네이버 팁 수집 실패: %s", e)
+        return ""
+
+    text = (text or "").strip()
+    logger.info("네이버 팁 수집 완료: %d자 (%.2fs)", len(text), perf_counter() - t0)
+    if len(text) < 80:
+        if text:
+            logger.info("네이버 팁 너무 짧아 제외: %d자", len(text))
+        return ""
+    if cache_key:
+        await upstash_setex_str(cache_key, settings.redis_cache_ttl_poi_sec, text)
     return text
 
 
@@ -612,6 +705,8 @@ class _SingleDayCommonKwargs(TypedDict):
     web_search_block: str
     # gather_context_node에서 카카오 병렬 수집 (없으면 "")
     poi_context_block: str
+    # use_search=False·네이버 키 있을 때 블로그 스니펫 (없으면 "")
+    naver_tips_block: str
 
 
 async def _generate_single_day(
@@ -630,6 +725,7 @@ async def _generate_single_day(
     news_block: str,
     web_search_block: str = "",
     poi_context_block: str = "",
+    naver_tips_block: str = "",
     exclude_places: list[str] | None = None,
     experience_ban_prompt: str = "",
     retry_hint: str = "",
@@ -751,6 +847,7 @@ async def _generate_single_day(
         f"{retry_hint}"
         f"{web_search_block}"
         f"{poi_context_block}"
+        f"{naver_tips_block}"
         f"{user_block}{festival_block}{weather_block}{transport_block}{news_block}"
         f"Create 4 schedule items. time∈[{time_labels}]. "
         f"CLUSTER in same district. Order: {flow_hint}. "
@@ -936,6 +1033,22 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         )
     web_search_block = _format_web_search_block(raw_ctx, lang) if raw_ctx else ""
     poi_context_block = state.get("kakao_poi_context_block") or ""
+
+    raw_naver = state.get("naver_tips_context") or ""
+    if (
+        not raw_naver
+        and not bool(state.get("use_search"))
+        and settings.naver_tips_context_enabled
+        and naver_search_configured()
+        and not state.get("naver_tips_gather_attempted")
+    ):
+        raw_naver = await _gather_naver_tips_context(
+            location_name=location_name,
+            route_name=route_name,
+            lang=lang,
+        )
+    naver_tips_block = _format_naver_tips_block(raw_naver, lang) if raw_naver else ""
+
     logger.debug(
         "[kakao_poi_ctx] generate_schedule←state chars=%d empty=%s head=%r",
         len(poi_context_block),
@@ -951,6 +1064,7 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
             "weather_block": weather_block, "transport_block": transport_block, "news_block": news_block,
             "web_search_block": web_search_block,
             "poi_context_block": poi_context_block,
+            "naver_tips_block": naver_tips_block,
         }
 
         # 다일차: **순차** 생성 + 이전 일차 장소를 exclude_places로 넘겨 동일 시설(케이블카 등) 반복을 구조적으로 막는다.
@@ -1055,6 +1169,7 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         "Never use places from other cities or regions, even if names are similar.\n\n"
         f"{web_search_block}"
         f"{poi_context_block}"
+        f"{naver_tips_block}"
         f"{user_block}{festival_block}{weather_block}{transport_block}{news_block}"
         f"Create a detailed travel itinerary ({num_days} days, 4 items per day).\n\n"
         "Rules:\n"

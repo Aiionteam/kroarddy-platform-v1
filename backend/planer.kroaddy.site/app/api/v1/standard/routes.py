@@ -30,6 +30,7 @@ from app.agent.standard.nodes_common import (
 from app.agent.standard.nodes_schedule import (
     _build_date_list,
     _build_festival_block,
+    _format_naver_tips_block,
     _format_web_search_block,
     _gather_web_search_context,
     _generate_single_day,
@@ -58,13 +59,15 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/planner", tags=["standard"])
 
 # ── 일정 스트림 gather 맥락(Upstash REST) ───────────────────────────────────
-_STREAM_CTX_VER = 1
+_STREAM_CTX_VER = 2
 _STREAM_GATHER_KEYS = (
     "festivals",
     "news_top10",
     "weather_forecast",
     "web_search_context",
     "web_search_gather_attempted",
+    "naver_tips_context",
+    "naver_tips_gather_attempted",
     "kakao_poi_context_block",
 )
 
@@ -460,6 +463,8 @@ def _base_state(location: str, start_date: Optional[str], end_date: Optional[str
         "weather_forecast": None,
         "web_search_context": None,
         "web_search_gather_attempted": False,
+        "naver_tips_context": None,
+        "naver_tips_gather_attempted": False,
         "routes": [],
         "schedule": [],
         "cost_summary": None,
@@ -789,6 +794,7 @@ async def stream_schedule(
             weather_forecast = ctx_state.get("weather_forecast")
             raw_web_ctx = ctx_state.get("web_search_context") or ""
             poi_context_block = ctx_state.get("kakao_poi_context_block") or ""
+            raw_naver_ctx = ctx_state.get("naver_tips_context") or ""
 
             # ── 날짜 목록 ────────────────────────────────────────────────
             date_list = _build_date_list(req.start_date, req.end_date)
@@ -806,6 +812,7 @@ async def stream_schedule(
             transport_block = _build_transport_block(req.transport_mode or "")
             festival_block = _build_festival_block(festivals, lang=lang)
             web_search_block = _format_web_search_block(raw_web_ctx, lang)
+            naver_tips_block = _format_naver_tips_block(raw_naver_ctx, lang)
 
             num_days = len(date_list)
             common_kwargs = dict(
@@ -821,6 +828,7 @@ async def stream_schedule(
                 news_block=news_block,
                 web_search_block=web_search_block,
                 poi_context_block=poi_context_block,
+                naver_tips_block=naver_tips_block,
             )
 
             # ── Day별 순차 생성 (비스트리밍 일정과 동일: 이전 일차 장소·키 exclude) ──

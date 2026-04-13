@@ -38,7 +38,7 @@ class PlannerState {
       schedule: <ScheduleItem>[],
       costSummary: null,
       savedPlanId: null,
-      useSearch: true,
+      useSearch: false,
       transportMode: "car",
     );
   }
