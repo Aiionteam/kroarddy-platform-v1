@@ -60,37 +60,50 @@ def _ko_desc(main: str, description: str) -> str:
     return _WEATHER_DESC_KO.get(main, description)
 
 
-async def fetch_coords_for_location(location_name: str) -> tuple[float, float] | None:
-    """지역명 → (lat, lon). Geocoding API 활용.
+def _owm_geocode_query_variants(place: str) -> list[str]:
+    """OWM Geocoding용 q 후보. 한국은 `이름,KR` 우선."""
+    place = (place or "").strip()
+    if not place:
+        return []
+    if "," in place:
+        return [place]
+    return [f"{place},KR", place]
 
-    OWM Geocoding은 q=<name>,<country_code> 형식에서 정확도가 높아짐.
-    한국 지명이면 KR 코드를 붙여 먼저 시도하고, 실패 시 코드 없이 재시도.
+
+async def fetch_coords_for_location(*place_names: str) -> tuple[float, float] | None:
+    """지역명(여러 후보 가능) → (lat, lon). Geocoding API.
+
+    ``place_names``는 앞에서부터 순서대로 시도한다(예: 한글 표기 → URL 슬러그).
+    OWM은 한글 `지명,KR`에서 성공률이 높다.
     """
     key = settings.openweather_api_key
     if not key:
         return None
 
-    # 국가 코드가 없을 때만 KR 붙여 시도 (이미 콤마 포함이면 그대로)
-    queries = (
-        [location_name]
-        if "," in location_name
-        else [f"{location_name},KR", location_name]
-    )
-
-    try:
-        for q in queries:
-            r = await _weather_client.get(
-                _OWM_GEO_URL,
-                params={"q": q, "limit": 1, "appid": key},
-            )
-            r.raise_for_status()
-            data = r.json()
-            if data:
-                logger.debug("OWM Geocoding 성공: %s → (%.4f, %.4f)", q, data[0]["lat"], data[0]["lon"])
-                return float(data[0]["lat"]), float(data[0]["lon"])
-        logger.info("OWM Geocoding: 모든 쿼리에서 결과 없음 (%s)", queries)
-    except Exception as e:
-        logger.warning("OWM Geocoding 실패 (%s): %s", location_name, e)
+    seen_place: set[str] = set()
+    for raw in place_names:
+        name = (raw or "").strip()
+        if not name or name in seen_place:
+            continue
+        seen_place.add(name)
+        queries = _owm_geocode_query_variants(name)
+        try:
+            for q in queries:
+                r = await _weather_client.get(
+                    _OWM_GEO_URL,
+                    params={"q": q, "limit": 1, "appid": key},
+                )
+                r.raise_for_status()
+                data = r.json()
+                if data:
+                    logger.debug(
+                        "OWM Geocoding 성공: %s → (%.4f, %.4f)", q, data[0]["lat"], data[0]["lon"]
+                    )
+                    return float(data[0]["lat"]), float(data[0]["lon"])
+            logger.debug("OWM Geocoding: 후보 '%s'에서 결과 없음 %s", name, queries)
+        except Exception as e:
+            logger.warning("OWM Geocoding 실패 (후보 %s): %s", name, e)
+    logger.info("OWM Geocoding: 모든 후보·쿼리에서 결과 없음 (%s)", list(seen_place))
     return None
 
 
@@ -291,14 +304,24 @@ async def fetch_weather_for_planner(
     location_coords: tuple[float, float] | None,
     start_date: str | None,
     end_date: str | None,
+    *,
+    extra_geocode_names: tuple[str, ...] = (),
 ) -> dict[str, Any]:
-    """플래너 파이프라인용 편의 함수. 좌표 없으면 지역명으로 Geocoding 후 예보 조회."""
+    """플래너 파이프라인용 편의 함수. 좌표 없으면 지역명으로 Geocoding 후 예보 조회.
+
+    ``extra_geocode_names``: 한글 표기와 다른 슬러그 등 추가 후보(앞선 ``location_name``이 실패할 때).
+    """
     if not settings.openweather_api_key:
         return {"available": False, "reason": "OPENWEATHER_API_KEY 미설정", "dates": {}}
 
     coords = location_coords
     if coords is None:
-        coords = await fetch_coords_for_location(location_name)
+        geo_order: list[str] = []
+        for n in (location_name, *extra_geocode_names):
+            s = (n or "").strip()
+            if s and s not in geo_order:
+                geo_order.append(s)
+        coords = await fetch_coords_for_location(*geo_order) if geo_order else None
 
     if coords is None:
         logger.warning("OWM: %s 좌표 조회 실패 – 날씨 생략", location_name)

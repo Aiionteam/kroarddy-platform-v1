@@ -82,6 +82,21 @@ class Settings(BaseSettings):
 
     # 카카오 REST API 키 – 장소 키워드 검색 (POI → 좌표), developers.kakao.com
     kakao_rest_api_key: str = ""
+    # POI 풀 검색 앵커(한라산·수성못 등)를 LLM으로 좁힘. False면 표기 지명(location_name)만 사용.
+    kakao_poi_anchor_use_llm: bool = True
+
+    # Upstash Redis REST — L0 보조 캐시(카카오 POI 풀 등). 비어 있으면 캐시 미사용.
+    # 콘솔의 HTTPS 엔드포인트 + Token. LangGraph 체크포인터와는 별도.
+    upstash_redis_rest_url: str = ""
+    upstash_redis_rest_token: str = ""
+    # 카카오 POI 컨텍스트 블록 캐시 TTL(초). 30~604800 범위로 클램프됨.
+    redis_cache_ttl_poi_sec: int = 3600
+    # SSE 스트림에서 gather 완료 맥락(Upstash REST) 보존 TTL(초)
+    redis_stream_gather_ttl_sec: int = 7200
+
+    # LangGraph 일정 그래프 체크포인트 — Redis TCP URL (예: rediss://default:PW@host:6379)
+    # langgraph-checkpoint-redis 사용. REST(Upstash HTTPS)와는 별도.
+    langgraph_redis_url: str = ""
 
     # OpenWeatherMap (5-day forecast) – https://openweathermap.org/api
     openweather_api_key: str = ""

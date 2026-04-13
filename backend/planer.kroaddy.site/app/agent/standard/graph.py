@@ -24,13 +24,16 @@ def _build_routes_graph():
     return g.compile()
 
 
-def _build_schedule_graph():
+def build_schedule_graph(*, checkpointer=None):
     """일정 생성 그래프 (LangGraph 멀티 노드).
 
-    gather_context  : 프로필·행사·뉴스·날씨·웹서칭을 병렬 수집 (5개 에이전트)
+    gather_context  : 프로필·행사·뉴스·날씨 1차 병렬 → 웹검색+카카오 POI 2차 병렬 (L1/L2 Neon 캐시 정책 유지)
     generate_schedule: 수집된 컨텍스트 기반 Day별 순차 LLM 일정 생성(교차 일차 exclude)
     geocode_schedule : 네이버 API로 장소 좌표 검증·보강 (병렬)
     enrich_business_hours: (옵션) 네이버 플레이스 영업시간 크롤
+
+    ``checkpointer``가 있으면 ``thread_id``(invoke config)별로 노드 단위 상태가 Redis에 저장되어
+    동일 ``thread_id``로 재호출 시 마지막 체크포인트부터 이어갈 수 있다.
     """
     g = StateGraph(PlannerState)
     g.add_node("gather_context", gather_context_node)
@@ -43,8 +46,9 @@ def _build_schedule_graph():
     g.add_edge("generate_schedule", "geocode_schedule")
     g.add_edge("geocode_schedule", "enrich_business_hours")
     g.add_edge("enrich_business_hours", END)
-    return g.compile()
+    return g.compile(checkpointer=checkpointer)
 
 
 routes_graph = _build_routes_graph()
-schedule_graph = _build_schedule_graph()
+# 기본은 무체크포인트; lifespan에서 Redis 초기화 성공 시 교체된다.
+schedule_graph = build_schedule_graph()
