@@ -86,6 +86,7 @@ flutter:
     - assets/branding/cloud_icon.png
     - assets/branding/cloud_mask.png
     - assets/branding/cloud_outline.png
+    - assets/branding/guide_place_marker.png
     - assets/branding/social/kakao.png
     - assets/branding/social/naver.png
     - assets/branding/social/google.png

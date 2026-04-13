@@ -71,7 +71,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: "/tourstar",
             builder: (context, state) {
               final postId = state.uri.queryParameters["postId"];
-              return TourstarPage(initialPostId: postId);
+              final authorIdStr = state.uri.queryParameters["authorUserId"];
+              final authorUserId = int.tryParse(authorIdStr ?? "");
+              final authorName = state.uri.queryParameters["authorName"];
+              return TourstarPage(
+                initialPostId: postId,
+                initialAuthorUserId: authorUserId,
+                initialAuthorName: authorName,
+              );
             },
             routes: [
               GoRoute(

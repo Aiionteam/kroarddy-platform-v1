@@ -1005,6 +1005,8 @@
     },
     "schedule": {
       "new_route": "+ 新路线",
+      "calendar_collapse": "收起日历",
+      "calendar_expand": "展开日历",
       "empty_no_plans": "还没有保存的行程。",
       "empty_go_planner": "在旅行规划器中创建AI路线吧。",
       "show_all": "查看全部",

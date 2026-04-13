@@ -1,5 +1,8 @@
 import "../../data/user_content_models.dart";
 
+/// 웹 `viewMode`: `all` | `mine`
+enum UserContentViewMode { all, mine }
+
 class UserContentState {
   const UserContentState({
     required this.loading,
@@ -8,12 +11,15 @@ class UserContentState {
     required this.feed,
     required this.nextOffset,
     required this.hasMoreFeed,
+    required this.viewMode,
+    required this.appliedSearchNickname,
     required this.polished,
     required this.draftTitle,
     required this.draftLocation,
     required this.draftDescription,
     required this.draftRouteItemsText,
     required this.selectedImagePath,
+    required this.validatedImage,
     required this.uploadedImageUrl,
     required this.uploadProgress,
     required this.saveSuccessCount,
@@ -23,16 +29,19 @@ class UserContentState {
     return const UserContentState(
       loading: false,
       loadingMore: false,
-      message: "유저 컨텐츠 피드를 불러올 수 있습니다.",
+      message: "",
       feed: <UserRoute>[],
       nextOffset: 0,
       hasMoreFeed: true,
+      viewMode: UserContentViewMode.all,
+      appliedSearchNickname: "",
       polished: null,
-      draftTitle: "부산 당일 감성 코스",
-      draftLocation: "부산",
-      draftDescription: "바다와 야경 중심의 가벼운 코스",
-      draftRouteItemsText: "해운대 - 오후 산책\n광안리 - 야경\n국제시장 - 먹거리",
+      draftTitle: "",
+      draftLocation: "",
+      draftDescription: "",
+      draftRouteItemsText: "",
       selectedImagePath: null,
+      validatedImage: null,
       uploadedImageUrl: null,
       uploadProgress: null,
       saveSuccessCount: 0,
@@ -45,12 +54,17 @@ class UserContentState {
   final List<UserRoute> feed;
   final int nextOffset;
   final bool hasMoreFeed;
+  final UserContentViewMode viewMode;
+  /// 서버에 전달 중인 닉네임 검색어 (전체 탭)
+  final String appliedSearchNickname;
   final PolishResponse? polished;
   final String draftTitle;
   final String draftLocation;
   final String draftDescription;
   final String draftRouteItemsText;
   final String? selectedImagePath;
+  /// NSFW 검증 완료 — 저장 직전 S3 업로드에 사용 (웹과 동일)
+  final ValidateImageResult? validatedImage;
   final String? uploadedImageUrl;
   final double? uploadProgress;
   final int saveSuccessCount;
@@ -62,16 +76,20 @@ class UserContentState {
     List<UserRoute>? feed,
     int? nextOffset,
     bool? hasMoreFeed,
+    UserContentViewMode? viewMode,
+    String? appliedSearchNickname,
     PolishResponse? polished,
     String? draftTitle,
     String? draftLocation,
     String? draftDescription,
     String? draftRouteItemsText,
     String? selectedImagePath,
+    ValidateImageResult? validatedImage,
     String? uploadedImageUrl,
     double? uploadProgress,
     int? saveSuccessCount,
     bool clearSelectedImagePath = false,
+    bool clearValidatedImage = false,
     bool clearUploadedImageUrl = false,
     bool clearUploadProgress = false,
     bool clearPolished = false,
@@ -83,6 +101,8 @@ class UserContentState {
       feed: feed ?? this.feed,
       nextOffset: nextOffset ?? this.nextOffset,
       hasMoreFeed: hasMoreFeed ?? this.hasMoreFeed,
+      viewMode: viewMode ?? this.viewMode,
+      appliedSearchNickname: appliedSearchNickname ?? this.appliedSearchNickname,
       polished: clearPolished ? null : (polished ?? this.polished),
       draftTitle: draftTitle ?? this.draftTitle,
       draftLocation: draftLocation ?? this.draftLocation,
@@ -90,6 +110,7 @@ class UserContentState {
       draftRouteItemsText: draftRouteItemsText ?? this.draftRouteItemsText,
       selectedImagePath:
           clearSelectedImagePath ? null : (selectedImagePath ?? this.selectedImagePath),
+      validatedImage: clearValidatedImage ? null : (validatedImage ?? this.validatedImage),
       uploadedImageUrl:
           clearUploadedImageUrl ? null : (uploadedImageUrl ?? this.uploadedImageUrl),
       uploadProgress: clearUploadProgress ? null : (uploadProgress ?? this.uploadProgress),

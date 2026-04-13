@@ -1005,6 +1005,8 @@
     },
     "schedule": {
       "new_route": "+ New route",
+      "calendar_collapse": "Thu gọn lịch",
+      "calendar_expand": "Mở rộng lịch",
       "empty_no_plans": "Chưa có kế hoạch đã lưu.",
       "empty_go_planner": "Hãy tạo lộ trình AI trong Trình lập kế hoạch chuyến đi.",
       "show_all": "Xem tất cả",

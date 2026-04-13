@@ -234,6 +234,8 @@
     },
     "schedule": {
       "new_route": "+ New route",
+      "calendar_collapse": "Collapse calendar",
+      "calendar_expand": "Expand calendar",
       "empty_no_plans": "No saved plans yet.",
       "empty_go_planner": "Create AI routes in Trip Planner.",
       "show_all": "Show all",

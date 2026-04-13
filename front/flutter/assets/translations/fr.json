@@ -1005,6 +1005,8 @@
     },
     "schedule": {
       "new_route": "+ New route",
+      "calendar_collapse": "Réduire le calendrier",
+      "calendar_expand": "Agrandir le calendrier",
       "empty_no_plans": "Aucun voyage enregistré pour l’instant.",
       "empty_go_planner": "Créez des itinéraires IA dans le planificateur.",
       "show_all": "Tout afficher",

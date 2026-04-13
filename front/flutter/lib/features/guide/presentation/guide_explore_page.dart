@@ -1,3 +1,5 @@
+import "dart:math" as math;
+
 import "package:easy_localization/easy_localization.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -163,10 +165,13 @@ class _GuideExplorePageState extends ConsumerState<GuideExplorePage> {
   int _lastAskAt = 0;
   int _lastSendAttemptAt = 0;
 
-  /// 웹 ChatDrawer — 기본 펼침
-  bool _chatPanelOpen = true;
+  /// 웹과 동일 — 기본은 접힌 작은 바(「채팅 열기」)
+  bool _chatPanelOpen = false;
 
   static const _kSeoul = NLatLng(37.5665, 126.9780);
+
+  static const _guideMarkerIcon =
+      NOverlayImage.fromAssetImage("assets/branding/guide_place_marker.png");
 
   @override
   void initState() {
@@ -235,13 +240,14 @@ class _GuideExplorePageState extends ConsumerState<GuideExplorePage> {
   double _mapChatReserveHeight(BuildContext context) {
     final safe = MediaQuery.paddingOf(context).bottom;
     if (!_chatPanelOpen) {
-      return 56 + safe + 10;
+      // 하단 중앙 작은 바(웹 가이드와 유사)
+      return 50 + safe + 12;
     }
     final hasBubbleArea = _messages.isNotEmpty || _guideLoading;
-    const inputBar = 62.0;
-    const verticalPad = 20.0;
+    const inputBar = 52.0;
+    const verticalPad = 14.0;
     final listBlock = hasBubbleArea ? 176.0 : 0.0;
-    return listBlock + inputBar + verticalPad + safe + 8;
+    return listBlock + inputBar + verticalPad + safe + 10;
   }
 
   Future<void> _syncMapOverlays() async {
@@ -250,13 +256,15 @@ class _GuideExplorePageState extends ConsumerState<GuideExplorePage> {
     await c.clearOverlays();
     final overlays = <NAddableOverlay>{};
     for (final m in _markers) {
+      final isSelected = _selected?.id == m.id;
       final marker = NMarker(
         id: m.id,
         position: NLatLng(m.lat, m.lng),
+        icon: _guideMarkerIcon,
+        iconTintColor: Colors.transparent,
+        anchor: const NPoint(0.26, 1.0),
+        size: Size(isSelected ? 56 : 44, isSelected ? 56 : 44),
         caption: NOverlayCaption(text: m.title),
-        iconTintColor: _selected?.id == m.id
-            ? const Color(0xFF0EA5E9)
-            : Colors.transparent,
       );
       marker.setOnTapListener((_) {
         if (!mounted) return;
@@ -706,8 +714,8 @@ class _GuideExplorePageState extends ConsumerState<GuideExplorePage> {
                     ),
                   ),
                 Positioned(
-                  left: 10,
-                  right: 10,
+                  left: 0,
+                  right: 0,
                   bottom: 8,
                   child: _ChatPanel(
                     panelOpen: _chatPanelOpen,
@@ -725,6 +733,7 @@ class _GuideExplorePageState extends ConsumerState<GuideExplorePage> {
                   Positioned(
                     left: 0,
                     right: 0,
+                    top: 0,
                     bottom: _mapChatReserveHeight(context),
                     child: _GuidePlaceSheet(
                       key: ValueKey(_selected!.id),
@@ -853,35 +862,60 @@ class _ChatPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final safe = MediaQuery.paddingOf(context).bottom;
+    final w = MediaQuery.sizeOf(context).width;
+    final barMaxW = math.min(400.0, w * 0.92);
+
+    Widget wrapBar(Widget child) {
+      return Align(
+        alignment: Alignment.bottomCenter,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: barMaxW),
+            child: child,
+          ),
+        ),
+      );
+    }
+
     if (!panelOpen) {
-      return Material(
-        elevation: 6,
-        borderRadius: BorderRadius.circular(12),
-        color: Colors.white.withValues(alpha: 0.92),
-        shadowColor: Colors.black26,
-        child: InkWell(
-          onTap: () => onPanelOpenChanged(true),
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(16, 14, 16, 14 + safe),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.forum_outlined,
-                    color: Color(0xFF0284C7), size: 22),
-                const SizedBox(width: 8),
-                Text(
-                  "screens.guide_explore.chat_expand".tr(),
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF334155),
+      return wrapBar(
+        Material(
+          elevation: 6,
+          borderRadius: BorderRadius.circular(28),
+          color: Colors.white.withValues(alpha: 0.96),
+          shadowColor: Colors.black26,
+          child: InkWell(
+            onTap: () => onPanelOpenChanged(true),
+            borderRadius: BorderRadius.circular(28),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(14, 10, 14, 10 + safe),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.keyboard_arrow_down,
+                      size: 20, color: Colors.grey.shade600),
+                  const SizedBox(width: 6),
+                  const Icon(Icons.forum_outlined,
+                      color: Color(0xFF0284C7), size: 20),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      "screens.guide_explore.chat_expand".tr(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF334155),
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 6),
-                Icon(Icons.keyboard_arrow_up,
-                    size: 20, color: Colors.grey.shade500),
-              ],
+                  const SizedBox(width: 4),
+                  Icon(Icons.keyboard_arrow_up,
+                      size: 18, color: Colors.grey.shade500),
+                ],
+              ),
             ),
           ),
         ),
@@ -892,155 +926,166 @@ class _ChatPanel extends StatelessWidget {
         ? messages
         : messages.sublist(messages.length - 6);
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (visible.isNotEmpty || assistantLoading)
-          Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            constraints: const BoxConstraints(maxHeight: 176),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.95),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x14000000),
-                  blurRadius: 12,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(11),
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                controller: scrollController,
-                itemCount: visible.length + (assistantLoading ? 1 : 0),
-                itemBuilder: (context, i) {
-                  if (assistantLoading && i == visible.length) {
-                    return Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Row(
-                        children: [
-                          const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                          const SizedBox(width: 8),
-                          Text("screens.guide_explore.replying".tr(), style: const TextStyle(fontSize: 12)),
-                        ],
-                      ),
-                    );
-                  }
-                  final m = visible[i];
-                  final isUser = m.role == "user";
-                  return Align(
-                    alignment:
-                        isUser ? Alignment.centerRight : Alignment.centerLeft,
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
-                      constraints: BoxConstraints(
-                        maxWidth: MediaQuery.sizeOf(context).width * 0.82,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isUser
-                            ? const Color(0xFF38BDF8)
-                            : const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
+    return wrapBar(
+      Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (visible.isNotEmpty || assistantLoading)
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              constraints: const BoxConstraints(maxHeight: 176),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.95),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x14000000),
+                    blurRadius: 12,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(13),
+                child: ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                  controller: scrollController,
+                  itemCount: visible.length + (assistantLoading ? 1 : 0),
+                  itemBuilder: (context, i) {
+                    if (assistantLoading && i == visible.length) {
+                      return Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Row(
+                          children: [
+                            const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            const SizedBox(width: 8),
+                            Text("screens.guide_explore.replying".tr(),
+                                style: const TextStyle(fontSize: 12)),
+                          ],
+                        ),
+                      );
+                    }
+                    final m = visible[i];
+                    final isUser = m.role == "user";
+                    return Align(
+                      alignment: isUser
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        constraints: BoxConstraints(maxWidth: barMaxW * 0.92),
+                        decoration: BoxDecoration(
                           color: isUser
                               ? const Color(0xFF38BDF8)
-                              : const Color(0xFFE2E8F0),
+                              : const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isUser
+                                ? const Color(0xFF38BDF8)
+                                : const Color(0xFFE2E8F0),
+                          ),
                         ),
-                      ),
-                      child: m.useMarkdown && !isUser
-                          ? MarkdownBody(
-                              data: m.content,
-                              shrinkWrap: true,
-                              styleSheet: MarkdownStyleSheet(
-                                p: const TextStyle(
+                        child: m.useMarkdown && !isUser
+                            ? MarkdownBody(
+                                data: m.content,
+                                shrinkWrap: true,
+                                styleSheet: MarkdownStyleSheet(
+                                  p: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF334155),
+                                    height: 1.35,
+                                  ),
+                                ),
+                              )
+                            : SelectableText(
+                                m.content,
+                                style: TextStyle(
                                   fontSize: 13,
-                                  color: Color(0xFF334155),
+                                  color: isUser
+                                      ? Colors.white
+                                      : const Color(0xFF334155),
                                   height: 1.35,
                                 ),
                               ),
-                            )
-                          : SelectableText(
-                              m.content,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: isUser
-                                    ? Colors.white
-                                    : const Color(0xFF334155),
-                                height: 1.35,
-                              ),
-                            ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          Material(
+            elevation: 8,
+            borderRadius: BorderRadius.circular(28),
+            color: Colors.white.withValues(alpha: 0.96),
+            shadowColor: Colors.black26,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(4, 4, 6, 4 + safe),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.expand_more, size: 22),
+                    tooltip: "screens.guide_explore.chat_collapse".tr(),
+                    style: IconButton.styleFrom(
+                      backgroundColor: const Color(0xFFF1F5F9),
+                      foregroundColor: const Color(0xFF475569),
+                      visualDensity: VisualDensity.compact,
                     ),
-                  );
-                },
+                    onPressed: () => onPanelOpenChanged(false),
+                  ),
+                  Expanded(
+                    child: TextField(
+                      controller: controller,
+                      minLines: 1,
+                      maxLines: 1,
+                      enabled: !disabled,
+                      textInputAction: TextInputAction.send,
+                      style: const TextStyle(fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: "screens.guide_explore.input_hint".tr(),
+                        hintStyle: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        isDense: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(22),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                      ),
+                      onSubmitted: disabled ? null : (_) => onSend(),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  FilledButton(
+                    onPressed: disabled ? null : onSend,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF0284C7),
+                      minimumSize: const Size(40, 40),
+                      maximumSize: const Size(40, 40),
+                      padding: EdgeInsets.zero,
+                      shape: const CircleBorder(),
+                    ),
+                    child: const Icon(Icons.send_rounded, size: 18),
+                  ),
+                ],
               ),
             ),
           ),
-        Material(
-          elevation: 8,
-          borderRadius: BorderRadius.circular(14),
-          color: Colors.white.withValues(alpha: 0.92),
-          shadowColor: Colors.black26,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(6, 6, 8, 6 + safe),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.expand_more, size: 26),
-                  tooltip: "screens.guide_explore.chat_collapse".tr(),
-                  style: IconButton.styleFrom(
-                    backgroundColor: const Color(0xFFF1F5F9),
-                    foregroundColor: const Color(0xFF475569),
-                  ),
-                  onPressed: () => onPanelOpenChanged(false),
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: controller,
-                    minLines: 1,
-                    maxLines: 4,
-                    enabled: !disabled,
-                    decoration: InputDecoration(
-                      hintText: "screens.guide_explore.input_hint".tr(),
-                      filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.5),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 12),
-                    ),
-                    onSubmitted: disabled ? null : (_) => onSend(),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                FilledButton(
-                  onPressed: disabled ? null : onSend,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF0284C7),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Icon(Icons.send_rounded, size: 20),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -1059,7 +1104,7 @@ class _GuidePlaceSheet extends ConsumerStatefulWidget {
   });
 
   final GuideMapMarker marker;
-  /// 채팅 패널과 연동 — `false`면 한 줄 요약만(지도·경로 확인용)
+  /// 채팅 패널 연동 — 접혀 있으면 시트 초기 높이를 낮춤(맵·경로 확인용)
   final bool detailExpanded;
   final String? guideAnswerFallback;
   final GuideDirectionsResponse? drivingRoute;
@@ -1213,107 +1258,87 @@ class _GuidePlaceSheetState extends ConsumerState<_GuidePlaceSheet> {
   Widget build(BuildContext context) {
     final m = widget.marker;
 
-    if (!widget.detailExpanded) {
-      return Material(
-        elevation: 12,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        color: Colors.white,
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(6, 2, 4, 8),
-            child: Row(
-              children: [
-                const Icon(Icons.place_outlined,
-                    color: Color(0xFF0284C7), size: 22),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    m.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
+    return DraggableScrollableSheet(
+      minChildSize: 0.13,
+      maxChildSize: 0.9,
+      initialChildSize: widget.detailExpanded ? 0.38 : 0.24,
+      snap: true,
+      snapSizes: const [0.13, 0.24, 0.28, 0.38, 0.45, 0.68, 0.88],
+      builder: (context, scrollController) {
+        return Material(
+          elevation: 12,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          color: Colors.white,
+          clipBehavior: Clip.antiAlias,
+          child: CustomScrollView(
+            controller: scrollController,
+            physics: const ClampingScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 8),
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFCBD5E1),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                if (m.kind != GuideMarkerKind.festival)
-                  IconButton(
-                    onPressed: widget.directionsLoading
-                        ? null
-                        : widget.onRequestDrivingRoute,
-                    icon: widget.directionsLoading
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.directions_car_outlined),
-                    tooltip: "screens.guide_explore.driving_route".tr(),
-                  ),
-                IconButton(
-                  onPressed: widget.onClose,
-                  icon: const Icon(Icons.close),
-                  tooltip: "screens.guide_explore.close".tr(),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Material(
-      elevation: 12,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      color: Colors.white,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.48,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    m.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 0, 4, 0),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.place_outlined,
+                              color: Color(0xFF0284C7), size: 22),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              m.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          if (m.kind != GuideMarkerKind.festival)
+                            IconButton(
+                              onPressed: widget.directionsLoading
+                                  ? null
+                                  : widget.onRequestDrivingRoute,
+                              icon: widget.directionsLoading
+                                  ? const SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.directions_car_outlined),
+                              tooltip:
+                                  "screens.guide_explore.driving_route".tr(),
+                            ),
+                          IconButton(
+                            onPressed: widget.onClose,
+                            icon: const Icon(Icons.close),
+                            tooltip: "screens.guide_explore.close".tr(),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+                    const Divider(height: 1),
+                  ],
                 ),
-                if (m.kind != GuideMarkerKind.festival)
-                  IconButton(
-                    onPressed: widget.directionsLoading
-                        ? null
-                        : widget.onRequestDrivingRoute,
-                    icon: widget.directionsLoading
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.directions_car_outlined),
-                    tooltip: "screens.guide_explore.driving_route".tr(),
-                  ),
-                IconButton(
-                  onPressed: widget.onClose,
-                  icon: const Icon(Icons.close),
-                  tooltip: "screens.guide_explore.close".tr(),
-                ),
-              ],
-            ),
-            const Divider(height: 1),
-            Flexible(
-              child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                sliver: SliverToBoxAdapter(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1409,6 +1434,7 @@ class _GuidePlaceSheetState extends ConsumerState<_GuidePlaceSheet> {
                             SizedBox(
                               height: 120,
                               child: ListView(
+                                primary: false,
                                 scrollDirection: Axis.horizontal,
                                 children: _nearby.map((it) {
                                   return Padding(
@@ -1462,8 +1488,9 @@ class _GuidePlaceSheetState extends ConsumerState<_GuidePlaceSheet> {
               ),
             ],
           ),
-        ),
-      );
+        );
+      },
+    );
   }
 
   Widget _drivingSection() {
