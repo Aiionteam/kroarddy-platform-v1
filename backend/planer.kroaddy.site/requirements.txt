@@ -6,6 +6,7 @@ python-dotenv
 pydantic-settings
 # LangGraph / Gemini / OpenAI fallback
 langgraph
+langgraph-checkpoint-redis>=0.3.0
 langchain-google-genai
 langchain-openai
 langchain-core

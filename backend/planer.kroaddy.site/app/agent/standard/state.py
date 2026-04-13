@@ -1,4 +1,4 @@
-from typing import Optional, TypedDict
+from typing import NotRequired, Optional, TypedDict
 
 
 class PlannerState(TypedDict):
@@ -22,6 +22,8 @@ class PlannerState(TypedDict):
     web_search_context: Optional[str]  # Google Search grounding으로 수집한 최신 텍스트
     # gather_context_node에서 use_search=True로 웹 검색을 이미 시도했으면 True (실패 시 재호출 방지)
     web_search_gather_attempted: Optional[bool]
+    # 카카오 키워드 검색으로 모은 실존 POI 후보 블록(프롬프트용 텍스트). L1/L2 캐시와 별개.
+    kakao_poi_context_block: NotRequired[Optional[str]]
 
     # ── 생성 결과 ────────────────────────────────────────────────────────────
     routes: list             # generate_routes 결과
