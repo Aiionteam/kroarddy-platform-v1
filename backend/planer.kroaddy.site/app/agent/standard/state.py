@@ -22,6 +22,9 @@ class PlannerState(TypedDict):
     web_search_context: Optional[str]  # Google Search grounding으로 수집한 최신 텍스트
     # gather_context_node에서 use_search=True로 웹 검색을 이미 시도했으면 True (실패 시 재호출 방지)
     web_search_gather_attempted: Optional[bool]
+    # 네이버 블로그 규칙 검색으로 모은 꿀팁 원문(use_search=False·키 설정 시)
+    naver_tips_context: NotRequired[Optional[str]]
+    naver_tips_gather_attempted: NotRequired[Optional[bool]]
     # 카카오 키워드 검색으로 모은 실존 POI 후보 블록(프롬프트용 텍스트). L1/L2 캐시와 별개.
     kakao_poi_context_block: NotRequired[Optional[str]]
 

@@ -9,7 +9,7 @@ class RoutesRequest(BaseModel):
     end_date: Optional[str] = None
     user_id: Optional[int] = None
     existing_routes: Optional[list[str]] = None
-    use_search: bool = False  # True: Google Search grounding 사용 (느리지만 정확)
+    use_search: bool = False  # False(권장): 카카오 POI + 네이버 팁. True: Google Search grounding(느림)
     news_top10: Optional[list[Any]] = None  # 프론트에서 전달한 뉴스 Top10 (없으면 직접 fetch)
     transport_mode: Optional[str] = None  # "car" | "transit" | "walk"
 
@@ -19,7 +19,7 @@ class ScheduleRequest(BaseModel):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     user_id: Optional[int] = None
-    use_search: bool = False  # True: Google Search grounding 사용
+    use_search: bool = False  # False(권장): 카카오 POI + 네이버 팁. True: Google Search grounding
     news_top10: Optional[list[Any]] = None  # 프론트에서 전달한 뉴스 Top10 (없으면 직접 fetch)
     transport_mode: Optional[str] = None  # "car" | "transit" | "walk"
     # 동일 값으로 재요청 시: LangGraph Redis 체크포인트 / SSE gather 맥락(Upstash) 재개
