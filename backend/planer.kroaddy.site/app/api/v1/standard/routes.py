@@ -201,6 +201,13 @@ _SCHEDULE_TTL = 7200
 _ROUTES_DB_TTL_DAYS = 5    # 루트: 5일 (장소/행사 변동 반영)
 _SCHEDULE_DB_TTL_DAYS = 5  # 일정: 5일 (루트와 동일 주기)
 
+# ScheduleCache / RouteCache 컬럼 길이(모델과 일치) — 초과 시 DB 오류·세션 깨짐 방지
+_DB_SCHEDULE_LOC_MAX = 100
+_DB_SCHEDULE_ROUTE_MAX = 200
+_DB_SCHEDULE_CACHE_KEY_MAX = 512
+_DB_ROUTE_LOC_MAX = 100
+_DB_ROUTE_CACHE_KEY_MAX = 255
+
 
 def _now_utc() -> datetime:
     return datetime.now(tz=timezone.utc)
@@ -228,12 +235,14 @@ async def _save_routes_to_db(
     lang_code: str | None = None,
     nationality: str | None = None,
 ) -> None:
+    ck = (cache_key or "")[:_DB_ROUTE_CACHE_KEY_MAX]
+    loc = (location or "")[:_DB_ROUTE_LOC_MAX]
     expires_at = _now_utc() + timedelta(days=_ROUTES_DB_TTL_DAYS)
     stmt = (
         pg_insert(RouteCache)
         .values(
-            cache_key=cache_key,
-            location=location,
+            cache_key=ck,
+            location=loc,
             lang_code=lang_code,
             nationality=nationality,
             routes=routes,
@@ -270,13 +279,16 @@ async def _save_schedule_to_db(
     lang_code: str | None = None,
     nationality: str | None = None,
 ) -> None:
+    ck = (cache_key or "")[:_DB_SCHEDULE_CACHE_KEY_MAX]
+    loc = (location or "")[:_DB_SCHEDULE_LOC_MAX]
+    rn = (route_name or "")[:_DB_SCHEDULE_ROUTE_MAX]
     expires_at = _now_utc() + timedelta(days=_SCHEDULE_DB_TTL_DAYS)
     stmt = (
         pg_insert(ScheduleCache)
         .values(
-            cache_key=cache_key,
-            location=location,
-            route_name=route_name,
+            cache_key=ck,
+            location=loc,
+            route_name=rn,
             lang_code=lang_code,
             nationality=nationality,
             schedule=schedule,
@@ -295,6 +307,8 @@ SLUG_TO_NAME: dict[str, str] = {
     "seoul":         "서울",
     "busan":         "부산",
     "daegu":         "대구",
+    # 대구권 랜드마크 (슬러그만 넘어오면 OWM 지오코딩이 실패하므로 한글 고정)
+    "suseongmot":    "수성못",
     "incheon":       "인천",
     "gwangju":       "광주",
     "daejeon":       "대전",
@@ -494,7 +508,12 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
             return {"location": location, "location_name": location_name, "routes": cached[0]}
 
         # DB 캐시도 lang 포함된 cache_key로 조회
-        db_routes = await _get_routes_from_db(cache_key, db)
+        try:
+            db_routes = await _get_routes_from_db(cache_key, db)
+        except Exception as db_ex:
+            logger.warning("루트 L2(DB) 캐시 조회 실패(생성으로 진행): %s", db_ex)
+            await db.rollback()
+            db_routes = None
         if db_routes:
             _routes_cache[cache_key] = (db_routes, time.time())
             logger.info("루트 L2(DB)캐시 히트: %s (%d건)", cache_key, len(db_routes))
@@ -514,6 +533,7 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
         try:
             result = await std_graph.routes_graph.ainvoke(state)
         except Exception as e:
+            await db.rollback()
             _check_quota_error(e)
             raise
         if result.get("error") and not result.get("routes"):
@@ -582,7 +602,12 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
                 "error": None,
             }
 
-        db_schedule = await _get_schedule_from_db(sched_key, db)
+        try:
+            db_schedule = await _get_schedule_from_db(sched_key, db)
+        except Exception as db_ex:
+            logger.warning("일정 L2(DB) 캐시 조회 실패(생성으로 진행): %s", db_ex)
+            await db.rollback()
+            db_schedule = None
         if db_schedule:
             _schedule_cache[sched_key] = (db_schedule, time.time())
             logger.info("일정 L2(DB)캐시 히트: %s (%d항목)", sched_key, len(db_schedule))
@@ -616,6 +641,7 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
             else:
                 result = await std_graph.schedule_graph.ainvoke(state)
         except Exception as e:
+            await db.rollback()
             _check_quota_error(e)
             raise
         schedule = result.get("schedule", [])
@@ -911,6 +937,10 @@ async def stream_schedule(
             raise
         except Exception as e:
             logger.exception("스트리밍 일정 처리 중 예외")
+            try:
+                await db.rollback()
+            except Exception:
+                pass
             yield _sse({"type": "error", "message": _stream_schedule_error_message(e)})
             yield _sse({"type": "done"})
 

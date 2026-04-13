@@ -1,6 +1,19 @@
-# Standard 플래너 아키텍처 (LangGraph)
+# Standard 플래너 아키텍처 (현행)
 
-`backend/planer.kroaddy.site/app/agent/standard/` 기준. **루트 추천**과 **일정 생성** 두 개의 컴파일된 그래프가 있으며, 상태는 공통 `PlannerState`(TypedDict)를 사용한다.
+서비스 루트: `backend/planer.kroaddy.site/`. **FastAPI**가 `app/api/v1/standard/routes.py`에서 L1/L2 캐시·스트리밍·LangGraph 호출을 조율하고, **LangGraph**는 `app/agent/standard/` 아래 두 그래프(`routes_graph`, `schedule_graph`)로 루트/일정을 생성한다. 상태 타입은 공통 `PlannerState`(TypedDict).
+
+---
+
+## 0. 진입점·생명주기
+
+| 구분 | 위치 |
+|------|------|
+| 앱 | `app/main.py` — `FastAPI(lifespan=...)` |
+| 기동 시 | `init_schedule_graph_checkpoint()` — `LANGGRAPH_REDIS_URL`이 있으면 `AsyncRedisSaver`로 `schedule_graph`를 **다시 컴파일**해 교체 |
+| 종료 시 | `close_schedule_graph_checkpoint()` — Redis 컨텍스트 종료 후 무체크포인트 그래프로 복귀 |
+| 공유 HTTP 클라이언트 | Kakao / Naver / News / Weather / user_info / **Upstash(httpx)** 등 `close_*` |
+
+라우터는 **`from app.agent.standard import graph as std_graph`** 로 모듈을 참조하므로, lifespan 이후 **`std_graph.schedule_graph`** 가 항상 최신 컴파일 인스턴스를 가리킨다.
 
 ---
 
@@ -8,13 +21,15 @@
 
 | 파일 | 역할 |
 |------|------|
-| `graph.py` | `routes_graph`, `schedule_graph` 빌드·export |
-| `state.py` | `PlannerState` — 요청 파라미터·수집 컨텍스트·생성 결과 |
-| `nodes_routes.py` | `generate_routes` — 7테마 루트 단일 노드 |
-| `nodes_schedule.py` | 컨텍스트 수집·일차 생성·지오코딩·영업시간 등 일정 파이프라인 |
-| `nodes_common.py` | Gemini 호출·언어 매핑·`modify_schedule` / `reroll_single_item` 등 공통 헬퍼 |
-
-**참고:** HTTP API의 **L1 메모리·L2 Neon DB 일정/루트 캐시**는 `app/api/v1/standard/routes.py`에 있으며, LangGraph 패키지 밖에서 그래프 전후를 감싼다.
+| `graph.py` | `build_schedule_graph(checkpointer=...)`, `routes_graph`, 기본 `schedule_graph` |
+| `graph_checkpoint.py` | Redis 체크포인터 `init` / `close`, `schedule_checkpoint_active()` |
+| `state.py` | `PlannerState` |
+| `nodes_routes.py` | `generate_routes` |
+| `nodes_schedule.py` | `gather_context_node`, `generate_schedule`, `geocode_schedule`, 영업시간 등 |
+| `nodes_common.py` | Gemini, `modify_schedule` / `reroll_single_item` 등 |
+| `app/services/upstash_redis.py` | Upstash **REST** GET/SETEX/DEL (POI L0 캐시 등) |
+| `app/api/v1/standard/routes.py` | L1/L2 캐시, SSE 스트림, `thread_id`, gather 스냅샷 |
+| `app/core/config.py` | Redis·LangGraph 관련 설정 필드 |
 
 ---
 
@@ -26,28 +41,30 @@
 - `transport_mode` (`car` | `transit` | `walk`)
 - `use_search` — True일 때 gather에서 Gemini+Google Search로 웹 맥락 수집
 
+HTTP **`ScheduleRequest`** 에는 추가로 **`thread_id`**(선택)가 있으며, 비스트리밍 일정 생성 시 LangGraph `configurable.thread_id` 및 응답 JSON에 사용된다.
+
 ### `gather_context` 이후 채워지는 필드
 
 | 필드 | 출처 |
 |------|------|
-| `user_profile` | user_info(프로필) |
+| `user_profile` | user_info |
 | `festivals` | 가이드/DB 캐시 기반 행사 |
-| `news_top10` | 뉴스 서비스 또는 요청에 실린 목록 |
-| `weather_forecast` | OpenWeatherMap 경로 |
+| `news_top10` | 뉴스 서비스 또는 요청 본문 |
+| `weather_forecast` | OpenWeatherMap |
 | `web_search_context` | `_gather_web_search_context` (선택) |
 | `web_search_gather_attempted` | 웹 수집 시도 여부 |
-| `kakao_poi_context_block` | 카카오 키워드(명소·맛집·카페) POI 풀 텍스트 |
+| `kakao_poi_context_block` | 카카오 키워드 POI 풀 텍스트 |
 
 ### 생성 결과
 
 - `routes`, `schedule`, `cost_summary`, `error`
-- `existing_routes` — 루트 그래프 전용(중복 제외)
+- `existing_routes` — 루트 그래프 전용
 
 ---
 
 ## 3. 그래프 A: 루트 (`routes_graph`)
 
-단일 LLM 노드만 사용한다. 행사/뉴스/날씨는 **호출하지 않는다** (일정 단계에서 반영).
+행사/뉴스/날씨는 호출하지 않는다.
 
 ```mermaid
 flowchart LR
@@ -55,15 +72,11 @@ flowchart LR
   GR --> END([END])
 ```
 
-| 노드 | 설명 |
-|------|------|
-| **generate_routes** | Gemini로 7개 테마별 루트 JSON (`name`, `theme`, `description`, `highlights`). `existing_routes` 있으면 프롬프트에 제외 블록 삽입. |
-
 ---
 
 ## 4. 그래프 B: 일정 (`schedule_graph`)
 
-선형 파이프라인. **일차별 LLM은 순차**이며, **지오코딩은 항목 전체 병렬**이다.
+선형 파이프라인. **일차별 LLM은 순차**, **지오코딩은 항목 단위 병렬**.
 
 ```mermaid
 flowchart TD
@@ -74,73 +87,99 @@ flowchart TD
   ENR --> END([END])
 ```
 
+### 체크포인트(선택)
+
+- `LANGGRAPH_REDIS_URL`(TCP, 예: `rediss://default:...@host:6379`)이 설정되고 `langgraph-checkpoint-redis`의 `AsyncRedisSaver.asetup()`이 성공하면, 위 그래프가 **체크포인터와 함께** 컴파일된다.
+- `POST .../schedule` 호출 시 `{"configurable": {"thread_id": "<고정 ID>"}}` 로 `ainvoke` — 동일 `thread_id`로 재호출 시 **마지막 노드 이후**부터 이어갈 수 있다.
+- 공식 Redis saver는 **RedisJSON·RediSearch**(또는 Redis 8+)를 요구한다. 인스턴스가 조건을 만족하지 않으면 로그 후 **무체크포인트 그래프**로 폴백한다.
+
 ### 4.1 `gather_context` (`gather_context_node`)
 
-1. **1차 `asyncio.gather` (4-way)**  
-   - 프로필(`user_info`)  
-   - 행사(DB 캐시 포함 `fetch_festivals_for_period_with_db_cache`)  
-   - 뉴스(`fetch_news_top10` 또는 state에 이미 있는 목록)  
-   - 날씨(`fetch_weather_for_planner`)
+1. **1차 `asyncio.gather`**: 프로필, 행사, 뉴스, 날씨  
+2. **언어 확정** — `_get_lang(profile)`  
+3. **2차 `asyncio.gather`**: 웹(`use_search`), 카카오 POI 풀 `_gather_kakao_poi_pool_block`  
+   - LLM(옵션 `kakao_poi_anchor_use_llm`)이 **앵커**를 고른 뒤 고정 3쿼리 ``{앵커} 관광지`` / ``{앵커} 맛집`` / ``{앵커} 카페``로 RAG용 블록 수집. **`UPSTASH_REDIS_REST_*`** 시 앵커·루트·언어 기준 L0 캐시(`redis_cache_ttl_poi_sec`).
 
-2. **언어 확정** — `_get_lang(profile)`
+### 4.2 ~ 4.4
 
-3. **2차 `asyncio.gather` (2-way, `return_exceptions=True`)**  
-   - **웹:** `use_search`이면 `_gather_web_search_context` (Gemini + Google Search, 타임아웃·길이 제한), 아니면 빈 문자열  
-   - **카카오 POI:** `_gather_kakao_poi_pool_block` — `명소` / `맛집` / `카페` 각 키워드로 `kakao_keyword_search_many`를 내부에서 병렬 호출 후, 중복 제거·문자 상한으로 프롬프트 블록 생성. **`UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`** 이 있으면 동일 지역·언어에 대해 **L0(Upstash REST)** 에 완성 블록을 캐시(`redis_cache_ttl_poi_sec`, 기본 3600초)해 카카오 호출을 줄인다.
-
-→ state에 `user_profile`, `festivals`, `news_top10`, `weather_forecast`, `web_search_context`, `kakao_poi_context_block` 등 반환.
-
-### 4.2 `generate_schedule`
-
-- **날짜 있음 (`_build_date_list` 비음):**  
-  - `common_kwargs`에 웹 블록 + **카카오 POI 블록** + 뉴스·날씨·행사·프로필 등을 넣고, **일차마다 `await _generate_single_day`** (순차).  
-  - 이전 일차 `place` / `place_ko` / `_venue_dedupe_key`를 `exclude_places`로 누적.  
-  - 전체 검사 후 `_fix_duplicate_days`로 중복 일차 보정 가능.
-
-- **날짜 없음:** 단일 대형 프롬프트로 N일 JSON 한 번 생성(폴백 경로).
-
-내부 헬퍼(노드는 아님): `_validate_full_trip_schedule`, `_venue_dedupe_key`, `_generate_single_day`, `_fix_duplicate_days`, `_fix_failed_places` 등.
-
-### 4.3 `geocode_schedule`
-
-1. 모든 일정 항목에 대해 **`asyncio.gather` + `_geocode_item`** (병렬)  
-   - 1순위: 카카오 키워드(`region` 힌트)  
-   - 2순위: 네이버 Geocoding(주소형 보조)
-
-2. `geocode_failed` 항목에 대해 **`_fix_failed_places`** (LLM 대체 + 재지오코딩, 제한적)
-
-3. 일차별 `_optimize_day_order`(time 슬롯 순)·`_validate_day_items` 로깅
-
-### 4.4 `enrich_business_hours`
-
-`settings.naver_place_hours_enabled`일 때만 네이버 플레이스 기반 영업시간 보강. 실패 시 state 그대로.
+`generate_schedule` → `geocode_schedule`(카카오 1순위·네이버 2순위, 실패 시 `_fix_failed_places`) → 옵션 `enrich_business_hours` — 기존과 동일.
 
 ---
 
-## 5. LLM·외부 서비스 요약
+## 5. HTTP 계층: 캐시·두 가지 일정 경로
+
+```mermaid
+flowchart TB
+  subgraph api["routes.py"]
+    L1[L1 메모리 캐시]
+    L2[L2 Neon ScheduleCache]
+    BR{캐시 히트?}
+  end
+  JSON["POST .../schedule"]
+  SSE["POST .../schedule/stream"]
+  LG["LangGraph schedule_graph"]
+  MAN["수동: gather + Day 루프 + geocode"]
+
+  JSON --> BR
+  SSE --> BR
+  BR -->|히트| OUT[즉시 반환]
+  BR -->|미스| JSON
+  BR -->|미스| SSE
+  JSON --> LG
+  SSE --> MAN
+```
+
+| 엔드포인트 | 일정 생성 방식 | 재개·맥락 |
+|------------|----------------|-----------|
+| `POST /api/v1/planner/{location}/schedule` | **`schedule_graph.ainvoke`** | Redis 체크포인트 활성 시 동일 `thread_id`로 LangGraph 재개. 응답에 `thread_id` 포함. |
+| `POST /api/v1/planner/{location}/schedule/stream` | **`gather_context_node`** + `_generate_single_day` 루프 (그래프의 `generate_schedule` 노드와는 별 루트) | 첫 이벤트 `run`에 `thread_id` 발급. gather 직후 맥락을 **Upstash REST** JSON으로 저장; 동일 `thread_id`+`sched_key`로 재요청 시 gather 생략. **Day 중간**은 현재 스냅샷 없음. |
+
+캐시 키(`sched_key`)는 위치·루트명·기간·언어·교통·검색 플래그 등으로 구성된다(`routes.py` 참고).
+
+---
+
+## 6. Redis·Upstash 이중 경로
+
+| 목적 | 프로토콜 | 환경 변수 | 구현 |
+|------|-----------|-----------|------|
+| POI 문자열 L0, SSE gather 스냅샷 | **HTTPS REST** | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | `app/services/upstash_redis.py` |
+| LangGraph 노드 체크포인트 | **Redis TCP + TLS** | `LANGGRAPH_REDIS_URL` (`rediss://...`) | `langgraph-checkpoint-redis` / `graph_checkpoint.py` |
+
+추가 설정: `REDIS_CACHE_TTL_POI_SEC`, `REDIS_STREAM_GATHER_TTL_SEC`(스트림 gather 스냅샷 TTL, 기본 7200).
+
+스트림 완료 시 gather 스냅샷 키는 DEL로 정리한다.
+
+---
+
+## 7. SSE 이벤트 요약 (`/schedule/stream`)
+
+| 타입 | 설명 |
+|------|------|
+| `run` | `thread_id`, `langgraph_checkpoint`(bool), 안내 메시지 |
+| `status` | 진행 메시지 |
+| `day` | 일차별 생성 결과 |
+| `geocoded` | 좌표 반영 후 일정 |
+| `cost_summary` | 비용 요약 |
+| `cached` / `error` / `done` | 기존과 동일 |
+
+---
+
+## 8. LLM·외부 서비스 요약
 
 | 구분 | 용도 |
 |------|------|
-| **Gemini** (`nodes_common._invoke`) | 루트 생성, 일차 JSON, 웹 맥락 수집(검색 도구), 실패 장소 대체 등 |
-| **Google Search** | `use_search` 시 웹 맥락 전용(일차 생성 루프에서는 일반 Gemini) |
-| **카카오 로컬** | POI 풀 + 지오코딩 1순위 |
-| **네이버 Maps** | 지오코딩 2순위, (옵션) 영업시간 |
-| **OpenWeatherMap** | 날씨 블록 |
+| **Gemini** | 루트·일차 JSON·웹 맥락·실패 장소 대체 등 |
+| **Google Search** | `use_search` 시 웹 맥락 |
+| **카카오 로컬** | POI 풀·지오코딩 1순위 |
+| **네이버 Maps** | 지오코딩 2순위·(옵션) 영업시간 |
+| **OpenWeatherMap** | 날씨 |
 | **user_info / guide / news** | 프로필·행사·뉴스 |
-| **Upstash Redis REST** (선택) | `app/services/upstash_redis.py` — 카카오 POI 풀 문자열 L0 캐시 등 |
+| **Upstash REST** | POI L0, 스트림 gather 스냅샷 |
+| **Redis TCP** | LangGraph 일정 체크포인트(옵션) |
 
 ---
 
-## 6. 스트리밍 API (`routes.py`)
-
-`POST .../schedule/stream`은 **동일 `gather_context_node`** 결과를 사용해 SSE로 일차별 진행을 보낸다. `common_kwargs`에 `web_search_block`과 **`poi_context_block`**을 넣어 비스트리밍 일정과 같은 프롬프트 구성을 맞춘다.
-
-- 첫 실작업 이벤트 **`run`**: `thread_id`(요청에 `ScheduleRequest.thread_id`가 없으면 서버가 임의 발급), `langgraph_checkpoint`(``LANGGRAPH_REDIS_URL`` 설정 시 true). 클라이언트는 **동일 `thread_id`**로 재연결 시 gather 단계를 생략하고 Upstash에 저장된 수집 맥락을 복원할 수 있다(``UPSTASH_REDIS_REST_*`` + `redis_stream_gather_ttl_sec`). 완료 시 gather 스냅샷은 삭제된다.
-- **`POST .../schedule`**(비스트리밍)은 `LANGGRAPH_REDIS_URL`이 유효하면 `langgraph-checkpoint-redis`의 **AsyncRedisSaver**로 컴파일된 그래프에 `thread_id`를 넘겨 노드 단위 체크포인트를 남긴다. 응답 JSON에 `thread_id`가 포함되며, **재시도 시 동일 값**을 내면 마지막 체크포인트부터 이어간다. (공식 Redis 체크포인터는 RedisJSON·RediSearch 등이 필요해 Upstash에서 `asetup()`이 실패하면 자동으로 무체크포인트 그래프로 폴백한다.)
-
----
-
-## 7. 다이어그램: 일정 데이터 흐름(요약)
+## 9. 데이터 흐름(요약 다이어그램)
 
 ```mermaid
 flowchart TB
@@ -175,4 +214,8 @@ flowchart TB
 
 ---
 
-*문서는 코드 변경에 맞춰 갱신할 것. 상세 API·캐시 키는 `md/planer-kroaddy-site.md` 및 `routes.py`를 참고.*
+## 10. 참고
+
+- API·슬러그·캐시 키 상세: `md/planer-kroaddy-site.md`(있는 경우), 코드 기준은 `routes.py`
+- 운영 이슈: `md/planer-standard-troubleshooting.md`
+- 문서는 저장소 코드 변경에 맞춰 갱신할 것
