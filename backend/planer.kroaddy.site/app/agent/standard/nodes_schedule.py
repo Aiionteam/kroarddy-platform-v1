@@ -1,5 +1,6 @@
 """Schedule-generation and post-processing nodes."""
 import asyncio
+import hashlib
 import logging
 import re
 from datetime import datetime, timedelta
@@ -27,11 +28,12 @@ from app.agent.standard.state import PlannerState
 from app.core.config import settings
 from app.core.database.session import _get_async_session_factory
 from app.services.festival_client import fetch_festivals_for_period_with_db_cache
-from app.services.kakao_map_client import kakao_keyword_search_with_fallback
+from app.services.kakao_map_client import kakao_keyword_search_many, kakao_keyword_search_with_fallback
 from app.services.naver_map_client import geocode
 from app.services.naver_place_hours import enrich_schedule_items_with_hours
 from app.services.news_client import build_news_block_for_prompt, fetch_news_top10
 from app.services.user_info_client import fetch_user_profile
+from app.services.upstash_redis import upstash_cache_configured, upstash_get_str, upstash_setex_str
 from app.services.weather_client import build_weather_block_for_prompt, fetch_weather_for_planner
 
 logger = logging.getLogger(__name__)
@@ -57,15 +59,96 @@ _TRAVEL_DAYS_DEFAULT = 2
 _WEB_CONTEXT_MAX_CHARS = 4000
 # 웹 검색은 보조 데이터 — 이 시간 내 미완료 시 빈 맥락으로 진행 (Gemini 검색·AFC 지연 대비)
 _WEB_GATHER_TIMEOUT_SEC = 90.0
+# 카카오 POI 풀(명소·맛집·카페) 프롬프트 상한 — 웹 맥락과 합쳐도 토큰 폭주 방지
+_KAKAO_POI_CONTEXT_MAX_CHARS = 2800
+
+
+async def _noop_str() -> str:
+    return ""
+
+
+async def _gather_kakao_poi_pool_block(*, location_name: str, lang: str) -> str:
+    """지역명 기준 카카오 키워드 3축(명소·맛집·카페) 병렬 조회 → LLM용 텍스트 블록.
+
+    L1/L2(Neon) 일정 캐시와 무관. gather 단계에서만 채워진다.
+    Upstash REST가 설정된 경우 동일 (지역+언어) 키로 L0 문자열 캐시를 사용한다.
+    """
+    region = (location_name or "").strip()
+    if not region:
+        return ""
+    if not settings.kakao_rest_api_key:
+        return ""
+
+    cache_key: str | None = None
+    if upstash_cache_configured():
+        h = hashlib.sha256(f"{region}|{lang}|kpv1".encode("utf-8")).hexdigest()
+        cache_key = f"planer:std:kakao_poi:{h}"
+        cached = await upstash_get_str(cache_key)
+        if cached:
+            return cached
+
+    async def _axis(q: str) -> list[dict[str, Any]]:
+        return await kakao_keyword_search_many(q, region=region, size=8)
+
+    try:
+        g1, g2, g3 = await asyncio.gather(_axis("명소"), _axis("맛집"), _axis("카페"))
+    except Exception as e:
+        logger.warning("카카오 POI 풀 수집 실패(무시): %s", e)
+        return ""
+
+    axis_labels = ("관광·명소", "식음료", "카페")
+    groups = (g1, g2, g3)
+    seen: set[str] = set()
+    lines: list[str] = []
+    for label, rows in zip(axis_labels, groups, strict=True):
+        for r in rows:
+            nm = (r.get("name") or "").strip()
+            if not nm:
+                continue
+            key = nm.casefold()
+            if key in seen:
+                continue
+            seen.add(key)
+            cat = (r.get("category") or "").strip()
+            road = (r.get("road_address") or r.get("address") or "").strip()
+            cat_part = f" ({cat})" if cat else ""
+            addr_part = f" – {road[:42]}" if road else ""
+            lines.append(f"  • [{label}]{cat_part} {nm}{addr_part}")
+
+    if not lines:
+        return ""
+
+    body = "\n".join(lines)
+    if len(body) > _KAKAO_POI_CONTEXT_MAX_CHARS:
+        body = body[:_KAKAO_POI_CONTEXT_MAX_CHARS] + "\n…(생략)"
+
+    if lang == "Korean":
+        out = (
+            "【카카오 지도 기준 실존 장소 후보 (우선 참고)】\n"
+            "아래는 해당 여행지 근처에서 키워드로 조회한 **실제 상호** 샘플입니다. "
+            "가능한 한 이 목록 또는 같은 생활권에서 검색되는 **실명 상호**만 사용하세요.\n"
+            f"{body}\n\n"
+        )
+    else:
+        out = (
+            "【Kakao Map–verified POI candidates (prefer)】\n"
+            "Real venue names from Kakao Local keyword search. Prefer these or other "
+            "verifiable names in the same area.\n"
+            f"{body}\n\n"
+        )
+    if cache_key:
+        await upstash_setex_str(cache_key, settings.redis_cache_ttl_poi_sec, out)
+    return out
 
 
 async def gather_context_node(state: PlannerState) -> PlannerState:
-    """프로필 · 행사 · 뉴스 · 날씨 · 웹 서칭을 **동시에** 수집하는 LangGraph 노드.
+    """프로필·행사·뉴스·날씨를 1차 병렬 수집한 뒤, **웹 검색과 카카오 POI 풀을 2차 병렬**로 채운다.
 
-    각 데이터 소스는 독립적으로 비동기 실행되어 전체 대기 시간은
-    가장 느린 소스 1개의 시간만큼만 걸린다.
+    1차 `asyncio.gather`로 I/O 4종을 동시에 돌리고, 언어 확정 후
+    웹(Gemini+검색)과 카카오(명소·맛집·카페)를 동시에 돌려 **벽시계 대기**를 줄인다.
+    L1 메모리·L2 Neon 일정 캐시 정책은 변경하지 않는다.
 
-    수집 결과는 PlannerState 필드에 저장되어 generate_schedule_node로 전달된다.
+    수집 결과는 PlannerState에 저장되어 generate_schedule으로 전달된다.
     """
     t0 = perf_counter()
     location = state["location"]
@@ -127,27 +210,39 @@ async def gather_context_node(state: PlannerState) -> PlannerState:
         _fetch_weather(),
     )
 
-    # 프로필 언어 확정 후 웹 검색 (언어에 맞는 쿼리를 써야 정확)
+    lang = _get_lang(profile)
+    route_name = state.get("route_name") or ""
+    web_search_gather_attempted = bool(use_search)
+
+    web_coro = (
+        _gather_web_search_context(
+            location_name=location_name,
+            route_name=route_name,
+            start_date=start_date,
+            end_date=end_date,
+            lang=lang,
+        )
+        if use_search
+        else _noop_str()
+    )
+    poi_coro = _gather_kakao_poi_pool_block(location_name=location_name, lang=lang)
+
     web_ctx = ""
-    web_search_gather_attempted = False
-    if use_search:
-        web_search_gather_attempted = True
-        lang = _get_lang(profile)
-        route_name = state.get("route_name") or ""
-        try:
-            web_ctx = await _gather_web_search_context(
-                location_name=location_name,
-                route_name=route_name,
-                start_date=start_date,
-                end_date=end_date,
-                lang=lang,
-            )
-        except Exception as e:
-            logger.warning("웹 검색 수집 실패: %s", e)
+    poi_block = ""
+    wr, pr = await asyncio.gather(web_coro, poi_coro, return_exceptions=True)
+    if isinstance(wr, Exception):
+        logger.warning("웹 검색 수집 실패: %s", wr)
+    elif use_search:
+        web_ctx = wr or ""
+    if isinstance(pr, Exception):
+        logger.warning("카카오 POI 풀 수집 실패: %s", pr)
+    else:
+        poi_block = pr or ""
 
     logger.info(
-        "컨텍스트 수집 완료: 행사=%d, 뉴스=%d, 날씨=%s, 웹검색=%d자 (%.2fs)",
-        len(festivals), len(news), "O" if weather else "X", len(web_ctx), perf_counter() - t0,
+        "컨텍스트 수집 완료: 행사=%d, 뉴스=%d, 날씨=%s, 웹검색=%d자, 카카오POI=%d자 (%.2fs)",
+        len(festivals), len(news), "O" if weather else "X", len(web_ctx or ""),
+        len(poi_block or ""), perf_counter() - t0,
     )
     return {
         **state,
@@ -157,6 +252,7 @@ async def gather_context_node(state: PlannerState) -> PlannerState:
         "weather_forecast": weather,
         "web_search_context": web_ctx or None,
         "web_search_gather_attempted": web_search_gather_attempted,
+        "kakao_poi_context_block": poi_block or None,
     }
 
 
@@ -406,6 +502,8 @@ class _SingleDayCommonKwargs(TypedDict):
     news_block: str
     # use_search=True 이면 generate_schedule에서 선행 웹검색 후 채움 (Day 호출에는 검색 LLM 미사용)
     web_search_block: str
+    # gather_context_node에서 카카오 병렬 수집 (없으면 "")
+    poi_context_block: str
 
 
 async def _generate_single_day(
@@ -423,6 +521,7 @@ async def _generate_single_day(
     transport_block: str,
     news_block: str,
     web_search_block: str = "",
+    poi_context_block: str = "",
     exclude_places: list[str] | None = None,
     experience_ban_prompt: str = "",
     retry_hint: str = "",
@@ -543,6 +642,7 @@ async def _generate_single_day(
         f"{experience_ban_prompt}"
         f"{retry_hint}"
         f"{web_search_block}"
+        f"{poi_context_block}"
         f"{user_block}{festival_block}{weather_block}{transport_block}{news_block}"
         f"Create 4 schedule items. time∈[{time_labels}]. "
         f"CLUSTER in same district. Order: {flow_hint}. "
@@ -727,6 +827,7 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
             lang=lang,
         )
     web_search_block = _format_web_search_block(raw_ctx, lang) if raw_ctx else ""
+    poi_context_block = state.get("kakao_poi_context_block") or ""
 
     if date_list:
         num_days = len(date_list)
@@ -735,6 +836,7 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
             "lang": lang, "lang_dir": lang_dir, "user_block": user_block, "festival_block": festival_block,
             "weather_block": weather_block, "transport_block": transport_block, "news_block": news_block,
             "web_search_block": web_search_block,
+            "poi_context_block": poi_context_block,
         }
 
         # 다일차: **순차** 생성 + 이전 일차 장소를 exclude_places로 넘겨 동일 시설(케이블카 등) 반복을 구조적으로 막는다.
@@ -838,6 +940,7 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
         f"⚠️ GEOGRAPHIC CONSTRAINT (CRITICAL): ALL places must be physically located within '{location_name}'. "
         "Never use places from other cities or regions, even if names are similar.\n\n"
         f"{web_search_block}"
+        f"{poi_context_block}"
         f"{user_block}{festival_block}{weather_block}{transport_block}{news_block}"
         f"Create a detailed travel itinerary ({num_days} days, 4 items per day).\n\n"
         "Rules:\n"

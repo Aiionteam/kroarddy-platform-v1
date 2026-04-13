@@ -88,6 +88,63 @@ async def kakao_keyword_search(
     }
 
 
+def _doc_to_place_dict(doc: dict, *, fallback_name: str) -> dict | None:
+    x = doc.get("x") or ""
+    y = doc.get("y") or ""
+    if not x or not y:
+        return None
+    return {
+        "x": x,
+        "y": y,
+        "name": doc.get("place_name", fallback_name),
+        "address": doc.get("address_name", ""),
+        "road_address": doc.get("road_address_name", ""),
+        "category": doc.get("category_name", ""),
+        "place_url": doc.get("place_url", ""),
+    }
+
+
+async def kakao_keyword_search_many(
+    query: str,
+    *,
+    region: str = "",
+    size: int = 8,
+) -> list[dict]:
+    """카카오 키워드 검색 → 상위 N건까지 동일 스키마 dict 리스트.
+
+    일정 gather 단계에서 지역×축(명소·맛집·카페 등)별 POI 풀을 한 번에 가져올 때 사용.
+    Kakao `size` 상한 15.
+    """
+    if not settings.kakao_rest_api_key:
+        logger.warning("KAKAO_REST_API_KEY 미설정 – 카카오 장소 검색 건너뜀")
+        return []
+
+    n = max(1, min(int(size), 15))
+    search_q = f"{region} {query}".strip() if region else query
+    params = {"query": search_q, "size": str(n)}
+    headers = {"Authorization": f"KakaoAK {settings.kakao_rest_api_key}"}
+
+    try:
+        resp = await _kakao_client.get(_KAKAO_KEYWORD_URL, params=params, headers=headers)
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception as e:
+        logger.error("카카오 키워드(복수) 검색 오류 (query=%s): %s", search_q, e)
+        return []
+
+    docs = data.get("documents") or []
+    if not docs:
+        logger.info("카카오 검색 결과 없음(복수): %s", search_q)
+        return []
+
+    out: list[dict] = []
+    for doc in docs:
+        row = _doc_to_place_dict(doc, fallback_name=query)
+        if row:
+            out.append(row)
+    return out
+
+
 # LLM이 생성한 모호한 장소명에서 핵심 키워드를 추출하는 패턴
 # 예: "행주산성 역사공원 내 식당" → "행주산성 역사공원"
 _VAGUE_SUFFIX_RE = re.compile(

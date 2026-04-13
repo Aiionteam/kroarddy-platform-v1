@@ -3,6 +3,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import secrets
 import time
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -14,7 +15,8 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
-from app.agent.standard.graph import routes_graph, schedule_graph
+from app.agent.standard import graph as std_graph
+from app.agent.standard.graph_checkpoint import schedule_checkpoint_active
 from app.agent.standard.nodes_common import (
     _build_transport_block,
     _build_user_profile_block,
@@ -43,11 +45,87 @@ from app.models.travel_plan import TravelPlan
 from app.models.plan_cache import RouteCache, ScheduleCache
 from app.services.naver_place_hours import enrich_schedule_items_with_hours
 from app.services.user_info_client import fetch_user_profile
+from app.services.upstash_redis import (
+    upstash_cache_configured,
+    upstash_delete,
+    upstash_get_str,
+    upstash_setex_str,
+)
 from .schemas import ModifyRequest, RerollItemRequest, RoutesRequest, SavePlanRequest, ScheduleRequest
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/planner", tags=["standard"])
+
+# ── 일정 스트림 gather 맥락(Upstash REST) ───────────────────────────────────
+_STREAM_CTX_VER = 1
+_STREAM_GATHER_KEYS = (
+    "festivals",
+    "news_top10",
+    "weather_forecast",
+    "web_search_context",
+    "web_search_gather_attempted",
+    "kakao_poi_context_block",
+)
+
+
+def _schedule_thread_id(req: ScheduleRequest) -> str:
+    t = (req.thread_id or "").strip()
+    if t:
+        return t[:220]
+    return secrets.token_urlsafe(20)
+
+
+def _stream_gather_ctx_cache_key(thread_id: str) -> str:
+    h = hashlib.sha256(thread_id.encode("utf-8")).hexdigest()[:48]
+    return f"planer:std:stream:gctx:{h}"
+
+
+def _pack_stream_gather_fields(ctx_state: dict) -> dict:
+    return {k: ctx_state.get(k) for k in _STREAM_GATHER_KEYS}
+
+
+def _apply_stream_gather_fields(target: dict, saved: dict) -> None:
+    for k in _STREAM_GATHER_KEYS:
+        if k in saved:
+            target[k] = saved[k]
+
+
+async def _try_load_stream_gather_snapshot(thread_id: str, sched_key: str) -> dict | None:
+    if not upstash_cache_configured():
+        return None
+    raw = await upstash_get_str(_stream_gather_ctx_cache_key(thread_id))
+    if not raw:
+        return None
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+    if data.get("v") != _STREAM_CTX_VER or data.get("sched_key") != sched_key:
+        return None
+    ctx = data.get("ctx")
+    return ctx if isinstance(ctx, dict) else None
+
+
+async def _save_stream_gather_snapshot(thread_id: str, sched_key: str, ctx_state: dict) -> None:
+    if not upstash_cache_configured():
+        return
+    payload = {
+        "v": _STREAM_CTX_VER,
+        "sched_key": sched_key,
+        "ctx": _pack_stream_gather_fields(ctx_state),
+    }
+    ttl = max(120, min(int(settings.redis_stream_gather_ttl_sec), 86400 * 2))
+    try:
+        body = json.dumps(payload, ensure_ascii=False, default=str)
+    except TypeError as e:
+        logger.warning("스트림 gather 스냅샷 직렬화 실패: %s", e)
+        return
+    await upstash_setex_str(_stream_gather_ctx_cache_key(thread_id), ttl, body)
+
+
+async def _clear_stream_gather_snapshot(thread_id: str) -> None:
+    await upstash_delete(_stream_gather_ctx_cache_key(thread_id))
 
 
 def _check_quota_error(e: Exception) -> None:
@@ -434,7 +512,7 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
             "transport_mode": req.transport_mode,
         }
         try:
-            result = await routes_graph.ainvoke(state)
+            result = await std_graph.routes_graph.ainvoke(state)
         except Exception as e:
             _check_quota_error(e)
             raise
@@ -456,6 +534,7 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
             )
         except Exception as e:
             logger.warning("루트 DB캐시 저장 실패 (무시): %s", e)
+            await db.rollback()
         logger.info("루트 캐시 저장(L1+L2): %s (%d건, lang=%s)", cache_key, len(routes), lang_code)
         return {"location": location, "location_name": location_name, "routes": routes}
 
@@ -518,6 +597,7 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
         # 행사·뉴스·날씨·웹검색은 gather_context_node에서 병렬 수집
         # 프론트에서 넘어온 뉴스가 있으면 state에 담아 gather_context_node가 재사용
         logger.info("일정 생성 시작: %s/%s (lang=%s, search=%s)", location, req.route_name, lang_code, search_tag)
+        run_thread_id = _schedule_thread_id(req)
         state = {
             **_base_state(location, req.start_date, req.end_date),
             "user_id": req.user_id,
@@ -528,7 +608,13 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
             "use_search": req.use_search,
         }
         try:
-            result = await schedule_graph.ainvoke(state)
+            if schedule_checkpoint_active():
+                result = await std_graph.schedule_graph.ainvoke(
+                    state,
+                    {"configurable": {"thread_id": run_thread_id}},
+                )
+            else:
+                result = await std_graph.schedule_graph.ainvoke(state)
         except Exception as e:
             _check_quota_error(e)
             raise
@@ -543,6 +629,7 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
                 )
             except Exception as e:
                 logger.warning("일정 DB캐시 저장 실패 (무시): %s", e)
+                await db.rollback()
             logger.info("일정 캐시 저장(L1+L2): %s (%d항목, lang=%s)", sched_key, len(schedule), lang_code)
 
         return {
@@ -552,6 +639,7 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
             "schedule": schedule,
             "cost_summary": result.get("cost_summary"),
             "error": result.get("error"),
+            "thread_id": run_thread_id,
         }
 
 
@@ -567,6 +655,7 @@ async def stream_schedule(
     """일정을 Day별로 병렬 생성하고, 완료된 Day부터 즉시 SSE로 전송합니다.
 
     이벤트 타입:
+    - run      : {"type":"run","thread_id":"…","langgraph_checkpoint":bool} — 재개용 ID(다음 요청 ``thread_id``)
     - status   : {"type":"status","message":"..."}
     - day      : {"type":"day","items":[...],"cost":{...}}
     - geocoded : {"type":"geocoded","items":[...]}
@@ -585,6 +674,7 @@ async def stream_schedule(
         f"{location}:{req.route_name}:{req.start_date}:{req.end_date}"
         f":{lang_code}:{transport_tag}:{search_tag}"
     )
+    run_tid = _schedule_thread_id(req)
 
     def _sse(obj: dict) -> str:
         try:
@@ -616,46 +706,63 @@ async def stream_schedule(
                 db_schedule = await _get_schedule_from_db(sched_key, db)
             except Exception as db_ex:
                 logger.warning("일정 L2(DB) 캐시 조회 실패(생성으로 진행): %s", db_ex)
+                await db.rollback()
             if db_schedule:
                 _schedule_cache[sched_key] = (db_schedule, time.time())
                 yield _sse({"type": "cached", "schedule": db_schedule, "cost_summary": None})
                 yield _sse({"type": "done"})
                 return
 
-            # ── gather_context_node 재사용: 행사·뉴스·날씨·웹서칭 병렬 수집 ─────
-            yield _sse({"type": "status", "message": "행사·날씨·최신 정보 수집 중…"})
+            # ── gather: Upstash에 스냅샷이 있으면 재사용(연결 끊김 후 재개) ─────────
+            yield _sse(
+                {
+                    "type": "run",
+                    "thread_id": run_tid,
+                    "langgraph_checkpoint": schedule_checkpoint_active(),
+                    "message": "이후 요청 본문에 동일 thread_id를 넣으면 수집 맥락·LangGraph 체크포인트를 이어갑니다.",
+                }
+            )
             ctx_state: dict = {
                 **_base_state(location, req.start_date, req.end_date),
                 "user_id": req.user_id,
                 "user_profile": user_profile,
                 "news_top10": req.news_top10 or [],
                 "route_name": req.route_name,
+                "transport_mode": req.transport_mode,
                 "use_search": req.use_search,
             }
-            ctx_task = asyncio.create_task(gather_context_node(ctx_state))  # type: ignore[arg-type]
-            try:
-                async for _ka in _sse_keepalive_while(ctx_task):
-                    yield _ka
-                ctx_state = ctx_task.result()
-            except asyncio.CancelledError:
-                if not ctx_task.done():
-                    ctx_task.cancel()
-                raise
-            except Exception as e:
-                if not ctx_task.done():
-                    ctx_task.cancel()
-                    try:
-                        await ctx_task
-                    except asyncio.CancelledError:
-                        pass
-                yield _sse({"type": "error", "message": f"컨텍스트 수집 실패: {e}"})
-                yield _sse({"type": "done"})
-                return
+            saved_gather = await _try_load_stream_gather_snapshot(run_tid, sched_key)
+            if saved_gather:
+                _apply_stream_gather_fields(ctx_state, saved_gather)
+                yield _sse({"type": "status", "message": "저장된 수집 맥락으로 재개합니다…"})
+            else:
+                yield _sse({"type": "status", "message": "행사·날씨·최신 정보 수집 중…"})
+                ctx_task = asyncio.create_task(gather_context_node(ctx_state))  # type: ignore[arg-type]
+                try:
+                    async for _ka in _sse_keepalive_while(ctx_task):
+                        yield _ka
+                    ctx_state = ctx_task.result()
+                except asyncio.CancelledError:
+                    if not ctx_task.done():
+                        ctx_task.cancel()
+                    raise
+                except Exception as e:
+                    if not ctx_task.done():
+                        ctx_task.cancel()
+                        try:
+                            await ctx_task
+                        except asyncio.CancelledError:
+                            pass
+                    yield _sse({"type": "error", "message": f"컨텍스트 수집 실패: {e}"})
+                    yield _sse({"type": "done"})
+                    return
+                await _save_stream_gather_snapshot(run_tid, sched_key, ctx_state)
 
             festivals = ctx_state.get("festivals") or []
             news_top10 = ctx_state.get("news_top10") or []
             weather_forecast = ctx_state.get("weather_forecast")
             raw_web_ctx = ctx_state.get("web_search_context") or ""
+            poi_context_block = ctx_state.get("kakao_poi_context_block") or ""
 
             # ── 날짜 목록 ────────────────────────────────────────────────
             date_list = _build_date_list(req.start_date, req.end_date)
@@ -687,6 +794,7 @@ async def stream_schedule(
                 transport_block=transport_block,
                 news_block=news_block,
                 web_search_block=web_search_block,
+                poi_context_block=poi_context_block,
             )
 
             # ── Day별 순차 생성 (비스트리밍 일정과 동일: 이전 일차 장소·키 exclude) ──
@@ -795,7 +903,9 @@ async def stream_schedule(
                 )
             except Exception as e:
                 logger.warning("스트리밍 일정 DB캐시 저장 실패(무시): %s", e)
+                await db.rollback()
 
+            await _clear_stream_gather_snapshot(run_tid)
             yield _sse({"type": "done"})
         except asyncio.CancelledError:
             raise
