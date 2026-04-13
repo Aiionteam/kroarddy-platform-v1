@@ -874,6 +874,21 @@ def _is_valid_korea_coord(lat: float, lng: float) -> bool:
     return 33.0 <= lat <= 43.0 and 124.0 <= lng <= 132.0
 
 
+def _region_prefix_for_place_query(region: str, name: str) -> str:
+    """카카오 `region` 인자용 — 상호에 여행지가 이미 포함되면 중복 접두를 피한다.
+
+    동일 상호가 전국에 있을 수 있으므로, 가능하면 `region + 상호`로 검색한다.
+    `kakao_keyword_search`가 내부에서 `f'{region} {query}'`를 쓰므로 여기서는 접두를 이중으로 붙이지 않는다.
+    """
+    r = (region or "").strip()
+    n = (name or "").strip()
+    if not r or not n:
+        return ""
+    if r in n:
+        return ""
+    return r
+
+
 async def _geocode_item(
     item: dict[str, Any],
     location_name: str = "",
@@ -881,8 +896,8 @@ async def _geocode_item(
     """장소 좌표·주소를 카카오/네이버 API로 보강한다.
 
     우선순위:
-    1. 카카오 키워드 검색 (POI DB) – 장소명 → 좌표, 가장 정확
-    2. 네이버 주소 지오코딩 (주소 DB) – 주소/장소명 → 좌표
+    1. 카카오 키워드 검색 (POI DB) – 지역+상호로 지점 구분, 좌표·도로명 확보
+    2. 네이버 Geocoding (주소 DB) – 도로명·지번 등 **주소형** 질의에 적합. 동일 상호 지점 선택은 불가에 가깝다.
     3. 전부 실패 → lat/lng=None, geocode_failed=True
     """
     place = (item.get("place") or "").strip()
@@ -890,16 +905,25 @@ async def _geocode_item(
     address = (item.get("address") or "").strip()
     region = (location_name or "").strip()
     search_name = place_ko or place
+    kakao_region = _region_prefix_for_place_query(region, search_name)
 
     # 1단계: 카카오 키워드 검색 (POI DB) ─────────────────────────────────────────
+    # `kakao_keyword_search*`의 region 인자로 여행지를 넘기면 API가 `지역 + 상호`로 검색한다.
     if search_name:
-        need_region_prefix = region and region not in search_name
-        for q in ([f"{region} {search_name}".strip(), search_name] if need_region_prefix else [search_name]):
-            kr = await kakao_keyword_search_with_fallback(q)
-            if not kr:
-                continue
+        kr = await kakao_keyword_search_with_fallback(search_name, region=kakao_region)
+        if not kr and kakao_region:
+            # 지역 접두까지 맞춰도 실패하면 상호만 재시도 (희귀 상호·DB 누락 대비, 전국 동명이 있을 수 있음)
+            kr = await kakao_keyword_search_with_fallback(search_name, region="")
+        if kr:
             lat, lng = float(kr["y"]), float(kr["x"])
-            logger.info("카카오 검색 성공: %s → (%.5f, %.5f) [%s]", q, lat, lng, kr.get("name", ""))
+            logger.info(
+                "카카오 검색 성공: region=%r q=%r → (%.5f, %.5f) [%s]",
+                kakao_region or "(none)",
+                search_name,
+                lat,
+                lng,
+                kr.get("name", ""),
+            )
             return {
                 **item,
                 "lat": lat,
@@ -912,7 +936,9 @@ async def _geocode_item(
                 "kakao_place_url": kr.get("place_url", ""),
             }
 
-    # 2단계: 네이버 주소 지오코딩 (주소 DB) ──────────────────────────────────────
+    # 2단계: 네이버 Geocoding (주소 DB) ────────────────────────────────────────────
+    # POI·지점 구분은 카카오가 담당. 네이버는 "지역+상호"로 원하는 지점을 고르기 어렵고,
+    # 좌표 확보 후 reverse 등 다른 API와 짝을 이룰 때 주소 문자열 기반 보조에 가깝다.
     for q in [x for x in [address, place_ko, place] if x]:
         result = await geocode(q)
         if result:
