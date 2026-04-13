@@ -183,7 +183,8 @@ export default function LocationPlannerPage() {
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [savedPlanId, setSavedPlanId] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const useSearch = true;
+  /** false: 카카오 POI + 네이버 블로그 팁(키 설정 시) — 빠름. true: Gemini Google Search — 느림 */
+  const useSearch = false;
   const [transportMode, setTransportMode] = useState<"car" | "transit" | "walk">("car");
 
   useEffect(() => {
