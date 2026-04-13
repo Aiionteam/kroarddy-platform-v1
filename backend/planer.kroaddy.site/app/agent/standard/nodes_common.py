@@ -541,14 +541,16 @@ async def modify_schedule(
         "- Replace only the instructed items' place/title/description/tips\n"
         "- Never change day/date/time or other items\n"
         f"- Use only real existing places within {location}\n"
-        "- For every item include: address (도로명 주소), lat, lng\n"
+        "- ⚠️ Do NOT output lat, lng, or address — they are filled by Kakao/Naver after save (same as itinerary generation).\n"
+        "- Include place_ko (Korean official name) for every changed item for geocoding.\n"
         "- If the requested place/event/movie does NOT exist or is NOT available (e.g. not currently screening, closed, fictional), "
         "  keep the schedule UNCHANGED and set 'not_possible' to true with a brief reason in 'reason' (1-2 sentences).\n"
         "- If the request IS fulfilled, set 'not_possible' to false and explain briefly WHY this change is good in 'reason' (1-2 sentences).\n"
         f"{lang_dir}"
         "\nRespond ONLY with valid JSON (no explanation):\n"
         '{"not_possible":false,"reason":"brief explanation here",'
-        '"schedule":[{"day":1,"date":"YYYY-MM-DD","time":"morning","place":"place name","address":"도로명 주소","lat":37.5665,"lng":126.9780,"title":"activity title","description":"description","tips":"tip"}],'
+        '"schedule":[{"day":1,"date":"YYYY-MM-DD","time":"morning","place":"place name","place_ko":"한국어 상호",'
+        '"title":"activity title","description":"description","tips":"tip"}],'
         '"modified_titles":["title of modified item"]}'
     )
     llm = _get_llm_with_search()
@@ -601,15 +603,29 @@ async def reroll_single_item(
         f"Replace with a completely different place/activity within {location}. Keep day/date/time identical.\n"
         f"Use only real existing places within {location}.\n"
         "Include estimated_cost in KRW (e.g. '무료', '₩3,000', '₩15,000~₩20,000').\n"
-        "Include address (도로명 주소), lat, lng for the new place.\n"
-        f"{lang_dir}"
-        "\nRespond ONLY with valid JSON (no explanation):\n"
-        f'{{"day":{day},"date":"{date_str}","time":"{time_str}",'
-        '"place":"place name","address":"도로명 주소","lat":37.5665,"lng":126.9780,'
-        '"title":"activity title","description":"description","tips":"tip",'
-        '"estimated_cost":"₩0"}'
-        "}"
+        "⚠️ Do NOT output lat, lng, or address — Kakao/Naver geocoding runs after this response.\n"
     )
+
+    if lang == "Korean":
+        place_rules = (
+            "- place·place_ko: 네이버/카카오맵에서 검색 가능한 실제 상호명만 (place_ko는 한국어 상호).\n"
+        )
+        schema_example = (
+            f'{{"day":{day},"date":"{date_str}","time":"{time_str}",'
+            '"place":"장소명","place_ko":"한국어 상호",'
+            '"title":"활동명","description":"설명","tips":"팁","estimated_cost":"₩0"}'
+        )
+    else:
+        place_rules = (
+            f"- place: real name in {lang}; place_ko: Korean name for geocoding (required).\n"
+        )
+        schema_example = (
+            f'{{"day":{day},"date":"{date_str}","time":"{time_str}",'
+            f'"place":"name in {lang}","place_ko":"한국어 상호",'
+            '"title":"activity title","description":"description","tips":"tip","estimated_cost":"₩0"}'
+        )
+
+    prompt += place_rules + f"{lang_dir}\nRespond ONLY with valid JSON (no explanation):\n{schema_example}\n"
     llm = _get_llm_with_search()
     response = await _invoke(llm, [HumanMessage(content=prompt)])
     return _parse_json(response)
