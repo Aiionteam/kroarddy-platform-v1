@@ -32,6 +32,17 @@ class UserContentController extends Notifier<UserContentState> {
   @override
   UserContentState build() => UserContentState.initial();
 
+  void setViewMode(UserContentViewMode mode) {
+    state = state.copyWith(
+      viewMode: mode,
+      appliedSearchNickname: "",
+    );
+  }
+
+  void setAppliedSearchNickname(String value) {
+    state = state.copyWith(appliedSearchNickname: value.trim());
+  }
+
   void setDraftTitle(String value) {
     state = state.copyWith(draftTitle: value);
   }
@@ -49,19 +60,26 @@ class UserContentController extends Notifier<UserContentState> {
   }
 
   Future<void> loadFeed() async {
-    state = state.copyWith(loading: true, message: "유저 루트 피드 불러오는 중...");
+    state = state.copyWith(loading: true, message: "");
     try {
+      final uid = _currentAppUserId();
+      final ownerId = state.viewMode == UserContentViewMode.mine ? uid : null;
+      final nick = state.viewMode == UserContentViewMode.all
+          ? (state.appliedSearchNickname.trim().isNotEmpty ? state.appliedSearchNickname.trim() : null)
+          : null;
       final routes = await _repo.fetchRoutes(
         limit: _pageSize,
         offset: 0,
-        userId: _currentAppUserId(),
+        userId: uid,
+        ownerId: ownerId,
+        nickname: nick,
       );
       state = state.copyWith(
         loading: false,
         feed: routes,
         nextOffset: routes.length,
         hasMoreFeed: routes.length >= _pageSize,
-        message: "피드 ${routes.length}건 로드 완료",
+        message: "",
       );
     } catch (e) {
       state = state.copyWith(
@@ -73,12 +91,19 @@ class UserContentController extends Notifier<UserContentState> {
 
   Future<void> loadMoreFeed() async {
     if (state.loading || state.loadingMore || !state.hasMoreFeed) return;
-    state = state.copyWith(loadingMore: true, message: "피드 추가 로드 중...");
+    state = state.copyWith(loadingMore: true, message: "");
     try {
+      final uid = _currentAppUserId();
+      final ownerId = state.viewMode == UserContentViewMode.mine ? uid : null;
+      final nick = state.viewMode == UserContentViewMode.all
+          ? (state.appliedSearchNickname.trim().isNotEmpty ? state.appliedSearchNickname.trim() : null)
+          : null;
       final more = await _repo.fetchRoutes(
         limit: _pageSize,
         offset: state.nextOffset,
-        userId: _currentAppUserId(),
+        userId: uid,
+        ownerId: ownerId,
+        nickname: nick,
       );
       final merged = <UserRoute>[...state.feed, ...more];
       final dedup = <int, UserRoute>{};
@@ -91,7 +116,7 @@ class UserContentController extends Notifier<UserContentState> {
         feed: feed,
         nextOffset: state.nextOffset + more.length,
         hasMoreFeed: more.length >= _pageSize,
-        message: "피드 ${feed.length}건 로드 완료",
+        message: "",
       );
     } catch (e) {
       state = state.copyWith(
@@ -108,7 +133,7 @@ class UserContentController extends Notifier<UserContentState> {
       return;
     }
     try {
-      final likes = await _repo.likeRoute(routeId, userId: uid);
+      final result = await _repo.likeRoute(routeId, userId: uid);
       final updated = state.feed.map((route) {
         if (route.id == routeId) {
           return UserRoute(
@@ -122,36 +147,54 @@ class UserContentController extends Notifier<UserContentState> {
             routeItems: route.routeItems,
             tags: route.tags,
             imageUrl: route.imageUrl,
-            likes: likes,
+            likes: result.likes,
             createdAt: route.createdAt,
           );
         }
         return route;
       }).toList();
-      state = state.copyWith(feed: updated, message: "좋아요 반영 완료");
+      state = state.copyWith(feed: updated, message: "");
     } catch (e) {
       state = state.copyWith(message: "좋아요 실패: $e");
     }
   }
 
-  Future<void> polishDraft() async {
-    state = state.copyWith(loading: true, message: "AI 폴리시 실행 중...", clearPolished: true);
+  Future<void> deleteRoute(int routeId) async {
+    final uid = _currentAppUserId();
+    if (uid == null) return;
     try {
-      final routeItems = _parseRouteItems(state.draftRouteItemsText);
-      if (routeItems.isEmpty) {
+      await _repo.deleteRoute(routeId, userId: uid);
+      state = state.copyWith(
+        feed: state.feed.where((r) => r.id != routeId).toList(),
+        message: "",
+      );
+    } catch (e) {
+      state = state.copyWith(message: "삭제 실패: $e");
+    }
+  }
+
+  /// 웹 `polishRoute` — [items]는 모든 일차 장소를 순서대로 합친 목록
+  Future<void> polishDraftFromItems(List<RouteItemInput> items) async {
+    state = state.copyWith(loading: true, message: "", clearPolished: true);
+    try {
+      final filtered = items.where((s) => s.place.trim().isNotEmpty).toList();
+      if (filtered.isEmpty) {
         throw Exception("루트 장소를 1개 이상 입력해 주세요.");
+      }
+      if (state.draftTitle.trim().isEmpty || state.draftLocation.trim().isEmpty) {
+        throw Exception("루트 제목과 여행지를 입력해 주세요.");
       }
 
       final polished = await _repo.polishRoute(
         title: state.draftTitle.trim(),
         location: state.draftLocation.trim(),
         description: state.draftDescription.trim(),
-        routeItems: routeItems,
+        routeItems: filtered,
       );
       state = state.copyWith(
         loading: false,
         polished: polished,
-        message: "AI 폴리시 완료",
+        message: "",
       );
     } catch (e) {
       state = state.copyWith(
@@ -161,51 +204,44 @@ class UserContentController extends Notifier<UserContentState> {
     }
   }
 
+  Future<void> polishDraft() async {
+    final items = _parseRouteItems(state.draftRouteItemsText);
+    await polishDraftFromItems(items);
+  }
+
   Future<void> pickImage() async {
     final file = await _picker.pickImage(source: ImageSource.gallery);
     if (file == null) return;
     state = state.copyWith(
       selectedImagePath: file.path,
+      clearValidatedImage: true,
       clearUploadedImageUrl: true,
-      message: "이미지 선택 완료",
+      message: "",
     );
   }
 
-  Future<void> validateAndUploadImage() async {
+  /// 사진 단계 → 폼 단계 진입 시 (웹 `handleNextFromPhoto`)
+  Future<void> validateImageForNextStep() async {
     final path = state.selectedImagePath;
-    if (path == null || path.isEmpty) {
-      state = state.copyWith(message: "먼저 이미지를 선택해 주세요.");
-      return;
-    }
+    if (path == null || path.isEmpty) return;
+    if (state.validatedImage != null) return;
 
-    state = state.copyWith(
-      loading: true,
-      message: "이미지 검증/업로드 중...",
-      uploadProgress: 0,
-    );
+    state = state.copyWith(loading: true, message: "");
     try {
       final file = XFile(path);
       final validated = await _repo.validateImageAndGetUploadUrl(file);
-      await _repo.uploadImageToS3(
-        uploadUrl: validated.uploadUrl,
-        file: file,
-        onSendProgress: (sent, total) {
-          if (total <= 0) return;
-          state = state.copyWith(uploadProgress: sent / total);
-        },
-      );
       state = state.copyWith(
         loading: false,
-        uploadedImageUrl: validated.imageUrl,
-        uploadProgress: 1,
-        message: "이미지 업로드 완료",
+        validatedImage: validated,
+        message: "",
       );
     } catch (e) {
       state = state.copyWith(
         loading: false,
-        clearUploadProgress: true,
-        message: "이미지 업로드 실패: $e",
+        clearValidatedImage: true,
+        message: "이미지 검증 실패: $e",
       );
+      rethrow;
     }
   }
 
@@ -216,8 +252,21 @@ class UserContentController extends Notifier<UserContentState> {
       return;
     }
 
-    state = state.copyWith(loading: true, message: "유저 루트 저장 중...");
+    state = state.copyWith(loading: true, message: "");
     try {
+      String? imageUrl = state.uploadedImageUrl;
+      final path = state.selectedImagePath;
+      if (imageUrl == null && path != null && path.isNotEmpty) {
+        var validated = state.validatedImage;
+        if (validated == null) {
+          final file = XFile(path);
+          validated = await _repo.validateImageAndGetUploadUrl(file);
+        }
+        final file = XFile(path);
+        await _repo.uploadImageToS3(uploadUrl: validated.uploadUrl, file: file);
+        imageUrl = validated.imageUrl;
+      }
+
       final saved = await _repo.saveRoute(
         userId: _currentAppUserId(),
         nickname: _currentNickname(),
@@ -226,22 +275,23 @@ class UserContentController extends Notifier<UserContentState> {
         description: polished.description,
         routeItems: polished.routeItems,
         tags: polished.tags,
-        imageUrl: state.uploadedImageUrl,
+        imageUrl: imageUrl,
       );
       state = state.copyWith(
         loading: false,
         feed: [saved, ...state.feed],
         nextOffset: state.nextOffset + 1,
-        draftTitle: "부산 당일 감성 코스",
-        draftLocation: "부산",
-        draftDescription: "바다와 야경 중심의 가벼운 코스",
-        draftRouteItemsText: "해운대 - 오후 산책\n광안리 - 야경\n국제시장 - 먹거리",
+        draftTitle: "",
+        draftLocation: "",
+        draftDescription: "",
+        draftRouteItemsText: "",
         clearPolished: true,
         clearSelectedImagePath: true,
+        clearValidatedImage: true,
         clearUploadedImageUrl: true,
         clearUploadProgress: true,
         saveSuccessCount: state.saveSuccessCount + 1,
-        message: "유저 루트 저장 완료",
+        message: "",
       );
     } catch (e) {
       state = state.copyWith(
@@ -266,5 +316,25 @@ class UserContentController extends Notifier<UserContentState> {
       out.add(RouteItemInput(place: place, note: note?.isEmpty == true ? null : note));
     }
     return out;
+  }
+
+  void clearPolishResult() {
+    state = state.copyWith(clearPolished: true, message: "");
+  }
+
+  /// 업로드 시트 닫을 때 초기화
+  void resetUploadDraft() {
+    state = state.copyWith(
+      draftTitle: "",
+      draftLocation: "",
+      draftDescription: "",
+      draftRouteItemsText: "",
+      clearPolished: true,
+      clearSelectedImagePath: true,
+      clearValidatedImage: true,
+      clearUploadedImageUrl: true,
+      clearUploadProgress: true,
+      message: "",
+    );
   }
 }

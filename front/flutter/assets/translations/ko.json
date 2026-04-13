@@ -215,6 +215,8 @@
     },
     "schedule": {
       "new_route": "+ 새 루트",
+      "calendar_collapse": "캘린더 접기",
+      "calendar_expand": "캘린더 펼치기",
       "empty_no_plans": "저장된 플랜이 없습니다.",
       "empty_go_planner": "여행플래너에서 AI 루트를 생성해보세요",
       "show_all": "전체 보기",

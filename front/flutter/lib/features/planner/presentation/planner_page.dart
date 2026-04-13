@@ -1,4 +1,3 @@
-import "dart:io";
 import "dart:math" show Random;
 
 import "package:easy_localization/easy_localization.dart";
@@ -6,15 +5,20 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
+import "../../../core/auth/jwt_claims.dart";
 import "../../../core/router/main_shell.dart";
 import "../../../core/theme/kroaddy_colors.dart";
 import "../../../core/router/shell_back_handler.dart";
+import "../../auth/presentation/state/auth_controller.dart";
 import "../data/k_content_repository.dart";
 import "../data/planner_models.dart";
+import "../data/planner_repository.dart";
 import "../data/user_content_models.dart";
 import "state/planner_controller.dart";
 import "state/user_content_controller.dart";
+import "state/user_content_state.dart";
 import "planner_dest_i18n.dart";
+import "user_content_upload_sheet.dart";
 
 // ── 색상 상수 ─────────────────────────────────────────────────
 const _primary = KroaddyColors.primary;
@@ -2172,19 +2176,48 @@ class _UserContentTab extends ConsumerStatefulWidget {
 class _UserContentTabState extends ConsumerState<_UserContentTab> {
   UserRoute? _detailRoute;
   bool _showUpload = false;
+  final _searchCtrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    Future<void>.microtask(
-      () => ref.read(userContentControllerProvider.notifier).loadFeed(),
-    );
+    Future<void>.microtask(() => ref.read(userContentControllerProvider.notifier).loadFeed());
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  int? _myUserId() {
+    final t = ref.read(authControllerProvider).accessToken;
+    if (t == null || t.isEmpty) return null;
+    return getAppUserIdFromToken(t) ?? getUserIdFromToken(t);
+  }
+
+  void _setMode(UserContentViewMode mode) {
+    _searchCtrl.clear();
+    ref.read(userContentControllerProvider.notifier).setViewMode(mode);
+    ref.read(userContentControllerProvider.notifier).loadFeed();
+  }
+
+  void _search() {
+    ref.read(userContentControllerProvider.notifier).setAppliedSearchNickname(_searchCtrl.text);
+    ref.read(userContentControllerProvider.notifier).loadFeed();
+  }
+
+  void _clearSearch() {
+    _searchCtrl.clear();
+    ref.read(userContentControllerProvider.notifier).setAppliedSearchNickname("");
+    ref.read(userContentControllerProvider.notifier).loadFeed();
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(userContentControllerProvider);
     final ctrl = ref.read(userContentControllerProvider.notifier);
+    final myId = _myUserId();
 
     ref.listen<int>(
       userContentControllerProvider.select((s) => s.saveSuccessCount),
@@ -2212,7 +2245,7 @@ class _UserContentTabState extends ConsumerState<_UserContentTab> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "유저 컨텐츠",
+                            "유저 콘텐츠",
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -2228,7 +2261,10 @@ class _UserContentTabState extends ConsumerState<_UserContentTab> {
                       ),
                       const Spacer(),
                       FilledButton.icon(
-                        onPressed: () => setState(() => _showUpload = true),
+                        onPressed: () {
+                          ref.read(userContentControllerProvider.notifier).resetUploadDraft();
+                          setState(() => _showUpload = true);
+                        },
                         icon: const Icon(Icons.add, size: 16),
                         label: const Text("내 루트 업로드"),
                         style: FilledButton.styleFrom(
@@ -2240,6 +2276,110 @@ class _UserContentTabState extends ConsumerState<_UserContentTab> {
                   ),
                 ),
               ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: SegmentedButton<UserContentViewMode>(
+                          segments: const [
+                            ButtonSegment(
+                              value: UserContentViewMode.all,
+                              label: Text("전체 루트", style: TextStyle(fontSize: 12)),
+                              icon: Text("🌍"),
+                            ),
+                            ButtonSegment(
+                              value: UserContentViewMode.mine,
+                              label: Text("내 루트", style: TextStyle(fontSize: 12)),
+                              icon: Text("👤"),
+                            ),
+                          ],
+                          selected: {state.viewMode},
+                          onSelectionChanged: (s) {
+                            if (s.isEmpty) return;
+                            if (s.first == UserContentViewMode.mine && myId == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("로그인 후 이용할 수 있습니다.")),
+                              );
+                              return;
+                            }
+                            _setMode(s.first);
+                          },
+                          style: ButtonStyle(
+                            visualDensity: VisualDensity.compact,
+                            foregroundColor: WidgetStateProperty.resolveWith((st) {
+                              if (st.contains(WidgetState.selected)) return Colors.white;
+                              return _textSecondary;
+                            }),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (state.viewMode == UserContentViewMode.all)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _searchCtrl,
+                            onSubmitted: (_) => _search(),
+                            decoration: InputDecoration(
+                              hintText: "닉네임으로 검색…",
+                              hintStyle: const TextStyle(fontSize: 13),
+                              prefixIcon: const Icon(Icons.search, size: 18, color: _textSecondary),
+                              suffixIcon: _searchCtrl.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.close, size: 18),
+                                      onPressed: _clearSearch,
+                                    )
+                                  : null,
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            ),
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        FilledButton(
+                          onPressed: _search,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _primaryLight,
+                            foregroundColor: _primary,
+                          ),
+                          child: const Text("검색"),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              if (state.viewMode == UserContentViewMode.all && state.appliedSearchNickname.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            "\"${state.appliedSearchNickname}\" 닉네임 검색 결과",
+                            style: const TextStyle(fontSize: 11, color: _primary, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _clearSearch,
+                          child: const Text("전체 보기", style: TextStyle(fontSize: 11)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               if (state.message.isNotEmpty)
                 SliverToBoxAdapter(
                   child: Padding(
@@ -2247,12 +2387,15 @@ class _UserContentTabState extends ConsumerState<_UserContentTab> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: _primaryLight,
+                        color: state.message.contains("실패") ? const Color(0xFFFEF2F2) : _primaryLight,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         state.message,
-                        style: const TextStyle(fontSize: 12, color: _primary),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: state.message.contains("실패") ? Colors.red.shade800 : _primary,
+                        ),
                       ),
                     ),
                   ),
@@ -2263,7 +2406,7 @@ class _UserContentTabState extends ConsumerState<_UserContentTab> {
                   sliver: SliverGrid(
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      childAspectRatio: 0.7,
+                      childAspectRatio: 0.68,
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
                     ),
@@ -2282,27 +2425,55 @@ class _UserContentTabState extends ConsumerState<_UserContentTab> {
               else if (state.feed.isEmpty)
                 SliverFillRemaining(
                   child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text("👥", style: TextStyle(fontSize: 46)),
-                        const SizedBox(height: 8),
-                        const Text(
-                          "아직 공유된 루트가 없습니다",
-                          style: TextStyle(color: _textPrimary, fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          "첫 번째로 루트를 업로드해보세요",
-                          style: TextStyle(color: _textSecondary, fontSize: 12),
-                        ),
-                        const SizedBox(height: 10),
-                        OutlinedButton(
-                          onPressed: () => setState(() => _showUpload = true),
-                          child: const Text("＋ 첫 루트 업로드"),
-                        ),
-                      ],
-                    ),
+                    child: state.viewMode == UserContentViewMode.mine
+                        ? Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text("🗺️", style: TextStyle(fontSize: 46)),
+                              const SizedBox(height: 8),
+                              const Text(
+                                "아직 내가 올린 루트가 없습니다",
+                                style: TextStyle(color: _textPrimary, fontWeight: FontWeight.w700),
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                "나만의 여행 루트를 공유해보세요!",
+                                style: TextStyle(color: _textSecondary, fontSize: 12),
+                              ),
+                              const SizedBox(height: 10),
+                              OutlinedButton(
+                                onPressed: () {
+                                  ref.read(userContentControllerProvider.notifier).resetUploadDraft();
+                                  setState(() => _showUpload = true);
+                                },
+                                child: const Text("＋ 첫 루트 올리기"),
+                              ),
+                            ],
+                          )
+                        : Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text("👥", style: TextStyle(fontSize: 46)),
+                              const SizedBox(height: 8),
+                              const Text(
+                                "아직 공유된 루트가 없습니다",
+                                style: TextStyle(color: _textPrimary, fontWeight: FontWeight.w700),
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                "첫 번째로 루트를 공유해보세요!",
+                                style: TextStyle(color: _textSecondary, fontSize: 12),
+                              ),
+                              const SizedBox(height: 10),
+                              OutlinedButton(
+                                onPressed: () {
+                                  ref.read(userContentControllerProvider.notifier).resetUploadDraft();
+                                  setState(() => _showUpload = true);
+                                },
+                                child: const Text("＋ 첫 루트 업로드"),
+                              ),
+                            ],
+                          ),
                   ),
                 )
               else ...[
@@ -2311,16 +2482,36 @@ class _UserContentTabState extends ConsumerState<_UserContentTab> {
                   sliver: SliverGrid(
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      childAspectRatio: 0.7,
+                      childAspectRatio: 0.68,
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
                     ),
                     delegate: SliverChildBuilderDelegate(
-                      (_, i) => _UserRouteCard(
-                        route: state.feed[i],
-                        onTap: () => setState(() => _detailRoute = state.feed[i]),
-                        onLike: () => ctrl.likeRoute(state.feed[i].id),
-                      ),
+                      (_, i) {
+                        final r = state.feed[i];
+                        final isOwner = myId != null && r.userId == myId;
+                        return _UserRouteCard(
+                          route: r,
+                          isOwner: isOwner,
+                          onTap: () => setState(() => _detailRoute = r),
+                          onLike: () => ctrl.likeRoute(r.id),
+                          onDelete: isOwner ? () async {
+                            await ctrl.deleteRoute(r.id);
+                            if (_detailRoute?.id == r.id) {
+                              setState(() => _detailRoute = null);
+                            }
+                          } : null,
+                          onAuthorTap: () {
+                            final uid = r.userId;
+                            final nick = (r.nickname ?? "").trim();
+                            if (uid == null && nick.isEmpty) return;
+                            final q = <String, String>{};
+                            if (uid != null) q["authorUserId"] = "$uid";
+                            if (nick.isNotEmpty) q["authorName"] = nick;
+                            context.push(Uri(path: "/tourstar", queryParameters: q).toString());
+                          },
+                        );
+                      },
                       childCount: state.feed.length,
                     ),
                   ),
@@ -2347,17 +2538,13 @@ class _UserContentTabState extends ConsumerState<_UserContentTab> {
               ],
             ],
           ),
-
-          // 상세 바텀시트
           if (_detailRoute != null)
             _RouteDetailSheet(
               route: _detailRoute!,
               onClose: () => setState(() => _detailRoute = null),
             ),
-
-          // 업로드 바텀시트
           if (_showUpload)
-            _UploadSheet(
+            UserContentUploadSheet(
               onClose: () => setState(() => _showUpload = false),
             ),
         ],
@@ -2367,14 +2554,37 @@ class _UserContentTabState extends ConsumerState<_UserContentTab> {
 }
 
 class _UserRouteCard extends StatelessWidget {
-  const _UserRouteCard({required this.route, required this.onTap, required this.onLike});
+  const _UserRouteCard({
+    required this.route,
+    required this.onTap,
+    required this.onLike,
+    required this.isOwner,
+    this.onDelete,
+    this.onAuthorTap,
+  });
+
   final UserRoute route;
   final VoidCallback onTap;
   final VoidCallback onLike;
+  final bool isOwner;
+  final VoidCallback? onDelete;
+  final VoidCallback? onAuthorTap;
+
+  static const _grads = [
+    [Color(0xFF8B5CF6), Color(0xFF4F46E5)],
+    [Color(0xFFEC4899), Color(0xFFBE185D)],
+    [Color(0xFFF59E0B), Color(0xFFEA580C)],
+    [Color(0xFF14B8A6), Color(0xFF0891B2)],
+    [Color(0xFF10B981), Color(0xFF059669)],
+  ];
 
   @override
   Widget build(BuildContext context) {
     final tags = route.tags.take(3).toList();
+    final grad = _grads[route.id.abs() % _grads.length];
+    final liked = route.likedByMe;
+    final nick = (route.nickname ?? "").trim();
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -2398,9 +2608,9 @@ class _UserRouteCard extends StatelessWidget {
                   ? Image.network(
                       route.imageUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => _gradientFallback(),
+                      errorBuilder: (_, _, _) => _gradientFallback(grad),
                     )
-                  : _gradientFallback(),
+                  : _gradientFallback(grad),
               const DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -2411,20 +2621,43 @@ class _UserRouteCard extends StatelessWidget {
                   ),
                 ),
               ),
+              if (isOwner && onDelete != null)
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: GestureDetector(
+                    onTap: onDelete,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.35),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: const Icon(Icons.delete_outline, size: 14, color: Colors.white),
+                    ),
+                  ),
+                ),
               Positioned(
                 top: 10,
                 right: 10,
                 child: GestureDetector(
-                  onTap: onLike,
+                  onTap: liked ? null : onLike,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.35),
+                      color: liked ? const Color(0xCCF43F5E) : Colors.black.withValues(alpha: 0.35),
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    child: Text(
-                      "🤍 ${route.likes}",
-                      style: const TextStyle(fontSize: 11, color: Colors.white),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(liked ? "❤️" : "🤍", style: const TextStyle(fontSize: 11)),
+                        const SizedBox(width: 4),
+                        Text(
+                          "${route.likes}",
+                          style: const TextStyle(fontSize: 11, color: Colors.white),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -2449,7 +2682,7 @@ class _UserRouteCard extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: Text(
-                                  t,
+                                  t.startsWith("#") ? t : "#$t",
                                   style: const TextStyle(fontSize: 10, color: Colors.white),
                                 ),
                               ),
@@ -2481,6 +2714,43 @@ class _UserRouteCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (nick.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      GestureDetector(
+                        onTap: () {
+                          onAuthorTap?.call();
+                        },
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 18,
+                              height: 18,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Text("👤", style: TextStyle(fontSize: 9)),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                nick,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: Colors.white70,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -2491,11 +2761,11 @@ class _UserRouteCard extends StatelessWidget {
     );
   }
 
-  Widget _gradientFallback() {
+  Widget _gradientFallback(List<Color> grad) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [KroaddyColors.primary, Color(0xFFEC4899)],
+          colors: grad,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -2504,15 +2774,124 @@ class _UserRouteCard extends StatelessWidget {
   }
 }
 
-class _RouteDetailSheet extends StatelessWidget {
+/// 웹 `RouteDetailModal` — 내 일정에 추가 + 방문 날짜 선택
+class _RouteDetailSheet extends ConsumerStatefulWidget {
   const _RouteDetailSheet({required this.route, required this.onClose});
   final UserRoute route;
   final VoidCallback onClose;
 
   @override
+  ConsumerState<_RouteDetailSheet> createState() => _RouteDetailSheetState();
+}
+
+class _RouteDetailSheetState extends ConsumerState<_RouteDetailSheet> {
+  static const _defaultDayTimes = ["10:00", "12:30", "15:00", "17:30", "19:00", "20:30"];
+
+  bool _adding = false;
+  bool _addDone = false;
+  String? _addError;
+  bool _datePickerOpen = false;
+  late DateTime _tripDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _tripDate = _dateOnly(DateTime.now());
+  }
+
+  @override
+  void didUpdateWidget(covariant _RouteDetailSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.route.id != widget.route.id) {
+      _adding = false;
+      _addDone = false;
+      _addError = null;
+      _datePickerOpen = false;
+      _tripDate = _dateOnly(DateTime.now());
+    }
+  }
+
+  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  String _iso(DateTime d) =>
+      "${d.year.toString().padLeft(4, "0")}-${d.month.toString().padLeft(2, "0")}-${d.day.toString().padLeft(2, "0")}";
+
+  int? _currentUserId() {
+    final t = ref.read(authControllerProvider).accessToken;
+    if (t == null || t.isEmpty) return null;
+    return getAppUserIdFromToken(t) ?? getUserIdFromToken(t);
+  }
+
+  List<ScheduleItem> _userRouteToScheduleItems(String tripDate) {
+    return widget.route.routeItems.asMap().entries.map((e) {
+      final idx = e.key;
+      final item = e.value;
+      return ScheduleItem(
+        day: 1,
+        date: tripDate,
+        time: _defaultDayTimes[idx % _defaultDayTimes.length],
+        place: item.place,
+        title: item.place,
+        description: item.description,
+        tips: item.tip.trim().isNotEmpty ? item.tip : null,
+      );
+    }).toList();
+  }
+
+  Future<void> _handleAddToMySchedule(String dateIso) async {
+    final userId = _currentUserId();
+    if (userId == null || widget.route.routeItems.isEmpty) return;
+    if (!RegExp(r"^\d{4}-\d{2}-\d{2}$").hasMatch(dateIso)) return;
+
+    setState(() {
+      _adding = true;
+      _addError = null;
+    });
+    try {
+      await ref.read(plannerRepositoryProvider).savePlan(
+            location: widget.route.location.trim().isEmpty ? "custom" : widget.route.location.trim(),
+            routeName: widget.route.title.trim().isEmpty ? "공유 루트" : widget.route.title.trim(),
+            startDate: dateIso,
+            endDate: dateIso,
+            schedule: _userRouteToScheduleItems(dateIso),
+            userId: userId,
+          );
+      if (!mounted) return;
+      setState(() {
+        _addDone = true;
+        _datePickerOpen = false;
+        _adding = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _adding = false;
+        _addError = e.toString();
+      });
+    }
+  }
+
+  Future<void> _pickTripDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _tripDate,
+      firstDate: _dateOnly(DateTime.now()),
+      lastDate: DateTime(DateTime.now().year + 2, 12, 31),
+      locale: Localizations.localeOf(context),
+    );
+    if (picked != null && mounted) {
+      setState(() => _tripDate = _dateOnly(picked));
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final route = widget.route;
+    final userId = _currentUserId();
+    final canAdd = userId != null && route.routeItems.isNotEmpty;
+
     return GestureDetector(
-      onTap: onClose,
+      onTap: widget.onClose,
       child: Container(
         color: Colors.black54,
         child: GestureDetector(
@@ -2533,240 +2912,427 @@ class _RouteDetailSheet extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Column(
+                child: Stack(
                   children: [
-                    SizedBox(
-                      height: 210,
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          topRight: Radius.circular(20),
-                        ),
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            if (route.imageUrl != null)
-                              Image.network(
-                                route.imageUrl!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) => Container(
-                                  decoration: const BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [KroaddyColors.primary, Color(0xFFEC4899)],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                  ),
-                                ),
-                              )
-                            else
-                              Container(
-                                decoration: const BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [KroaddyColors.primary, Color(0xFFEC4899)],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                ),
-                              ),
-                            const DecoratedBox(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [Colors.transparent, Color(0xAA000000)],
-                                ),
-                              ),
+                    Column(
+                      children: [
+                        SizedBox(
+                          height: 210,
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(20),
+                              topRight: Radius.circular(20),
                             ),
-                            Positioned(
-                              top: 12,
-                              right: 12,
-                              child: IconButton(
-                                onPressed: onClose,
-                                style: IconButton.styleFrom(
-                                  backgroundColor: Colors.black.withValues(alpha: 0.3),
-                                  foregroundColor: Colors.white,
-                                ),
-                                icon: const Icon(Icons.close),
-                              ),
-                            ),
-                            Positioned(
-                              top: 12,
-                              left: 12,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.3),
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: Text(
-                                  "❤️ ${route.likes}",
-                                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              left: 16,
-                              right: 16,
-                              bottom: 14,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (route.tags.isNotEmpty)
-                                    Wrap(
-                                      spacing: 6,
-                                      runSpacing: 6,
-                                      children: route.tags
-                                          .map(
-                                            (t) => Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              decoration: BoxDecoration(
-                                                color: Colors.white.withValues(alpha: 0.22),
-                                                borderRadius: BorderRadius.circular(999),
-                                              ),
-                                              child: Text(
-                                                "#$t",
-                                                style: const TextStyle(
-                                                  fontSize: 10,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ),
-                                          )
-                                          .toList(),
-                                    ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    route.title,
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    "📍 ${route.location}",
-                                    style: const TextStyle(fontSize: 12, color: Colors.white70),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: ListView(
-                        padding: const EdgeInsets.fromLTRB(18, 16, 18, 22),
-                        children: [
-                          Text(
-                            route.description,
-                            style: const TextStyle(fontSize: 13, color: _textSecondary, height: 1.4),
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            "루트",
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: _textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          ...route.routeItems.asMap().entries.map((e) {
-                            final idx = e.key;
-                            final item = e.value;
-                            return Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            child: Stack(
+                              fit: StackFit.expand,
                               children: [
-                                Column(
-                                  children: [
-                                    Container(
-                                      width: 18,
-                                      height: 18,
+                                if (route.imageUrl != null)
+                                  Image.network(
+                                    route.imageUrl!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, _, _) => Container(
                                       decoration: const BoxDecoration(
-                                        color: Color(0xFFD8B4FE),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      alignment: Alignment.center,
-                                      child: Text(
-                                        "${idx + 1}",
-                                        style: const TextStyle(
-                                          fontSize: 10,
-                                          color: Color(0xFF6D28D9),
-                                          fontWeight: FontWeight.bold,
+                                        gradient: LinearGradient(
+                                          colors: [KroaddyColors.primary, Color(0xFFEC4899)],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
                                         ),
                                       ),
                                     ),
-                                    if (idx < route.routeItems.length - 1)
-                                      Container(
-                                        width: 2,
-                                        height: 34,
-                                        color: const Color(0xFFE9D5FF),
+                                  )
+                                else
+                                  Container(
+                                    decoration: const BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [KroaddyColors.primary, Color(0xFFEC4899)],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
                                       ),
-                                  ],
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Container(
-                                    margin: const EdgeInsets.only(bottom: 10),
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF9FAFB),
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(color: const Color(0xFFE5E7EB)),
                                     ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                  ),
+                                const DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [Colors.transparent, Color(0xAA000000)],
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 12,
+                                  right: 12,
+                                  child: IconButton(
+                                    onPressed: widget.onClose,
+                                    style: IconButton.styleFrom(
+                                      backgroundColor: Colors.black.withValues(alpha: 0.3),
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    icon: const Icon(Icons.close),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 12,
+                                  left: 12,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(alpha: 0.3),
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      "❤️ ${route.likes}",
+                                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  left: 16,
+                                  right: 16,
+                                  bottom: 14,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      if (route.tags.isNotEmpty)
+                                        Wrap(
+                                          spacing: 6,
+                                          runSpacing: 6,
+                                          children: route.tags
+                                              .map(
+                                                (t) => Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white.withValues(alpha: 0.22),
+                                                    borderRadius: BorderRadius.circular(999),
+                                                  ),
+                                                  child: Text(
+                                                    t.startsWith("#") ? t : "#$t",
+                                                    style: const TextStyle(
+                                                      fontSize: 10,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                ),
+                                              )
+                                              .toList(),
+                                        ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        route.title,
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        "📍 ${route.location}",
+                                        style: const TextStyle(fontSize: 12, color: Colors.white70),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: ListView(
+                            padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
+                            children: [
+                              Text(
+                                route.description,
+                                style: const TextStyle(fontSize: 13, color: _textSecondary, height: 1.4),
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                "루트",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: _textSecondary,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              ...route.routeItems.asMap().entries.map((e) {
+                                final idx = e.key;
+                                final item = e.value;
+                                return Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Column(
                                       children: [
-                                        Text(
-                                          "📍 ${item.place}",
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w700,
+                                        Container(
+                                          width: 18,
+                                          height: 18,
+                                          decoration: const BoxDecoration(
+                                            color: Color(0xFFD8B4FE),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            "${idx + 1}",
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                              color: Color(0xFF6D28D9),
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        if (idx < route.routeItems.length - 1)
+                                          Container(
+                                            width: 2,
+                                            height: 34,
+                                            color: const Color(0xFFE9D5FF),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Container(
+                                        margin: const EdgeInsets.only(bottom: 10),
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF9FAFB),
+                                          borderRadius: BorderRadius.circular(10),
+                                          border: Border.all(color: const Color(0xFFE5E7EB)),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              "📍 ${item.place}",
+                                              style: const TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w700,
+                                                color: _textPrimary,
+                                              ),
+                                            ),
+                                            if (item.description.isNotEmpty)
+                                              Padding(
+                                                padding: const EdgeInsets.only(top: 4),
+                                                child: Text(
+                                                  item.description,
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: _textSecondary,
+                                                  ),
+                                                ),
+                                              ),
+                                            if (item.tip.isNotEmpty)
+                                              Padding(
+                                                padding: const EdgeInsets.only(top: 6),
+                                                child: Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFFFEF3C7),
+                                                    borderRadius: BorderRadius.circular(8),
+                                                  ),
+                                                  child: Text(
+                                                    "💡 ${item.tip}",
+                                                    style: const TextStyle(
+                                                      fontSize: 11,
+                                                      color: Color(0xFF92400E),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.fromLTRB(18, 10, 18, 16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            border: Border(top: BorderSide(color: Colors.grey.shade200)),
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(20),
+                              bottomRight: Radius.circular(20),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              if (_addError != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Text(
+                                    _addError!,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(fontSize: 12, color: Colors.red),
+                                  ),
+                                ),
+                              if (_addDone)
+                                Column(
+                                  children: [
+                                    const Text(
+                                      "✅ 내 일정에 추가되었습니다",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF047857),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    FilledButton(
+                                      onPressed: () {
+                                        widget.onClose();
+                                        context.push("/planner/schedule");
+                                      },
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: const Color(0xFF4F46E8),
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                      ),
+                                      child: const Text("일정 관리로 이동"),
+                                    ),
+                                  ],
+                                )
+                              else
+                                FilledButton.icon(
+                                  onPressed: (!canAdd || _adding)
+                                      ? null
+                                      : () {
+                                          setState(() {
+                                            _tripDate = _dateOnly(DateTime.now());
+                                            _datePickerOpen = true;
+                                          });
+                                        },
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: _primary,
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                  ),
+                                  icon: const Icon(Icons.calendar_month_outlined, size: 20),
+                                  label: const Text("내 일정에 추가", style: TextStyle(fontWeight: FontWeight.w600)),
+                                ),
+                              if (userId == null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    "로그인 후 이용할 수 있습니다.",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                                  ),
+                                )
+                              else if (route.routeItems.isEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    "저장할 장소가 없습니다.",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_datePickerOpen && !_addDone)
+                      Positioned.fill(
+                        child: GestureDetector(
+                          onTap: _adding ? null : () => setState(() => _datePickerOpen = false),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.4),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            alignment: Alignment.center,
+                            child: GestureDetector(
+                              onTap: () {},
+                              child: Material(
+                                borderRadius: BorderRadius.circular(16),
+                                color: Colors.white,
+                                elevation: 8,
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(maxWidth: 340),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                                      children: [
+                                        const Text(
+                                          "언제 다녀오실 예정인가요?",
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
                                             color: _textPrimary,
                                           ),
                                         ),
-                                        if (item.description.isNotEmpty)
-                                          Padding(
-                                            padding: const EdgeInsets.only(top: 4),
-                                            child: Text(
-                                              item.description,
-                                              style: const TextStyle(
-                                                fontSize: 12,
-                                                color: _textSecondary,
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          "선택한 날짜가 일정에 반영됩니다.",
+                                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        const Text(
+                                          "방문 날짜",
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: _textSecondary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        OutlinedButton.icon(
+                                          onPressed: _adding ? null : _pickTripDate,
+                                          icon: const Icon(Icons.edit_calendar_outlined, size: 18),
+                                          label: Text(
+                                            _iso(_tripDate),
+                                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: OutlinedButton(
+                                                onPressed: _adding
+                                                    ? null
+                                                    : () => setState(() => _datePickerOpen = false),
+                                                child: const Text("취소"),
                                               ),
                                             ),
-                                          ),
-                                        if (item.tip.isNotEmpty)
-                                          Padding(
-                                            padding: const EdgeInsets.only(top: 6),
-                                            child: Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFFFEF3C7),
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              child: Text(
-                                                "💡 ${item.tip}",
-                                                style: const TextStyle(
-                                                  fontSize: 11,
-                                                  color: Color(0xFF92400E),
-                                                ),
+                                            const SizedBox(width: 10),
+                                            Expanded(
+                                              child: FilledButton(
+                                                onPressed: _adding
+                                                    ? null
+                                                    : () => _handleAddToMySchedule(_iso(_tripDate)),
+                                                style: FilledButton.styleFrom(backgroundColor: _primary),
+                                                child: _adding
+                                                    ? const SizedBox(
+                                                        height: 20,
+                                                        width: 20,
+                                                        child: CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                          color: Colors.white,
+                                                        ),
+                                                      )
+                                                    : const Text("이 날짜로 추가"),
                                               ),
                                             ),
-                                          ),
+                                          ],
+                                        ),
                                       ],
                                     ),
                                   ),
                                 ),
-                              ],
-                            );
-                          }),
-                        ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -2778,379 +3344,6 @@ class _RouteDetailSheet extends StatelessWidget {
   }
 }
 
-// ── 업로드 바텀시트 (단계별 위저드) ───────────────────────────
-class _UploadSheet extends ConsumerStatefulWidget {
-  const _UploadSheet({required this.onClose});
-  final VoidCallback onClose;
-
-  @override
-  ConsumerState<_UploadSheet> createState() => _UploadSheetState();
-}
-
-class _UploadSheetState extends ConsumerState<_UploadSheet> {
-  // step: 0=사진, 1=폼, 2=폴리시, 3=완료
-  int _step = 0;
-  int? _lastSaveCount;
-
-  @override
-  Widget build(BuildContext context) {
-    final state = ref.watch(userContentControllerProvider);
-    final ctrl = ref.read(userContentControllerProvider.notifier);
-
-    ref.listen<int>(
-      userContentControllerProvider.select((s) => s.saveSuccessCount),
-      (prev, next) {
-        _lastSaveCount ??= prev ?? 0;
-        if (next > (_lastSaveCount ?? 0)) {
-          _lastSaveCount = next;
-          if (mounted) {
-            setState(() => _step = 3);
-          }
-        }
-      },
-    );
-
-    return GestureDetector(
-      onTap: widget.onClose,
-      child: Container(
-        color: Colors.black54,
-        child: GestureDetector(
-          onTap: () {},
-          child: DraggableScrollableSheet(
-            initialChildSize: 0.85,
-            minChildSize: 0.5,
-            maxChildSize: 0.95,
-            builder: (_, scrollCtrl) => Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-              ),
-              child: Column(
-                children: [
-                  Center(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 10),
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  // 단계 인디케이터
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                    child: Row(
-                      children: [
-                        const Text(
-                          "루트 공유하기",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: _textPrimary,
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          "${_step + 1}/4",
-                          style: const TextStyle(fontSize: 13, color: _textSecondary),
-                        ),
-                      ],
-                    ),
-                  ),
-                  LinearProgressIndicator(
-                    value: (_step + 1) / 4,
-                    color: _primary,
-                    backgroundColor: _primaryLight,
-                    minHeight: 3,
-                  ),
-                  Expanded(
-                    child: ListView(
-                      controller: scrollCtrl,
-                      padding: const EdgeInsets.all(20),
-                      children: [
-                        if (_step == 0) ...[
-                          const Text(
-                            "📸 대표 사진을 선택해 주세요",
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            "선택 사항입니다. 없어도 공유할 수 있어요.",
-                            style: TextStyle(fontSize: 12, color: _textSecondary),
-                          ),
-                          const SizedBox(height: 16),
-                          if (state.selectedImagePath != null)
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.file(
-                                File(state.selectedImagePath!),
-                                height: 180,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          const SizedBox(height: 12),
-                          OutlinedButton.icon(
-                            onPressed: ctrl.pickImage,
-                            icon: const Icon(Icons.photo_library_outlined),
-                            label: Text(state.selectedImagePath == null ? "갤러리에서 선택" : "다시 선택"),
-                          ),
-                          if (state.selectedImagePath != null && state.uploadedImageUrl == null) ...[
-                            const SizedBox(height: 8),
-                            FilledButton.icon(
-                              onPressed: state.loading ? null : ctrl.validateAndUploadImage,
-                              icon: const Icon(Icons.upload),
-                              label: Text(state.loading ? "업로드 중..." : "사진 업로드"),
-                              style: FilledButton.styleFrom(backgroundColor: _primary),
-                            ),
-                            if (state.uploadProgress != null) ...[
-                              const SizedBox(height: 8),
-                              LinearProgressIndicator(value: state.uploadProgress, color: _primary),
-                            ],
-                          ],
-                          if (state.uploadedImageUrl != null)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFD1FAE5),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Row(
-                                children: [
-                                  Icon(Icons.check_circle, color: Color(0xFF059669), size: 16),
-                                  SizedBox(width: 6),
-                                  Text("사진 업로드 완료!", style: TextStyle(color: Color(0xFF059669), fontSize: 13)),
-                                ],
-                              ),
-                            ),
-                          const SizedBox(height: 20),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: FilledButton(
-                                  onPressed: () => setState(() => _step = 1),
-                                  style: FilledButton.styleFrom(backgroundColor: _primary),
-                                  child: const Text("다음"),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ] else if (_step == 1) ...[
-                          const Text(
-                            "✍️ 루트 정보를 입력해 주세요",
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
-                          ),
-                          const SizedBox(height: 16),
-                          _InputField(
-                            label: "제목",
-                            initial: state.draftTitle,
-                            onChanged: ctrl.setDraftTitle,
-                          ),
-                          const SizedBox(height: 12),
-                          _InputField(
-                            label: "여행지",
-                            hint: "예: 부산, 제주",
-                            initial: state.draftLocation,
-                            onChanged: ctrl.setDraftLocation,
-                          ),
-                          const SizedBox(height: 12),
-                          _InputField(
-                            label: "한 줄 설명",
-                            initial: state.draftDescription,
-                            onChanged: ctrl.setDraftDescription,
-                          ),
-                          const SizedBox(height: 12),
-                          _InputField(
-                            label: "장소 목록 (한 줄당 장소 - 메모)",
-                            hint: "해운대 - 오전 산책\n광안리 - 야경",
-                            initial: state.draftRouteItemsText,
-                            onChanged: ctrl.setDraftRouteItemsText,
-                            maxLines: 5,
-                          ),
-                          const SizedBox(height: 20),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: () => setState(() => _step = 0),
-                                  child: const Text("이전"),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: FilledButton(
-                                  onPressed: () {
-                                    setState(() => _step = 2);
-                                    ctrl.polishDraft();
-                                  },
-                                  style: FilledButton.styleFrom(backgroundColor: _primary),
-                                  child: const Text("AI 다듬기"),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ] else if (_step == 2) ...[
-                          const Text(
-                            "✨ AI 다듬기 결과",
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _textPrimary),
-                          ),
-                          const SizedBox(height: 12),
-                          if (state.loading)
-                            const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(32),
-                                child: CircularProgressIndicator(color: _primary),
-                              ),
-                            )
-                          else if (state.polished != null) ...[
-                            Container(
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: _primaryLight,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    state.polished!.title,
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      color: _textPrimary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    state.polished!.description,
-                                    style: const TextStyle(fontSize: 13, color: _textSecondary),
-                                  ),
-                                  if (state.polished!.tags.isNotEmpty) ...[
-                                    const SizedBox(height: 8),
-                                    Wrap(
-                                      spacing: 6,
-                                      children: state.polished!.tags
-                                          .map(
-                                            (t) => Chip(
-                                              label: Text("#$t", style: const TextStyle(fontSize: 11)),
-                                              backgroundColor: Colors.white,
-                                            ),
-                                          )
-                                          .toList(),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: OutlinedButton(
-                                    onPressed: () => setState(() => _step = 1),
-                                    child: const Text("수정하기"),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: FilledButton(
-                                    onPressed: state.loading ? null : ctrl.savePolishedRoute,
-                                    style: FilledButton.styleFrom(backgroundColor: _primary),
-                                    child: const Text("공유하기"),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ] else ...[
-                            const Text("AI 다듬기 실패. 다시 시도해 주세요.", style: TextStyle(color: Colors.red)),
-                            const SizedBox(height: 12),
-                            OutlinedButton(
-                              onPressed: () => setState(() => _step = 1),
-                              child: const Text("돌아가기"),
-                            ),
-                          ],
-                        ] else ...[
-                          const SizedBox(height: 32),
-                          const Center(
-                            child: Icon(
-                              Icons.check_circle,
-                              size: 56,
-                              color: Color(0xFF10B981),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          const Center(
-                            child: Text(
-                              "공유 완료!",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: _textPrimary,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Center(
-                            child: Text(
-                              "유저 루트 피드에 새 글이 추가되었습니다.",
-                              style: TextStyle(fontSize: 13, color: _textSecondary),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          FilledButton(
-                            onPressed: widget.onClose,
-                            style: FilledButton.styleFrom(backgroundColor: _primary),
-                            child: const Text("닫기"),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _InputField extends StatelessWidget {
-  const _InputField({
-    required this.label,
-    required this.initial,
-    required this.onChanged,
-    this.hint,
-    this.maxLines = 1,
-  });
-  final String label;
-  final String initial;
-  final void Function(String) onChanged;
-  final String? hint;
-  final int maxLines;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      key: ValueKey(initial.hashCode),
-      initialValue: initial,
-      onChanged: onChanged,
-      maxLines: maxLines,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      ),
-    );
-  }
-}
 
 // ═══════════════════════════════════════════════════════════════
 // K-CONTENT TAB

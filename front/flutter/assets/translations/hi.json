@@ -1005,6 +1005,8 @@
     },
     "schedule": {
       "new_route": "+ New route",
+      "calendar_collapse": "कैलेंडर संकुचित करें",
+      "calendar_expand": "कैलेंडर विस्तृत करें",
       "empty_no_plans": "अभी कोई सहेजी योजना नहीं है।",
       "empty_go_planner": "ट्रिप प्लानर में AI मार्ग बनाएँ।",
       "show_all": "सभी देखें",

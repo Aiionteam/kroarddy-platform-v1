@@ -1005,6 +1005,8 @@
     },
     "schedule": {
       "new_route": "+ New route",
+      "calendar_collapse": "Ciutkan kalender",
+      "calendar_expand": "Bentangkan kalender",
       "empty_no_plans": "Belum ada rencana yang disimpan.",
       "empty_go_planner": "Buat rute AI di Perencana Perjalanan.",
       "show_all": "Lihat semua",
