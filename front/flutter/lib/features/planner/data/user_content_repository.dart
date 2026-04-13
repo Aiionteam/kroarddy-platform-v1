@@ -130,11 +130,29 @@ class UserContentRepository {
   }
 
   /// 웹 `likeUserRoute` 와 동일 — `user_id` 쿼리 필수 (백엔드 `like_route`)
-  Future<int> likeRoute(int routeId, {required int userId}) async {
+  Future<LikeUserRouteResult> likeRoute(int routeId, {required int userId}) async {
     final res = await _dio.post<Map<String, dynamic>>(
       "/v1/user-content/routes/$routeId/like",
       queryParameters: {"user_id": userId},
     );
-    return (res.data?["likes"] as num?)?.toInt() ?? 0;
+    final data = res.data ?? const <String, dynamic>{};
+    return LikeUserRouteResult(
+      likes: (data["likes"] as num?)?.toInt() ?? 0,
+      alreadyLiked: data["already_liked"] == true,
+    );
   }
+
+  Future<void> deleteRoute(int routeId, {required int userId}) async {
+    await _dio.delete<dynamic>(
+      "/v1/user-content/routes/$routeId",
+      queryParameters: {"user_id": userId},
+    );
+  }
+}
+
+class LikeUserRouteResult {
+  const LikeUserRouteResult({required this.likes, required this.alreadyLiked});
+
+  final int likes;
+  final bool alreadyLiked;
 }

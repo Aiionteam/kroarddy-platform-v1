@@ -1005,6 +1005,8 @@
     },
     "schedule": {
       "new_route": "+ เส้นทางใหม่",
+      "calendar_collapse": "ย่อปฏิทิน",
+      "calendar_expand": "ขยายปฏิทิน",
       "empty_no_plans": "ยังไม่มีแผนที่บันทึกไว้",
       "empty_go_planner": "สร้างเส้นทาง AI ในแผนการเดินทาง",
       "show_all": "ดูทั้งหมด",

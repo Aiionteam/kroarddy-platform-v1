@@ -1005,6 +1005,8 @@
     },
     "schedule": {
       "new_route": "+ New route",
+      "calendar_collapse": "Kalender einklappen",
+      "calendar_expand": "Kalender ausklappen",
       "empty_no_plans": "Noch keine gespeicherten Pläne.",
       "empty_go_planner": "Erstellen Sie KI-Routen im Reiseplaner.",
       "show_all": "Alle anzeigen",

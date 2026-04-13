@@ -253,6 +253,7 @@ class SchedulePage extends ConsumerStatefulWidget {
 class _SchedulePageState extends ConsumerState<SchedulePage> {
   DateTime _focusedMonth = DateTime.now();
   DateTime? _selectedDate;
+  bool _calendarExpanded = true;
   bool _loading = false;
   String? _error;
   List<TravelPlanRecord> _plans = const [];
@@ -518,33 +519,133 @@ class _SchedulePageState extends ConsumerState<SchedulePage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: weekdayLabels.asMap().entries.map((e) {
-                    final i = e.key;
-                    final d = e.value;
-                    final isSun = i == 0;
-                    final isSat = i == 6;
-                    return Expanded(
-                      child: Center(
-                        child: Text(
-                          d,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: isSun
-                                ? const Color(0xFFEF4444)
-                                : isSat
-                                    ? const Color(0xFF3B82F6)
-                                    : _textSecondary,
-                          ),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 240),
+                  curve: Curves.easeInOutCubic,
+                  alignment: Alignment.topCenter,
+                  child: _calendarExpanded
+                      ? Column(
+                          key: const ValueKey("cal_open"),
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(height: 8),
+                            Row(
+                              children: weekdayLabels.asMap().entries.map((e) {
+                                final i = e.key;
+                                final d = e.value;
+                                final isSun = i == 0;
+                                final isSat = i == 6;
+                                return Expanded(
+                                  child: Center(
+                                    child: Text(
+                                      d,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: isSun
+                                            ? const Color(0xFFEF4444)
+                                            : isSat
+                                                ? const Color(0xFF3B82F6)
+                                                : _textSecondary,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 8),
+                            _buildCalendarGrid(),
+                            const SizedBox(height: 4),
+                            Center(
+                              child: Tooltip(
+                                message: "screens.schedule.calendar_collapse".tr(),
+                                child: Material(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: InkWell(
+                                    onTap: () =>
+                                        setState(() => _calendarExpanded = false),
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 6,
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            "screens.schedule.calendar_collapse"
+                                                .tr(),
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: _textSecondary,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Icon(
+                                            Icons.expand_less,
+                                            size: 22,
+                                            color: Colors.grey.shade700,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : Column(
+                          key: const ValueKey("cal_shut"),
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(height: 6),
+                            Center(
+                              child: Tooltip(
+                                message: "screens.schedule.calendar_expand".tr(),
+                                child: Material(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: InkWell(
+                                    onTap: () =>
+                                        setState(() => _calendarExpanded = true),
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 6,
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            "screens.schedule.calendar_expand"
+                                                .tr(),
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: _textSecondary,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Icon(
+                                            Icons.expand_more,
+                                            size: 22,
+                                            color: Colors.grey.shade700,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    );
-                  }).toList(),
                 ),
-                const SizedBox(height: 8),
-                _buildCalendarGrid(),
               ],
             ),
           ),

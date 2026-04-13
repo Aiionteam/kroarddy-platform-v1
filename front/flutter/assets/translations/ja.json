@@ -1005,6 +1005,8 @@
     },
     "schedule": {
       "new_route": "+ 新しいルート",
+      "calendar_collapse": "カレンダーを閉じる",
+      "calendar_expand": "カレンダーを開く",
       "empty_no_plans": "保存したプランはまだありません。",
       "empty_go_planner": "旅行プランナーでAIルートを作成してみましょう。",
       "show_all": "すべて表示",

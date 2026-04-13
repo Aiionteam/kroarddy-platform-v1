@@ -46,10 +46,19 @@ const _mbtiGroups = [
 
 // ═════════════════════════════════════════════════════════════
 class TourstarPage extends ConsumerStatefulWidget {
-  const TourstarPage({super.key, this.initialPostId});
+  const TourstarPage({
+    super.key,
+    this.initialPostId,
+    this.initialAuthorUserId,
+    this.initialAuthorName,
+  });
 
   /// 딥링크나 채팅 카드에서 바로 열 게시글 ID
   final String? initialPostId;
+
+  /// 유저 콘텐츠 등에서 닉네임 탭 시 — 작성자 피드로 바로 진입
+  final int? initialAuthorUserId;
+  final String? initialAuthorName;
 
   @override
   ConsumerState<TourstarPage> createState() => _TourstarPageState();
@@ -247,6 +256,14 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
           await Future<void>.delayed(const Duration(milliseconds: 100));
           waited++;
         }
+      } else {
+        var waited = 0;
+        while (mounted && waited < 60) {
+          final st = ref.read(tourstarControllerProvider);
+          if (!st.postsLoading) break;
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+          waited++;
+        }
       }
       if (!mounted) return;
       if (id != null && id.isNotEmpty) {
@@ -263,6 +280,18 @@ class _TourstarPageState extends ConsumerState<TourstarPage> {
           } catch (_) {}
         }
         if (post != null && mounted) _openDetail(post);
+        return;
+      }
+      final authorName = widget.initialAuthorName?.trim() ?? "";
+      if (widget.initialAuthorUserId != null || authorName.isNotEmpty) {
+        setState(() {
+          _viewAuthorUserId = widget.initialAuthorUserId;
+          _viewAuthorName = authorName;
+          _filter = "all";
+          _gridView = true;
+          _searchCtrl.clear();
+          _searchQuery = "";
+        });
       }
     });
   }
