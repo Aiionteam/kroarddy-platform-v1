@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3-flash-preview"
     openai_api_key: str = ""
+    # Day 생성 노드만 OpenAI로 선택할지 여부 (기본: Gemini 유지)
+    daygen_use_openai: bool = False
+    # daygen_use_openai=True일 때 사용할 모델명
+    daygen_openai_model: str = "gpt-5-mini"
     database_url: str = ""
     # 로컬: localhost / 프로덕션: https://api.kroaddy.site
     guide_service_url: str = "http://localhost:8002"

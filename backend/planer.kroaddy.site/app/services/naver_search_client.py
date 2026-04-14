@@ -13,8 +13,22 @@ from html import unescape
 import httpx
 
 from app.core.config import settings
+from app.core.location_slugs import SLUG_TO_NAME
 
 logger = logging.getLogger(__name__)
+
+
+def naver_blog_location_token(location_name: str, *, lang: str) -> str:
+    """네이버 블로그 검색용 지역 토큰. 한국어 응답(lang=Korean)이면 영문 슬러그를 한글 표기로 바꾼다."""
+    raw = (location_name or "").strip()
+    if not raw:
+        return raw
+    if lang != "Korean":
+        return raw
+    if any("\uac00" <= c <= "\ud7a3" for c in raw):
+        return raw
+    key = raw.lower().replace(" ", "-")
+    return SLUG_TO_NAME.get(key, raw)
 
 _NAVER_BLOG_URL = "https://openapi.naver.com/v1/search/blog.json"
 
@@ -74,7 +88,7 @@ async def naver_blog_search(query: str, *, display: int = 5) -> list[dict[str, s
 
 def naver_tips_queries(*, location_name: str, route_name: str, lang: str) -> list[str]:
     """규칙 기반 검색어 – 지역·루트별 고정 패턴."""
-    loc = (location_name or "").strip()
+    loc = naver_blog_location_token(location_name, lang=lang)
     rn = (route_name or "").strip()
     if not loc:
         return []
@@ -100,6 +114,7 @@ async def build_naver_tips_raw_text(
     location_name: str,
     route_name: str,
     lang: str,
+    extra_queries: list[str] | None = None,
     max_chars: int = 2200,
     per_query_display: int = 4,
 ) -> str:
@@ -108,6 +123,15 @@ async def build_naver_tips_raw_text(
         return ""
 
     queries = naver_tips_queries(location_name=location_name, route_name=route_name, lang=lang)
+    if extra_queries:
+        for q in extra_queries:
+            qq = (q or "").strip()
+            if not qq:
+                continue
+            if qq not in queries:
+                queries.append(qq)
+    # 너무 많은 쿼리는 지연/토큰만 늘리므로 상위 8개 제한
+    queries = queries[:8]
     if not queries:
         return ""
 
