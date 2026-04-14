@@ -5,10 +5,27 @@ from time import perf_counter
 from typing import Any, TypedDict
 
 from langchain_core.messages import HumanMessage
+from langchain_openai import ChatOpenAI
 
 from app.agent.standard.nodes_common import _get_llm, _invoke, _parse_json
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+_daygen_openai_llm: ChatOpenAI | None = None
+
+
+def _get_daygen_llm() -> Any:
+    """Day 생성 전용 LLM 선택기. OpenAI 키가 있으면 GPT를 우선 사용."""
+    global _daygen_openai_llm
+    if (settings.openai_api_key or "").strip():
+        if _daygen_openai_llm is None:
+            _daygen_openai_llm = ChatOpenAI(
+                model=(settings.daygen_openai_model or "gpt-5-mini"),
+                temperature=0.2,
+                api_key=(settings.openai_api_key or "").strip(),
+            )
+        return _daygen_openai_llm
+    return _get_llm()
 
 
 def _normalize_place_key(name: str) -> str:
@@ -324,7 +341,7 @@ async def _generate_single_day(
         "\nRespond ONLY with valid JSON:\n"
         f"{schema}"
     )
-    llm = _get_llm()
+    llm = _get_daygen_llm()
     response = await _invoke(llm, [HumanMessage(content=prompt)], plain_fallback=False)
     data = _parse_json(response)
     raw_items = data.get("items", [])
