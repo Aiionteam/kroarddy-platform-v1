@@ -66,6 +66,8 @@ interface TourPhoto {
   selected: boolean;
   imageUrl?: string;
   fileName?: string;
+  /** 업로드 전 클라이언트에서 읽은 촬영 시각(EXIF). 없으면 null */
+  shotAt?: string | null;
   sourceImagePath?: string;
   aiRank?: number;
   aiScore?: number;
@@ -262,6 +264,22 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
     setPhotos((prev) => prev.map((p) => (p.id === id ? { ...p, selected: !p.selected } : p)));
   };
 
+  const computeInDateRange = React.useCallback((shotAt: string | null | undefined) => {
+    const hasStart = Boolean(dateFilter.startDate);
+    const hasEnd = Boolean(dateFilter.endDate);
+    if (!hasStart && !hasEnd) return true;
+
+    if (!shotAt) return Boolean(dateFilter.includeUnknownDate);
+    const shotDate = new Date(shotAt);
+    if (Number.isNaN(shotDate.getTime())) return Boolean(dateFilter.includeUnknownDate);
+
+    const startAt = hasStart ? new Date(`${dateFilter.startDate}T00:00:00`) : null;
+    const endAt = hasEnd ? new Date(`${dateFilter.endDate}T23:59:59.999`) : null;
+    const inStart = startAt ? shotDate >= startAt : true;
+    const inEnd = endAt ? shotDate <= endAt : true;
+    return inStart && inEnd;
+  }, [dateFilter.endDate, dateFilter.includeUnknownDate, dateFilter.startDate]);
+
   const parseExifShotDate = async (file: File): Promise<Date | null> => {
     try {
       const exifr = await import("exifr");
@@ -333,11 +351,14 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
 
     setIsUploading(true);
     try {
+      // 업로드 전에 촬영일(EXIF)을 읽어 두고, 이후 기간 변경 시 자동 선택에 활용한다.
+      const shotDates = await Promise.all(imageFiles.map((f) => parseExifShotDate(f)));
       const result = await uploadTourstarPhotos(imageFiles);
       const mapped: TourPhoto[] = result.uploaded.map((item, idx) => ({
         id: `upload-${Date.now()}-${idx}`,
         gradient: randomGradient(),
-        selected: true,
+        shotAt: shotDates[idx] ? shotDates[idx]!.toISOString() : null,
+        selected: computeInDateRange(shotDates[idx] ? shotDates[idx]!.toISOString() : null),
         imageUrl: buildTourstarImageUrl(item.url),
         fileName: item.name,
       }));
@@ -420,6 +441,11 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
       setIsUploading(false);
     }
   };
+
+  // 기간이 설정/변경되면, 이미 업로드된 사진도 자동으로 기간 내 항목만 선택 상태로 맞춘다.
+  React.useEffect(() => {
+    setPhotos((prev) => prev.map((p) => ({ ...p, selected: computeInDateRange(p.shotAt) })));
+  }, [computeInDateRange]);
 
   const handleUploadPhotosWithDateFilter = async (files: File[] | null) => {
     if (!files || files.length === 0 || isUploading || isFilteringByDate) return;

@@ -46,6 +46,15 @@ String _tierDisplayName(String tier) {
   }
 }
 
+/// 웹 설정 `settings/account` — 명예도 행과 동일: `{점수} 점 ({티어})`
+String _honorAccountLine(UserModel? user) {
+  final score = user?.honor ?? 0;
+  final tierRaw = user?.tier?.trim();
+  final tierKey = (tierRaw == null || tierRaw.isEmpty) ? "SILVER" : tierRaw.toUpperCase();
+  final tierLabel = _tierDisplayName(tierKey);
+  return "$score ${"settings.account.point".tr()} ($tierLabel)";
+}
+
 // ── 진입점 ─────────────────────────────────────────────────────
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -266,6 +275,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           _EditableNicknameField(
             initial: state.nickname,
             onChanged: ctrl.setNickname,
+          ),
+          const SizedBox(height: 12),
+          _ReadOnlyField(
+            label: "settings.account.honor".tr(),
+            value: _honorAccountLine(state.user),
+            valueColor: _primary,
           ),
           const SizedBox(height: 12),
           _ReadOnlyField(
