@@ -815,6 +815,10 @@ def _to_post_response(
     honor_down = int(getattr(row, "honor_down", 0) or 0)
     hv = honor_vote if honor_vote in (-1, 0, 1) else 0
     net = honor_up - honor_down
+    attached = getattr(row, "attached_schedule", None)
+    if attached is not None and not isinstance(attached, dict):
+        attached = None
+
     return PostResponse(
         id=str(row.id),
         user_id=row.user_id,
@@ -827,6 +831,7 @@ def _to_post_response(
         tags=list(row.tags or []),
         photo_urls=[_build_s3_view_url(str(url)) for url in list(row.photo_urls or [])],
         selected_scores=row.selected_scores or None,
+        attached_schedule=attached,
         created_at=row.created_at,
         updated_at=row.updated_at,
         honor_up=honor_up,
@@ -2013,6 +2018,7 @@ async def create_post(req: CreatePostRequest, db: AsyncSession = Depends(get_db)
         tags=req.tags,
         photo_urls=photo_urls,
         selected_scores=req.selected_scores,
+        attached_schedule=req.attached_schedule,
     )
     db.add(post)
     await db.flush()
@@ -2033,6 +2039,9 @@ async def update_post(post_id: int, req: UpdatePostRequest, db: AsyncSession = D
         post.comment = req.comment
     if req.tags is not None:
         post.tags = req.tags
+    body = req.model_dump(exclude_unset=True)
+    if "attached_schedule" in body:
+        post.attached_schedule = body["attached_schedule"]
     if req.keep_photo_urls is not None or req.image_paths is not None:
         try:
             next_photo_urls: list[str] = []

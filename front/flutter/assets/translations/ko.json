@@ -23,13 +23,13 @@
     "previous": "이전"
   },
   "sidebar": {
-    "tourstar": "투어스타",
+    "tourstar": "여행피드",
     "planner": "여행플래너",
-    "schedule": "일정관리",
-    "guide": "장소 추천",
-    "groupchat": "단체채팅",
+    "schedule": "마이플랜",
+    "guide": "장소탐색",
+    "groupchat": "그룹톡",
     "friends": "친구목록",
-    "whisper": "귓속말",
+    "whisper": "개인톡",
     "profile": "내정보",
     "customer": "고객센터",
     "logout": "로그아웃",
@@ -78,6 +78,8 @@
       "date_range_placeholder": "기간 선택",
       "date_range_summary": "{start} ~ {end} ({count}장)",
       "clear": "해제",
+      "include_unknown_shot_date": "촬영일 없는 사진 포함",
+      "open_settings": "설정",
       "upload_ai": "업로드 + AI 분석",
       "ai_ranking_title": "AI 랭킹 결과",
       "ai_ranking_pick_n": "{selected}/{total} 선택",
@@ -116,6 +118,15 @@
       "share_link_copied": "공유 링크가 클립보드에 복사되었습니다.",
       "net_likes": "순{likes}",
       "action_edit": "수정",
+      "import_saved_schedule": "저장된 일정에서 가져오기",
+      "view_schedule": "일정 보기",
+      "schedule_collapse": "일정 접기",
+      "schedule_section_title": "일정표",
+      "schedule_day_n": "{n}일차",
+      "select_saved_plan_title": "저장된 일정 선택",
+      "no_saved_plans": "저장된 일정이 없습니다.",
+      "remove_attached_schedule": "붙인 일정 제거",
+      "schedule_in_feed_hint": "저장 일정 포함 · 상세에서 일정 보기",
       "comments_inline": "댓글 {count}",
       "photos_inline": "사진 {count}장",
       "comments_heading_n": "댓글 {count}개",
@@ -126,8 +137,14 @@
       "status_hint_select_upload": "사진을 선택하고 업로드를 시작하세요.",
       "status_picked_exif_checking": "촬영일 확인 중… ({count}장)",
       "status_pick_photos_first": "먼저 사진을 선택해 주세요.",
+      "status_date_filter_ready": "먼저 기간을 선택해 주세요.",
       "status_date_filter_applied": "기간 필터가 적용되었습니다.",
       "status_date_filter_cleared": "기간 필터를 해제했습니다.",
+      "status_checking_gallery_permission": "갤러리 권한 확인 중...",
+      "status_gallery_permission_denied": "갤러리 접근 권한이 필요합니다. 설정에서 허용해 주세요.",
+      "status_no_photos_in_range": "선택한 기간에 해당하는 사진이 없습니다.",
+      "status_gallery_autopick_done": "기간 내 사진 {count}장을 불러왔습니다.",
+      "status_gallery_autopick_error": "갤러리 사진 불러오기에 실패했습니다. ({error})",
       "status_need_login": "로그인이 필요합니다.",
       "status_cannot_resolve_user": "사용자 정보를 확인할 수 없습니다.",
       "status_upload_analyze_start": "업로드 및 분석 중…",
@@ -201,7 +218,7 @@
       "msg_save_failed": "저장 실패: {error}",
       "dest_plan_cta": "{name} 여행을 AI로 계획해보세요",
       "save_plan": "💾 저장하기",
-      "saved_goto_schedule": "✅ 저장됨 · 일정관리 보기",
+      "saved_goto_schedule": "✅ 저장됨 · 마이플랜 보기",
       "schedule_pick_route_hint": "루트를 선택해 주세요",
       "standard_map_need_generate": "날짜 선택 후 루트를 생성하세요",
       "standard_map_range_hint": "{start} ~ {end} 일정을 AI가 만들어드려요",
@@ -225,7 +242,7 @@
       "weather_within_5days": "· 5일 이내"
     },
     "guide": {
-      "landing_title": "장소 추천",
+      "landing_title": "장소탐색",
       "landing_subtitle": "맛집과 행사를 한 화면에서 선택해서 살펴보세요.",
       "restaurant_label": "맛집 추천",
       "restaurant_desc": "지역별 맛집 탐색",
@@ -456,7 +473,7 @@
         "recipe_placeholder": "예: 맵부심 챌린지, 단짠 디저트",
         "recipe_generate_btn": "AI 꿀조합 레시피 생성하기",
         "recommended_schedule_title": "{title} — 추천 일정",
-        "saved_goto_schedule": "✅ 저장됨 · 일정관리 보기",
+        "saved_goto_schedule": "✅ 저장됨 · 마이플랜 보기",
         "save_plan": "💾 저장하기",
         "total_cost": "예상 총 경비",
         "cost_per_day": "Day{day} {total}",
@@ -563,7 +580,7 @@
         "first_steps": {
           "category": "시작하기",
           "question": "처음 왔는데 어디부터 보면 되나요?",
-          "answer": "홈 바로가기에서 여행플래너·일정관리·장소 추천 순으로 둘러보세요. 이용가이드에도 단계별 안내가 있습니다."
+          "answer": "홈 바로가기에서 여행플래너·마이플랜·장소탐색 순으로 둘러보세요. 이용가이드에도 단계별 안내가 있습니다."
         },
         "update_notes": {
           "category": "업데이트",
@@ -591,18 +608,18 @@
         "title": "여행 루트 생성 → 일정 정리 → 필요하면 후기/소통",
         "steps": {
           "planner": "여행플래너",
-          "schedule": "일정관리",
-          "guide": "장소추천",
-          "social": "투어스타/단체채팅"
+          "schedule": "마이플랜",
+          "guide": "장소탐색",
+          "social": "여행피드/그룹톡"
         },
         "cta_planner": "여행플래너 시작하기",
-        "cta_groupchat": "단체채팅 둘러보기"
+        "cta_groupchat": "그룹톡 둘러보기"
       },
       "cards": {
         "tourstar": {
-          "title": "투어스타",
+          "title": "여행피드",
           "subtitle": "여행의 기록(게시글)과 후기/공유를 한 곳에서 만들어보세요.",
-          "cta": "투어스타 가기",
+          "cta": "여행피드 가기",
           "items": {
             "1": {
               "title": "1) 사진/여행기록을 준비",
@@ -636,14 +653,14 @@
               "body": " : 루트가 이어질 곳을 정하면 AI 추천이 더 정확해져요."
             },
             "3": {
-              "body": "추천된 일정은 자동으로 저장되고, 다음 단계(일정관리)에서 더 다듬을 수 있어요."
+              "body": "추천된 일정은 자동으로 저장되고, 다음 단계(마이플랜)에서 더 다듬을 수 있어요."
             }
           }
         },
         "schedule": {
-          "title": "일정관리",
+          "title": "마이플랜",
           "subtitle": "저장된 플랜을 달력에서 확인하고, AI로 수정/리롤할 수 있어요.",
-          "cta": "일정관리 보기",
+          "cta": "마이플랜 보기",
           "items": {
             "1": {
               "title": "1) 달력에서 날짜 선택",
@@ -664,9 +681,9 @@
           }
         },
         "discover": {
-          "title": "장소추천",
-          "subtitle": "맛집/행사 등 지역 기반 추천을 한 화면에서 찾아보세요.",
-          "cta": "장소추천 가기",
+          "title": "장소탐색",
+          "subtitle": "맛집·행사 등 지역 정보를 한 화면에서 탐색해 보세요.",
+          "cta": "장소탐색 가기",
           "items": {
             "1": {
               "title": "1) 가이드 선택",
@@ -677,14 +694,14 @@
               "body": "관심 있는 장소를 눌러 정보를 확인해요."
             },
             "3": {
-              "body": "일정에 넣고 싶다면, 여행플래너/일정관리에서 현재 루트에 맞게 조정하세요."
+              "body": "일정에 넣고 싶다면, 여행플래너/마이플랜에서 현재 루트에 맞게 조정하세요."
             }
           }
         },
         "groupchat": {
-          "title": "단체채팅",
+          "title": "그룹톡",
           "subtitle": "명예도/방 형태에 따라 모임에 참여하고 여행 이야기를 나눠요.",
-          "cta": "단체채팅 가기",
+          "cta": "그룹톡 가기",
           "items": {
             "1": {
               "title": "1) 방 목록에서 입장",
@@ -695,8 +712,8 @@
               "body": "채팅창에 내용을 입력하고 전송하면 실시간으로 공유됩니다."
             },
             "3": {
-              "title": "3) 친구/귓속말/명예도 기능",
-              "body": "상대 메시지 메뉴에서 귓속말, 친구 추가, 명예도 조작을 할 수 있어요."
+              "title": "3) 친구/개인톡/명예도 기능",
+              "body": "상대 메시지 메뉴에서 개인톡, 친구 추가, 명예도 조작을 할 수 있어요."
             }
           }
         }

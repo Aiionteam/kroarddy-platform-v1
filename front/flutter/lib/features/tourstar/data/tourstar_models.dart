@@ -1,5 +1,7 @@
 // ── 게시글 / 댓글 / 공유 미리보기 ──────────────────────────────
 
+import "tourstar_schedule.dart";
+
 class TourstarComment {
   TourstarComment({
     required this.id,
@@ -54,6 +56,7 @@ class TourstarPostRecord {
     this.honorDown = 0,
     this.honorVote = 0,
     this.bookmarked = false,
+    this.attachedSchedule,
   });
 
   final String id;
@@ -90,6 +93,9 @@ class TourstarPostRecord {
   /// 현재 사용자가 스크랩(북마크)한 여부 (클라이언트 측 관리)
   final bool bookmarked;
 
+  /// 여행 플래너에서 붙인 일정 스냅샷 (백엔드 `attached_schedule`)
+  final Map<String, dynamic>? attachedSchedule;
+
   factory TourstarPostRecord.fromJson(Map<String, dynamic> json) {
     final tagsRaw = (json["tags"] as List?) ?? [];
     final urlsRaw = (json["photo_urls"] as List?) ?? [];
@@ -106,6 +112,7 @@ class TourstarPostRecord {
       selectedScores: json["selected_scores"] is Map
           ? Map<String, dynamic>.from(json["selected_scores"] as Map)
           : null,
+      attachedSchedule: parseAttachedScheduleFromPostJson(json),
       comments: commentsRaw
           .whereType<Map>()
           .map((e) => TourstarComment.fromJson(Map<String, dynamic>.from(e)))
@@ -138,6 +145,7 @@ class TourstarPostRecord {
     int? honorVote,
     String? authorNickname,
     String? authorProfileImageUrl,
+    Map<String, dynamic>? attachedSchedule,
   }) {
     return TourstarPostRecord(
       id: id,
@@ -160,6 +168,7 @@ class TourstarPostRecord {
       honorDown: honorDown ?? this.honorDown,
       honorVote: honorVote ?? this.honorVote,
       bookmarked: bookmarked ?? this.bookmarked,
+      attachedSchedule: attachedSchedule ?? this.attachedSchedule,
     );
   }
 }

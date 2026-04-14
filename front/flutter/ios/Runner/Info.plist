@@ -81,6 +81,8 @@
 		</array>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>장소 추천과 차량 경로 안내를 위해 현재 위치가 필요합니다.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>투어스타에서 갤러리 사진을 불러와 여행 기록을 만들기 위해 사진 접근 권한이 필요합니다.</string>
 		<key>UIStatusBarHidden</key>
 		<false/>
 	</dict>

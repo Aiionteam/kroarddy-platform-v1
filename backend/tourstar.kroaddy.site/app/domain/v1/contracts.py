@@ -126,6 +126,7 @@ class CreatePostRequest(BaseModel):
     tags: list[str] = Field(default_factory=list)
     image_paths: list[str] = Field(default_factory=list, description="로컬 artifacts 경로")
     selected_scores: dict | None = None
+    attached_schedule: dict | None = None
 
 
 class CommentResponse(BaseModel):
@@ -150,6 +151,8 @@ class PostResponse(BaseModel):
     tags: list[str] = Field(default_factory=list)
     photo_urls: list[str] = Field(default_factory=list)
     selected_scores: dict | None = None
+    # 플래너에서 게시 시 저장하는 일정 스냅샷 (DB `tourstar_posts.attached_schedule`)
+    attached_schedule: dict | None = None
     created_at: datetime
     updated_at: datetime
     # 명예도 (썸업/썸다운)
@@ -170,6 +173,7 @@ class UpdatePostRequest(BaseModel):
     tags: list[str] | None = None
     keep_photo_urls: list[str] | None = None
     image_paths: list[str] | None = None
+    attached_schedule: dict | None = None
 
 
 class FinalizeUploadsRequest(BaseModel):

@@ -813,13 +813,13 @@
     }
   },
   "sidebar": {
-    "tourstar": "यात्रा सितारा",
+    "tourstar": "ट्रैवल फ़ीड",
     "planner": "ट्रिप प्लानर",
-    "schedule": "मेरी योजनाएँ",
-    "guide": "खोजें",
-    "groupchat": "ग्रुप चैट",
+    "schedule": "मेरा प्लान",
+    "guide": "स्थान खोजें",
+    "groupchat": "ग्रुप टॉक",
     "friends": "मित्र सूची",
-    "whisper": "फुसफुसाहट",
+    "whisper": "निजी चैट",
     "profile": "मेरा प्रोफ़ाइल",
     "customer": "कस्टमर सेंटर",
     "logout": "लॉग आउट",
@@ -1015,7 +1015,7 @@
       "weather_within_5days": "· 5 दिनों के भीतर"
     },
     "guide": {
-      "landing_title": "Place picks",
+      "landing_title": "स्थान खोजें",
       "landing_subtitle": "Choose food spots or events and explore in one place.",
       "restaurant_label": "Restaurant picks",
       "restaurant_desc": "Browse by area",
@@ -1713,7 +1713,7 @@
         "steps": {
           "planner": "यात्रा योजनाकार",
           "schedule": "शेड्यूल",
-          "guide": "खोजें",
+          "guide": "स्थान खोजें",
           "social": "Tourstar / समूह चैट"
         },
         "cta_planner": "यात्रा योजनाकार शुरू करें",
@@ -1785,9 +1785,9 @@
           }
         },
         "discover": {
-          "title": "खोजें",
-          "subtitle": "रेस्तरां, आयोजन आदि एक स्क्रीन पर।",
-          "cta": "खोजें पर जाएँ",
+          "title": "स्थान खोजें",
+          "subtitle": "रेस्तरां, आयोजन और स्थानीय स्थान एक स्क्रीन पर।",
+          "cta": "स्थान खोजें खोलें",
           "items": {
             "1": {
               "title": "1) गाइड चुनें",

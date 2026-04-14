@@ -114,6 +114,10 @@ export interface TourstarPostRecord {
   honor_down?: number;
   honor_vote?: number;
   comments: TourstarComment[];
+  /** 여행 플래너에서 붙인 일정 스냅샷 */
+  attached_schedule?: Record<string, unknown> | null;
+  /** 일부 게이트웨이/직렬화에서 camelCase 로 올 수 있음 */
+  attachedSchedule?: Record<string, unknown> | null;
 }
 
 export interface TourstarSharePreview {
@@ -281,11 +285,32 @@ export async function createTourstarPost(payload: {
   tags: string[];
   image_paths: string[];
   selected_scores?: Record<string, unknown>;
+  attached_schedule?: Record<string, unknown> | null;
 }): Promise<TourstarPostRecord> {
+  const body: Record<string, unknown> = {
+    title: payload.title,
+    location: payload.location,
+    comment: payload.comment,
+    visibility: payload.visibility,
+    tags: payload.tags,
+    image_paths: payload.image_paths,
+  };
+  if (payload.user_id != null) body.user_id = payload.user_id;
+  if (payload.author_nickname != null && String(payload.author_nickname).trim() !== "") {
+    body.author_nickname = payload.author_nickname;
+  }
+  if (payload.selected_scores != null) body.selected_scores = payload.selected_scores;
+  if (
+    payload.attached_schedule != null &&
+    typeof payload.attached_schedule === "object" &&
+    Object.keys(payload.attached_schedule).length > 0
+  ) {
+    body.attached_schedule = payload.attached_schedule;
+  }
   const res = await fetch(toApiUrl("/v1/photo-selection/posts"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
     cache: "no-store",
   });
   if (!res.ok) {
@@ -416,6 +441,7 @@ export async function updateTourstarPost(
     tags?: string[];
     keep_photo_urls?: string[];
     image_paths?: string[];
+    attached_schedule?: Record<string, unknown> | null;
   },
 ): Promise<TourstarPostRecord> {
   const res = await fetch(toApiUrl(`/v1/photo-selection/posts/${postId}`), {

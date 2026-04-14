@@ -813,13 +813,13 @@
     }
   },
   "sidebar": {
-    "tourstar": "Étoile de voyage",
+    "tourstar": "Fil voyage",
     "planner": "Planificateur",
-    "schedule": "Mes voyages",
-    "guide": "Découvrir",
-    "groupchat": "Discussion de groupe",
+    "schedule": "Mon plan",
+    "guide": "Explorer les lieux",
+    "groupchat": "Groupe",
     "friends": "Liste d’amis",
-    "whisper": "Chuchoter",
+    "whisper": "Message perso",
     "profile": "Mon profil",
     "customer": "Service client",
     "logout": "Déconnexion",
@@ -1015,7 +1015,7 @@
       "weather_within_5days": "· Sous 5 jours"
     },
     "guide": {
-      "landing_title": "Place picks",
+      "landing_title": "Explorer les lieux",
       "landing_subtitle": "Choose food spots or events and explore in one place.",
       "restaurant_label": "Restaurant picks",
       "restaurant_desc": "Browse by area",
@@ -1713,7 +1713,7 @@
         "steps": {
           "planner": "Planificateur",
           "schedule": "Planning",
-          "guide": "Découvrir",
+          "guide": "Explorer les lieux",
           "social": "Tourstar / Chat de groupe"
         },
         "cta_planner": "Lancer le planificateur",
@@ -1785,9 +1785,9 @@
           }
         },
         "discover": {
-          "title": "Découvrir",
-          "subtitle": "Restaurants, événements et plus sur un seul écran.",
-          "cta": "Aller à Découvrir",
+          "title": "Explorer les lieux",
+          "subtitle": "Restaurants, événements et lieux locaux sur un seul écran.",
+          "cta": "Ouvrir l’exploration",
           "items": {
             "1": {
               "title": "1) Choisir un guide",
