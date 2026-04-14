@@ -32,6 +32,9 @@ class TourstarPost(Base, TimestampMixin):
     # YOLO 평가 결과 (점수, 순위 등 메타데이터)
     selected_scores: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
+    # 여행 플래너에서 붙인 일정 스냅샷 (plan_id, route_name, schedule[] 등)
+    attached_schedule: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+
     # 게시물 공개 여부 ('public' / 'private')
     visibility: Mapped[str] = mapped_column(
         String(20), nullable=False, server_default="public"

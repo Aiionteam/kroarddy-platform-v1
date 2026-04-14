@@ -5,6 +5,7 @@ import "package:dio/dio.dart";
 import "package:exif/exif.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:image_picker/image_picker.dart";
+import "package:photo_manager/photo_manager.dart";
 
 import "../../../../core/auth/jwt_claims.dart";
 import "../../../../core/auth/token_store.dart";
@@ -13,6 +14,8 @@ import "../../../chat/data/friend_repository.dart";
 import "../../../profile/data/profile_repository.dart";
 import "../../data/tourstar_models.dart";
 import "../../data/tourstar_repository.dart";
+import "../../data/tourstar_schedule.dart";
+import "../../../planner/data/planner_models.dart";
 import "tourstar_state.dart";
 
 // ignore_for_file: avoid_catches_without_on_clauses
@@ -24,6 +27,7 @@ final tourstarControllerProvider = NotifierProvider<TourstarController, Tourstar
 class TourstarController extends Notifier<TourstarState> {
   final ImagePicker _picker = ImagePicker();
   final Map<String, DateTime> _shotDateCache = <String, DateTime>{};
+  static const int _kMaxAutoGalleryPick = 200;
 
   TourstarRepository get _repo => ref.read(tourstarRepositoryProvider);
   FriendRepository get _friendRepo => ref.read(friendRepositoryProvider);
@@ -148,49 +152,205 @@ class TourstarController extends Notifier<TourstarState> {
   Future<void> pickImages() async {
     final files = await _picker.pickMultiImage();
     if (files.isEmpty) return;
+    // 기간 필터는 "사진 선택 전 설정"도 가능해야 하므로 clearDateFilter 하지 않는다.
     state = state.copyWith(
       pickedFiles: files,
       filteredPickedFiles: files,
-      clearDateFilter: true,
       statusMessage: "screens.tourstar.status_picked_exif_checking",
       statusMessageParams: {"count": "${files.length}"},
       clearGeneratedPost: true,
     );
 
     await _summarizeShotDates(files);
+    // 이미 기간이 설정돼 있으면, 선택 직후 자동으로 기간 내 사진만 업로드 대상에 남긴다.
+    await _applyDateFilterIfNeeded();
     await uploadAndAnalyze(autoGenerateComment: true);
   }
 
-  Future<void> setDateRange(DateTime start, DateTime end) async {
-    if (state.pickedFiles.isEmpty) {
+  /// 기간이 설정된 경우, OS 갤러리에서 해당 기간의 사진을 자동 선별해 `pickedFiles`에 채운다.
+  /// - 사용자 액션(버튼 클릭)을 통해서만 실행한다(프라이버시/심사 이슈 방지).
+  Future<void> autoPickFromGallery() async {
+    final start = state.filterStartDate;
+    final end = state.filterEndDate;
+    if (start == null || end == null) {
       state = state.copyWith(
-        statusMessage: "screens.tourstar.status_pick_photos_first",
+        statusMessage: "screens.tourstar.status_date_filter_ready",
         clearStatusParams: true,
       );
       return;
     }
 
+    state = state.copyWith(
+      loading: true,
+      statusMessage: "screens.tourstar.status_checking_gallery_permission",
+      clearStatusParams: true,
+      clearGeneratedPost: true,
+    );
+
+    try {
+      final permission = await PhotoManager.requestPermissionExtend();
+      final allowed = permission.isAuth || permission == PermissionState.limited;
+      if (!allowed) {
+        state = state.copyWith(
+          loading: false,
+          statusMessage: "screens.tourstar.status_gallery_permission_denied",
+          clearStatusParams: true,
+        );
+        return;
+      }
+
+      final filter = FilterOptionGroup()
+        ..addOrderOption(const OrderOption(type: OrderOptionType.createDate, asc: false))
+        ..setOption(
+          AssetType.image,
+          const FilterOption(),
+        );
+      // NOTE:
+      // - photo_manager의 createTimeCond는 플랫폼/제조사에 따라 "촬영일"이 아닌 "미디어 DB 추가/생성일"에
+      //   가깝게 동작할 수 있다(예: 카카오톡으로 받은 과거 촬영 사진을 오늘 저장한 경우).
+      // - 그래서 1차로는 createTimeCond로 빠르게 후보를 줄이되, 비어 있으면 All 앨범을 최근순 스캔하며
+      //   EXIF 촬영일(없으면 lastModified)로 기간을 재필터링하는 폴백을 사용한다.
+      filter.createTimeCond = DateTimeCond(min: start, max: end);
+
+      List<AssetPathEntity> paths = await PhotoManager.getAssetPathList(
+        type: RequestType.image,
+        hasAll: true,
+        filterOption: filter,
+      );
+      final prefilteredEmpty = paths.isEmpty;
+      if (prefilteredEmpty) {
+        // createTimeCond로는 못 잡는 케이스(외부에서 받은 사진 등)를 위해 전체(All)에서 EXIF 기준으로 스캔한다.
+        final fallbackFilter = FilterOptionGroup()
+          ..addOrderOption(const OrderOption(type: OrderOptionType.createDate, asc: false))
+          ..setOption(
+            AssetType.image,
+            const FilterOption(),
+          );
+        paths = await PhotoManager.getAssetPathList(
+          type: RequestType.image,
+          hasAll: true,
+          filterOption: fallbackFilter,
+        );
+      }
+      if (paths.isEmpty) {
+        state = state.copyWith(
+          loading: false,
+          pickedFiles: <XFile>[],
+          filteredPickedFiles: <XFile>[],
+          statusMessage: "screens.tourstar.status_no_photos_in_range",
+          clearStatusParams: true,
+        );
+        return;
+      }
+
+      // hasAll=true일 때는 "전체(All/Recent)" 앨범이 포함되며,
+      // 이를 포함해 여러 앨범을 순회하면 동일 자산이 중복될 수 있다.
+      // 기간 조건은 filter(createTimeCond)로 이미 걸려 있으므로, All 앨범 1개만 사용한다.
+      final all = paths.first;
+      final picked = <XFile>[];
+      final seenIds = <String>{};
+      if (!prefilteredEmpty) {
+        // 1차(빠른 경로): createTimeCond로 후보가 잡힌 경우엔 그대로 상위 N장만 사용.
+        final assets = await all.getAssetListPaged(page: 0, size: _kMaxAutoGalleryPick);
+        for (final asset in assets) {
+          final id = asset.id;
+          if (id.isNotEmpty && seenIds.contains(id)) continue;
+          if (id.isNotEmpty) seenIds.add(id);
+          final file = await asset.file;
+          if (file == null) continue;
+          picked.add(XFile(file.path));
+        }
+      } else {
+        // 폴백(정확 경로): All 앨범을 최근순으로 스캔하며 EXIF 촬영일 기준으로 기간 필터링.
+        // - 너무 많은 사진을 읽지 않도록 스캔 상한을 둔다.
+        const int maxScan = 2000; // 실사용에서 안전한 상한(성능/배터리)
+        const int pageSize = 200;
+        int scanned = 0;
+        int page = 0;
+        while (picked.length < _kMaxAutoGalleryPick && scanned < maxScan) {
+          final assets = await all.getAssetListPaged(page: page, size: pageSize);
+          if (assets.isEmpty) break;
+          page += 1;
+          for (final asset in assets) {
+            if (picked.length >= _kMaxAutoGalleryPick || scanned >= maxScan) break;
+            scanned += 1;
+            final id = asset.id;
+            if (id.isNotEmpty && seenIds.contains(id)) continue;
+            if (id.isNotEmpty) seenIds.add(id);
+            final file = await asset.file;
+            if (file == null) continue;
+
+            final x = XFile(file.path);
+            final shotAt = await _getShotDate(x);
+            if (shotAt == null) {
+              if (state.includeUnknownShotDate) picked.add(x);
+              continue;
+            }
+            if (!shotAt.isBefore(start) && !shotAt.isAfter(end)) {
+              picked.add(x);
+            }
+          }
+        }
+      }
+
+      if (picked.isEmpty) {
+        state = state.copyWith(
+          loading: false,
+          pickedFiles: <XFile>[],
+          filteredPickedFiles: <XFile>[],
+          statusMessage: "screens.tourstar.status_no_photos_in_range",
+          clearStatusParams: true,
+        );
+        return;
+      }
+
+      state = state.copyWith(
+        pickedFiles: picked,
+        filteredPickedFiles: picked, // 이미 기간 조건으로 가져온 목록이므로 동일
+        statusMessage: "screens.tourstar.status_gallery_autopick_done",
+        statusMessageParams: {"count": "${picked.length}"},
+        clearGeneratedPost: true,
+      );
+
+      await _summarizeShotDates(picked);
+      await _applyDateFilterIfNeeded();
+    } catch (e) {
+      state = state.copyWith(
+        statusMessage: "screens.tourstar.status_gallery_autopick_error",
+        statusMessageParams: {"error": "$e"},
+      );
+    } finally {
+      state = state.copyWith(loading: false);
+    }
+  }
+
+  Future<void> openGallerySettings() async {
+    try {
+      await PhotoManager.openSetting();
+    } catch (_) {}
+  }
+
+  /// "원터치" 동작: 기간 사진 자동 선별 -> 바로 업로드/AI 분석까지 수행한다.
+  Future<void> autoPickAndUploadFromGallery() async {
+    await autoPickFromGallery();
+    if (state.pickedFiles.isEmpty) return;
+    await uploadAndAnalyze(autoGenerateComment: true);
+  }
+
+  Future<void> setIncludeUnknownShotDate(bool value) async {
+    state = state.copyWith(includeUnknownShotDate: value);
+    await _applyDateFilterIfNeeded();
+  }
+
+  Future<void> setDateRange(DateTime start, DateTime end) async {
     final rangeStart = DateTime(start.year, start.month, start.day);
     final rangeEnd = DateTime(end.year, end.month, end.day, 23, 59, 59);
-    final filtered = <XFile>[];
-    for (final file in state.pickedFiles) {
-      final shotAt = await _getShotDate(file);
-      if (shotAt == null) continue;
-      if (!shotAt.isBefore(rangeStart) && !shotAt.isAfter(rangeEnd)) {
-        filtered.add(file);
-      }
-    }
     state = state.copyWith(
       filterStartDate: rangeStart,
       filterEndDate: rangeEnd,
-      filteredPickedFiles: filtered,
-      statusMessage: "screens.tourstar.status_date_filter_applied",
-      statusMessageParams: {
-        "filtered": "${filtered.length}",
-        "total": "${state.pickedFiles.length}",
-      },
       clearGeneratedPost: true,
     );
+    await _applyDateFilterIfNeeded();
   }
 
   void clearDateRange() {
@@ -211,6 +371,16 @@ class TourstarController extends Notifier<TourstarState> {
     state = state.copyWith(comment: value);
   }
 
+  void setAttachedScheduleFromTravelPlan(TravelPlanRecord plan) {
+    state = state.copyWith(
+      attachedScheduleSnapshot: attachedScheduleFromTravelPlan(plan),
+    );
+  }
+
+  void clearAttachedSchedule() {
+    state = state.copyWith(clearAttachedSchedule: true);
+  }
+
   /// 새 기록 시트를 열 때만 호출한다. 로그인 ID·피드·친구 등은 유지하고 작성용 필드만 비운다.
   /// (기존: initial()로 전체 초기화 → myUserId 소실로 게시물이 익명 저장되고 목록이 비는 버그)
   void reset() {
@@ -226,6 +396,7 @@ class TourstarController extends Notifier<TourstarState> {
       rankedImages: <RankedImage>[],
       selectedImagePaths: <String>{},
       clearGeneratedPost: true,
+      clearAttachedSchedule: true,
     );
     _shotDateCache.clear();
   }
@@ -737,6 +908,7 @@ class TourstarController extends Notifier<TourstarState> {
         imagePaths: paths,
         userId: userId,
         authorNickname: state.myNickname,
+        attachedSchedule: state.attachedScheduleSnapshot,
       );
 
       state = state.copyWith(
@@ -744,6 +916,7 @@ class TourstarController extends Notifier<TourstarState> {
         serverPosts: [created, ...state.serverPosts],
         statusMessage: "screens.tourstar.status_post_generate_done",
         clearStatusParams: true,
+        clearAttachedSchedule: true,
       );
       return true;
     } catch (e) {
@@ -775,6 +948,46 @@ class TourstarController extends Notifier<TourstarState> {
       return state.filteredPickedFiles;
     }
     return state.pickedFiles;
+  }
+
+  Future<void> _applyDateFilterIfNeeded() async {
+    final start = state.filterStartDate;
+    final end = state.filterEndDate;
+    if (start == null || end == null) {
+      state = state.copyWith(filteredPickedFiles: state.pickedFiles);
+      return;
+    }
+    if (state.pickedFiles.isEmpty) {
+      state = state.copyWith(
+        statusMessage: "screens.tourstar.status_date_filter_ready",
+        clearStatusParams: true,
+      );
+      return;
+    }
+
+    final filtered = <XFile>[];
+    int unknown = 0;
+    for (final file in state.pickedFiles) {
+      final shotAt = await _getShotDate(file);
+      if (shotAt == null) {
+        unknown += 1;
+        if (state.includeUnknownShotDate) filtered.add(file);
+        continue;
+      }
+      if (!shotAt.isBefore(start) && !shotAt.isAfter(end)) {
+        filtered.add(file);
+      }
+    }
+    state = state.copyWith(
+      filteredPickedFiles: filtered,
+      statusMessage: "screens.tourstar.status_date_filter_applied",
+      statusMessageParams: {
+        "filtered": "${filtered.length}",
+        "total": "${state.pickedFiles.length}",
+        "unknown": "$unknown",
+      },
+      clearGeneratedPost: true,
+    );
   }
 
   Future<DateTime?> _getShotDate(XFile file) async {

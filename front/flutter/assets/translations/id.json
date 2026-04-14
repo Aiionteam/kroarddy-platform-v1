@@ -813,13 +813,13 @@
     }
   },
   "sidebar": {
-    "tourstar": "Bintang Wisata",
+    "tourstar": "Feed Perjalanan",
     "planner": "Perencana Perjalanan",
     "schedule": "Rencana Saya",
-    "guide": "Jelajahi",
-    "groupchat": "Obrolan Grup",
+    "guide": "Jelajahi tempat",
+    "groupchat": "Obrolan grup",
     "friends": "Daftar teman",
-    "whisper": "Bisikan",
+    "whisper": "Obrolan pribadi",
     "profile": "Profil Saya",
     "customer": "Pusat Pelanggan",
     "logout": "Keluar",
@@ -1015,7 +1015,7 @@
       "weather_within_5days": "· Dalam 5 hari"
     },
     "guide": {
-      "landing_title": "Place picks",
+      "landing_title": "Jelajahi tempat",
       "landing_subtitle": "Choose food spots or events and explore in one place.",
       "restaurant_label": "Restaurant picks",
       "restaurant_desc": "Browse by area",
@@ -1713,7 +1713,7 @@
         "steps": {
           "planner": "Perencana perjalanan",
           "schedule": "Jadwal",
-          "guide": "Rekomendasi tempat",
+          "guide": "Jelajahi tempat",
           "social": "Tourstar / Obrolan grup"
         },
         "cta_planner": "Mulai perencana perjalanan",
@@ -1785,9 +1785,9 @@
           }
         },
         "discover": {
-          "title": "Rekomendasi tempat",
-          "subtitle": "Restoran, acara, dan lainnya dalam satu layar.",
-          "cta": "Ke rekomendasi tempat",
+          "title": "Jelajahi tempat",
+          "subtitle": "Restoran, acara, dan tempat lokal dalam satu layar.",
+          "cta": "Buka jelajah tempat",
           "items": {
             "1": {
               "title": "1) Pilih panduan",

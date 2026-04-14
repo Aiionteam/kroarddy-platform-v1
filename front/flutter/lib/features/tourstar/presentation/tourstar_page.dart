@@ -8,14 +8,20 @@ import "package:image_picker/image_picker.dart";
 
 // ignore_for_file: avoid_catches_without_on_clauses
 
+import "../../../core/auth/jwt_claims.dart";
 import "../../../core/router/main_shell.dart";
 import "../../../core/theme/kroaddy_colors.dart";
+import "../../auth/presentation/state/auth_controller.dart";
 import "../../chat/data/friend_repository.dart";
+import "../../planner/data/planner_models.dart";
+import "../../planner/data/planner_repository.dart";
 import "../data/tourstar_models.dart";
 import "../data/tourstar_repository.dart";
+import "../data/tourstar_schedule.dart";
 import "state/tourstar_controller.dart";
 import "state/tourstar_state.dart";
 import "tourstar_status_text.dart";
+import "widgets/tourstar_attached_schedule_preview.dart";
 
 // ── Design tokens (강조·버튼·선택: Kroaddy 남색) ─────────────────
 const _kPurple = KroaddyColors.primary;
@@ -35,6 +41,10 @@ class _MbtiGroup {
   const _MbtiGroup(this.key, this.items);
   final String key;
   final List<String> items;
+}
+
+bool _tourstarPostHasAttachedSchedule(TourstarPostRecord post) {
+  return !tourstarAttachedScheduleIsEmpty(post.attachedSchedule);
 }
 
 const _mbtiGroups = [
@@ -1303,6 +1313,19 @@ class _FeedCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (_tourstarPostHasAttachedSchedule(post)) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(Icons.calendar_month_outlined, size: 14, color: _kPurple),
+                        const SizedBox(width: 4),
+                        Text(
+                          "screens.tourstar.schedule_in_feed_hint".tr(),
+                          style: const TextStyle(fontSize: 10, color: _kPurple, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ],
                   if (post.tags.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Wrap(
@@ -1552,6 +1575,7 @@ class _PostDetailSheet extends ConsumerStatefulWidget {
 
 class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
   int _photoIdx = 0;
+  bool _scheduleExpanded = false;
   final _ctrl = TextEditingController();
 
   String _relativeTime(DateTime t) {
@@ -1802,75 +1826,98 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                                   ],
                                 ),
                               ),
-                              // 내 게시물이면 수정/삭제 메뉴
-                              if (isOwner) ...[
+                              // 작성자: 수정 · 일정 보기 · 삭제 / 타인: 일정이 있으면 일정 보기만
+                              if (isOwner || _tourstarPostHasAttachedSchedule(post)) ...[
                                 const SizedBox(width: 4),
-                                PopupMenuButton<String>(
-                                  icon: const Icon(Icons.more_vert, size: 20, color: _kGray500),
-                                  onSelected: (value) async {
-                                    if (value == "edit") {
-                                      if (!mounted) return;
-                                      Navigator.pop(context);
-                                      widget.onEditPost?.call(post);
-                                    } else if (value == "delete") {
-                                      final navigator = Navigator.of(context);
-                                      final messenger = ScaffoldMessenger.of(context);
-                                      final confirmed = await showDialog<bool>(
-                                        context: context,
-                                        builder: (dialogContext) => AlertDialog(
-                                          title: Text("screens.tourstar.delete_post_title".tr()),
-                                          content: Text("screens.tourstar.delete_post_confirm".tr()),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(dialogContext, false),
-                                              child: Text("common.cancel".tr()),
-                                            ),
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(dialogContext, true),
-                                              child: Text("common.delete".tr(), style: const TextStyle(color: Colors.red)),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                      if (!mounted) return;
-                                      if (confirmed == true) {
-                                        final ok = await widget.onDeletePost?.call(post.id) ?? false;
-                                        if (ok) {
-                                          navigator.pop();
-                                        } else {
-                                          final msg = ref.read(tourstarControllerProvider).statusMessage;
-                                          messenger.showSnackBar(
-                                            SnackBar(content: Text(msg.isNotEmpty ? msg : "screens.tourstar.delete_post_failed".tr())),
-                                          );
-                                        }
-                                      }
-                                    }
-                                  },
-                                  itemBuilder: (ctx) => [
-                                    PopupMenuItem(
-                                      value: "edit",
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.edit_outlined, size: 18, color: _kPurple),
-                                          const SizedBox(width: 8),
-                                          Text(
+                                Flexible(
+                                  child: Wrap(
+                                    alignment: WrapAlignment.end,
+                                    spacing: 0,
+                                    runSpacing: 4,
+                                    children: [
+                                      if (isOwner)
+                                        TextButton.icon(
+                                          onPressed: () {
+                                            if (!mounted) return;
+                                            Navigator.pop(context);
+                                            widget.onEditPost?.call(post);
+                                          },
+                                          icon: const Icon(Icons.edit_outlined, size: 16, color: _kPurple),
+                                          label: Text(
                                             "screens.tourstar.action_edit".tr(),
-                                            style: const TextStyle(color: _kPurple, fontWeight: FontWeight.w600),
+                                            style: const TextStyle(fontSize: 12, color: _kPurple, fontWeight: FontWeight.w600),
                                           ),
-                                        ],
-                                      ),
-                                    ),
-                                    PopupMenuItem(
-                                      value: "delete",
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                                          const SizedBox(width: 8),
-                                          Text("common.delete".tr(), style: const TextStyle(color: Colors.red)),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
+                                          style: TextButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                            minimumSize: Size.zero,
+                                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                          ),
+                                        ),
+                                      if (_tourstarPostHasAttachedSchedule(post))
+                                        TextButton.icon(
+                                          onPressed: () => setState(() => _scheduleExpanded = !_scheduleExpanded),
+                                          icon: Icon(
+                                            _scheduleExpanded ? Icons.expand_less : Icons.calendar_month_outlined,
+                                            size: 16,
+                                            color: _kGray700,
+                                          ),
+                                          label: Text(
+                                            _scheduleExpanded
+                                                ? "screens.tourstar.schedule_collapse".tr()
+                                                : "screens.tourstar.view_schedule".tr(),
+                                            style: const TextStyle(fontSize: 12, color: _kGray700, fontWeight: FontWeight.w600),
+                                          ),
+                                          style: TextButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                            minimumSize: Size.zero,
+                                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                          ),
+                                        ),
+                                      if (isOwner)
+                                        TextButton.icon(
+                                          onPressed: () async {
+                                            final navigator = Navigator.of(context);
+                                            final messenger = ScaffoldMessenger.of(context);
+                                            final confirmed = await showDialog<bool>(
+                                              context: context,
+                                              builder: (dialogContext) => AlertDialog(
+                                                title: Text("screens.tourstar.delete_post_title".tr()),
+                                                content: Text("screens.tourstar.delete_post_confirm".tr()),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () => Navigator.pop(dialogContext, false),
+                                                    child: Text("common.cancel".tr()),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () => Navigator.pop(dialogContext, true),
+                                                    child: Text("common.delete".tr(), style: const TextStyle(color: Colors.red)),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                            if (!mounted) return;
+                                            if (confirmed == true) {
+                                              final ok = await widget.onDeletePost?.call(post.id) ?? false;
+                                              if (ok) {
+                                                navigator.pop();
+                                              } else {
+                                                final msg = ref.read(tourstarControllerProvider).statusMessage;
+                                                messenger.showSnackBar(
+                                                  SnackBar(content: Text(msg.isNotEmpty ? msg : "screens.tourstar.delete_post_failed".tr())),
+                                                );
+                                              }
+                                            }
+                                          },
+                                          icon: const Icon(Icons.delete_outline, size: 16, color: Colors.red),
+                                          label: Text("common.delete".tr(), style: const TextStyle(fontSize: 12, color: Colors.red)),
+                                          style: TextButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                            minimumSize: Size.zero,
+                                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ],
@@ -1901,6 +1948,12 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                             post.comment,
                             style: const TextStyle(fontSize: 14, color: _kGray700, height: 1.6),
                           ),
+                          if (_tourstarPostHasAttachedSchedule(post) &&
+                              _scheduleExpanded &&
+                              post.attachedSchedule != null) ...[
+                            const SizedBox(height: 12),
+                            TourstarAttachedSchedulePreview(data: post.attachedSchedule!),
+                          ],
                           if (post.tags.isNotEmpty) ...[
                             const SizedBox(height: 12),
                             Wrap(
@@ -2083,6 +2136,9 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
   String _visibility = "public";
   String? _openGroup;
   final _commentCtrl = TextEditingController();
+  bool _planPickerOpen = false;
+  List<TravelPlanRecord> _myPlans = const [];
+  bool _plansLoading = false;
 
   Widget _buildRankedPreview(String sourceImage) {
     final resolved = TourstarRepository.toDisplayImageUrl(sourceImage);
@@ -2114,6 +2170,99 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
   void dispose() {
     _commentCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _openPlanPicker() async {
+    final token = ref.read(authControllerProvider).accessToken;
+    if (token == null || token.isEmpty) return;
+    final userId = getAppUserIdFromToken(token) ?? getUserIdFromToken(token);
+    if (userId == null) return;
+
+    if (_myPlans.isNotEmpty) {
+      setState(() => _planPickerOpen = true);
+      return;
+    }
+    setState(() => _plansLoading = true);
+    try {
+      final plans = await ref.read(plannerRepositoryProvider).fetchMyPlans(userId);
+      if (!mounted) return;
+      setState(() {
+        _myPlans = plans;
+        _planPickerOpen = true;
+        _plansLoading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _plansLoading = false);
+    }
+  }
+
+  Widget _buildCreatePlanPickerPanel() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 4),
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFC7D2FE)),
+        borderRadius: BorderRadius.circular(12),
+        color: const Color(0xFFEEF2FF),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    "screens.tourstar.select_saved_plan_title".tr(),
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF4338CA)),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => setState(() => _planPickerOpen = false),
+                  child: Text("common.close".tr(), style: const TextStyle(fontSize: 12)),
+                ),
+              ],
+            ),
+          ),
+          if (_myPlans.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                "screens.tourstar.no_saved_plans".tr(),
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 12, color: _kGray500),
+              ),
+            )
+          else
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 200),
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: _myPlans.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (_, i) {
+                  final p = _myPlans[i];
+                  return ListTile(
+                    dense: true,
+                    title: Text(
+                      p.routeName,
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    ),
+                    subtitle: Text(
+                      "${p.location}${p.startDate != null ? " · ${p.startDate}" : ""} · ${p.schedule.length}곳",
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    onTap: () {
+                      ref.read(tourstarControllerProvider.notifier).setAttachedScheduleFromTravelPlan(p);
+                      setState(() => _planPickerOpen = false);
+                    },
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -2198,13 +2347,32 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                   vertical: 8,
                 ),
                 color: _kPurpleLight,
-                child: Text(
-                  tourstarStatusLine(state),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: _kPurple,
-                    fontWeight: FontWeight.w500,
-                  ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        tourstarStatusLine(state),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: _kPurple,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    if (state.statusMessage ==
+                        "screens.tourstar.status_gallery_permission_denied")
+                      TextButton(
+                        onPressed: ctrl.openGallerySettings,
+                        child: Text(
+                          "screens.tourstar.open_settings".tr(),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: _kPurple,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             if (state.loading)
@@ -2297,94 +2465,103 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                     ],
                     // Date filter
                     const SizedBox(height: 12),
-                    Row(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: state.loading ||
-                                    state.pickedFiles.isEmpty
-                                ? null
-                                : () async {
-                                    final now = DateTime.now();
-                                    final picked = await showDateRangePicker(
-                                      context: context,
-                                      firstDate:
-                                          DateTime(now.year - 10),
-                                      lastDate:
-                                          DateTime(now.year + 1),
-                                    );
-                                    if (picked != null) {
-                                      await ctrl.setDateRange(
-                                        picked.start,
-                                        picked.end,
-                                      );
-                                    }
-                                  },
-                            icon: const Icon(Icons.date_range, size: 16),
-                            label: Text(
-                              state.filterStartDate != null
-                                  ? "screens.tourstar.date_range_summary".tr(namedArgs: {
-                                      "start":
-                                          "${state.filterStartDate!.month}/${state.filterStartDate!.day}",
-                                      "end":
-                                          "${state.filterEndDate?.month}/${state.filterEndDate?.day}",
-                                      "count": "${state.filteredPickedFiles.length}",
-                                    })
-                                  : "screens.tourstar.date_range_placeholder".tr(),
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: _kPurple,
-                              side: const BorderSide(
-                                color: Color(0xFFD8B4FE),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: state.loading
+                                    ? null
+                                    : () async {
+                                        final now = DateTime.now();
+                                        final picked = await showDateRangePicker(
+                                          context: context,
+                                          firstDate: DateTime(now.year - 10),
+                                          lastDate: DateTime(now.year + 1),
+                                        );
+                                        if (picked != null) {
+                                          await ctrl.setDateRange(
+                                            picked.start,
+                                            picked.end,
+                                          );
+                                        }
+                                      },
+                                icon: const Icon(Icons.date_range, size: 16),
+                                label: Text(
+                                  state.filterStartDate != null
+                                      ? "screens.tourstar.date_range_summary".tr(namedArgs: {
+                                          "start":
+                                              "${state.filterStartDate!.month}/${state.filterStartDate!.day}",
+                                          "end":
+                                              "${state.filterEndDate?.month}/${state.filterEndDate?.day}",
+                                          "count": "${state.filteredPickedFiles.length}",
+                                        })
+                                      : "screens.tourstar.date_range_placeholder".tr(),
+                                  style: const TextStyle(fontSize: 12),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: _kPurple,
+                                  side: const BorderSide(
+                                    color: Color(0xFFD8B4FE),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                            if (state.filterStartDate != null) ...[
+                              const SizedBox(width: 8),
+                              TextButton(
+                                onPressed: ctrl.clearDateRange,
+                                child: Text(
+                                  "screens.tourstar.clear".tr(),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: _kGray500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                        if (state.filterStartDate != null) ...[
-                          const SizedBox(width: 8),
-                          TextButton(
-                            onPressed: ctrl.clearDateRange,
-                            child: Text(
-                              "screens.tourstar.clear".tr(),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: _kGray500,
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            OutlinedButton(
+                              onPressed: state.loading ? null : ctrl.autoPickAndUploadFromGallery,
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: _kPurple,
+                                side: const BorderSide(color: Color(0xFFD8B4FE)),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                              ),
+                              child: const Text(
+                                "기간 사진 업로드",
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                               ),
                             ),
-                          ),
-                        ],
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Switch(
+                                  value: state.includeUnknownShotDate,
+                                  onChanged: state.loading ? null : (v) => ctrl.setIncludeUnknownShotDate(v),
+                                  activeThumbColor: _kPurple,
+                                ),
+                                const Text(
+                                  "촬영일 없는 사진 포함",
+                                  style: TextStyle(fontSize: 12, color: _kGray500),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ],
                     ),
-                    // Upload button
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: state.loading || state.pickedFiles.isEmpty
-                            ? null
-                            : ctrl.uploadAndAnalyze,
-                        icon: const Icon(
-                          Icons.cloud_upload_outlined,
-                          size: 18,
-                        ),
-                        label: Text(
-                          "screens.tourstar.upload_ai".tr(),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: _kPurple,
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
+                    // 업로드 + AI 분석은 "기간 사진 업로드" 버튼에서 원터치로 수행한다.
                     // Ranked images
                     if (state.rankedImages.isNotEmpty) ...[
                       const SizedBox(height: 16),
@@ -2566,6 +2743,46 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                         ),
                       ],
                     ),
+                    // ── 플래너 일정 (게시 시 함께 저장, 상세에서 '일정 보기') ──
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: state.loading || _plansLoading ? null : _openPlanPicker,
+                        icon: _plansLoading
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.calendar_month_outlined, size: 18),
+                        label: Text("screens.tourstar.import_saved_schedule".tr()),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: _kPurple,
+                          side: const BorderSide(color: Color(0xFFD8B4FE)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                    if (_planPickerOpen) ...[
+                      const SizedBox(height: 10),
+                      _buildCreatePlanPickerPanel(),
+                    ],
+                    if (state.attachedScheduleSnapshot != null &&
+                        !tourstarAttachedScheduleIsEmpty(state.attachedScheduleSnapshot!)) ...[
+                      const SizedBox(height: 12),
+                      TourstarAttachedSchedulePreview(data: state.attachedScheduleSnapshot!),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: state.loading ? null : ctrl.clearAttachedSchedule,
+                          child: Text(
+                            "screens.tourstar.remove_attached_schedule".tr(),
+                            style: const TextStyle(fontSize: 12, color: _kGray500),
+                          ),
+                        ),
+                      ),
+                    ],
                     // ── MBTI ────────────────────────────────
                     const SizedBox(height: 16),
                     Text(

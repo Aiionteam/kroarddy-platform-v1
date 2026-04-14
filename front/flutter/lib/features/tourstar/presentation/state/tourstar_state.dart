@@ -13,6 +13,7 @@ class TourstarState {
     required this.filteredPickedFiles,
     required this.filterStartDate,
     required this.filterEndDate,
+    required this.includeUnknownShotDate,
     required this.rankedImages,
     required this.selectedImagePaths,
     required this.generatedPost,
@@ -24,6 +25,7 @@ class TourstarState {
     this.myUserId,
     this.myNickname,
     this.profileImageUrl,
+    this.attachedScheduleSnapshot,
   });
 
   factory TourstarState.initial() {
@@ -37,6 +39,7 @@ class TourstarState {
       filteredPickedFiles: <XFile>[],
       filterStartDate: null,
       filterEndDate: null,
+      includeUnknownShotDate: false,
       rankedImages: <RankedImage>[],
       selectedImagePaths: <String>{},
       generatedPost: null,
@@ -60,6 +63,7 @@ class TourstarState {
   final List<XFile> filteredPickedFiles;
   final DateTime? filterStartDate;
   final DateTime? filterEndDate;
+  final bool includeUnknownShotDate;
   final List<RankedImage> rankedImages;
   final Set<String> selectedImagePaths;
   final GeneratePostResponse? generatedPost;
@@ -86,6 +90,9 @@ class TourstarState {
   /// 로컬에서 좋아요 누른 게시물 ID Set
   final Set<String> likedPostIds;
 
+  /// 새 게시 작성 시 서버로 보낼 플래너 일정 스냅샷 (게시 후에는 null로 비움)
+  final Map<String, dynamic>? attachedScheduleSnapshot;
+
   TourstarState copyWith({
     bool? loading,
     String? statusMessage,
@@ -97,6 +104,7 @@ class TourstarState {
     List<XFile>? filteredPickedFiles,
     DateTime? filterStartDate,
     DateTime? filterEndDate,
+    bool? includeUnknownShotDate,
     List<RankedImage>? rankedImages,
     Set<String>? selectedImagePaths,
     GeneratePostResponse? generatedPost,
@@ -112,6 +120,8 @@ class TourstarState {
     bool clearProfileImageUrl = false,
     Set<String>? friendNicknames,
     Set<String>? likedPostIds,
+    Map<String, dynamic>? attachedScheduleSnapshot,
+    bool clearAttachedSchedule = false,
   }) {
     return TourstarState(
       loading: loading ?? this.loading,
@@ -123,6 +133,7 @@ class TourstarState {
       filteredPickedFiles: filteredPickedFiles ?? this.filteredPickedFiles,
       filterStartDate: clearDateFilter ? null : (filterStartDate ?? this.filterStartDate),
       filterEndDate: clearDateFilter ? null : (filterEndDate ?? this.filterEndDate),
+      includeUnknownShotDate: clearDateFilter ? false : (includeUnknownShotDate ?? this.includeUnknownShotDate),
       rankedImages: rankedImages ?? this.rankedImages,
       selectedImagePaths: selectedImagePaths ?? this.selectedImagePaths,
       generatedPost: clearGeneratedPost ? null : (generatedPost ?? this.generatedPost),
@@ -134,6 +145,9 @@ class TourstarState {
       profileImageUrl: clearProfileImageUrl ? null : (profileImageUrl ?? this.profileImageUrl),
       friendNicknames: friendNicknames ?? this.friendNicknames,
       likedPostIds: likedPostIds ?? this.likedPostIds,
+      attachedScheduleSnapshot: clearAttachedSchedule
+          ? null
+          : (attachedScheduleSnapshot ?? this.attachedScheduleSnapshot),
     );
   }
 }

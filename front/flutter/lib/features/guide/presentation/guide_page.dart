@@ -1,3 +1,4 @@
+import "package:easy_localization/easy_localization.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:url_launcher/url_launcher.dart";
@@ -34,9 +35,9 @@ class GuidePage extends ConsumerWidget {
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
-          title: const Text(
-            "가이드",
-            style: TextStyle(
+          title: Text(
+            "sidebar.guide".tr(),
+            style: const TextStyle(
               color: _textPrimary,
               fontWeight: FontWeight.bold,
               fontSize: 18,

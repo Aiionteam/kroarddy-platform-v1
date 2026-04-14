@@ -28,6 +28,7 @@ import {
   type TourstarStyleFilter,
   uploadTourstarPhotos,
 } from "@/lib/api/tourstar";
+import { fetchMyPlans, type TravelPlanRecord } from "@/lib/api/planner";
 
 /* ────────────────────────── 타입 정의 ────────────────────────── */
 type Visibility = "public" | "private";
@@ -99,10 +100,72 @@ interface TourPost {
   isOwner: boolean;
   bookmarked: boolean;
   isFriend: boolean;
+  /** 서버 `attached_schedule` — 플래너 일정 스냅샷 */
+  attachedSchedule?: Record<string, unknown> | null;
 }
 
 function stripHashtags(text: string): string {
   return text.replace(/#[\w\uAC00-\uD7A3\uAC00-\uD7A3]+/g, "").replace(/\s{2,}/g, " ").trim();
+}
+
+function attachedScheduleFromTravelPlan(plan: TravelPlanRecord): Record<string, unknown> {
+  return {
+    plan_id: plan.id,
+    route_name: plan.route_name,
+    location: plan.location,
+    start_date: plan.start_date,
+    end_date: plan.end_date,
+    schedule: plan.schedule.map((s) => ({
+      day: s.day,
+      date: s.date,
+      time: s.time,
+      place: s.place,
+      title: s.title,
+      description: s.description,
+      tips: s.tips,
+      estimated_cost: s.estimated_cost,
+      address: s.address,
+      lat: s.lat,
+      lng: s.lng,
+      business_hours: s.business_hours,
+    })),
+  };
+}
+
+function parseAttachedScheduleRaw(raw: unknown): Record<string, unknown> | null {
+  let v: unknown = raw;
+  for (let i = 0; i < 2; i += 1) {
+    if (v == null) return null;
+    if (typeof v === "string") {
+      const s = v.trim();
+      if (s === "" || s === "null") return null;
+      try {
+        v = JSON.parse(s) as unknown;
+      } catch {
+        return null;
+      }
+      continue;
+    }
+    break;
+  }
+  if (v != null && typeof v === "object" && !Array.isArray(v)) {
+    return v as Record<string, unknown>;
+  }
+  return null;
+}
+
+function tourstarAttachedScheduleIsEmpty(data: Record<string, unknown> | null | undefined): boolean {
+  if (!data || Object.keys(data).length === 0) return true;
+  const planId = data.plan_id;
+  if (planId != null && String(planId).trim() !== "") return false;
+  const sched = data.schedule;
+  if (Array.isArray(sched) && sched.length > 0) return false;
+  const title = `${String(data.route_name ?? "")}${String(data.location ?? "")}`.trim();
+  return title.length === 0;
+}
+
+function postHasAttachedSchedule(post: TourPost): boolean {
+  return !tourstarAttachedScheduleIsEmpty(post.attachedSchedule ?? null);
 }
 
 /** DB user_id 와 JWT 를 같은 숫자 기준으로 맞춤.
@@ -229,15 +292,83 @@ function BookmarkIcon({ filled }: { filled: boolean }) {
   );
 }
 
+function TourstarAttachedSchedulePreview({ data }: { data: Record<string, unknown> }) {
+  const { t } = useTranslation();
+  const route = String(data.route_name ?? "");
+  const loc = String(data.location ?? "");
+  const start = data.start_date != null ? String(data.start_date) : "";
+  const end = data.end_date != null ? String(data.end_date) : "";
+  const dateParts = [start, end].filter((x) => x.length > 0);
+  const dateLine = dateParts.join(" ~ ");
+  const raw = data.schedule;
+  const byDay = new Map<number, Record<string, unknown>[]>();
+  if (Array.isArray(raw)) {
+    for (const item of raw) {
+      if (!item || typeof item !== "object") continue;
+      const row = item as Record<string, unknown>;
+      const d = typeof row.day === "number" ? row.day : Number(row.day) || 1;
+      const arr = byDay.get(d) ?? [];
+      arr.push(row);
+      byDay.set(d, arr);
+    }
+  }
+  const dayKeys = [...byDay.keys()].sort((a, b) => a - b);
+
+  return (
+    <div className="w-full rounded-xl border border-indigo-200 bg-indigo-50/90 p-3 text-left shadow-sm">
+      <div className="mb-2 flex items-center gap-1.5 text-sm font-bold text-gray-800">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-indigo-600">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+        </svg>
+        {t("tourstar.schedule.section_title", { defaultValue: "일정표" })}
+      </div>
+      {route ? <p className="text-sm font-semibold text-gray-900">{route}</p> : null}
+      {(loc || dateLine) ? (
+        <p className="mt-0.5 text-xs text-gray-500">
+          {[loc, dateLine].filter((s) => s.length > 0).join(" · ")}
+        </p>
+      ) : null}
+      {dayKeys.length > 0 ? (
+        <div className="mt-3 space-y-3">
+          {dayKeys.map((day) => (
+            <div key={day}>
+              <p className="mb-1.5 text-xs font-semibold text-indigo-600">
+                {t("tourstar.schedule.day_n", { n: day, defaultValue: "{{n}}일차" })}
+              </p>
+              <ul className="space-y-1.5">
+                {(byDay.get(day) ?? []).map((s, idx) => {
+                  const place = String(s.place ?? "");
+                  const time = String(s.time ?? "");
+                  const title = String(s.title ?? "");
+                  const line = [time, place].filter((x) => x.length > 0).join(" · ");
+                  const sub = title && title !== place ? title : "";
+                  return (
+                    <li key={`${day}-${idx}`} className="text-xs text-gray-700">
+                      <span className="text-gray-400">• </span>
+                      {line ? <span>{line}</span> : null}
+                      {sub ? <span className="mt-0.5 block pl-3 text-[11px] text-gray-500">{sub}</span> : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /* ───────────────────── 새 게시물 작성 모달 ───────────────────── */
 interface CreateModalProps {
   open: boolean;
   onClose: () => void;
   onCreate: (post: Omit<TourPost, "id" | "author" | "likes" | "liked" | "comments" | "isOwner" | "bookmarked" | "userId" | "isFriend">) => Promise<void> | void;
   onJobStatusChange?: (status: string) => void;
+  currentUserId?: number | null;
 }
 
-function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateModalProps) {
+function CreatePostModal({ open, onClose, onCreate, onJobStatusChange, currentUserId }: CreateModalProps) {
   const { t } = useTranslation();
   const [form, setForm] = useState({
     comment: "",
@@ -258,7 +389,39 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
   const [openStyleGroup, setOpenStyleGroup] = useState<string | null>(
     STYLE_FILTER_GROUPS[0]?.title ?? null,
   );
+  const [planPickerOpen, setPlanPickerOpen] = useState(false);
+  const [myPlans, setMyPlans] = useState<TravelPlanRecord[]>([]);
+  const [plansLoading, setPlansLoading] = useState(false);
+  const [attachedScheduleSnapshot, setAttachedScheduleSnapshot] = useState<Record<string, unknown> | null>(null);
+  const prevCreateOpen = React.useRef(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  React.useEffect(() => {
+    if (open && !prevCreateOpen.current) {
+      setPlanPickerOpen(false);
+      setAttachedScheduleSnapshot(null);
+      setMyPlans([]);
+    }
+    prevCreateOpen.current = open;
+  }, [open]);
+
+  const openPlanPicker = async () => {
+    if (currentUserId == null || !Number.isFinite(Number(currentUserId))) return;
+    if (myPlans.length > 0) {
+      setPlanPickerOpen(true);
+      return;
+    }
+    setPlansLoading(true);
+    try {
+      const plans = await fetchMyPlans(Number(currentUserId));
+      setMyPlans(plans);
+      setPlanPickerOpen(true);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setPlansLoading(false);
+    }
+  };
 
   const togglePhoto = (id: string) => {
     setPhotos((prev) => prev.map((p) => (p.id === id ? { ...p, selected: !p.selected } : p)));
@@ -560,6 +723,68 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
               rows={2} placeholder={t("tourstar.create.comment_placeholder", { defaultValue: "간단한 코멘트만 남기면 자동으로 예쁘게 게시됩니다" })} value={form.comment}
               onChange={(e) => setForm({ ...form, comment: e.target.value })} />
           </div>
+          <div>
+            <button
+              type="button"
+              disabled={isGeneratingPost || plansLoading || currentUserId == null}
+              onClick={() => void openPlanPicker()}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-indigo-200 bg-white py-2.5 text-sm font-medium text-indigo-700 transition-colors hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {plansLoading ? (
+                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-indigo-300 border-t-indigo-600" />
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+              )}
+              {t("tourstar.create.import_saved_schedule", { defaultValue: "저장된 일정에서 가져오기" })}
+            </button>
+            {currentUserId == null ? (
+              <p className="mt-1 text-[10px] text-amber-600">{t("tourstar.create.import_schedule_login", { defaultValue: "로그인 후 플래너에 저장된 일정을 불러올 수 있어요." })}</p>
+            ) : null}
+            {planPickerOpen ? (
+              <div className="mt-2 rounded-xl border border-indigo-200 bg-indigo-50/80 p-2">
+                <div className="flex items-center justify-between border-b border-indigo-100 px-1 pb-2">
+                  <span className="text-xs font-bold text-indigo-800">{t("tourstar.create.select_saved_plan_title", { defaultValue: "저장된 일정 선택" })}</span>
+                  <button type="button" className="text-xs text-gray-500 hover:text-gray-700" onClick={() => setPlanPickerOpen(false)}>{t("common.close", { defaultValue: "닫기" })}</button>
+                </div>
+                {myPlans.length === 0 ? (
+                  <p className="py-4 text-center text-xs text-gray-500">{t("tourstar.create.no_saved_plans", { defaultValue: "저장된 일정이 없습니다." })}</p>
+                ) : (
+                  <ul className="max-h-48 overflow-y-auto divide-y divide-indigo-100">
+                    {myPlans.map((p) => (
+                      <li key={p.id}>
+                        <button
+                          type="button"
+                          className="w-full px-2 py-2.5 text-left text-sm hover:bg-white/60"
+                          onClick={() => {
+                            setAttachedScheduleSnapshot(attachedScheduleFromTravelPlan(p));
+                            setPlanPickerOpen(false);
+                          }}
+                        >
+                          <span className="font-semibold text-gray-900">{p.route_name}</span>
+                          <span className="mt-0.5 block text-[11px] text-gray-500">
+                            {p.location}{p.start_date ? ` · ${p.start_date}` : ""} · {p.schedule.length}
+                            {t("tourstar.create.stops_unit", { defaultValue: "곳" })}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ) : null}
+            {attachedScheduleSnapshot != null && !tourstarAttachedScheduleIsEmpty(attachedScheduleSnapshot) ? (
+              <div className="mt-3 space-y-1">
+                <TourstarAttachedSchedulePreview data={attachedScheduleSnapshot} />
+                <div className="text-right">
+                  <button type="button" className="text-xs text-gray-500 hover:text-gray-800" onClick={() => setAttachedScheduleSnapshot(null)}>
+                    {t("tourstar.create.remove_attached_schedule", { defaultValue: "붙인 일정 제거" })}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-500">{t("tourstar.create.style_preset", { defaultValue: "문체 프리셋 (MBTI)" })}</label>
@@ -629,6 +854,7 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
                   visibility: form.visibility,
                   photos: selectedPhotos,
                   tags: generated.tags,
+                  attachedSchedule: attachedScheduleSnapshot,
                 });
                 setForm({ comment: "", location: "", styleFilter: "AUTO", styleTemplate: "", visibility: "public" });
                 setPhotos([]);
@@ -916,8 +1142,9 @@ function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, o
   const { t } = useTranslation();
   const [photoIndex, setPhotoIndex] = useState(0);
   const [commentInput, setCommentInput] = useState("");
+  const [scheduleExpanded, setScheduleExpanded] = useState(false);
 
-  React.useEffect(() => { setPhotoIndex(0); setCommentInput(""); }, [post]);
+  React.useEffect(() => { setPhotoIndex(0); setCommentInput(""); setScheduleExpanded(false); }, [post]);
 
   if (!post) return null;
 
@@ -978,7 +1205,7 @@ function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, o
                 <p className="text-[11px] text-gray-500">{post.location}</p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center justify-end gap-1.5">
               {post.isOwner ? (
                 <>
                   <button type="button" onClick={() => onEdit(post)}
@@ -986,6 +1213,17 @@ function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, o
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                     {t("common.edit", { defaultValue: "수정" })}
                   </button>
+                  {postHasAttachedSchedule(post) ? (
+                    <button type="button" onClick={() => setScheduleExpanded((v) => !v)}
+                      className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-100 transition-colors">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                      </svg>
+                      {scheduleExpanded
+                        ? t("tourstar.schedule.collapse", { defaultValue: "일정 접기" })
+                        : t("tourstar.schedule.view", { defaultValue: "일정 보기" })}
+                    </button>
+                  ) : null}
                   <button type="button" onClick={async () => {
                     const ok = await onDeletePost(post.id);
                     if (ok) onClose();
@@ -995,13 +1233,25 @@ function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, o
                     {t("common.delete", { defaultValue: "삭제" })}
                   </button>
                 </>
-              ) : (
+              ) : null}
+              {!post.isOwner && postHasAttachedSchedule(post) ? (
+                <button type="button" onClick={() => setScheduleExpanded((v) => !v)}
+                  className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-100 transition-colors">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                  {scheduleExpanded
+                    ? t("tourstar.schedule.collapse", { defaultValue: "일정 접기" })
+                    : t("tourstar.schedule.view", { defaultValue: "일정 보기" })}
+                </button>
+              ) : null}
+              {!post.isOwner ? (
                 <button type="button" onClick={() => onBookmark(post.id)}
                   className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${post.bookmarked ? "border-amber-300 bg-amber-50 text-amber-600 hover:bg-amber-100" : "border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100"}`}>
                   <BookmarkIcon filled={post.bookmarked} />
                   {post.bookmarked ? t("tourstar.bookmarked", { defaultValue: "스크랩됨" }) : t("tourstar.bookmark", { defaultValue: "스크랩" })}
                 </button>
-              )}
+              ) : null}
               <button type="button" onClick={onClose}
                 className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
@@ -1011,6 +1261,11 @@ function PostDetailModal({ post, onClose, onToggleLike, onAddComment, onShare, o
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
             <h2 className="text-base font-bold text-gray-800">{post.title}</h2>
             <p className="text-sm leading-relaxed text-gray-700">{stripHashtags(post.comment)}</p>
+            {postHasAttachedSchedule(post) && scheduleExpanded && post.attachedSchedule ? (
+              <div className="pt-1">
+                <TourstarAttachedSchedulePreview data={post.attachedSchedule} />
+              </div>
+            ) : null}
             {post.tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {post.tags.map((tag) => (<span key={tag} className="rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-600">#{tag}</span>))}
@@ -1308,6 +1563,7 @@ function mapRecordToPost(
     isOwner,
     bookmarked,
     isFriend,
+    attachedSchedule: parseAttachedScheduleRaw(record.attached_schedule ?? record.attachedSchedule),
   };
 }
 
@@ -1765,6 +2021,7 @@ export default function TourstarContent() {
       tags: newPost.tags,
       image_paths: sourceImagePaths,
       author_nickname: authorName,
+      attached_schedule: newPost.attachedSchedule ?? null,
     });
     setPosts((prev) => [mapRecordToPost(saved, authorName, currentUserId, bookmarkedIds, friendUserIds, friendNicknames, locationUnknown, relativeTimeLabels), ...prev]);
   };
@@ -2150,7 +2407,7 @@ export default function TourstarContent() {
         </div>
       </main>
 
-      <CreatePostModal open={createOpen} onClose={() => setCreateOpen(false)} onCreate={createPost} onJobStatusChange={setAnalysisStatus} />
+      <CreatePostModal open={createOpen} onClose={() => setCreateOpen(false)} onCreate={createPost} onJobStatusChange={setAnalysisStatus} currentUserId={currentUserId} />
       <EditPostModal post={editTargetPost} onClose={() => setEditTargetPost(null)} onSave={updatePostData} onDelete={deletePost} />
       <PostDetailModal
         post={detailPost}
