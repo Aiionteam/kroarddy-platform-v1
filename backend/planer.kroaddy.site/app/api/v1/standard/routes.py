@@ -694,10 +694,18 @@ def _base_state(location: str, start_date: Optional[str], end_date: Optional[str
 
 
 def _plan_to_dict(plan: TravelPlan) -> dict:
+    raw_loc = (plan.location or "").strip()
+    # 과거 데이터에는 slug(예: yongsan)가 남아 있을 수 있어 목록 표시명이 섞인다.
+    # 응답은 항상 사람이 읽는 표기명을 location/location_name으로 내려주고,
+    # 원본 slug는 location_slug로 보존한다.
+    location_name = SLUG_TO_NAME.get(raw_loc, raw_loc)
+    location_slug = raw_loc if raw_loc in SLUG_TO_NAME else None
     return {
         "id": plan.id,
         "user_id": plan.user_id,
-        "location": plan.location,
+        "location": location_name,
+        "location_name": location_name,
+        "location_slug": location_slug,
         "route_name": plan.route_name,
         "start_date": plan.start_date,
         "end_date": plan.end_date,
