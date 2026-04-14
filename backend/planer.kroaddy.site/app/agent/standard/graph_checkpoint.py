@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import logging
+from urllib.parse import urlparse
 
 from app.agent.standard import graph as std_graph
 from app.core.config import settings
@@ -19,11 +20,31 @@ _cm: object | None = None
 _checkpointer: object | None = None
 
 
+def _langgraph_redis_is_upstash_incompatible(url: str) -> bool:
+    """``langgraph-checkpoint-redis`` 는 RediSearch(``FT.*``) 초기화가 필요하다.
+
+    Upstash Redis는 해당 명령을 제공하지 않아 ``asetup()`` 이 항상 실패한다.
+    https://upstash.com/docs/redis/overall/rediscompatibility
+    """
+    try:
+        host = (urlparse(url).hostname or "").lower()
+    except Exception:
+        return False
+    return "upstash.io" in host
+
+
 async def init_schedule_graph_checkpoint() -> None:
     global _cm, _checkpointer
     url = (settings.langgraph_redis_url or "").strip()
     if not url:
         logger.info("LANGGRAPH_REDIS_URL 미설정 — 일정 그래프는 체크포인트 없이 동작합니다.")
+        return
+    if _langgraph_redis_is_upstash_incompatible(url):
+        logger.info(
+            "LANGGRAPH_REDIS_URL 가 Upstash 호스트입니다. LangGraph RedisSaver는 RediSearch가 "
+            "필요해 Upstash와 맞지 않아 체크포인트를 쓰지 않습니다. "
+            "(Upstash REST 캐시·비동기 job 등은 기존대로 동작)",
+        )
         return
     try:
         from langgraph.checkpoint.redis.aio import AsyncRedisSaver
@@ -37,8 +58,17 @@ async def init_schedule_graph_checkpoint() -> None:
         _checkpointer = await _cm.__aenter__()  # type: ignore[union-attr]
         await _checkpointer.asetup()  # type: ignore[union-attr]
     except Exception as e:
-        logger.warning(
-            "Redis LangGraph 체크포인터 초기화 실패(모듈 미지원·URL 오류 등) — 무상태로 계속: %s",
+        err = str(e)
+        # RediSearch 미지원·엔진 제한은 흔한 케이스 → WARNING 대신 INFO
+        _soft = (
+            "FT." in err
+            or "RediSearch" in err
+            or "not available" in err.lower()
+            or "rediscompatibility" in err.lower()
+        )
+        log = logger.info if _soft else logger.warning
+        log(
+            "Redis LangGraph 체크포인터 초기화 실패 — 무상태로 계속: %s",
             e,
         )
         if _cm is not None:
