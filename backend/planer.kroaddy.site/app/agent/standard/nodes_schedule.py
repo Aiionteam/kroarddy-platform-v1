@@ -176,6 +176,14 @@ async def _gather_kakao_poi_pool_block(
     axis_specs = _kakao_poi_axis_queries(anchor, lang)
     if not axis_specs:
         return ""
+    _axis_mode = "KO" if (lang == "Korean" or _has_hangul(anchor)) else "EN"
+    logger.info(
+        "[std_node] kakao_poi 키워드검색 축(%s) lang=%s anchor=%r queries=%s",
+        _axis_mode,
+        lang,
+        anchor,
+        [q for q, _ in axis_specs],
+    )
 
     async def _axis(full_query: str) -> list[dict[str, Any]]:
         return await kakao_keyword_search_many(full_query, region="", size=8)
@@ -249,6 +257,11 @@ async def gather_context_node(state: PlannerState) -> PlannerState:
     start_date = state.get("start_date")
     end_date = state.get("end_date")
     use_search: bool = bool(state.get("use_search"))
+    logger.info(
+        "[std_node] gather_context 시작 location=%s use_search=%s (1차: 프로필·행사·뉴스·날씨 병렬)",
+        location,
+        use_search,
+    )
 
     # ── 각 에이전트 코루틴 정의 ───────────────────────────────────────────────
 
@@ -311,6 +324,14 @@ async def gather_context_node(state: PlannerState) -> PlannerState:
         _fetch_weather(),
     )
 
+    logger.info(
+        "[std_node] gather_context 1차 완료 행사=%d 뉴스=%d 날씨=%s 프로필=%s",
+        len(festivals),
+        len(news),
+        "O" if weather else "X",
+        "O" if profile else "X",
+    )
+
     lang = _get_lang(profile)
     route_name = state.get("route_name") or ""
     web_search_gather_attempted = bool(use_search)
@@ -343,6 +364,16 @@ async def gather_context_node(state: PlannerState) -> PlannerState:
         )
         if naver_tips_gather_attempted
         else _noop_str()
+    )
+
+    _kakao_scheduled = bool(settings.kakao_rest_api_key)
+    logger.info(
+        "[std_node] gather_context 2차 병렬 시작 lang=%s | 웹검색=%s 카카오POI=%s 네이버팁=%s "
+        "(행사 조회는 1차만; 카카오는 별도 키워드 3축)",
+        lang,
+        "O" if use_search else "X",
+        "O" if _kakao_scheduled else "X(키없음)",
+        "O" if naver_tips_gather_attempted else "X",
     )
 
     web_ctx = ""
@@ -1002,6 +1033,11 @@ async def generate_schedule(state: PlannerState) -> PlannerState:
     end_date = state.get("end_date")
     user_profile: dict | None = state.get("user_profile")
     festivals: list = state.get("festivals") or []
+    logger.info(
+        "[std_node] generate_schedule 시작 location=%s 행사=%d건 (state의 gather 결과 사용)",
+        location_name,
+        len(festivals),
+    )
     news_top10: list = state.get("news_top10") or []
     weather_forecast: dict | None = state.get("weather_forecast")
     transport_mode: str | None = state.get("transport_mode")
@@ -1496,6 +1532,7 @@ async def _fix_failed_places(
 
 async def geocode_schedule(state: PlannerState) -> PlannerState:
     schedule: list[dict[str, Any]] = state.get("schedule", [])
+    logger.info("[std_node] geocode_schedule 시작 일정=%d건", len(schedule))
     if not schedule:
         return state
     loc = str(state.get("location_name") or state.get("location") or "").strip()
@@ -1550,8 +1587,10 @@ async def geocode_schedule(state: PlannerState) -> PlannerState:
 
 async def enrich_business_hours_schedule(state: PlannerState) -> PlannerState:
     if not settings.naver_place_hours_enabled:
+        logger.info("[std_node] enrich_business_hours 건너뜀 (설정 비활성)")
         return state
     schedule = state.get("schedule") or []
+    logger.info("[std_node] enrich_business_hours 시작 일정=%d건", len(schedule))
     if not schedule:
         return state
     try:

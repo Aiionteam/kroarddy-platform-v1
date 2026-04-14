@@ -52,6 +52,10 @@ async def generate_routes(state: PlannerState) -> PlannerState:
     """
     t0 = perf_counter()
     location_name = state.get("location_name") or state["location"]
+    logger.info(
+        "[std_node] generate_routes 시작 location=%s (외부 API 없음, 행사/카카오는 일정 단계)",
+        location_name,
+    )
     existing_routes: list = state.get("existing_routes") or []
     user_profile: dict | None = state.get("user_profile")
     lang = _get_lang(user_profile)
