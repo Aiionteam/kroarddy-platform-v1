@@ -169,6 +169,7 @@ class TourstarRepository {
     int? userId,
     String? authorNickname,
     Map<String, dynamic>? selectedScores,
+    Map<String, dynamic>? attachedSchedule,
   }) async {
     final nick = authorNickname?.trim();
     final res = await _dio.post<Map<String, dynamic>>(
@@ -183,6 +184,7 @@ class TourstarRepository {
         ...?((userId != null) ? {"user_id": userId} : null),
         ...?((nick != null && nick.isNotEmpty) ? {"author_nickname": nick} : null),
         ...?((selectedScores != null) ? {"selected_scores": selectedScores} : null),
+        ...?((attachedSchedule != null) ? {"attached_schedule": attachedSchedule} : null),
       },
       options: Options(receiveTimeout: const Duration(minutes: 2)),
     );

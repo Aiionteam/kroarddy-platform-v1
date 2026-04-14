@@ -813,13 +813,13 @@
     }
   },
   "sidebar": {
-    "tourstar": "旅行之星",
+    "tourstar": "旅行动态",
     "planner": "旅行规划师",
-    "schedule": "行程管理",
-    "guide": "地点推荐",
+    "schedule": "我的计划",
+    "guide": "地点探索",
     "groupchat": "群聊",
     "friends": "好友列表",
-    "whisper": "悄悄话",
+    "whisper": "私聊",
     "profile": "我的信息",
     "customer": "客服中心",
     "logout": "退出登录",
@@ -1015,7 +1015,7 @@
       "weather_within_5days": "· 5 日内"
     },
     "guide": {
-      "landing_title": "地点推荐",
+      "landing_title": "地点探索",
       "landing_subtitle": "在同一页面选择美食或活动并浏览。",
       "restaurant_label": "美食推荐",
       "restaurant_desc": "按地区浏览",
@@ -1713,7 +1713,7 @@
         "steps": {
           "planner": "旅行规划",
           "schedule": "日程管理",
-          "guide": "地点推荐",
+          "guide": "地点探索",
           "social": "Tourstar / 群聊"
         },
         "cta_planner": "开始旅行规划",
@@ -1785,9 +1785,9 @@
           }
         },
         "discover": {
-          "title": "地点推荐",
-          "subtitle": "在同一屏浏览餐厅、活动等本地推荐。",
-          "cta": "前往地点推荐",
+          "title": "地点探索",
+          "subtitle": "在同一屏探索餐厅、活动与本地地点。",
+          "cta": "前往地点探索",
           "items": {
             "1": {
               "title": "1) 选择指南",

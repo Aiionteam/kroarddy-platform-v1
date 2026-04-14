@@ -813,13 +813,13 @@
     }
   },
   "sidebar": {
-    "tourstar": "Ngôi sao du lịch",
+    "tourstar": "Bảng tin du lịch",
     "planner": "Lập kế hoạch",
     "schedule": "Kế hoạch của tôi",
-    "guide": "Khám phá",
-    "groupchat": "Chat nhóm",
+    "guide": "Khám phá địa điểm",
+    "groupchat": "Nhóm chat",
     "friends": "Danh sách bạn bè",
-    "whisper": "Thì thầm",
+    "whisper": "Chat riêng",
     "profile": "Thông tin của tôi",
     "customer": "Trung tâm hỗ trợ",
     "logout": "Đăng xuất",
@@ -1015,7 +1015,7 @@
       "weather_within_5days": "· Trong 5 ngày"
     },
     "guide": {
-      "landing_title": "Place picks",
+      "landing_title": "Khám phá địa điểm",
       "landing_subtitle": "Choose food spots or events and explore in one place.",
       "restaurant_label": "Restaurant picks",
       "restaurant_desc": "Browse by area",
@@ -1713,7 +1713,7 @@
         "steps": {
           "planner": "Bộ lập kế hoạch",
           "schedule": "Lịch trình",
-          "guide": "Địa điểm",
+          "guide": "Khám phá địa điểm",
           "social": "Tourstar / Chat nhóm"
         },
         "cta_planner": "Bắt đầu lập kế hoạch",
@@ -1785,9 +1785,9 @@
           }
         },
         "discover": {
-          "title": "Địa điểm",
-          "subtitle": "Nhà hàng, sự kiện… trên một màn hình.",
-          "cta": "Đi tới địa điểm",
+          "title": "Khám phá địa điểm",
+          "subtitle": "Nhà hàng, sự kiện và địa điểm địa phương trên một màn hình.",
+          "cta": "Mở khám phá địa điểm",
           "items": {
             "1": {
               "title": "1) Chọn hướng dẫn",

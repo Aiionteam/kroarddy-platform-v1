@@ -42,13 +42,13 @@
     "language": "Language"
   },
   "sidebar": {
-    "tourstar": "TourStar",
+    "tourstar": "Travel Feed",
     "planner": "Trip Planner",
-    "schedule": "My Plans",
-    "guide": "Discover",
-    "groupchat": "Group Chat",
+    "schedule": "My Plan",
+    "guide": "Explore places",
+    "groupchat": "Group Talk",
     "friends": "Friends",
-    "whisper": "Whisper",
+    "whisper": "Private Talk",
     "profile": "My Profile",
     "customer": "Customer Center",
     "logout": "Logout",
@@ -97,6 +97,8 @@
       "date_range_placeholder": "Date range",
       "date_range_summary": "{start} ~ {end} ({count} photos)",
       "clear": "Clear",
+      "include_unknown_shot_date": "Include photos without shot date",
+      "open_settings": "Settings",
       "upload_ai": "Upload + AI analysis",
       "ai_ranking_title": "AI ranking",
       "ai_ranking_pick_n": "{selected}/{total} selected",
@@ -118,6 +120,12 @@
       "add_photo": "Add photo",
       "photos_label": "Photos",
       "photos_edit_hint": "Tap × to remove · add photos from your gallery.",
+      "status_checking_gallery_permission": "Checking gallery permission...",
+      "status_gallery_permission_denied": "Gallery permission is required. Please allow it in Settings.",
+      "status_no_photos_in_range": "No photos found in the selected date range.",
+      "status_gallery_autopick_done": "Loaded {count} photos from the selected range.",
+      "status_gallery_autopick_error": "Failed to load gallery photos. ({error})",
+      "status_date_filter_ready": "Please select a date range first.",
       "edit_post_title": "Edit post",
       "field_title": "Title",
       "field_place": "Place",
@@ -135,6 +143,15 @@
       "share_link_copied": "Share link copied.",
       "net_likes": "Net {likes}",
       "action_edit": "Edit",
+      "import_saved_schedule": "Import from saved plan",
+      "view_schedule": "View schedule",
+      "schedule_collapse": "Hide schedule",
+      "schedule_section_title": "Itinerary",
+      "schedule_day_n": "Day {n}",
+      "select_saved_plan_title": "Choose a saved plan",
+      "no_saved_plans": "No saved plans yet.",
+      "remove_attached_schedule": "Remove attached plan",
+      "schedule_in_feed_hint": "Itinerary attached · open post for schedule",
       "comments_inline": "Comments {count}",
       "photos_inline": "{count} photos",
       "comments_heading_n": "Comments ({count})",
@@ -244,8 +261,8 @@
       "weather_within_5days": "· Within 5 days"
     },
     "guide": {
-      "landing_title": "Place picks",
-      "landing_subtitle": "Choose food spots or events and explore in one place.",
+      "landing_title": "Explore places",
+      "landing_subtitle": "Explore restaurants, events, and local spots in one place.",
       "restaurant_label": "Restaurant picks",
       "restaurant_desc": "Browse by area",
       "event_label": "Event picks",
@@ -859,7 +876,7 @@
         "first_steps": {
           "category": "Getting started",
           "question": "Where should I start?",
-          "answer": "Try Trip Planner, Schedule, and Discover from home. See the user guide for steps."
+          "answer": "Try Trip Planner, My Plan, and Explore places from home. See the user guide for steps."
         },
         "update_notes": {
           "category": "Updates",
@@ -921,18 +938,18 @@
         "title": "Create route -> organize schedule -> share and chat when needed",
         "steps": {
           "planner": "Trip Planner",
-          "schedule": "Schedule",
-          "guide": "Discover",
-          "social": "Tourstar / Group Chat"
+          "schedule": "My Plan",
+          "guide": "Explore places",
+          "social": "Travel Feed / Group Talk"
         },
         "cta_planner": "Start Trip Planner",
-        "cta_groupchat": "Explore Group Chat"
+        "cta_groupchat": "Explore Group Talk"
       },
       "cards": {
         "tourstar": {
-          "title": "Tourstar",
+          "title": "Travel Feed",
           "subtitle": "Create and share travel posts and reviews in one place.",
-          "cta": "Go to Tourstar",
+          "cta": "Go to Travel Feed",
           "items": {
             "1": {
               "title": "1) Prepare photos/travel notes",
@@ -966,14 +983,14 @@
               "body": ": AI recommendations become more accurate when route context is clear."
             },
             "3": {
-              "body": "Recommended schedules are auto-saved and can be refined in Schedule."
+              "body": "Recommended schedules are auto-saved and can be refined in My Plan."
             }
           }
         },
         "schedule": {
-          "title": "Schedule",
+          "title": "My Plan",
           "subtitle": "Check saved plans in calendar and reroll/modify with AI.",
-          "cta": "Open Schedule",
+          "cta": "Open My Plan",
           "items": {
             "1": {
               "title": "1) Select date in calendar",
@@ -994,9 +1011,9 @@
           }
         },
         "discover": {
-          "title": "Discover",
-          "subtitle": "Find local recommendations like restaurants and events on one screen.",
-          "cta": "Go to Discover",
+          "title": "Explore places",
+          "subtitle": "Browse restaurants, events, and local spots on one screen.",
+          "cta": "Go to Explore places",
           "items": {
             "1": {
               "title": "1) Choose a guide",
@@ -1007,14 +1024,14 @@
               "body": ": Open places you are interested in for details."
             },
             "3": {
-              "body": "If you want to add it to plan, tune it in Planner/Schedule with your route."
+              "body": "If you want to add it to plan, tune it in Planner/My Plan with your route."
             }
           }
         },
         "groupchat": {
-          "title": "Group Chat",
+          "title": "Group Talk",
           "subtitle": "Join rooms by honor level and share travel stories.",
-          "cta": "Go to Group Chat",
+          "cta": "Go to Group Talk",
           "items": {
             "1": {
               "title": "1) Enter from room list",
@@ -1025,8 +1042,8 @@
               "body": ": Type in chat input and send in real-time."
             },
             "3": {
-              "title": "3) Friend/whisper/honor actions",
-              "body": ": Use message menu for whisper, add friend, and honor actions."
+              "title": "3) Friend/private talk/honor actions",
+              "body": ": Use message menu for private talk, add friend, and honor actions."
             }
           }
         }

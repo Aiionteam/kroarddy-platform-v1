@@ -813,13 +813,13 @@
     }
   },
   "sidebar": {
-    "tourstar": "ツアースター",
+    "tourstar": "旅行フィード",
     "planner": "旅行プランナー",
-    "schedule": "スケジュール",
-    "guide": "スポット",
-    "groupchat": "グループチャット",
+    "schedule": "マイプラン",
+    "guide": "スポット探索",
+    "groupchat": "グループトーク",
     "friends": "友だち一覧",
-    "whisper": "ひそひそ話",
+    "whisper": "個人トーク",
     "profile": "マイページ",
     "customer": "カスタマーセンター",
     "logout": "ログアウト",
@@ -1015,7 +1015,7 @@
       "weather_within_5days": "· 5日以内"
     },
     "guide": {
-      "landing_title": "おすすめスポット",
+      "landing_title": "スポット探索",
       "landing_subtitle": "グルメとイベントを選んで、ひとつの画面から見られます。",
       "restaurant_label": "グルメおすすめ",
       "restaurant_desc": "エリア別に探す",
@@ -1713,7 +1713,7 @@
         "steps": {
           "planner": "旅行プランナー",
           "schedule": "スケジュール",
-          "guide": "スポット",
+          "guide": "スポット探索",
           "social": "ツアースター / グループチャット"
         },
         "cta_planner": "旅行プランナーを始める",
@@ -1785,9 +1785,9 @@
           }
         },
         "discover": {
-          "title": "スポット",
-          "subtitle": "グルメ・イベントなど地域おすすめをひと画面で。",
-          "cta": "スポットへ",
+          "title": "スポット探索",
+          "subtitle": "グルメ・イベントなど地域のスポットをひと画面で探せます。",
+          "cta": "スポット探索へ",
           "items": {
             "1": {
               "title": "1) ガイドを選ぶ",

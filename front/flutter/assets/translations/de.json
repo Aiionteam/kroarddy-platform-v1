@@ -813,13 +813,13 @@
     }
   },
   "sidebar": {
-    "tourstar": "Reisestern",
+    "tourstar": "Reise-Feed",
     "planner": "Reiseplaner",
-    "schedule": "Meine Reisen",
-    "guide": "Entdecken",
-    "groupchat": "Gruppenchat",
+    "schedule": "Mein Plan",
+    "guide": "Orte erkunden",
+    "groupchat": "Gruppentalk",
     "friends": "Freundesliste",
-    "whisper": "Flüstern",
+    "whisper": "Privatchat",
     "profile": "Mein Profil",
     "customer": "Kundencenter",
     "logout": "Abmelden",
@@ -1015,7 +1015,7 @@
       "weather_within_5days": "· Innerhalb von 5 Tagen"
     },
     "guide": {
-      "landing_title": "Place picks",
+      "landing_title": "Orte erkunden",
       "landing_subtitle": "Choose food spots or events and explore in one place.",
       "restaurant_label": "Restaurant picks",
       "restaurant_desc": "Browse by area",
@@ -1713,7 +1713,7 @@
         "steps": {
           "planner": "Reiseplaner",
           "schedule": "Termine",
-          "guide": "Entdecken",
+          "guide": "Orte erkunden",
           "social": "Tourstar / Gruppenchat"
         },
         "cta_planner": "Reiseplaner starten",
@@ -1785,9 +1785,9 @@
           }
         },
         "discover": {
-          "title": "Entdecken",
-          "subtitle": "Restaurants, Events und mehr auf einem Bildschirm.",
-          "cta": "Zu Entdecken",
+          "title": "Orte erkunden",
+          "subtitle": "Restaurants, Events und lokale Orte auf einem Bildschirm.",
+          "cta": "Orte erkunden öffnen",
           "items": {
             "1": {
               "title": "1) Guide wählen",
