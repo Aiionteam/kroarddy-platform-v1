@@ -8,7 +8,7 @@ import time
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select, delete
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -41,7 +41,7 @@ from app.agent.standard.nodes_schedule import (
 from app.services.news_client import build_news_block_for_prompt
 from app.services.weather_client import build_weather_block_for_prompt
 from app.core.config import settings
-from app.core.database.session import get_db
+from app.core.database.session import _get_async_session_factory, get_db
 from app.models.travel_plan import TravelPlan
 from app.models.plan_cache import RouteCache, ScheduleCache
 from app.services.naver_place_hours import enrich_schedule_items_with_hours
@@ -199,6 +199,226 @@ _ROUTES_TTL = 3600
 _schedule_cache: dict[str, tuple[list, float]] = {}
 _schedule_lock: asyncio.Lock = asyncio.Lock()
 _SCHEDULE_TTL = 7200
+
+# ─── 비동기 일정 job (Upstash 없으면 프로세스 메모리, 멀티 워커에서는 Redis 권장) ─
+_ASYNC_JOB_KEY_PREFIX = "planer:std:async_job:"
+_ASYNC_JOB_TTL_SEC = 7200
+_async_jobs_mem: dict[str, dict] = {}
+_async_jobs_lock = asyncio.Lock()
+
+
+def _async_job_redis_key(job_id: str) -> str:
+    return f"{_ASYNC_JOB_KEY_PREFIX}{job_id}"
+
+
+async def _async_job_put(job_id: str, payload: dict) -> None:
+    """job 상태 저장 (완료 시 result에 동기 엔드포인트와 동일 형태의 필드 포함)."""
+    data = {**payload, "updated_at": time.time()}
+    raw = json.dumps(data, ensure_ascii=False, default=str)
+    if upstash_cache_configured():
+        await upstash_setex_str(_async_job_redis_key(job_id), _ASYNC_JOB_TTL_SEC, raw)
+    else:
+        async with _async_jobs_lock:
+            _async_jobs_mem[job_id] = data
+
+
+async def _async_job_get(job_id: str) -> dict | None:
+    if upstash_cache_configured():
+        s = await upstash_get_str(_async_job_redis_key(job_id))
+        if not s:
+            return None
+        try:
+            return json.loads(s)
+        except json.JSONDecodeError:
+            return None
+    async with _async_jobs_lock:
+        return _async_jobs_mem.get(job_id)
+
+
+async def _generate_schedule_after_cache_miss(
+    location: str,
+    location_name: str,
+    req: ScheduleRequest,
+    user_profile: dict | None,
+    lang_code: str,
+    nationality: str,
+    sched_key: str,
+    search_tag: str,
+    db: AsyncSession,
+) -> dict:
+    """L1/L2 미스 후 LangGraph 일정 생성·캐시 저장. ``_schedule_lock`` 보유 중 호출."""
+    logger.info("일정 생성 시작: %s/%s (lang=%s, search=%s)", location, req.route_name, lang_code, search_tag)
+    run_thread_id = _schedule_thread_id(req)
+    state = {
+        **_base_state(location, req.start_date, req.end_date),
+        "user_id": req.user_id,
+        "user_profile": user_profile,
+        "news_top10": req.news_top10 or [],
+        "route_name": req.route_name,
+        "transport_mode": req.transport_mode,
+        "use_search": req.use_search,
+    }
+    try:
+        if schedule_checkpoint_active():
+            result = await std_graph.schedule_graph.ainvoke(
+                state,
+                {"configurable": {"thread_id": run_thread_id}},
+            )
+        else:
+            result = await std_graph.schedule_graph.ainvoke(state)
+    except Exception as e:
+        await db.rollback()
+        _check_quota_error(e)
+        raise
+    schedule = result.get("schedule", [])
+
+    if schedule:
+        _schedule_cache[sched_key] = (schedule, time.time())
+        try:
+            await _save_schedule_to_db(
+                sched_key, location_name, req.route_name, schedule, db,
+                lang_code=lang_code, nationality=nationality,
+            )
+        except Exception as e:
+            logger.warning("일정 DB캐시 저장 실패 (무시): %s", e)
+            await db.rollback()
+        logger.info("일정 캐시 저장(L1+L2): %s (%d항목, lang=%s)", sched_key, len(schedule), lang_code)
+
+    return {
+        "location": location,
+        "location_name": location_name,
+        "route_name": req.route_name,
+        "schedule": schedule,
+        "cost_summary": result.get("cost_summary"),
+        "error": result.get("error"),
+        "thread_id": run_thread_id,
+    }
+
+
+async def _run_async_schedule_job(job_id: str, location: str, req: ScheduleRequest) -> None:
+    """백그라운드: 동기 ``get_schedule`` 와 동일한 캐시·락·생성 순서."""
+    location_name = SLUG_TO_NAME.get(location, location)
+    try:
+        user_profile = await fetch_user_profile(req.user_id)
+        nationality = (user_profile or {}).get("nationality", "")
+        lang_code = nationality[:3].lower() if nationality else "ko"
+        sched_transport_tag = req.transport_mode or "any"
+        search_tag = "s1" if req.use_search else "s0"
+        sched_key = (
+            f"{location}:{req.route_name}:{req.start_date}:{req.end_date}"
+            f":{lang_code}:{sched_transport_tag}:{search_tag}"
+        )
+
+        await _async_job_put(
+            job_id,
+            {
+                "status": "running",
+                "job_id": job_id,
+                "location": location,
+                "location_name": location_name,
+                "route_name": req.route_name,
+                "sched_key": sched_key,
+            },
+        )
+
+        cached_sched = _schedule_cache.get(sched_key)
+        if cached_sched and time.time() - cached_sched[1] < _SCHEDULE_TTL:
+            await _async_job_put(
+                job_id,
+                {
+                    "status": "completed",
+                    "job_id": job_id,
+                    "location": location,
+                    "location_name": location_name,
+                    "route_name": req.route_name,
+                    "schedule": cached_sched[0],
+                    "error": None,
+                    "source": "L1_cache",
+                },
+            )
+            return
+
+        factory = _get_async_session_factory()
+        async with factory() as db:
+            try:
+                async with _schedule_lock:
+                    cached_sched = _schedule_cache.get(sched_key)
+                    if cached_sched and time.time() - cached_sched[1] < _SCHEDULE_TTL:
+                        await _async_job_put(
+                            job_id,
+                            {
+                                "status": "completed",
+                                "job_id": job_id,
+                                "location": location,
+                                "location_name": location_name,
+                                "route_name": req.route_name,
+                                "schedule": cached_sched[0],
+                                "error": None,
+                                "source": "L1_cache_lock",
+                            },
+                        )
+                        return
+
+                    try:
+                        db_schedule = await _get_schedule_from_db(sched_key, db)
+                    except Exception as db_ex:
+                        logger.warning("일정 L2(DB) 캐시 조회 실패(생성으로 진행): %s", db_ex)
+                        await db.rollback()
+                        db_schedule = None
+                    if db_schedule:
+                        _schedule_cache[sched_key] = (db_schedule, time.time())
+                        logger.info("일정 L2(DB)캐시 히트: %s (%d항목)", sched_key, len(db_schedule))
+                        await _async_job_put(
+                            job_id,
+                            {
+                                "status": "completed",
+                                "job_id": job_id,
+                                "location": location,
+                                "location_name": location_name,
+                                "route_name": req.route_name,
+                                "schedule": db_schedule,
+                                "error": None,
+                                "source": "L2_db",
+                            },
+                        )
+                        return
+
+                    result_body = await _generate_schedule_after_cache_miss(
+                        location,
+                        location_name,
+                        req,
+                        user_profile,
+                        lang_code,
+                        nationality,
+                        sched_key,
+                        search_tag,
+                        db,
+                    )
+                await db.commit()
+            except Exception:
+                await db.rollback()
+                raise
+
+        await _async_job_put(
+            job_id,
+            {
+                "status": "completed",
+                "job_id": job_id,
+                "source": "generated",
+                **result_body,
+            },
+        )
+    except HTTPException as he:
+        await _async_job_put(
+            job_id,
+            {"status": "failed", "job_id": job_id, "error": str(he.detail), "http_status": he.status_code},
+        )
+    except Exception as e:
+        logger.exception("비동기 일정 job 실패 job_id=%s", job_id)
+        await _async_job_put(
+            job_id,
+            {"status": "failed", "job_id": job_id, "error": _stream_schedule_error_message(e)},
+        )
 
 # ─── L2 DB 캐시 TTL ─────────────────────────────────────────────
 _ROUTES_DB_TTL_DAYS = 5    # 루트: 5일 (장소/행사 변동 반영)
@@ -626,52 +846,66 @@ async def get_schedule(location: str, req: ScheduleRequest, db: AsyncSession = D
 
         # 행사·뉴스·날씨·웹검색은 gather_context_node에서 병렬 수집
         # 프론트에서 넘어온 뉴스가 있으면 state에 담아 gather_context_node가 재사용
-        logger.info("일정 생성 시작: %s/%s (lang=%s, search=%s)", location, req.route_name, lang_code, search_tag)
-        run_thread_id = _schedule_thread_id(req)
-        state = {
-            **_base_state(location, req.start_date, req.end_date),
-            "user_id": req.user_id,
-            "user_profile": user_profile,   # 이미 조회된 프로필 재사용
-            "news_top10": req.news_top10 or [],   # 프론트 제공 뉴스 선반영
-            "route_name": req.route_name,
-            "transport_mode": req.transport_mode,
-            "use_search": req.use_search,
-        }
-        try:
-            if schedule_checkpoint_active():
-                result = await std_graph.schedule_graph.ainvoke(
-                    state,
-                    {"configurable": {"thread_id": run_thread_id}},
-                )
-            else:
-                result = await std_graph.schedule_graph.ainvoke(state)
-        except Exception as e:
-            await db.rollback()
-            _check_quota_error(e)
-            raise
-        schedule = result.get("schedule", [])
+        return await _generate_schedule_after_cache_miss(
+            location,
+            location_name,
+            req,
+            user_profile,
+            lang_code,
+            nationality,
+            sched_key,
+            search_tag,
+            db,
+        )
 
-        if schedule:
-            _schedule_cache[sched_key] = (schedule, time.time())
-            try:
-                await _save_schedule_to_db(
-                    sched_key, location_name, req.route_name, schedule, db,
-                    lang_code=lang_code, nationality=nationality,
-                )
-            except Exception as e:
-                logger.warning("일정 DB캐시 저장 실패 (무시): %s", e)
-                await db.rollback()
-            logger.info("일정 캐시 저장(L1+L2): %s (%d항목, lang=%s)", sched_key, len(schedule), lang_code)
 
-        return {
+@router.get(
+    "/schedule/jobs/{job_id}",
+    summary="비동기 일정 job 상태 조회",
+)
+async def get_schedule_job_status(job_id: str):
+    """``POST .../schedule/async`` 로 받은 ``job_id`` 로 폴링한다.
+
+    - ``status``: ``pending`` | ``running`` | ``completed`` | ``failed``
+    - ``completed`` 이면 ``schedule``, ``cost_summary``, ``error`` 등 동기 응답과 동일 필드 확인.
+    """
+    data = await _async_job_get(job_id.strip())
+    if not data:
+        raise HTTPException(status_code=404, detail="job_id가 없거나 만료되었습니다.")
+    return data
+
+
+@router.post(
+    "/{location}/schedule/async",
+    summary="일정 생성 비동기 — 즉시 job_id 반환 후 백그라운드 실행",
+)
+async def start_schedule_async(
+    location: str,
+    req: ScheduleRequest,
+    background_tasks: BackgroundTasks,
+):
+    """HTTP는 즉시 반환하고, 일정은 백그라운드에서 생성한다.
+
+    완료 알림은 서버 푸시가 아니라 **폴링**(
+    ``GET /api/v1/planner/schedule/jobs/{job_id}``)으로 ``status == completed`` 를 확인하면 된다.
+    Upstash Redis가 설정된 경우 job 상태가 워커 간 공유된다.
+    """
+    job_id = secrets.token_urlsafe(18)
+    await _async_job_put(
+        job_id,
+        {
+            "status": "pending",
+            "job_id": job_id,
             "location": location,
-            "location_name": location_name,
-            "route_name": req.route_name,
-            "schedule": schedule,
-            "cost_summary": result.get("cost_summary"),
-            "error": result.get("error"),
-            "thread_id": run_thread_id,
-        }
+        },
+    )
+    background_tasks.add_task(_run_async_schedule_job, job_id, location, req)
+    return {
+        "job_id": job_id,
+        "status": "pending",
+        "poll_url": f"/api/v1/planner/schedule/jobs/{job_id}",
+        "message": "GET poll_url로 status가 completed일 때 schedule 등을 확인하세요.",
+    }
 
 
 @router.post(
