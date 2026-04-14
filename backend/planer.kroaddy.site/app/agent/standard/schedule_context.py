@@ -2,6 +2,7 @@
 import asyncio
 import hashlib
 import logging
+import re
 from time import perf_counter
 from typing import Any
 
@@ -21,7 +22,11 @@ from app.core.config import settings
 from app.core.database.session import _get_async_session_factory
 from app.services.festival_client import fetch_festivals_for_period_with_db_cache
 from app.services.kakao_map_client import kakao_keyword_search_many
-from app.services.naver_search_client import build_naver_tips_raw_text, naver_search_configured
+from app.services.naver_search_client import (
+    build_naver_tips_raw_text,
+    naver_blog_location_token,
+    naver_search_configured,
+)
 from app.services.news_client import fetch_news_top10
 from app.services.user_info_client import fetch_user_profile
 from app.services.upstash_redis import upstash_cache_configured, upstash_get_str, upstash_setex_str
@@ -536,17 +541,18 @@ async def _gather_naver_tips_context(
             return cached
 
     t0 = perf_counter()
+    loc_q = naver_blog_location_token(location_name, lang=lang)
     extra_queries: list[str] = []
     for nm in focus_place_names or []:
         n = (nm or "").strip()
         if not n:
             continue
         if lang == "Korean":
-            extra_queries.append(f"{location_name} {n} 후기")
-            extra_queries.append(f"{location_name} {n} 팁")
+            extra_queries.append(f"{loc_q} {n} 후기")
+            extra_queries.append(f"{loc_q} {n} 팁")
         else:
-            extra_queries.append(f"{location_name} {n} review")
-            extra_queries.append(f"{location_name} {n} tips")
+            extra_queries.append(f"{loc_q} {n} review")
+            extra_queries.append(f"{loc_q} {n} tips")
     try:
         text = await asyncio.wait_for(
             build_naver_tips_raw_text(

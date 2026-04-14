@@ -13,8 +13,22 @@ from html import unescape
 import httpx
 
 from app.core.config import settings
+from app.core.location_slugs import SLUG_TO_NAME
 
 logger = logging.getLogger(__name__)
+
+
+def naver_blog_location_token(location_name: str, *, lang: str) -> str:
+    """네이버 블로그 검색용 지역 토큰. 한국어 응답(lang=Korean)이면 영문 슬러그를 한글 표기로 바꾼다."""
+    raw = (location_name or "").strip()
+    if not raw:
+        return raw
+    if lang != "Korean":
+        return raw
+    if any("\uac00" <= c <= "\ud7a3" for c in raw):
+        return raw
+    key = raw.lower().replace(" ", "-")
+    return SLUG_TO_NAME.get(key, raw)
 
 _NAVER_BLOG_URL = "https://openapi.naver.com/v1/search/blog.json"
 
@@ -74,7 +88,7 @@ async def naver_blog_search(query: str, *, display: int = 5) -> list[dict[str, s
 
 def naver_tips_queries(*, location_name: str, route_name: str, lang: str) -> list[str]:
     """규칙 기반 검색어 – 지역·루트별 고정 패턴."""
-    loc = (location_name or "").strip()
+    loc = naver_blog_location_token(location_name, lang=lang)
     rn = (route_name or "").strip()
     if not loc:
         return []
