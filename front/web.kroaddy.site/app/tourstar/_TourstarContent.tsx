@@ -303,6 +303,13 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
       }
       return null;
     } catch {
+      // 일부 파일(특히 메신저/편집 앱 경유)은 EXIF가 없거나 파싱 실패할 수 있다.
+      // UX 관점에서 기간 필터가 너무 보수적으로 빠지지 않도록 브라우저 파일 메타(lastModified)로 폴백한다.
+      const lm = typeof file.lastModified === "number" ? file.lastModified : NaN;
+      if (!Number.isNaN(lm) && lm > 0) {
+        const d = new Date(lm);
+        return Number.isNaN(d.getTime()) ? null : d;
+      }
       return null;
     }
   };
@@ -485,6 +492,26 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
         <p className="mb-5 text-xs text-gray-400">{t("tourstar.create.subtitle", { defaultValue: "사진을 올리면 AI가 잘 나온 사진을 자동으로 추려드려요 ✨" })}</p>
         <div className="space-y-4">
           <div>
+            <div className="mb-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
+              <p className="text-[11px] font-semibold text-gray-600">{t("tourstar.create.filter_by_date", { defaultValue: "촬영일 기간 자동 선별 (메타데이터 기반)" })}</p>
+              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <label className="flex flex-col gap-1 text-[11px] text-gray-500">{t("tourstar.create.start_date", { defaultValue: "시작일" })}
+                  <input type="date" value={dateFilter.startDate} onChange={(e) => setDateFilter((prev) => ({ ...prev, startDate: e.target.value }))}
+                    className="rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 focus:border-purple-300 focus:outline-none" />
+                </label>
+                <label className="flex flex-col gap-1 text-[11px] text-gray-500">{t("tourstar.create.end_date", { defaultValue: "종료일" })}
+                  <input type="date" value={dateFilter.endDate} onChange={(e) => setDateFilter((prev) => ({ ...prev, endDate: e.target.value }))}
+                    className="rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 focus:border-purple-300 focus:outline-none" />
+                </label>
+              </div>
+              <label className="mt-2 flex items-center gap-2 text-[11px] text-gray-500">
+                <input type="checkbox" checked={dateFilter.includeUnknownDate}
+                  onChange={(e) => setDateFilter((prev) => ({ ...prev, includeUnknownDate: e.target.checked }))}
+                  className="h-3.5 w-3.5 rounded border-gray-300 text-purple-600 focus:ring-purple-400" />
+                {t("tourstar.create.include_unknown_shot_date", { defaultValue: "촬영일 메타데이터가 없는 사진도 포함" })}
+              </label>
+              <p className="mt-1 text-[10px] text-gray-400">{t("tourstar.create.date_filter_note", { defaultValue: "날짜를 입력하면 해당 기간에 촬영된 사진만 자동 업로드됩니다. (OpenAI 미사용)" })}</p>
+            </div>
             <div className="mb-2 flex items-center justify-between">
               <label className="text-xs font-medium text-gray-500">
                 {t("tourstar.create.photo_selected_count", {
@@ -519,26 +546,6 @@ function CreatePostModal({ open, onClose, onCreate, onJobStatusChange }: CreateM
               </button>
               <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
                 onChange={async (e) => { await handleUploadPhotosWithDateFilter(e.target.files ? Array.from(e.target.files) : null); e.target.value = ""; }} />
-            </div>
-            <div className="mt-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
-              <p className="text-[11px] font-semibold text-gray-600">{t("tourstar.create.filter_by_date", { defaultValue: "촬영일 기간 자동 선별 (메타데이터 기반)" })}</p>
-              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <label className="flex flex-col gap-1 text-[11px] text-gray-500">{t("tourstar.create.start_date", { defaultValue: "시작일" })}
-                  <input type="date" value={dateFilter.startDate} onChange={(e) => setDateFilter((prev) => ({ ...prev, startDate: e.target.value }))}
-                    className="rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 focus:border-purple-300 focus:outline-none" />
-                </label>
-                <label className="flex flex-col gap-1 text-[11px] text-gray-500">{t("tourstar.create.end_date", { defaultValue: "종료일" })}
-                  <input type="date" value={dateFilter.endDate} onChange={(e) => setDateFilter((prev) => ({ ...prev, endDate: e.target.value }))}
-                    className="rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 focus:border-purple-300 focus:outline-none" />
-                </label>
-              </div>
-              <label className="mt-2 flex items-center gap-2 text-[11px] text-gray-500">
-                <input type="checkbox" checked={dateFilter.includeUnknownDate}
-                  onChange={(e) => setDateFilter((prev) => ({ ...prev, includeUnknownDate: e.target.checked }))}
-                  className="h-3.5 w-3.5 rounded border-gray-300 text-purple-600 focus:ring-purple-400" />
-                {t("tourstar.create.include_unknown_shot_date", { defaultValue: "촬영일 메타데이터가 없는 사진도 포함" })}
-              </label>
-              <p className="mt-1 text-[10px] text-gray-400">{t("tourstar.create.date_filter_note", { defaultValue: "날짜를 입력하면 해당 기간에 촬영된 사진만 자동 업로드됩니다. (OpenAI 미사용)" })}</p>
             </div>
           </div>
           <div>
