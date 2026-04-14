@@ -2,6 +2,7 @@
 import asyncio
 import hashlib
 import logging
+import re
 from time import perf_counter
 from typing import Any
 
@@ -21,7 +22,11 @@ from app.core.config import settings
 from app.core.database.session import _get_async_session_factory
 from app.services.festival_client import fetch_festivals_for_period_with_db_cache
 from app.services.kakao_map_client import kakao_keyword_search_many
-from app.services.naver_search_client import build_naver_tips_raw_text, naver_search_configured
+from app.services.naver_search_client import (
+    build_naver_tips_raw_text,
+    naver_blog_location_token,
+    naver_search_configured,
+)
 from app.services.news_client import fetch_news_top10
 from app.services.user_info_client import fetch_user_profile
 from app.services.upstash_redis import upstash_cache_configured, upstash_get_str, upstash_setex_str
@@ -40,6 +45,29 @@ _NAVER_TIPS_GATHER_TIMEOUT_SEC = 45.0
 
 async def _noop_str() -> str:
     return ""
+
+
+def _extract_kakao_names_for_tips(poi_block: str, *, limit: int = 4) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
+    for raw in (poi_block or "").splitlines():
+        line = raw.strip()
+        if "•" not in line:
+            continue
+        txt = line.split("•", 1)[1].strip()
+        txt = re.sub(r"^\[[^\]]+\]\s*", "", txt)
+        txt = re.sub(r"^\([^)]*\)\s*", "", txt)
+        txt = txt.split(" – ", 1)[0].strip()
+        if len(txt) < 2:
+            continue
+        key = txt.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(txt)
+        if len(out) >= limit:
+            break
+    return out
 
 
 def _has_hangul(s: str) -> bool:
@@ -327,20 +355,10 @@ async def gather_context_node(state: PlannerState) -> PlannerState:
         route_name=route_name,
         lang=lang,
     )
-    naver_coro = (
-        _gather_naver_tips_context(
-            location_name=location_name,
-            route_name=route_name,
-            lang=lang,
-        )
-        if naver_tips_gather_attempted
-        else _noop_str()
-    )
-
     _kakao_scheduled = bool(settings.kakao_rest_api_key)
     logger.info(
-        "[std_node] gather_context 2차 병렬 시작 lang=%s | 웹검색=%s 카카오POI=%s 네이버팁=%s "
-        "(행사 조회는 1차만; 카카오는 별도 키워드 3축)",
+        "[std_node] gather_context 2차 시작 lang=%s | 웹검색=%s 카카오POI=%s 네이버팁=%s "
+        "(카카오→네이버 팁 순서, 행사 조회는 1차만)",
         lang,
         "O" if use_search else "X",
         "O" if _kakao_scheduled else "X(키없음)",
@@ -350,7 +368,8 @@ async def gather_context_node(state: PlannerState) -> PlannerState:
     web_ctx = ""
     poi_block = ""
     naver_ctx = ""
-    wr, pr, nr = await asyncio.gather(web_coro, poi_coro, naver_coro, return_exceptions=True)
+    # 웹검색은 카카오와 병렬 가능, 네이버 팁은 카카오 결과를 기반으로 후행 수집한다.
+    wr, pr = await asyncio.gather(web_coro, poi_coro, return_exceptions=True)
     if isinstance(wr, Exception):
         logger.warning("웹 검색 수집 실패: %s", wr)
     elif use_search:
@@ -359,10 +378,23 @@ async def gather_context_node(state: PlannerState) -> PlannerState:
         logger.warning("카카오 POI 풀 수집 실패: %s", pr)
     else:
         poi_block = pr or ""
-    if isinstance(nr, Exception):
-        logger.warning("네이버 팁 수집 실패: %s", nr)
-    elif naver_tips_gather_attempted:
-        naver_ctx = nr or ""
+
+    if naver_tips_gather_attempted:
+        focus = _extract_kakao_names_for_tips(poi_block, limit=4)
+        logger.info(
+            "[std_node] naver_tips 후행 수집(카카오 기반) focus=%s",
+            focus if focus else "(none)",
+        )
+        try:
+            naver_ctx = await _gather_naver_tips_context(
+                location_name=location_name,
+                route_name=route_name,
+                lang=lang,
+                focus_place_names=focus,
+            )
+        except Exception as e:
+            logger.warning("네이버 팁 수집 실패: %s", e)
+            naver_ctx = ""
 
     logger.info(
         "컨텍스트 수집 완료: 행사=%d, 뉴스=%d, 날씨=%s, 웹검색=%d자, 카카오POI=%d자, 네이버팁=%d자 (%.2fs)",
@@ -493,6 +525,7 @@ async def _gather_naver_tips_context(
     location_name: str,
     route_name: str,
     lang: str,
+    focus_place_names: list[str] | None = None,
 ) -> str:
     """규칙 기반 블로그 검색으로 꿀팁 텍스트를 한 번에 수집한다 (Google Search 미사용 경로)."""
     if not settings.naver_tips_context_enabled or not naver_search_configured():
@@ -508,12 +541,25 @@ async def _gather_naver_tips_context(
             return cached
 
     t0 = perf_counter()
+    loc_q = naver_blog_location_token(location_name, lang=lang)
+    extra_queries: list[str] = []
+    for nm in focus_place_names or []:
+        n = (nm or "").strip()
+        if not n:
+            continue
+        if lang == "Korean":
+            extra_queries.append(f"{loc_q} {n} 후기")
+            extra_queries.append(f"{loc_q} {n} 팁")
+        else:
+            extra_queries.append(f"{loc_q} {n} review")
+            extra_queries.append(f"{loc_q} {n} tips")
     try:
         text = await asyncio.wait_for(
             build_naver_tips_raw_text(
                 location_name=location_name,
                 route_name=route_name,
                 lang=lang,
+                extra_queries=extra_queries,
                 max_chars=_NAVER_TIPS_MAX_CHARS,
             ),
             timeout=_NAVER_TIPS_GATHER_TIMEOUT_SEC,
