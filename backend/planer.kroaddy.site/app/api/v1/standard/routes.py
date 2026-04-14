@@ -32,7 +32,6 @@ from app.agent.standard.nodes_schedule import (
     _build_festival_block,
     _format_naver_tips_block,
     _format_web_search_block,
-    _gather_web_search_context,
     _generate_single_day,
     _geocode_item,
     _venue_dedupe_key,
@@ -724,7 +723,6 @@ async def get_routes(location: str, req: RoutesRequest, db: AsyncSession = Depen
 
     # 루트 생성은 프로필 개인화를 사용하지 않으므로 user_profile 조회를 생략한다.
     # lang_code는 루트 캐시 키/메타 호환을 위해 고정값을 사용한다.
-    user_profile = None
     nationality = None
     lang_code = "ko"
     cache_key = f"{location}:{req.start_date}:{req.end_date}:{eh}:{lang_code}:{transport_tag}"
